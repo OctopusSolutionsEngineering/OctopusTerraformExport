@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
+	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"regexp"
 	"strings"
 )
@@ -36,14 +37,12 @@ func (c ProjectConverter) ToHcl() (string, error) {
 		return "", err
 	}
 
-	allowedChars := regexp.MustCompile(`[^A-Za-z0-9]`)
-
 	output := ""
 
 	for _, project := range collection.Items {
 		terraformResource := projectTerraform{
 			Type:                            "octopusdeploy_project",
-			Name:                            "octopus_project_" + allowedChars.ReplaceAllString(strings.ToLower(project.Name), "_"),
+			Name:                            "octopus_project_" + util.SanitizeName(project.Name),
 			ResourceName:                    project.Name,
 			AutoCreateRelease:               project.AutoCreateRelease,
 			DefaultGuidedFailureMode:        project.DefaultGuidedFailureMode,

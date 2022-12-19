@@ -4,8 +4,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
-	"regexp"
-	"strings"
+	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
 type spaceTerraform struct {
@@ -31,15 +30,13 @@ func (c SpaceConverter) ToHcl() (string, error) {
 		return "", err
 	}
 
-	allowedChars := regexp.MustCompile(`[^A-Za-z0-9]`)
-
 	output := ""
 
 	terraformResource := spaceTerraform{
 		Description:              space.Description,
 		IsDefault:                space.IsDefault,
 		IsTaskQueueStopped:       space.TaskQueueStopped,
-		Name:                     "octopus_space_" + allowedChars.ReplaceAllString(strings.ToLower(space.Name), "_"),
+		Name:                     "octopus_space_" + util.SanitizeName(space.Name),
 		SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
 		SpaceManagersTeams:       space.SpaceManagersTeams,
 		ResourceName:             space.Name,
