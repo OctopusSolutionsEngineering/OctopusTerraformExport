@@ -3,28 +3,13 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type projectTerraform struct {
-	Type                            string `hcl:"type,label"`
-	Name                            string `hcl:"name,label"`
-	ResourceName                    string `hcl:"name"`
-	AutoCreateRelease               bool   `hcl:"auto_create_release"`
-	DefaultGuidedFailureMode        string `hcl:"default_guided_failure_mode"`
-	DefaultToSkipIfAlreadyInstalled bool   `hcl:"default_to_skip_if_already_installed"`
-	Description                     string `hcl:"description"`
-	DiscreteChannelRelease          bool   `hcl:"discrete_channel_release"`
-	IsDisabled                      bool   `hcl:"is_disabled"`
-	IsVersionControlled             bool   `hcl:"is_version_controlled"`
-	LifecycleId                     string `hcl:"lifecycle_id"`
-	ProjectGroupId                  string `hcl:"project_group_id"`
-	TenantedDeploymentParticipation string `hcl:"tenanted_deployment_participation"`
-}
-
-const terraformFile = "populatespace/projects.tf"
+const terraformFile = internal.PopulateSpaceDir + "/projects.tf"
 
 type ProjectConverter struct {
 	Client client.OctopusClient
@@ -41,7 +26,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	output := ""
 
 	for _, project := range collection.Items {
-		terraformResource := projectTerraform{
+		terraformResource := model.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            "octopus_project_" + util.SanitizeName(project.Name),
 			ResourceName:                    project.Name,
@@ -75,7 +60,7 @@ func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
 		return nil, err
 	}
 
-	terraformResource := projectTerraform{
+	terraformResource := model.TerraformProject{
 		Type:                            "octopusdeploy_project",
 		Name:                            "octopus_space_" + util.SanitizeName(resource.Name),
 		ResourceName:                    resource.Name,

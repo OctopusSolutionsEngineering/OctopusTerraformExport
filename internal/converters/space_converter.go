@@ -3,21 +3,11 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
-
-type spaceTerraform struct {
-	Type                     string   `hcl:"type,label"`
-	Name                     string   `hcl:"name,label"`
-	Description              string   `hcl:"description"`
-	ResourceName             string   `hcl:"name"`
-	IsDefault                bool     `hcl:"is_default"`
-	IsTaskQueueStopped       bool     `hcl:"is_task_queue_stopped"`
-	SpaceManagersTeamMembers []string `hcl:"space_managers_team_members"`
-	SpaceManagersTeams       []string `hcl:"space_managers_teams"`
-}
 
 type SpaceConverter struct {
 	Client client.OctopusClient
@@ -31,7 +21,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		return nil, err
 	}
 
-	terraformResource := spaceTerraform{
+	terraformResource := model.TerraformSpace{
 		Description:              space.Description,
 		IsDefault:                space.IsDefault,
 		IsTaskQueueStopped:       space.TaskQueueStopped,
@@ -45,7 +35,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 	results := map[string]string{
-		"createspace/space.tf": string(file.Bytes()),
+		internal.CreateSpaceDir + "/space.tf": string(file.Bytes()),
 	}
 
 	// Convert the projects
