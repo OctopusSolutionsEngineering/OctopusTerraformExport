@@ -3,7 +3,7 @@ module github.com/mcasperson/OctopusTerraformExport
 go 1.19
 
 require (
-	github.com/hashicorp/hcl/v2 v2.15.0
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
 )
 

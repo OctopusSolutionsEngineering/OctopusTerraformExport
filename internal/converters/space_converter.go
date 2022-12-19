@@ -23,15 +23,13 @@ type SpaceConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SpaceConverter) ToHcl() (string, error) {
+func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	space := model.Space{}
 	err := c.Client.GetSpace(&space)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	output := ""
 
 	terraformResource := spaceTerraform{
 		Description:              space.Description,
@@ -45,23 +43,30 @@ func (c SpaceConverter) ToHcl() (string, error) {
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-	output += string(file.Bytes())
+
+	results := map[string]string{
+		"createspace/space.tf": string(file.Bytes()),
+	}
 
 	// Convert the projects
 	projects, err := c.processProjects()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	output += projects
 
-	return output, nil
+	// merge the maps
+	for k, v := range projects {
+		results[k] = v
+	}
+
+	return results, nil
 }
 
 func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
 }
 
-func (c SpaceConverter) processProjects() (string, error) {
+func (c SpaceConverter) processProjects() (map[string]string, error) {
 	return ProjectConverter{
 		Client: c.Client,
 	}.ToHcl()

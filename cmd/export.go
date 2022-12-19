@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
+	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
 )
 
@@ -28,7 +29,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(hcl)
+	err = writeFiles(hcl)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
 
 func parseUrl() (string, string, string) {
@@ -44,4 +50,14 @@ func parseUrl() (string, string, string) {
 	flag.Parse()
 
 	return url, space, apiKey
+}
+
+func writeFiles(files map[string]string) error {
+	writer := writers.FileWriter{}
+	output, err := writer.Write(files)
+	if err != nil {
+		return err
+	}
+	fmt.Println(output)
+	return nil
 }

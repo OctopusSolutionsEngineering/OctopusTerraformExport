@@ -6,8 +6,6 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
-	"regexp"
-	"strings"
 )
 
 type projectTerraform struct {
@@ -26,16 +24,18 @@ type projectTerraform struct {
 	TenantedDeploymentParticipation string `hcl:"tenanted_deployment_participation"`
 }
 
+const terraformFile = "populatespace/projects.tf"
+
 type ProjectConverter struct {
 	Client client.OctopusClient
 }
 
-func (c ProjectConverter) ToHcl() (string, error) {
+func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	collection := model.GeneralCollection[model.Project]{}
 	err := c.Client.GetAllResources("Projects", &collection)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	output := ""
@@ -62,22 +62,22 @@ func (c ProjectConverter) ToHcl() (string, error) {
 		output += string(file.Bytes())
 	}
 
-	return output, nil
+	return map[string]string{
+		terraformFile: output,
+	}, nil
 }
 
-func (c ProjectConverter) ToHclById(id string) (string, error) {
+func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
 	resource := model.Project{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	allowedChars := regexp.MustCompile(`[^A-Za-z0-9]`)
 
 	terraformResource := projectTerraform{
 		Type:                            "octopusdeploy_project",
-		Name:                            "octopus_space_" + allowedChars.ReplaceAllString(strings.ToLower(resource.Name), "_"),
+		Name:                            "octopus_space_" + util.SanitizeName(resource.Name),
 		ResourceName:                    resource.Name,
 		AutoCreateRelease:               resource.AutoCreateRelease,
 		DefaultGuidedFailureMode:        resource.DefaultGuidedFailureMode,
@@ -92,11 +92,14 @@ func (c ProjectConverter) ToHclById(id string) (string, error) {
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-	return string(file.Bytes()), nil
+
+	return map[string]string{
+		terraformFile: string(file.Bytes()),
+	}, nil
 }
 
-func (c ProjectConverter) ToHclByName(name string) (string, error) {
-	return "", nil
+func (c ProjectConverter) ToHclByName(name string) (map[string]string, error) {
+	return map[string]string{}, nil
 }
 
 func (c ProjectConverter) GetResourceType() string {
