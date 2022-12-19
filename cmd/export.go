@@ -3,20 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/mcasperson/OctopusTerraformExport/internal"
+	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
 	"os"
 )
 
 func main() {
 	url, space, apiKey := parseUrl()
 
-	client := internal.OctopusClient{
+	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
 		ApiKey: apiKey,
 	}
 
-	spaceConverter := internal.SpaceConverter{
+	spaceConverter := converters.SpaceConverter{
 		Client: client,
 	}
 

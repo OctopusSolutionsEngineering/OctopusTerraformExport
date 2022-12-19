@@ -1,8 +1,9 @@
-package internal
+package converters
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"regexp"
@@ -26,7 +27,7 @@ type projectTerraform struct {
 }
 
 type ProjectConverter struct {
-	Client OctopusClient
+	Client client.OctopusClient
 }
 
 func (c ProjectConverter) ToHcl() (string, error) {

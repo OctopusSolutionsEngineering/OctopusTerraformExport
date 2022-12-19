@@ -1,8 +1,9 @@
-package internal
+package converters
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
@@ -19,7 +20,7 @@ type spaceTerraform struct {
 }
 
 type SpaceConverter struct {
-	Client OctopusClient
+	Client client.OctopusClient
 }
 
 func (c SpaceConverter) ToHcl() (string, error) {

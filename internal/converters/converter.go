@@ -1,4 +1,4 @@
-package internal
+package converters
 
 type converter interface {
 	ToHcl() (string, error)
