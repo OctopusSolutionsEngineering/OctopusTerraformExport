@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"regexp"
 	"strings"
 )
@@ -23,7 +24,7 @@ type SpaceConverter struct {
 }
 
 func (c SpaceConverter) ToHcl() (string, error) {
-	space := Space{}
+	space := model.Space{}
 	err := c.Client.GetSpace(&space)
 
 	if err != nil {
@@ -31,6 +32,8 @@ func (c SpaceConverter) ToHcl() (string, error) {
 	}
 
 	allowedChars := regexp.MustCompile(`[^A-Za-z0-9]`)
+
+	output := ""
 
 	terraformResource := spaceTerraform{
 		Description:              space.Description,
@@ -44,9 +47,24 @@ func (c SpaceConverter) ToHcl() (string, error) {
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-	return string(file.Bytes()), nil
+	output += string(file.Bytes())
+
+	// Convert the projects
+	projects, err := c.processProjects()
+	if err != nil {
+		return "", err
+	}
+	output += projects
+
+	return output, nil
 }
 
 func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
+}
+
+func (c SpaceConverter) processProjects() (string, error) {
+	return ProjectConverter{
+		Client: c.Client,
+	}.ToHcl()
 }

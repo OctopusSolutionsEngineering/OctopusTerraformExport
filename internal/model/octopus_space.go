@@ -1,4 +1,4 @@
-package internal
+package model
 
 type Space struct {
 	Id                       string
@@ -8,13 +8,4 @@ type Space struct {
 	TaskQueueStopped         bool
 	SpaceManagersTeams       []string
 	SpaceManagersTeamMembers []string
-}
-
-type SpaceCollection struct {
-	Items          []Space
-	TotalResults   int
-	ItemsPerPage   int
-	NumberOfPages  int
-	LastPageNumber int
-	ItemType       string
 }

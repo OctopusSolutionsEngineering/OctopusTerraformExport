@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"net/http"
 	"net/url"
 	"strings"
@@ -63,7 +64,7 @@ func (o OctopusClient) lookupSpaceAsName() (string, error) {
 	}
 	defer res.Body.Close()
 
-	collection := SpaceCollection{}
+	collection := model.GeneralCollection[model.Space]{}
 	err = json.NewDecoder(res.Body).Decode(&collection)
 
 	if err != nil {
@@ -115,20 +116,14 @@ func (o OctopusClient) getSpaceRequest() (*http.Request, error) {
 	return req, nil
 }
 
-func (o OctopusClient) getRequest(resourceType string, ids []string, names []string) (*http.Request, error) {
+func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request, error) {
 	spaceUrl, err := o.getSpaceUrl()
 
 	if err != nil {
 		return nil, err
 	}
 
-	queryParams := url.Values{}
-
-	if len(ids) != 0 {
-		queryParams.Set("ids", strings.Join(ids[:], ","))
-	}
-
-	requestURL := spaceUrl + "/" + resourceType + "?" + queryParams.Encode()
+	requestURL := spaceUrl + "/" + resourceType + "/" + id
 	req, err := http.NewRequest(http.MethodPost, requestURL, nil)
 
 	if err != nil {
@@ -140,7 +135,26 @@ func (o OctopusClient) getRequest(resourceType string, ids []string, names []str
 	return req, nil
 }
 
-func (o OctopusClient) GetSpace(resources *Space) error {
+func (o OctopusClient) getCollectionRequest(resourceType string) (*http.Request, error) {
+	spaceUrl, err := o.getSpaceUrl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	requestURL := spaceUrl + "/" + resourceType + "?take=10000"
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+
+	return req, nil
+}
+
+func (o OctopusClient) GetSpace(resources *model.Space) error {
 	req, err := o.getSpaceRequest()
 
 	if err != nil {
@@ -161,8 +175,8 @@ func (o OctopusClient) GetSpace(resources *Space) error {
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
-func (o OctopusClient) GetResourcesById(resourceType string, ids []string, resources *interface{}) error {
-	req, err := o.getRequest(resourceType, ids, []string{})
+func (o OctopusClient) GetResourceById(resourceType string, id string, resources any) error {
+	req, err := o.getRequest(resourceType, id)
 
 	if err != nil {
 		return err
@@ -182,10 +196,27 @@ func (o OctopusClient) GetResourcesById(resourceType string, ids []string, resou
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
-func (o OctopusClient) GetResourcesByName(resourceType string, names []string) {
+func (o OctopusClient) GetResourceByName(resourceType string, names string) {
 
 }
 
-func (o OctopusClient) GetAllResources(resourceType string) {
+func (o OctopusClient) GetAllResources(resourceType string, resources any) error {
+	req, err := o.getCollectionRequest(resourceType)
 
+	if err != nil {
+		return err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		return nil
+	}
+	defer res.Body.Close()
+
+	return json.NewDecoder(res.Body).Decode(resources)
 }
