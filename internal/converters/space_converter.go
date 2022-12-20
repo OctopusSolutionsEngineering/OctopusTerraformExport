@@ -23,11 +23,13 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	provider := c.createSpaceProvider()
 	terraformConfig := c.createTerraformConfig()
+	terraformVariables := c.createVariables()
 
 	results := map[string]string{
 		internal.CreateSpaceDir + "/space.tf":    spaceTf,
 		internal.CreateSpaceDir + "/provider.tf": provider,
 		internal.CreateSpaceDir + "/config.tf":   terraformConfig,
+		internal.CreateSpaceDir + "/vars.tf":     terraformVariables,
 	}
 
 	// Convert the projects
@@ -80,8 +82,8 @@ func (c SpaceConverter) createSpaceTf() (string, error) {
 func (c SpaceConverter) createSpaceProvider() string {
 	terraformResource := model.TerraformProvider{
 		Type:    "octopusdeploy",
-		Address: "var.octopusUrl",
-		ApiKey:  "var.octopusApiKey",
+		Address: "var.octopus_server",
+		ApiKey:  "var.octopus_apikey",
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
@@ -92,5 +94,28 @@ func (c SpaceConverter) createTerraformConfig() string {
 	terraformResource := model.TerraformConfig{}.CreateTerraformConfig()
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
+	return string(file.Bytes())
+}
+
+func (c SpaceConverter) createVariables() string {
+	octopusServer := model.TerraformVariable{
+		Name:        "octopus_server",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The URL of the Octopus server e.g. https://myinstance.octopus.app.",
+	}
+
+	octopusApiKey := model.TerraformVariable{
+		Name:        "octopus_apikey",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: "The API key used to access the Octopus server. See https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for details on creating an API key.",
+	}
+
+	file := hclwrite.NewEmptyFile()
+	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusServer, "variable"))
+	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusApiKey, "variable"))
 	return string(file.Bytes())
 }
