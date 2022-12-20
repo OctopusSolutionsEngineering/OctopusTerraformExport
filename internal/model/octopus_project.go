@@ -31,6 +31,7 @@ type Project struct {
 	IsVersionControlled             bool
 	LifecycleId                     string
 	ProjectGroupId                  string
+	DeploymentProcessId             string
 	TenantedDeploymentMode          string
 	ProjectConnectivityPolicy       ProjectConnectivityPolicy
 	Templates                       []Template

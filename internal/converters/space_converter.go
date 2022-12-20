@@ -9,6 +9,9 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
+// SpaceConverter creates the files required to create a new space. These files are used in a separate
+// terraform project, as you first need to a create a space, and then configure a second provider
+// to use that space.
 type SpaceConverter struct {
 	Client client.OctopusClient
 }
@@ -82,8 +85,15 @@ func (c SpaceConverter) createSpaceTf() (string, error) {
 		ResourceName:             space.Name,
 		Type:                     "octopusdeploy_space",
 	}
+
+	spaceOutput := model.TerraformOutput{
+		Name:  "octopus_space_id",
+		Value: "octopusdeploy_space.octopus_space_" + util.SanitizeName(space.Name) + ".id",
+	}
+
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+	file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
 	return string(file.Bytes()), nil
 }
 

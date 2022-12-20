@@ -17,18 +17,19 @@ type ProjectConverter struct {
 
 func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	collection := model.GeneralCollection[model.Project]{}
-	err := c.Client.GetAllResources("Projects", &collection)
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
 		return nil, err
 	}
 
-	output := ""
+	results := map[string]string{}
 
 	for _, project := range collection.Items {
+		projectName := "octopus_project_" + util.SanitizeName(project.Name)
 		terraformResource := model.TerraformProject{
 			Type:                            "octopusdeploy_project",
-			Name:                            "octopus_project_" + util.SanitizeName(project.Name),
+			Name:                            projectName,
 			ResourceName:                    project.Name,
 			AutoCreateRelease:               project.AutoCreateRelease,
 			DefaultGuidedFailureMode:        project.DefaultGuidedFailureMode,
@@ -44,12 +45,22 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		output += string(file.Bytes())
+		results[internal.PopulateSpaceDir+"/"+projectName+".tf"] = string(file.Bytes())
+
+		deploymentProcess, err := DeploymentProcessConverter{Client: c.Client}.ToHclById(project.DeploymentProcessId, projectName)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// merge the maps
+		for k, v := range deploymentProcess {
+			results[k] = v
+		}
+
 	}
 
-	return map[string]string{
-		terraformFile: output,
-	}, nil
+	return results, nil
 }
 
 func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {

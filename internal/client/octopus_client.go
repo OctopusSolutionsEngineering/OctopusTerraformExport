@@ -124,7 +124,7 @@ func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request
 	}
 
 	requestURL := spaceUrl + "/" + resourceType + "/" + id
-	req, err := http.NewRequest(http.MethodPost, requestURL, nil)
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	}
 
 	if res.StatusCode != 200 {
-		return nil
+		return errors.New("did not find the requested resource")
 	}
 	defer res.Body.Close()
 

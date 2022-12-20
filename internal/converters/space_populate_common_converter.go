@@ -8,6 +8,8 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 )
 
+// SpacePopulateCommonGenerator creates the common terraform files required to populate a space
+// including the provider, terraform config, and common vars
 type SpacePopulateCommonGenerator struct {
 	Client client.OctopusClient
 }
@@ -18,9 +20,9 @@ func (c SpacePopulateCommonGenerator) ToHcl() map[string]string {
 	terraformVariables := c.createVariables()
 
 	return map[string]string{
-		internal.PopulateSpaceDir + "/provider.tf": provider,
-		internal.PopulateSpaceDir + "/config.tf":   terraformConfig,
-		internal.PopulateSpaceDir + "/vars.tf":     terraformVariables,
+		internal.PopulateSpaceDir + "/provider.tf":      provider,
+		internal.PopulateSpaceDir + "/config.tf":        terraformConfig,
+		internal.PopulateSpaceDir + "/provider_vars.tf": terraformVariables,
 	}
 }
 
