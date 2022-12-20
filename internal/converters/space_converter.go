@@ -32,6 +32,14 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		internal.CreateSpaceDir + "/vars.tf":     terraformVariables,
 	}
 
+	// Generate space population common files
+	commonProjectFiles := SpacePopulateCommonGenerator{}.ToHcl()
+
+	// merge the maps
+	for k, v := range commonProjectFiles {
+		results[k] = v
+	}
+
 	// Convert the projects
 	projects, err := c.processProjects()
 	if err != nil {
