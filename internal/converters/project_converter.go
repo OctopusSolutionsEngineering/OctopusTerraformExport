@@ -9,8 +9,6 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-const terraformFile = internal.PopulateSpaceDir + "/projects.tf"
-
 type ProjectConverter struct {
 	Client client.OctopusClient
 }
@@ -26,7 +24,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
-		projectName := "octopus_project_" + util.SanitizeName(project.Name)
+		projectName := util.SanitizeName(project.Id)
 		terraformResource := model.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,
@@ -71,9 +69,11 @@ func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
 		return nil, err
 	}
 
+	resourceName := util.SanitizeName(resource.Name)
+
 	terraformResource := model.TerraformProject{
 		Type:                            "octopusdeploy_project",
-		Name:                            "octopus_space_" + util.SanitizeName(resource.Name),
+		Name:                            resourceName,
 		ResourceName:                    resource.Name,
 		AutoCreateRelease:               resource.AutoCreateRelease,
 		DefaultGuidedFailureMode:        resource.DefaultGuidedFailureMode,
@@ -90,7 +90,7 @@ func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 	return map[string]string{
-		terraformFile: string(file.Bytes()),
+		internal.PopulateSpaceDir + "/" + resourceName + ".tf": string(file.Bytes()),
 	}, nil
 }
 
