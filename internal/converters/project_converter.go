@@ -45,15 +45,17 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 
 		results[internal.PopulateSpaceDir+"/"+projectName+".tf"] = string(file.Bytes())
 
-		deploymentProcess, err := DeploymentProcessConverter{Client: c.Client}.ToHclById(project.DeploymentProcessId, projectName)
+		if project.DeploymentProcessId != nil {
+			deploymentProcess, err := DeploymentProcessConverter{Client: c.Client}.ToHclById(*project.DeploymentProcessId, projectName)
 
-		if err != nil {
-			return nil, err
-		}
+			if err != nil {
+				return nil, err
+			}
 
-		// merge the maps
-		for k, v := range deploymentProcess {
-			results[k] = v
+			// merge the maps
+			for k, v := range deploymentProcess {
+				results[k] = v
+			}
 		}
 
 	}

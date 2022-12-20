@@ -3,15 +3,15 @@ package model
 type ProjectConnectivityPolicy struct {
 	AllowDeploymentsToNoTargets bool
 	ExcludeUnhealthyTargets     bool
-	SkipMachineBehavior         string
+	SkipMachineBehavior         *string
 }
 
 type Template struct {
-	Id              string
-	Name            string
-	Label           string
-	HelpText        string
-	DefaultValue    string
+	Id              *string
+	Name            *string
+	Label           *string
+	HelpText        *string
+	DefaultValue    *string
 	DisplaySettings DisplaySettings
 }
 
@@ -20,19 +20,19 @@ type DisplaySettings struct {
 }
 
 type Project struct {
-	Id                              string
-	Name                            string
-	Description                     string
+	Id                              *string
+	Name                            *string
+	Description                     *string
 	AutoCreateRelease               bool
-	DefaultGuidedFailureMode        string
+	DefaultGuidedFailureMode        *string
 	DefaultToSkipIfAlreadyInstalled bool
 	DiscreteChannelRelease          bool
 	IsDisabled                      bool
 	IsVersionControlled             bool
-	LifecycleId                     string
-	ProjectGroupId                  string
-	DeploymentProcessId             string
-	TenantedDeploymentMode          string
+	LifecycleId                     *string
+	ProjectGroupId                  *string
+	DeploymentProcessId             *string
+	TenantedDeploymentMode          *string
 	ProjectConnectivityPolicy       ProjectConnectivityPolicy
 	Templates                       []Template
 	// Todo: add service now and jira settings

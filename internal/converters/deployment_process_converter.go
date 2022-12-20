@@ -49,18 +49,15 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 				CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 				IsRequired:                    a.IsRequired,
 				WorkerPoolId:                  a.WorkerPoolId,
-				Container: model.TerraformContainer{
-					FeedId: a.Container.FeedId,
-					Image:  a.Container.Image,
-				},
-				WorkerPoolVariable:   a.WorkerPoolVariable,
-				Environments:         a.Environments,
-				ExcludedEnvironments: a.ExcludedEnvironments,
-				Channels:             a.Channels,
-				TenantTags:           a.TenantTags,
-				Package:              make([]model.TerraformPackage, len(a.Packages)),
-				Condition:            a.Condition,
-				Properties:           a.Properties,
+				Container:                     c.convertContainer(a.Container),
+				WorkerPoolVariable:            a.WorkerPoolVariable,
+				Environments:                  a.Environments,
+				ExcludedEnvironments:          a.ExcludedEnvironments,
+				Channels:                      a.Channels,
+				TenantTags:                    a.TenantTags,
+				Package:                       make([]model.TerraformPackage, len(a.Packages)),
+				Condition:                     a.Condition,
+				Properties:                    a.Properties,
 			}
 
 			for k, p := range a.Packages {
@@ -87,4 +84,15 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 
 func (c DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
+}
+
+func (c DeploymentProcessConverter) convertContainer(container model.Container) *model.TerraformContainer {
+	if container.Image != nil || container.FeedId != nil {
+		return &model.TerraformContainer{
+			FeedId: container.FeedId,
+			Image:  container.Image,
+		}
+	}
+
+	return nil
 }
