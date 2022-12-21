@@ -1,7 +1,5 @@
 package model
 
-import "github.com/hashicorp/hcl2/hcl"
-
 type TerraformProjectVariable struct {
 	Type           string                         `hcl:"type,label"`
 	Name           string                         `hcl:"name,label"`
@@ -9,7 +7,7 @@ type TerraformProjectVariable struct {
 	Value          *string                        `hcl:"value"`
 	ResourceName   *string                        `hcl:"name"`
 	Description    *string                        `hcl:"description"`
-	SensitiveValue hcl.Expression                 `hcl:"sensitive_value"`
+	SensitiveValue *string                        `hcl:"sensitive_value"`
 	IsSensitive    bool                           `hcl:"is_sensitive"`
 	Prompt         TerraformProjectVariablePrompt `hcl:"prompt,block"`
 }

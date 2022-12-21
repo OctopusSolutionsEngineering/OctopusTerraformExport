@@ -2,13 +2,12 @@ package converters
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
-	"github.com/zclconf/go-cty/cty"
+	"strings"
 )
 
 type VariableSetConverter struct {
@@ -46,7 +45,8 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 		}
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-		resources[internal.PopulateSpaceDir+"/"+resourceName+".tf"] = string(file.Bytes())
+		// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
+		resources[internal.PopulateSpaceDir+"/"+resourceName+".tf"] = strings.ReplaceAll(string(file.Bytes()), "$${", "${")
 	}
 
 	return resources, nil
@@ -56,11 +56,10 @@ func (c VariableSetConverter) GetResourceType() string {
 	return "Variables"
 }
 
-func (c VariableSetConverter) convertSecretValue(variable model.Variable, resourceName string) hclsyntax.Expression {
+func (c VariableSetConverter) convertSecretValue(variable model.Variable, resourceName string) *string {
 	if variable.IsSensitive {
-		return &hclsyntax.LiteralValueExpr{
-			Val: cty.StringVal("var." + resourceName),
-		}
+		value := "${var." + resourceName + "}"
+		return &value
 	}
 
 	return nil
