@@ -35,7 +35,7 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 			Value:          v.Value,
 			ResourceName:   v.Name,
 			Description:    v.Description,
-			SensitiveValue: c.convertSecretValue(v, resourceName),
+			SensitiveValue: c.convertSecretValue(v, parentName),
 			IsSensitive:    v.IsSensitive,
 			Prompt: model.TerraformProjectVariablePrompt{
 				Description: v.Prompt.Description,
@@ -56,9 +56,9 @@ func (c VariableSetConverter) GetResourceType() string {
 	return "Variables"
 }
 
-func (c VariableSetConverter) convertSecretValue(variable model.Variable, resourceName string) *string {
+func (c VariableSetConverter) convertSecretValue(variable model.Variable, parentName string) *string {
 	if variable.IsSensitive {
-		value := "${var." + resourceName + "}"
+		value := "${var." + parentName + ".id}"
 		return &value
 	}
 
