@@ -20,7 +20,7 @@ type DisplaySettings struct {
 }
 
 type Project struct {
-	Id                              *string
+	Id                              string
 	Name                            *string
 	Slug                            *string
 	Description                     *string

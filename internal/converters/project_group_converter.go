@@ -66,6 +66,8 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, error) {
 		return nil, err
 	}
 
+	results := map[string]string{}
+
 	resourceName := util.SanitizeName(resource.Name)
 
 	terraformResource := terraform.TerraformProject{
@@ -85,6 +87,23 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, error) {
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+	results[resourceName+".tf"] = string(file.Bytes())
+
+	// Convert the projects
+	projects, err := ProjectConverter{
+		Client:                   c.Client,
+		SpaceResourceName:        c.SpaceResourceName,
+		ProjectGroupResourceName: resourceName,
+		ProjectGroupId:           resource.Id,
+	}.ToHcl()
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range projects {
+		results[k] = v
+	}
 
 	return map[string]string{
 		resourceName + ".tf": string(file.Bytes()),
