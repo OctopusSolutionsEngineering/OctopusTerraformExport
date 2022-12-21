@@ -58,6 +58,19 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			}
 		}
 
+		if project.VariableSetId != nil {
+			variableSet, err := VariableSetConverter{Client: c.Client}.ToHclById(*project.VariableSetId, projectName)
+
+			if err != nil {
+				return nil, err
+			}
+
+			// merge the maps
+			for k, v := range variableSet {
+				results[k] = v
+			}
+		}
+
 	}
 
 	return results, nil

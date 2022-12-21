@@ -35,5 +35,6 @@ type Project struct {
 	TenantedDeploymentMode          *string
 	ProjectConnectivityPolicy       ProjectConnectivityPolicy
 	Templates                       []Template
+	VariableSetId                   *string
 	// Todo: add service now and jira settings
 }
