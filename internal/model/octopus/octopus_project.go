@@ -1,4 +1,4 @@
-package model
+package octopus
 
 type ProjectConnectivityPolicy struct {
 	AllowDeploymentsToNoTargets bool
@@ -22,6 +22,7 @@ type DisplaySettings struct {
 type Project struct {
 	Id                              *string
 	Name                            *string
+	Slug                            *string
 	Description                     *string
 	AutoCreateRelease               bool
 	DefaultGuidedFailureMode        *string
@@ -30,7 +31,7 @@ type Project struct {
 	IsDisabled                      bool
 	IsVersionControlled             bool
 	LifecycleId                     *string
-	ProjectGroupId                  *string
+	ProjectGroupId                  string
 	DeploymentProcessId             *string
 	TenantedDeploymentMode          *string
 	ProjectConnectivityPolicy       ProjectConnectivityPolicy

@@ -1,4 +1,4 @@
-package model
+package terraform
 
 type TerraformConfig struct {
 	RequiredProviders RequiredProviders `hcl:"required_providers,block"`

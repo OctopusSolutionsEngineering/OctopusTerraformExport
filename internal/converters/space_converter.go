@@ -3,10 +3,11 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/model"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"strings"
 )
 
 // SpaceConverter creates the files required to create a new space. These files are used in a separate
@@ -18,21 +19,14 @@ type SpaceConverter struct {
 
 func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
-	spaceTf, err := c.createSpaceTf()
+	spaceResourceName, spaceTf, err := c.createSpaceTf()
 
 	if err != nil {
 		return nil, err
 	}
 
-	provider := c.createSpaceProvider()
-	terraformConfig := c.createTerraformConfig()
-	terraformVariables := c.createVariables()
-
 	results := map[string]string{
-		internal.CreateSpaceDir + "/space.tf":    spaceTf,
-		internal.CreateSpaceDir + "/provider.tf": provider,
-		internal.CreateSpaceDir + "/config.tf":   terraformConfig,
-		internal.CreateSpaceDir + "/vars.tf":     terraformVariables,
+		"space.tf": spaceTf,
 	}
 
 	// Generate space population common files
@@ -43,8 +37,11 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the projects
-	projects, err := c.processProjects()
+	// Convert the projects groups
+	projects, err := ProjectGroupConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +51,11 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
+	for k, v := range results {
+		results[k] = strings.ReplaceAll(v, "$${", "${")
+	}
+
 	return results, nil
 }
 
@@ -61,79 +63,34 @@ func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
 }
 
-func (c SpaceConverter) processProjects() (map[string]string, error) {
-	return ProjectConverter{
-		Client: c.Client,
-	}.ToHcl()
-}
-
-func (c SpaceConverter) createSpaceTf() (string, error) {
-	space := model.Space{}
+func (c SpaceConverter) createSpaceTf() (string, string, error) {
+	space := octopus.Space{}
 	err := c.Client.GetSpace(&space)
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	terraformResource := model.TerraformSpace{
+	spaceResourceName := "octopus_space_" + util.SanitizeName(space.Name)
+
+	terraformResource := terraform.TerraformSpace{
 		Description:              space.Description,
 		IsDefault:                space.IsDefault,
 		IsTaskQueueStopped:       space.TaskQueueStopped,
-		Name:                     "octopus_space_" + util.SanitizeName(space.Name),
+		Name:                     spaceResourceName,
 		SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
 		SpaceManagersTeams:       space.SpaceManagersTeams,
 		ResourceName:             space.Name,
 		Type:                     "octopusdeploy_space",
 	}
 
-	spaceOutput := model.TerraformOutput{
+	spaceOutput := terraform.TerraformOutput{
 		Name:  "octopus_space_id",
-		Value: "octopusdeploy_space.octopus_space_" + util.SanitizeName(space.Name) + ".id",
+		Value: "octopusdeploy_space." + spaceResourceName + ".id",
 	}
 
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
-	return string(file.Bytes()), nil
-}
-
-func (c SpaceConverter) createSpaceProvider() string {
-	terraformResource := model.TerraformProvider{
-		Type:    "octopusdeploy",
-		Address: "var.octopus_server",
-		ApiKey:  "var.octopus_apikey",
-	}
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
-	return string(file.Bytes())
-}
-
-func (c SpaceConverter) createTerraformConfig() string {
-	terraformResource := model.TerraformConfig{}.CreateTerraformConfig()
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
-	return string(file.Bytes())
-}
-
-func (c SpaceConverter) createVariables() string {
-	octopusServer := model.TerraformVariable{
-		Name:        "octopus_server",
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   false,
-		Description: "The URL of the Octopus server e.g. https://myinstance.octopus.app.",
-	}
-
-	octopusApiKey := model.TerraformVariable{
-		Name:        "octopus_apikey",
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The API key used to access the Octopus server. See https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for details on creating an API key.",
-	}
-
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusServer, "variable"))
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusApiKey, "variable"))
-	return string(file.Bytes())
+	return spaceResourceName, string(file.Bytes()), nil
 }

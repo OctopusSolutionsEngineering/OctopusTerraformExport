@@ -1,4 +1,4 @@
-package model
+package terraform
 
 type TerraformSpace struct {
 	Type                     string   `hcl:"type,label"`

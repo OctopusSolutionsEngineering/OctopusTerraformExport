@@ -1,4 +1,4 @@
-package model
+package terraform
 
 type TerraformDeploymentProcess struct {
 	Type      string          `hcl:"type,label"`

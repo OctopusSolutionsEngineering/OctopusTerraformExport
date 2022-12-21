@@ -1,4 +1,4 @@
-package model
+package octopus
 
 type GeneralCollection[T any] struct {
 	TotalResults   int

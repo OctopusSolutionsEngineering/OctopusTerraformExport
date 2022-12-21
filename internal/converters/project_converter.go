@@ -3,18 +3,21 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/model"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
 type ProjectConverter struct {
-	Client client.OctopusClient
+	Client                   client.OctopusClient
+	SpaceResourceName        string
+	ProjectGroupResourceName string
+	ProjectGroupId           string
 }
 
 func (c ProjectConverter) ToHcl() (map[string]string, error) {
-	collection := model.GeneralCollection[model.Project]{}
+	collection := octopus.GeneralCollection[octopus.Project]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -24,8 +27,8 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
-		projectName := util.SanitizeName(project.Id)
-		terraformResource := model.TerraformProject{
+		projectName := util.SanitizeName(project.Slug)
+		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,
 			ResourceName:                    project.Name,
@@ -37,13 +40,13 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			IsDisabled:                      project.IsDisabled,
 			IsVersionControlled:             project.IsVersionControlled,
 			LifecycleId:                     project.LifecycleId,
-			ProjectGroupId:                  project.ProjectGroupId,
+			ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results[internal.PopulateSpaceDir+"/"+projectName+".tf"] = string(file.Bytes())
+		results[projectName+".tf"] = string(file.Bytes())
 
 		if project.DeploymentProcessId != nil {
 			deploymentProcess, err := DeploymentProcessConverter{Client: c.Client}.ToHclById(*project.DeploymentProcessId, projectName)
@@ -77,7 +80,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 }
 
 func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
-	resource := model.Project{}
+	resource := octopus.Project{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -86,7 +89,7 @@ func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
 
 	resourceName := util.SanitizeName(resource.Name)
 
-	terraformResource := model.TerraformProject{
+	terraformResource := terraform.TerraformProject{
 		Type:                            "octopusdeploy_project",
 		Name:                            resourceName,
 		ResourceName:                    resource.Name,
@@ -98,14 +101,14 @@ func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
 		IsDisabled:                      resource.IsDisabled,
 		IsVersionControlled:             resource.IsVersionControlled,
 		LifecycleId:                     resource.LifecycleId,
-		ProjectGroupId:                  resource.ProjectGroupId,
+		ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
 		TenantedDeploymentParticipation: resource.TenantedDeploymentMode,
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 	return map[string]string{
-		internal.PopulateSpaceDir + "/" + resourceName + ".tf": string(file.Bytes()),
+		resourceName + ".tf": string(file.Bytes()),
 	}, nil
 }
 
@@ -114,5 +117,5 @@ func (c ProjectConverter) ToHclByName(name string) (map[string]string, error) {
 }
 
 func (c ProjectConverter) GetResourceType() string {
-	return "Projects"
+	return "ProjectGroups/" + c.ProjectGroupId + "/projects"
 }

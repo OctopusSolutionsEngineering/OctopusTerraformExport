@@ -1,4 +1,4 @@
-package model
+package octopus
 
 type VariableSet struct {
 	Id        *string

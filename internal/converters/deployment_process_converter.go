@@ -3,9 +3,9 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/model"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
@@ -14,7 +14,7 @@ type DeploymentProcessConverter struct {
 }
 
 func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map[string]string, error) {
-	resource := model.DeploymentProcess{}
+	resource := octopus.DeploymentProcess{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -23,25 +23,25 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 
 	resourceName := util.SanitizeName(resource.Id)
 
-	terraformResource := model.TerraformDeploymentProcess{
+	terraformResource := terraform.TerraformDeploymentProcess{
 		Type:      "octopusdeploy_deployment_process",
 		Name:      resourceName,
 		ProjectId: "octopusdeploy_project." + parentName + ".id",
-		Step:      make([]model.TerraformStep, len(resource.Steps)),
+		Step:      make([]terraform.TerraformStep, len(resource.Steps)),
 	}
 
 	for i, s := range resource.Steps {
-		terraformResource.Step[i] = model.TerraformStep{
+		terraformResource.Step[i] = terraform.TerraformStep{
 			Name:               s.Name,
 			PackageRequirement: s.PackageRequirement,
 			Properties:         s.Properties,
 			Condition:          s.Condition,
 			StartTrigger:       s.StartTrigger,
-			Action:             make([]model.TerraformAction, len(s.Actions)),
+			Action:             make([]terraform.TerraformAction, len(s.Actions)),
 		}
 
 		for j, a := range s.Actions {
-			terraformResource.Step[i].Action[j] = model.TerraformAction{
+			terraformResource.Step[i].Action[j] = terraform.TerraformAction{
 				Name:                          a.Name,
 				ActionType:                    a.ActionType,
 				Notes:                         a.Notes,
@@ -55,13 +55,13 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 				ExcludedEnvironments:          a.ExcludedEnvironments,
 				Channels:                      a.Channels,
 				TenantTags:                    a.TenantTags,
-				Package:                       make([]model.TerraformPackage, len(a.Packages)),
+				Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 				Condition:                     a.Condition,
 				Properties:                    a.Properties,
 			}
 
 			for k, p := range a.Packages {
-				terraformResource.Step[i].Action[j].Package[k] = model.TerraformPackage{
+				terraformResource.Step[i].Action[j].Package[k] = terraform.TerraformPackage{
 					Name:                    p.Name,
 					PackageID:               p.PackageId,
 					AcquisitionLocation:     p.AcquisitionLocation,
@@ -78,7 +78,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 	return map[string]string{
-		internal.PopulateSpaceDir + "/" + resourceName + ".tf": string(file.Bytes()),
+		resourceName + ".tf": string(file.Bytes()),
 	}, nil
 }
 
@@ -86,9 +86,9 @@ func (c DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c DeploymentProcessConverter) convertContainer(container model.Container) *model.TerraformContainer {
+func (c DeploymentProcessConverter) convertContainer(container octopus.Container) *terraform.TerraformContainer {
 	if container.Image != nil || container.FeedId != nil {
-		return &model.TerraformContainer{
+		return &terraform.TerraformContainer{
 			FeedId: container.FeedId,
 			Image:  container.Image,
 		}

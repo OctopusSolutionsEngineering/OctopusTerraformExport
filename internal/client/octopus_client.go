@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mcasperson/OctopusTerraformExport/internal/model"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"net/http"
 	"net/url"
 	"strings"
@@ -64,7 +64,7 @@ func (o OctopusClient) lookupSpaceAsName() (string, error) {
 	}
 	defer res.Body.Close()
 
-	collection := model.GeneralCollection[model.Space]{}
+	collection := octopus.GeneralCollection[octopus.Space]{}
 	err = json.NewDecoder(res.Body).Decode(&collection)
 
 	if err != nil {
@@ -154,7 +154,7 @@ func (o OctopusClient) getCollectionRequest(resourceType string) (*http.Request,
 	return req, nil
 }
 
-func (o OctopusClient) GetSpace(resources *model.Space) error {
+func (o OctopusClient) GetSpace(resources *octopus.Space) error {
 	req, err := o.getSpaceRequest()
 
 	if err != nil {

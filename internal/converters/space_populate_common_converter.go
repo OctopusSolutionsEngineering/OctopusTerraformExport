@@ -3,9 +3,8 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/internal"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/model"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 )
 
 // SpacePopulateCommonGenerator creates the common terraform files required to populate a space
@@ -20,18 +19,17 @@ func (c SpacePopulateCommonGenerator) ToHcl() map[string]string {
 	terraformVariables := c.createVariables()
 
 	return map[string]string{
-		internal.PopulateSpaceDir + "/provider.tf":      provider,
-		internal.PopulateSpaceDir + "/config.tf":        terraformConfig,
-		internal.PopulateSpaceDir + "/provider_vars.tf": terraformVariables,
+		"provider.tf":      provider,
+		"config.tf":        terraformConfig,
+		"provider_vars.tf": terraformVariables,
 	}
 }
 
 func (c SpacePopulateCommonGenerator) createProvider() string {
-	terraformResource := model.TerraformProvider{
+	terraformResource := terraform.TerraformProvider{
 		Type:    "octopusdeploy",
 		Address: "var.octopus_server",
 		ApiKey:  "var.octopus_apikey",
-		SpaceId: "var.octopus_space_id",
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
@@ -39,14 +37,14 @@ func (c SpacePopulateCommonGenerator) createProvider() string {
 }
 
 func (c SpacePopulateCommonGenerator) createTerraformConfig() string {
-	terraformResource := model.TerraformConfig{}.CreateTerraformConfig()
+	terraformResource := terraform.TerraformConfig{}.CreateTerraformConfig()
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 	return string(file.Bytes())
 }
 
 func (c SpacePopulateCommonGenerator) createVariables() string {
-	octopusServer := model.TerraformVariable{
+	octopusServer := terraform.TerraformVariable{
 		Name:        "octopus_server",
 		Type:        "string",
 		Nullable:    false,
@@ -54,7 +52,7 @@ func (c SpacePopulateCommonGenerator) createVariables() string {
 		Description: "The URL of the Octopus server e.g. https://myinstance.octopus.app.",
 	}
 
-	octopusApiKey := model.TerraformVariable{
+	octopusApiKey := terraform.TerraformVariable{
 		Name:        "octopus_apikey",
 		Type:        "string",
 		Nullable:    false,
@@ -62,7 +60,7 @@ func (c SpacePopulateCommonGenerator) createVariables() string {
 		Description: "The API key used to access the Octopus server. See https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for details on creating an API key.",
 	}
 
-	octopusSpaceId := model.TerraformVariable{
+	octopusSpaceId := terraform.TerraformVariable{
 		Name:        "octopus_space_id",
 		Type:        "string",
 		Nullable:    false,

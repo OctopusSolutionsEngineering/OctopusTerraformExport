@@ -1,4 +1,4 @@
-package model
+package terraform
 
 type TerraformVariable struct {
 	Name        string `hcl:"name,label"`

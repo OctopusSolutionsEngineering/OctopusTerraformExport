@@ -1,4 +1,4 @@
-package model
+package terraform
 
 type TerraformProject struct {
 	Type                            string  `hcl:"type,label"`
@@ -12,6 +12,6 @@ type TerraformProject struct {
 	IsDisabled                      bool    `hcl:"is_disabled"`
 	IsVersionControlled             bool    `hcl:"is_version_controlled"`
 	LifecycleId                     *string `hcl:"lifecycle_id"`
-	ProjectGroupId                  *string `hcl:"project_group_id"`
+	ProjectGroupId                  string  `hcl:"project_group_id"`
 	TenantedDeploymentParticipation *string `hcl:"tenanted_deployment_participation"`
 }
