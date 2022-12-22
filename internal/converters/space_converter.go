@@ -52,6 +52,21 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the feeds
+	accounts, accountsMap, err := AccountConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range accounts {
+		results[k] = v
+	}
+
 	// Convert the lifecycles
 	lifecycles, lifecycleMap, err := LifecycleConverter{
 		Client:            c.Client,
@@ -89,6 +104,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		FeedMap:           feedMap,
 		LifecycleMap:      lifecycleMap,
 		WorkPoolMap:       poolMap,
+		AccountsMap:       accountsMap,
 	}.ToHcl()
 
 	if err != nil {

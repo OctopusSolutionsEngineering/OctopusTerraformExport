@@ -33,13 +33,27 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 			OwnerId:        "octopusdeploy_project." + parentName + ".id",
 			Value:          v.Value,
 			ResourceName:   v.Name,
+			ResourceType:   v.Type,
 			Description:    v.Description,
 			SensitiveValue: c.convertSecretValue(v, parentName),
 			IsSensitive:    v.IsSensitive,
 			Prompt:         c.convertPrompt(v.Prompt),
 		}
 
+		if v.IsSensitive {
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        parentName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The secret variable value associated with the variable " + *v.Name,
+			}
+
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+		}
+
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		resources[resourceName+".tf"] = string(file.Bytes())
 	}
 
 	return resources, nil

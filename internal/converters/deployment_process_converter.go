@@ -14,6 +14,7 @@ type DeploymentProcessConverter struct {
 	Client      client.OctopusClient
 	FeedMap     map[string]string
 	WorkPoolMap map[string]string
+	AccountsMap map[string]string
 }
 
 func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map[string]string, error) {
@@ -61,7 +62,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 				TenantTags:                    a.TenantTags,
 				Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 				Condition:                     a.Condition,
-				Properties:                    c.replaceFeedIds(util.SanitizeMap(a.Properties)),
+				Properties:                    c.replaceIds(util.SanitizeMap(a.Properties)),
 			}
 
 			for k, p := range a.Packages {
@@ -73,7 +74,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 					ExtractDuringDeployment: p.ExtractDuringDeployment,
 					FeedId:                  &feedVar,
 					Id:                      p.Id,
-					Properties:              c.replaceFeedIds(p.Properties),
+					Properties:              c.replaceIds(p.Properties),
 				}
 			}
 		}
@@ -102,11 +103,30 @@ func (c DeploymentProcessConverter) convertContainer(container octopus.Container
 	return nil
 }
 
+func (c DeploymentProcessConverter) replaceIds(properties map[string]string) map[string]string {
+	return c.replaceAccountIds(
+		c.replaceAccountIds(properties))
+}
+
 // replaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
 func (c DeploymentProcessConverter) replaceFeedIds(properties map[string]string) map[string]string {
 	for k, v := range properties {
 		for k2, v2 := range c.FeedMap {
+			if strings.Contains(v, k2) {
+				properties[k] = strings.ReplaceAll(v, k2, v2)
+			}
+		}
+	}
+
+	return properties
+}
+
+// replaceAccountIds looks for any property value that is a valid account ID and replaces it with a resource ID lookup.
+// This also looks in the property values, for instance when you export a JSON blob that has feed references.
+func (c DeploymentProcessConverter) replaceAccountIds(properties map[string]string) map[string]string {
+	for k, v := range properties {
+		for k2, v2 := range c.AccountsMap {
 			if strings.Contains(v, k2) {
 				properties[k] = strings.ReplaceAll(v, k2, v2)
 			}

@@ -11,7 +11,7 @@ type Variable struct {
 	Value       *string
 	Description *string
 	IsEditable  bool
-	Type        *string
+	Type        string
 	IsSensitive bool
 	Prompt      Prompt
 }
