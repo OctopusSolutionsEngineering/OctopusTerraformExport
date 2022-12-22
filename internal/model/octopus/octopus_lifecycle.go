@@ -2,7 +2,7 @@ package octopus
 
 type Lifecycle struct {
 	Id                      string
-	Name                    *string
+	Name                    string
 	Slug                    *string
 	Description             *string
 	Phases                  []Phase

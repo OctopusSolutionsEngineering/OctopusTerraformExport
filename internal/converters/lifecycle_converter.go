@@ -27,28 +27,46 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 
 	for _, lifecycle := range collection.Items {
 		resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Slug)
-		terraformResource := terraform.TerraformLifecycle{
-			Type:         "octopusdeploy_lifecycle",
-			Name:         resourceName,
-			ResourceName: lifecycle.Name,
-			Description:  lifecycle.Description,
-			Phase:        c.convertPhases(lifecycle.Phases),
-			ReleaseRetentionPolicy: terraform.TerraformPolicy{
-				QuantityToKeep:    lifecycle.ReleaseRetentionPolicy.QuantityToKeep,
-				ShouldKeepForever: lifecycle.ReleaseRetentionPolicy.ShouldKeepForever,
-				Unit:              lifecycle.ReleaseRetentionPolicy.Unit,
-			},
-			TentacleRetentionPolicy: terraform.TerraformPolicy{
-				QuantityToKeep:    lifecycle.TentacleRetentionPolicy.QuantityToKeep,
-				ShouldKeepForever: lifecycle.TentacleRetentionPolicy.ShouldKeepForever,
-				Unit:              lifecycle.TentacleRetentionPolicy.Unit,
-			},
-		}
-		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results[resourceName+".tf"] = string(file.Bytes())
-		lifecycleMap[lifecycle.Id] = "${octopusdeploy_lifecycle." + resourceName + ".id}"
+		// Assume the default lifecycle already exists
+		if lifecycle.Name == "Default Lifecycle" {
+			data := terraform.TerraformLifecycleData{
+				Type:        "octopusdeploy_lifecycles",
+				Name:        resourceName,
+				Ids:         nil,
+				PartialName: lifecycle.Name,
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
+
+			results[resourceName+".tf"] = string(file.Bytes())
+			lifecycleMap[lifecycle.Id] = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
+		} else {
+			terraformResource := terraform.TerraformLifecycle{
+				Type:         "octopusdeploy_lifecycle",
+				Name:         resourceName,
+				ResourceName: lifecycle.Name,
+				Description:  lifecycle.Description,
+				Phase:        c.convertPhases(lifecycle.Phases),
+				ReleaseRetentionPolicy: terraform.TerraformPolicy{
+					QuantityToKeep:    lifecycle.ReleaseRetentionPolicy.QuantityToKeep,
+					ShouldKeepForever: lifecycle.ReleaseRetentionPolicy.ShouldKeepForever,
+					Unit:              lifecycle.ReleaseRetentionPolicy.Unit,
+				},
+				TentacleRetentionPolicy: terraform.TerraformPolicy{
+					QuantityToKeep:    lifecycle.TentacleRetentionPolicy.QuantityToKeep,
+					ShouldKeepForever: lifecycle.TentacleRetentionPolicy.ShouldKeepForever,
+					Unit:              lifecycle.TentacleRetentionPolicy.Unit,
+				},
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+			results[resourceName+".tf"] = string(file.Bytes())
+			lifecycleMap[lifecycle.Id] = "${octopusdeploy_lifecycle." + resourceName + ".id}"
+		}
 	}
 
 	return results, lifecycleMap, nil
