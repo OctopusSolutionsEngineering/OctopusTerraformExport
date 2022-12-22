@@ -7,10 +7,12 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"strings"
 )
 
 type DeploymentProcessConverter struct {
-	Client client.OctopusClient
+	Client  client.OctopusClient
+	FeedMap map[string]string
 }
 
 func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map[string]string, error) {
@@ -34,13 +36,14 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 		terraformResource.Step[i] = terraform.TerraformStep{
 			Name:               s.Name,
 			PackageRequirement: s.PackageRequirement,
-			Properties:         s.Properties,
+			Properties:         c.replaceFeedIds(s.Properties),
 			Condition:          s.Condition,
 			StartTrigger:       s.StartTrigger,
 			Action:             make([]terraform.TerraformAction, len(s.Actions)),
 		}
 
 		for j, a := range s.Actions {
+
 			terraformResource.Step[i].Action[j] = terraform.TerraformAction{
 				Name:                          a.Name,
 				ActionType:                    a.ActionType,
@@ -57,18 +60,19 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 				TenantTags:                    a.TenantTags,
 				Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 				Condition:                     a.Condition,
-				Properties:                    a.Properties,
+				Properties:                    c.replaceFeedIds(util.SanitizeMap(a.Properties)),
 			}
 
 			for k, p := range a.Packages {
+				feedVar := c.FeedMap[*p.FeedId]
 				terraformResource.Step[i].Action[j].Package[k] = terraform.TerraformPackage{
 					Name:                    p.Name,
 					PackageID:               p.PackageId,
 					AcquisitionLocation:     p.AcquisitionLocation,
 					ExtractDuringDeployment: p.ExtractDuringDeployment,
-					FeedId:                  p.FeedId,
+					FeedId:                  &feedVar,
 					Id:                      p.Id,
-					Properties:              p.Properties,
+					Properties:              c.replaceFeedIds(p.Properties),
 				}
 			}
 		}
@@ -95,4 +99,18 @@ func (c DeploymentProcessConverter) convertContainer(container octopus.Container
 	}
 
 	return nil
+}
+
+// replaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
+// This also looks in the property values, for instance when you export a JSON blob that has feed references.
+func (c DeploymentProcessConverter) replaceFeedIds(properties map[string]string) map[string]string {
+	for k, v := range properties {
+		for k2, v2 := range c.FeedMap {
+			if strings.Contains(v, k2) {
+				properties[k] = strings.ReplaceAll(v, k2, v2)
+			}
+		}
+	}
+
+	return properties
 }

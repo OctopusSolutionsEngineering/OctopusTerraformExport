@@ -12,6 +12,7 @@ import (
 type ProjectGroupConverter struct {
 	Client            client.OctopusClient
 	SpaceResourceName string
+	FeedMap           map[string]string
 }
 
 func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
@@ -44,6 +45,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 			SpaceResourceName:        c.SpaceResourceName,
 			ProjectGroupResourceName: projectName,
 			ProjectGroupId:           project.Id,
+			FeedMap:                  c.FeedMap,
 		}.ToHcl()
 		if err != nil {
 			return nil, err

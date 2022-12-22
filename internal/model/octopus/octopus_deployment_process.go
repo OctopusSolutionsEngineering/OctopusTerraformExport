@@ -33,7 +33,7 @@ type Action struct {
 	TenantTags                    []string
 	Packages                      []Package
 	Condition                     *string
-	Properties                    map[string]string
+	Properties                    map[string]any
 }
 
 type Container struct {

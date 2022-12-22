@@ -14,6 +14,7 @@ type ProjectConverter struct {
 	SpaceResourceName        string
 	ProjectGroupResourceName string
 	ProjectGroupId           string
+	FeedMap                  map[string]string
 }
 
 func (c ProjectConverter) ToHcl() (map[string]string, error) {
@@ -49,7 +50,10 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		results[projectName+".tf"] = string(file.Bytes())
 
 		if project.DeploymentProcessId != nil {
-			deploymentProcess, err := DeploymentProcessConverter{Client: c.Client}.ToHclById(*project.DeploymentProcessId, projectName)
+			deploymentProcess, err := DeploymentProcessConverter{
+				Client:  c.Client,
+				FeedMap: c.FeedMap,
+			}.ToHclById(*project.DeploymentProcessId, projectName)
 
 			if err != nil {
 				return nil, err

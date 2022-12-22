@@ -51,7 +51,7 @@ func (c VariableSetConverter) GetResourceType() string {
 
 func (c VariableSetConverter) convertSecretValue(variable octopus.Variable, parentName string) *string {
 	if variable.IsSensitive {
-		value := "${var." + parentName + ".id}"
+		value := "${var." + parentName + "}"
 		return &value
 	}
 

@@ -37,11 +37,28 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the feeds
+	feeds, feedMap, err := FeedConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range feeds {
+		results[k] = v
+	}
+
 	// Convert the projects groups
 	projects, err := ProjectGroupConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
+		FeedMap:           feedMap,
 	}.ToHcl()
+
 	if err != nil {
 		return nil, err
 	}

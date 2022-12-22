@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -193,7 +194,20 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	}
 	defer res.Body.Close()
 
-	return json.NewDecoder(res.Body).Decode(resources)
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(body, resources)
+
+	if err != nil {
+		fmt.Println(string(body))
+		return err
+	}
+
+	return nil
 }
 
 func (o OctopusClient) GetResourceByName(resourceType string, names string) {
