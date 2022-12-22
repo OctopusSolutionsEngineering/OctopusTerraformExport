@@ -30,7 +30,7 @@ type Project struct {
 	DiscreteChannelRelease          bool
 	IsDisabled                      bool
 	IsVersionControlled             bool
-	LifecycleId                     *string
+	LifecycleId                     string
 	ProjectGroupId                  string
 	DeploymentProcessId             *string
 	TenantedDeploymentMode          *string

@@ -15,6 +15,7 @@ type ProjectConverter struct {
 	ProjectGroupResourceName string
 	ProjectGroupId           string
 	FeedMap                  map[string]string
+	LifecycleMap             map[string]string
 }
 
 func (c ProjectConverter) ToHcl() (map[string]string, error) {
@@ -40,7 +41,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			DiscreteChannelRelease:          project.DiscreteChannelRelease,
 			IsDisabled:                      project.IsDisabled,
 			IsVersionControlled:             project.IsVersionControlled,
-			LifecycleId:                     project.LifecycleId,
+			LifecycleId:                     c.LifecycleMap[project.LifecycleId],
 			ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 		}

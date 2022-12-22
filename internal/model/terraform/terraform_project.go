@@ -11,7 +11,7 @@ type TerraformProject struct {
 	DiscreteChannelRelease          bool    `hcl:"discrete_channel_release"`
 	IsDisabled                      bool    `hcl:"is_disabled"`
 	IsVersionControlled             bool    `hcl:"is_version_controlled"`
-	LifecycleId                     *string `hcl:"lifecycle_id"`
+	LifecycleId                     string  `hcl:"lifecycle_id"`
 	ProjectGroupId                  string  `hcl:"project_group_id"`
 	TenantedDeploymentParticipation *string `hcl:"tenanted_deployment_participation"`
 }
