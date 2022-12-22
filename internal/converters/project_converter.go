@@ -81,46 +81,25 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			}
 		}
 
+		// export the channels
+		lifecycles, _, err := ChannelConverter{
+			Client:            c.Client,
+			SpaceResourceName: c.SpaceResourceName,
+			ProjectId:         project.Id,
+			LifecycleMap:      c.LifecycleMap,
+		}.ToHcl()
+
+		if err != nil {
+			return nil, err
+		}
+
+		// merge the maps
+		for k, v := range lifecycles {
+			results[k] = v
+		}
 	}
 
 	return results, nil
-}
-
-func (c ProjectConverter) ToHclById(id string) (map[string]string, error) {
-	resource := octopus.Project{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resourceName := util.SanitizeName(resource.Name)
-
-	terraformResource := terraform.TerraformProject{
-		Type:                            "octopusdeploy_project",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		AutoCreateRelease:               resource.AutoCreateRelease,
-		DefaultGuidedFailureMode:        resource.DefaultGuidedFailureMode,
-		DefaultToSkipIfAlreadyInstalled: resource.DefaultToSkipIfAlreadyInstalled,
-		Description:                     resource.Description,
-		DiscreteChannelRelease:          resource.DiscreteChannelRelease,
-		IsDisabled:                      resource.IsDisabled,
-		IsVersionControlled:             resource.IsVersionControlled,
-		LifecycleId:                     resource.LifecycleId,
-		ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
-		TenantedDeploymentParticipation: resource.TenantedDeploymentMode,
-	}
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-	return map[string]string{
-		resourceName + ".tf": string(file.Bytes()),
-	}, nil
-}
-
-func (c ProjectConverter) ToHclByName(name string) (map[string]string, error) {
-	return map[string]string{}, nil
 }
 
 func (c ProjectConverter) GetResourceType() string {
