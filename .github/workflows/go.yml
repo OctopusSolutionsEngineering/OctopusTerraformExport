@@ -43,7 +43,7 @@ jobs:
         run: go get ./...
         shell: bash
       - name: List Dependencies
-        run: go list > dependencies.txt
+        run: go list -u -m all > dependencies.txt
         shell: bash
       - name: Collect Dependencies
         uses: actions/upload-artifact@v2
