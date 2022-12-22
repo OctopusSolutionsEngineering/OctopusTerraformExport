@@ -16,6 +16,7 @@ type ProjectConverter struct {
 	ProjectGroupId           string
 	FeedMap                  map[string]string
 	LifecycleMap             map[string]string
+	WorkPoolMap              map[string]string
 }
 
 func (c ProjectConverter) ToHcl() (map[string]string, error) {
@@ -52,8 +53,9 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 
 		if project.DeploymentProcessId != nil {
 			deploymentProcess, err := DeploymentProcessConverter{
-				Client:  c.Client,
-				FeedMap: c.FeedMap,
+				Client:      c.Client,
+				FeedMap:     c.FeedMap,
+				WorkPoolMap: c.WorkPoolMap,
 			}.ToHclById(*project.DeploymentProcessId, projectName)
 
 			if err != nil {

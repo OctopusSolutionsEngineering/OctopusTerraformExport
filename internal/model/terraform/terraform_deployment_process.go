@@ -25,7 +25,7 @@ type TerraformAction struct {
 	IsDisabled                    bool                `hcl:"is_disabled"`
 	CanBeUsedForProjectVersioning bool                `hcl:"can_be_used_for_project_versioning"`
 	IsRequired                    bool                `hcl:"is_required"`
-	WorkerPoolId                  *string             `hcl:"worker_pool_id"`
+	WorkerPoolId                  string              `hcl:"worker_pool_id"`
 	WorkerPoolVariable            *string             `hcl:"worker_pool_variable"`
 	Properties                    map[string]string   `hcl:"properties"`
 	Container                     *TerraformContainer `hcl:"container,block"`

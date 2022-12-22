@@ -67,12 +67,28 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the lifecycles
+	pools, poolMap, err := WorkerPoolConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range pools {
+		results[k] = v
+	}
+
 	// Convert the projects groups
 	projects, err := ProjectGroupConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
 		FeedMap:           feedMap,
 		LifecycleMap:      lifecycleMap,
+		WorkPoolMap:       poolMap,
 	}.ToHcl()
 
 	if err != nil {

@@ -24,7 +24,7 @@ type Action struct {
 	IsDisabled                    bool
 	CanBeUsedForProjectVersioning bool
 	IsRequired                    bool
-	WorkerPoolId                  *string
+	WorkerPoolId                  string
 	Container                     Container
 	WorkerPoolVariable            *string
 	Environments                  []string

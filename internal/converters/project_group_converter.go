@@ -14,6 +14,7 @@ type ProjectGroupConverter struct {
 	SpaceResourceName string
 	FeedMap           map[string]string
 	LifecycleMap      map[string]string
+	WorkPoolMap       map[string]string
 }
 
 func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
@@ -48,6 +49,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 			ProjectGroupId:           project.Id,
 			FeedMap:                  c.FeedMap,
 			LifecycleMap:             c.LifecycleMap,
+			WorkPoolMap:              c.WorkPoolMap,
 		}.ToHcl()
 		if err != nil {
 			return nil, err

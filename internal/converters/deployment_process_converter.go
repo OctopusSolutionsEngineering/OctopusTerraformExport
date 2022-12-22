@@ -11,8 +11,9 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client  client.OctopusClient
-	FeedMap map[string]string
+	Client      client.OctopusClient
+	FeedMap     map[string]string
+	WorkPoolMap map[string]string
 }
 
 func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map[string]string, error) {
@@ -51,7 +52,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 				IsDisabled:                    a.IsDisabled,
 				CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 				IsRequired:                    a.IsRequired,
-				WorkerPoolId:                  a.WorkerPoolId,
+				WorkerPoolId:                  c.WorkPoolMap[a.WorkerPoolId],
 				Container:                     c.convertContainer(a.Container),
 				WorkerPoolVariable:            a.WorkerPoolVariable,
 				Environments:                  a.Environments,
