@@ -95,6 +95,51 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
+		if account.AccountType == "AzureSubscription" {
+			certVariable := "${var." + resourceName + "_cert}"
+			certThumbprintVariable := "${var." + resourceName + "_cert_thumbprint}"
+			terraformResource := terraform.TerraformAzureSubscription{
+				Type:                            "octopusdeploy_azure_service_principal",
+				Name:                            resourceName,
+				SpaceId:                         c.SpaceResourceName,
+				Description:                     account.Description,
+				Environments:                    nil,
+				TenantTags:                      account.TenantTags,
+				Tenants:                         nil,
+				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+				ManagementEndpoint:              account.ResourceManagementEndpointBaseUri,
+				StorageEndpointSuffix:           account.ServiceManagementEndpointSuffix,
+				SubscriptionId:                  account.SubscriptionNumber,
+				AzureEnvironment:                account.AzureEnvironment,
+				Certificate:                     &certVariable,
+				CertificateThumbprint:           &certThumbprintVariable,
+			}
+
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        resourceName + "_cert",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The Azure certificate associated with the account " + account.Name,
+			}
+
+			thumbprintVariableResource := terraform.TerraformVariable{
+				Name:        resourceName + "_cert_thumbprint",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The Azure certificate associated with the account " + account.Name,
+			}
+
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(thumbprintVariableResource, "variable"))
+
+			results[resourceName+".tf"] = string(file.Bytes())
+			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+		}
+
 		if account.AccountType == "GoogleCloudAccount" {
 			secretVariable := "${var." + resourceName + "}"
 			terraformResource := terraform.TerraformGcpAccount{
@@ -186,7 +231,47 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
-		//todo: octopusdeploy_ssh_key_account, octopusdeploy_azure_subscription_account
+		if account.AccountType == "SshKeyPair" {
+			secretVariable := "${var." + resourceName + "}"
+			certFileVariable := "${var." + resourceName + "_cert}"
+			terraformResource := terraform.TerraformSshAccount{
+				Type:                            "octopusdeploy_username_password_account",
+				Name:                            resourceName,
+				SpaceId:                         c.SpaceResourceName,
+				Description:                     account.Description,
+				Environments:                    nil,
+				TenantTags:                      account.TenantTags,
+				Tenants:                         nil,
+				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+				PrivateKeyFile:                  &certFileVariable,
+				Username:                        account.Username,
+				PrivateKeyPassphrase:            &secretVariable,
+			}
+
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        resourceName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The password associated with the certificate for account " + account.Name,
+			}
+
+			certFileVariableResource := terraform.TerraformVariable{
+				Name:        resourceName + "_cert",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The certificate file for account " + account.Name,
+			}
+
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(certFileVariableResource, "variable"))
+
+			results[resourceName+".tf"] = string(file.Bytes())
+			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+		}
 	}
 
 	return results, accountMap, nil

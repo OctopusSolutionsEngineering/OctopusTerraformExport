@@ -102,7 +102,10 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		}
 
 		if project.VariableSetId != nil {
-			variableSet, err := VariableSetConverter{Client: c.Client}.ToHclById(*project.VariableSetId, projectName)
+			variableSet, err := VariableSetConverter{
+				Client:      c.Client,
+				AccountsMap: c.AccountsMap,
+			}.ToHclById(*project.VariableSetId, projectName)
 
 			if err != nil {
 				return nil, err

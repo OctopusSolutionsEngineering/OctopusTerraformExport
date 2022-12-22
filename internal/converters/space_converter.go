@@ -52,7 +52,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the feeds
+	// Convert the accounts
 	accounts, accountsMap, err := AccountConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -82,7 +82,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the lifecycles
+	// Convert the worker pools
 	pools, poolMap, err := WorkerPoolConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,

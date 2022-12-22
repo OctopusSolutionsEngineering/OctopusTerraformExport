@@ -10,7 +10,8 @@ import (
 )
 
 type VariableSetConverter struct {
-	Client client.OctopusClient
+	Client      client.OctopusClient
+	AccountsMap map[string]string
 }
 
 func (c VariableSetConverter) ToHclById(id string, parentName string) (map[string]string, error) {
@@ -31,7 +32,7 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 			Name:           resourceName,
 			Type:           "octopusdeploy_variable",
 			OwnerId:        "octopusdeploy_project." + parentName + ".id",
-			Value:          v.Value,
+			Value:          c.replaceAccountIds(v.Value),
 			ResourceName:   v.Name,
 			ResourceType:   v.Type,
 			Description:    v.Description,
@@ -82,4 +83,17 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 	}
 
 	return nil
+}
+
+// replaceAccountIds swaps out an account ID with the resource lookup expression
+func (c VariableSetConverter) replaceAccountIds(variableValue *string) *string {
+	if variableValue == nil {
+		return variableValue
+	}
+
+	if val, ok := c.AccountsMap[*variableValue]; ok {
+		return &val
+	}
+
+	return variableValue
 }

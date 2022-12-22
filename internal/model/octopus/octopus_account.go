@@ -28,6 +28,12 @@ type Account struct {
 	ResourceManagementEndpointBaseUri *string
 	ActiveDirectoryEndpointBaseUri    *string
 
+	// azure subscription
+	ServiceManagementEndpointBaseUri *string
+	ServiceManagementEndpointSuffix  *string
+	CertificateBytes                 Secret
+	CertificateThumbprint            *string
+
 	// username
 	Username *string
 
