@@ -30,6 +30,35 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
+
+		/*
+			Convert library variable sets.
+			This may be duplicated if multiple projects reference the same set,
+			but that is fine as converting the set multiple times produces the
+			same outcome.
+		*/
+		variableSetMap := map[string]string{}
+		for _, v := range project.IncludedLibraryVariableSetIds {
+			variables, variableMap, err := LibraryVariableSetConverter{
+				Client:            c.Client,
+				SpaceResourceName: c.SpaceResourceName,
+			}.ToHclById(v)
+
+			if err != nil {
+				return nil, err
+			}
+
+			// merge the maps
+			for k, v := range variableMap {
+				variableSetMap[k] = v
+			}
+
+			// merge the results
+			for k, v := range variables {
+				results[k] = v
+			}
+		}
+
 		projectName := util.SanitizeName(project.Slug)
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
@@ -45,6 +74,8 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			LifecycleId:                     c.LifecycleMap[project.LifecycleId],
 			ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
+			Template:                        c.convertTemplates(project.Templates),
+			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, variableSetMap),
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
@@ -104,4 +135,26 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 
 func (c ProjectConverter) GetResourceType() string {
 	return "ProjectGroups/" + c.ProjectGroupId + "/projects"
+}
+
+func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template) []terraform.TerraformTemplate {
+	collection := make([]terraform.TerraformTemplate, 0)
+	for _, v := range actionPackages {
+		collection = append(collection, terraform.TerraformTemplate{
+			Name:            v.Name,
+			Label:           v.Label,
+			HelpText:        v.HelpText,
+			DefaultValue:    v.DefaultValue,
+			DisplaySettings: v.DisplaySettings,
+		})
+	}
+	return collection
+}
+
+func (c ProjectConverter) convertLibraryVariableSets(setIds []string, libraryMap map[string]string) []string {
+	collection := make([]string, 0)
+	for _, v := range setIds {
+		collection = append(collection, libraryMap[v])
+	}
+	return collection
 }

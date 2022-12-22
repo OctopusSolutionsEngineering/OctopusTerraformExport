@@ -12,11 +12,7 @@ type Template struct {
 	Label           *string
 	HelpText        *string
 	DefaultValue    *string
-	DisplaySettings DisplaySettings
-}
-
-type DisplaySettings struct {
-	OctopusControlType string `json:"Octopus.ControlType"`
+	DisplaySettings map[string]string
 }
 
 type Project struct {
@@ -37,5 +33,6 @@ type Project struct {
 	ProjectConnectivityPolicy       ProjectConnectivityPolicy
 	Templates                       []Template
 	VariableSetId                   *string
+	IncludedLibraryVariableSetIds   []string
 	// Todo: add service now and jira settings
 }
