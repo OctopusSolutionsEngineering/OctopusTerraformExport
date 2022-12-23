@@ -16,6 +16,7 @@ type octopusContainer struct {
 }
 
 type mysqlContainer struct {
+	testcontainers.Container
 	port string
 	ip   string
 }
@@ -66,14 +67,17 @@ func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 		return nil, err
 	}
 
-	return &mysqlContainer{ip: ip, port: mappedPort.Port()}, nil
+	return &mysqlContainer{
+		Container: container,
+		ip:        ip,
+		port:      mappedPort.Port(),
+	}, nil
 }
 
 func setupOctopus(ctx context.Context, connString string) (*octopusContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        "octopusdeploy/octopusdeploy",
 		ExposedPorts: []string{"8080/tcp"},
-		WaitingFor:   wait.ForHTTP("/api"),
 		Env: map[string]string{
 			"ACCEPT_EULA":          "Y",
 			"DB_CONNECTION_STRING": connString,
@@ -83,6 +87,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 			"ADMIN_PASSWORD":       "Password01!",
 		},
 		Privileged: false,
+		WaitingFor: wait.ForLog("Listening for HTTP requests on").WithStartupTimeout(10 * time.Minute),
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -135,17 +140,32 @@ func TestOctopusExportAndRecreate(t *testing.T) {
 	// Clean up the container after the test is complete
 	defer func() {
 		octoTerminateErr := octopusContainer.Terminate(ctx)
-		sqlTerminateErr := octopusContainer.Terminate(ctx)
+		sqlTerminateErr := sqlServer.Terminate(ctx)
 
 		if octoTerminateErr != nil || sqlTerminateErr != nil {
 			t.Fatalf("failed to terminate container: %v %v", octoTerminateErr, sqlTerminateErr)
 		}
 	}()
 
-	time.Sleep(5 * time.Minute)
+	// give the server 5 minutes to start up
+	success := false
+	for start := time.Now(); ; {
+		if time.Since(start) > 5*time.Minute {
+			break
+		}
 
-	resp, err := http.Get(octopusContainer.URI)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Expected status code %d. Got %d.", http.StatusOK, resp.StatusCode)
+		resp, err := http.Get(octopusContainer.URI)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			success = true
+			t.Log("Successfully contacted the Octopus API")
+			break
+		}
+
+		time.Sleep(10 * time.Second)
 	}
+
+	if !success {
+		t.Fatal("Failed to access the Octopus API")
+	}
+
 }
