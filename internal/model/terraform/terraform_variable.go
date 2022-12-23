@@ -1,9 +1,10 @@
 package terraform
 
 type TerraformVariable struct {
-	Name        string `hcl:"name,label"`
-	Type        string `hcl:"type"`
-	Nullable    bool   `hcl:"nullable"`
-	Sensitive   bool   `hcl:"sensitive"`
-	Description string `hcl:"description"`
+	Name        string  `hcl:"name,label"`
+	Type        string  `hcl:"type"`
+	Nullable    bool    `hcl:"nullable"`
+	Sensitive   bool    `hcl:"sensitive"`
+	Description string  `hcl:"description"`
+	Default     *string `hcl:"default"`
 }

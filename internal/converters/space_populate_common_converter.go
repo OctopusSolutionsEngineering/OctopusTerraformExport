@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
+	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
 // SpacePopulateCommonGenerator creates the common terraform files required to populate a space
@@ -69,8 +70,18 @@ func (c SpacePopulateCommonGenerator) createVariables() string {
 	}
 
 	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusServer, "variable"))
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusApiKey, "variable"))
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusSpaceId, "variable"))
+
+	octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "variable")
+	util.WriteUnquotedAttribute(octopusServerBlock, "type", "string")
+	file.Body().AppendBlock(octopusServerBlock)
+
+	octopusApiKeyBlock := gohcl.EncodeAsBlock(octopusApiKey, "variable")
+	util.WriteUnquotedAttribute(octopusApiKeyBlock, "type", "string")
+	file.Body().AppendBlock(octopusApiKeyBlock)
+
+	octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
+	util.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
+	file.Body().AppendBlock(octopusSpaceIdBlock)
+
 	return string(file.Bytes())
 }

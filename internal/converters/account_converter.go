@@ -54,7 +54,10 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_aws_account." + resourceName + ".id}"
@@ -89,7 +92,10 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
@@ -133,8 +139,14 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(thumbprintVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
+
+			thumbprintVariableResourceBlock := gohcl.EncodeAsBlock(thumbprintVariableResource, "variable")
+			util.WriteUnquotedAttribute(thumbprintVariableResourceBlock, "type", "string")
+			file.Body().AppendBlock(thumbprintVariableResourceBlock)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
@@ -164,7 +176,10 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
@@ -194,7 +209,10 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
@@ -225,7 +243,10 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
@@ -266,8 +287,14 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(certFileVariableResource, "variable"))
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
+
+			certFileVariableResourceBlock := gohcl.EncodeAsBlock(certFileVariableResource, "variable")
+			util.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
+			file.Body().AppendBlock(certFileVariableResourceBlock)
 
 			results[resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"

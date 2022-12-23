@@ -6,9 +6,14 @@ import (
 	"path/filepath"
 )
 
-var tempDir = "/tmp/" + uuid.New().String() + "/"
-
 type FileWriter struct {
+	tempDir string
+}
+
+func NewFileWriter() *FileWriter {
+	return &FileWriter{
+		tempDir: os.TempDir() + string(os.PathSeparator) + uuid.New().String() + string(os.PathSeparator),
+	}
 }
 
 func (c FileWriter) Write(files map[string]string) (string, error) {
@@ -17,17 +22,17 @@ func (c FileWriter) Write(files map[string]string) (string, error) {
 			return "", err
 		}
 	}
-	return tempDir, nil
+	return c.tempDir, nil
 }
 
 func (c FileWriter) write(filename string, contents string) error {
 	// create the directory
-	if err := os.MkdirAll(filepath.Dir(tempDir+filename), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(c.tempDir+filename), os.ModePerm); err != nil {
 		return nil
 	}
 
 	// create the file
-	f, err := os.Create(tempDir + filename)
+	f, err := os.Create(c.tempDir + filename)
 
 	if err != nil {
 		return err

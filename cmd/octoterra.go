@@ -53,8 +53,8 @@ func parseUrl() (string, string, string) {
 }
 
 func writeFiles(files map[string]string) error {
-	// writer := writers.FileWriter{}
-	writer := writers.ConsoleWriter{}
+	writer := writers.NewFileWriter()
+	//writer := writers.ConsoleWriter{}
 	output, err := writer.Write(files)
 	if err != nil {
 		return err

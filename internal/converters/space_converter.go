@@ -137,6 +137,7 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 	}
 
 	spaceResourceName := "octopus_space_" + util.SanitizeName(space.Name)
+	spaceName := "${var." + spaceResourceName + "_name}"
 
 	terraformResource := terraform.TerraformSpace{
 		Description:              space.Description,
@@ -145,7 +146,7 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 		Name:                     spaceResourceName,
 		SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
 		SpaceManagersTeams:       space.SpaceManagersTeams,
-		ResourceName:             space.Name,
+		ResourceName:             &spaceName,
 		Type:                     "octopusdeploy_space",
 	}
 
@@ -154,8 +155,22 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 		Value: "octopusdeploy_space." + spaceResourceName + ".id",
 	}
 
+	spaceNameVar := terraform.TerraformVariable{
+		Name:        spaceResourceName + "_name",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Default:     space.Name,
+		Description: "The name of the new space",
+	}
+
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
+
+	block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
+	util.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+
 	return spaceResourceName, string(file.Bytes()), nil
 }

@@ -14,10 +14,10 @@ type OctopusProvider struct {
 }
 
 type TerraformProvider struct {
-	Type    string `hcl:"type,label"`
-	Address string `hcl:"address"`
-	ApiKey  string `hcl:"api_key"`
-	SpaceId string `hcl:"space_id"`
+	Type    string  `hcl:"type,label"`
+	Address string  `hcl:"address"`
+	ApiKey  string  `hcl:"api_key"`
+	SpaceId *string `hcl:"space_id"`
 }
 
 func (c TerraformConfig) CreateTerraformConfig() TerraformConfig {

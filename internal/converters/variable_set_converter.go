@@ -50,7 +50,9 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 				Description: "The secret variable value associated with the variable " + *v.Name,
 			}
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(secretVariableResource, "variable"))
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 		}
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))

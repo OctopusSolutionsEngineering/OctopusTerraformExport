@@ -76,7 +76,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Take:     1,
 		}
 		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
 		return map[string]string{
 			resourceName + ".tf": string(file.Bytes()),

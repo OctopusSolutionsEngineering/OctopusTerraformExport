@@ -25,7 +25,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 		return nil, err
 	}
 
-	resourceName := util.SanitizeName(resource.Id)
+	resourceName := "deployment_process_" + util.SanitizeName(&parentName)
 
 	terraformResource := terraform.TerraformDeploymentProcess{
 		Type:      "octopusdeploy_deployment_process",
