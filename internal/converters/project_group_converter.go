@@ -29,25 +29,32 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
-		projectName := util.SanitizeName(project.Name)
-		terraformResource := terraform.TerraformProjectGroup{
-			Type:         "octopusdeploy_project_group",
-			Name:         projectName,
-			ResourceName: project.Name,
-			Description:  project.Description,
-			SpaceId:      "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
-		}
-		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		projectName := "project_group_" + util.SanitizeName(project.Name)
+		var projectGroupVar string
 
-		results[projectName+".tf"] = string(file.Bytes())
+		if *project.Name == "Default Project Group" {
+			// todo - create lookup for existing project group
+		} else {
+			terraformResource := terraform.TerraformProjectGroup{
+				Type:         "octopusdeploy_project_group",
+				Name:         projectName,
+				ResourceName: project.Name,
+				Description:  project.Description,
+				SpaceId:      "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+			results[projectName+".tf"] = string(file.Bytes())
+			projectGroupVar = "${octopusdeploy_project_group." + projectName + ".id}"
+		}
 
 		// Convert the projects
 		projects, err := ProjectConverter{
 			Client:                   c.Client,
 			SpaceResourceName:        c.SpaceResourceName,
 			ProjectGroupResourceName: projectName,
-			ProjectGroupId:           project.Id,
+			ProjectGroupId:           projectGroupVar,
 			FeedMap:                  c.FeedMap,
 			LifecycleMap:             c.LifecycleMap,
 			WorkPoolMap:              c.WorkPoolMap,

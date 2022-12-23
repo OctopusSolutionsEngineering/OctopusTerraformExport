@@ -30,7 +30,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 	terraformResource := terraform.TerraformDeploymentProcess{
 		Type:      "octopusdeploy_deployment_process",
 		Name:      resourceName,
-		ProjectId: "octopusdeploy_project." + parentName + ".id",
+		ProjectId: "${octopusdeploy_project." + parentName + ".id}",
 		Step:      make([]terraform.TerraformStep, len(resource.Steps)),
 	}
 
