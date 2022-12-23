@@ -29,8 +29,8 @@ func (c SpacePopulateCommonGenerator) ToHcl() map[string]string {
 func (c SpacePopulateCommonGenerator) createProvider() string {
 	terraformResource := terraform.TerraformProvider{
 		Type:    "octopusdeploy",
-		Address: "var.octopus_server",
-		ApiKey:  "var.octopus_apikey",
+		Address: "${var.octopus_server}",
+		ApiKey:  "${var.octopus_apikey}",
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
@@ -61,14 +61,6 @@ func (c SpacePopulateCommonGenerator) createVariables() string {
 		Description: "The API key used to access the Octopus server. See https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for details on creating an API key.",
 	}
 
-	octopusSpaceId := terraform.TerraformVariable{
-		Name:        "octopus_space_id",
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The Octopus space to populate.",
-	}
-
 	file := hclwrite.NewEmptyFile()
 
 	octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "variable")
@@ -78,10 +70,6 @@ func (c SpacePopulateCommonGenerator) createVariables() string {
 	octopusApiKeyBlock := gohcl.EncodeAsBlock(octopusApiKey, "variable")
 	util.WriteUnquotedAttribute(octopusApiKeyBlock, "type", "string")
 	file.Body().AppendBlock(octopusApiKeyBlock)
-
-	octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
-	util.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
-	file.Body().AppendBlock(octopusSpaceIdBlock)
 
 	return string(file.Bytes())
 }
