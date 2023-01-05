@@ -462,3 +462,64 @@ func TestAwsAccountExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestAzureAccountExport verifies that an AWS account can be reimported with the correct settings
+func TestAzureAccountExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/4-azureaccount")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{"-var=account_azure=secretgoeshere"})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Account]{}
+		err = octopusClient.GetAllResources("Accounts", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == "Azure" {
+				found = true
+				if *v.ClientId != "2eb8bd13-661e-489c-beb9-4103efb9dbdd" {
+					t.Fatalf("The account must be have a client ID of \"2eb8bd13-661e-489c-beb9-4103efb9dbdd\"")
+				}
+
+				if *v.SubscriptionNumber != "95bf77d2-64b1-4ed2-9de1-b5451e3881f5" {
+					t.Fatalf("The account must be have a client ID of \"95bf77d2-64b1-4ed2-9de1-b5451e3881f5\"")
+				}
+
+				if *v.TenantId != "18eb006b-c3c8-4a72-93cd-fe4b293f82ee" {
+					t.Fatalf("The account must be have a client ID of \"18eb006b-c3c8-4a72-93cd-fe4b293f82ee\"")
+				}
+
+				if *v.Description != "Azure Account" {
+					t.Fatalf("The account must be have a description of \"Azure Account\"")
+				}
+
+				if *v.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatalf("Space must have an Azure account called \"Azure\"")
+		}
+
+		return nil
+	})
+}
