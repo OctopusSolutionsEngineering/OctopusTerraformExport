@@ -36,6 +36,7 @@ func (g *TestLogConsumer) Accept(l testcontainers.Log) {
 	fmt.Println(string(l.Content))
 }
 
+// setupDatabase creates a MSSQL container
 func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        "mcr.microsoft.com/mssql/server",
@@ -82,6 +83,7 @@ func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 	}, nil
 }
 
+// setupOctopus creates an Octopus container
 func setupOctopus(ctx context.Context, connString string) (*octopusContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        "octopusdeploy/octopusdeploy",
@@ -129,6 +131,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 	return &octopusContainer{Container: container, URI: uri}, nil
 }
 
+// performTest is wrapper that initialises Octopus, runs a test, and cleans up the containers
 func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusContainer) error) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
@@ -254,6 +257,7 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 	return nil
 }
 
+// getOutputVariable reads a Terraform output variable
 func getOutputVariable(t *testing.T, terraformDir string, outputVar string) (string, error) {
 	cmnd := exec.Command(
 		"terraform",
@@ -271,10 +275,12 @@ func getOutputVariable(t *testing.T, terraformDir string, outputVar string) (str
 	return string(out), nil
 }
 
+// getTempDir creates a temporary directory for the exported Terraform files
 func getTempDir() string {
 	return os.TempDir() + string(os.PathSeparator) + uuid.New().String() + string(os.PathSeparator)
 }
 
+// createClient creates a client used to access the Octopus API
 func createClient(container *octopusContainer, space string) *client.OctopusClient {
 	return &client.OctopusClient{
 		Url:    container.URI,
@@ -283,6 +289,7 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 	}
 }
 
+// arrangeTest initialises Octopus and MSSQL
 func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string) (string, error) {
 	err := initialiseOctopus(t, container, terraformDir, "Test2")
 
@@ -293,6 +300,7 @@ func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string)
 	return getOutputVariable(t, terraformDir+"/space_creation", "octopus_space_id")
 }
 
+// actTest exports the Octopus configuration as Terraform, and reimports it as a new space
 func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (string, error) {
 	tempDir := getTempDir()
 	defer os.Remove(tempDir)
@@ -312,6 +320,7 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (stri
 	return getOutputVariable(t, tempDir+"/space_creation", "octopus_space_id")
 }
 
+// TestSpaceExport verifies that a space can be reimported with the correct settings
 func TestSpaceExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
@@ -338,8 +347,8 @@ func TestSpaceExport(t *testing.T) {
 			return err
 		}
 
-		if *space.Name != "Test2" {
-			t.Fatalf("New space must have the name \"Test2\"")
+		if *space.Name != "Test3" {
+			t.Fatalf("New space must have the name \"Test3\"")
 		}
 
 		if *space.Description != "My test space" {
@@ -362,6 +371,7 @@ func TestSpaceExport(t *testing.T) {
 	})
 }
 
+// TestProjectGroupExport verifies that a project group can be reimported with the correct settings
 func TestProjectGroupExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
