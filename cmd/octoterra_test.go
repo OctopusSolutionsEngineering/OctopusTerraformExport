@@ -276,10 +276,9 @@ func TestSpaceExport(t *testing.T) {
 
 		// Act
 		tempDir := getTempDir()
-		t.Log("Temp dir is: " + tempDir)
 		defer os.Remove(tempDir)
 
-		err = ConvertToTerraform(container.URI, newSpaceId, API_KEY, tempDir)
+		err = ConvertToTerraform(container.URI, newSpaceId, API_KEY, tempDir, true)
 
 		if err != nil {
 			return err
