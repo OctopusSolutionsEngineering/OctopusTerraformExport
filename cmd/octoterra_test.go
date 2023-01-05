@@ -264,7 +264,7 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 
 func TestSpaceExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
-		// Arrange
+		// Arrange - Start the Octopus and MSSQL containers
 		terraformDir := "../test/terraform/1-singlespace"
 		err := initialiseOctopus(t, container, terraformDir, []string{})
 
@@ -274,7 +274,8 @@ func TestSpaceExport(t *testing.T) {
 
 		newSpaceId, err := getOutputVariable(t, terraformDir, "octopus_space_id")
 
-		// Act
+		// Act - Populate Octopus with some resources to export, export the space, and reimport the
+		// space back into the same Octopus instance with a new name
 		tempDir := getTempDir()
 		defer os.Remove(tempDir)
 
@@ -292,7 +293,7 @@ func TestSpaceExport(t *testing.T) {
 			return err
 		}
 
-		// Assert
+		// Assert - Ensure the newly created space has the correct details
 		octopusClient := createClient(container, recreatedSpaceId)
 
 		space := octopus.Space{}
@@ -303,7 +304,23 @@ func TestSpaceExport(t *testing.T) {
 		}
 
 		if *space.Name != "Test2" {
-			t.Fatalf("New space must have the name Test2")
+			t.Fatalf("New space must have the name \"Test2\"")
+		}
+
+		if *space.Description != "My test space" {
+			t.Fatalf("New space must have the name \"My test space\"")
+		}
+
+		if space.IsDefault {
+			t.Fatalf("New space must not be the default one")
+		}
+
+		if space.TaskQueueStopped {
+			t.Fatalf("New space must not have the task queue stopped")
+		}
+
+		if len(space.SpaceManagersTeams) != 1 || space.SpaceManagersTeams[0] != "teams-administrators" {
+			t.Fatalf("New space must have teams-administrators as a manager team")
 		}
 
 		return nil
