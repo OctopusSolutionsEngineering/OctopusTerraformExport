@@ -64,7 +64,7 @@ func (c FeedConverter) GetResourceType() string {
 }
 
 func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, map[string]string) {
-	resourceName := "feed_" + util.SanitizeName(resource.Slug)
+	resourceName := "feed_" + util.SanitizeName(resource.Name)
 	password := "${var." + resourceName + "_password}"
 
 	if *resource.FeedType == "BuiltIn" {

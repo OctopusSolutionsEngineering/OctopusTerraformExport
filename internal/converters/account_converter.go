@@ -26,7 +26,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 	accountMap := map[string]string{}
 
 	for _, account := range collection.Items {
-		resourceName := "account_" + util.SanitizeName(account.Slug)
+		resourceName := "account_" + util.SanitizeName(&account.Name)
 
 		// Assume the default lifecycle already exists
 		if account.AccountType == "AmazonWebServicesAccount" {

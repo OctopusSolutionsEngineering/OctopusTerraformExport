@@ -26,7 +26,7 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 	lifecycleMap := map[string]string{}
 
 	for _, lifecycle := range collection.Items {
-		resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Slug)
+		resourceName := "lifecycle_" + util.SanitizeName(&lifecycle.Name)
 
 		// Assume the default lifecycle already exists
 		if lifecycle.Name == "Default Lifecycle" {
@@ -80,7 +80,7 @@ func (c LifecycleConverter) ToHclById(id string) (map[string]string, error) {
 		return nil, err
 	}
 
-	resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Slug)
+	resourceName := "lifecycle_" + util.SanitizeName(&lifecycle.Name)
 	terraformResource := terraform.TerraformLifecycle{
 		Type:         "octopusdeploy_lifecycle",
 		Name:         resourceName,

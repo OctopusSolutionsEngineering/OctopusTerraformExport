@@ -60,7 +60,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			}
 		}
 
-		projectName := util.SanitizeName(project.Slug)
+		projectName := util.SanitizeName(project.Name)
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,

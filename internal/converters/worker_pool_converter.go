@@ -27,7 +27,7 @@ func (c WorkerPoolConverter) ToHcl() (map[string]string, map[string]string, erro
 	workerPoolMap := map[string]string{}
 
 	for _, pool := range collection.Items {
-		resourceName := "workerpool_" + util.SanitizeName(pool.Slug)
+		resourceName := "workerpool_" + util.SanitizeName(&pool.Name)
 
 		if pool.WorkerPoolType == "DynamicWorkerPool" {
 			/*
@@ -116,7 +116,7 @@ func (c WorkerPoolConverter) ToHclById(id string) (map[string]string, error) {
 		return nil, err
 	}
 
-	resourceName := "workerpool_" + util.SanitizeName(pool.Slug)
+	resourceName := "workerpool_" + util.SanitizeName(&pool.Name)
 
 	if pool.WorkerPoolType == "DynamicWorkerPool" {
 		terraformResource := terraform.TerraformWorkerPool{

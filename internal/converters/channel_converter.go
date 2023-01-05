@@ -28,7 +28,7 @@ func (c ChannelConverter) ToHcl() (map[string]string, map[string]string, error) 
 	channelMap := map[string]string{}
 
 	for _, channel := range collection.Items {
-		resourceName := "channel_" + util.SanitizeName(channel.Slug)
+		resourceName := "channel_" + util.SanitizeName(&channel.Name)
 
 		// Assume the default lifecycle already exists
 		if channel.Name != "Default" {
