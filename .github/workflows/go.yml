@@ -59,7 +59,7 @@ jobs:
           name: Dependencies Updates
           path: dependencyUpdates.txt
       - name: Test
-        run: go test github.com/mcasperson/OctopusTerraformExport/cmd
+        run: go test -timeout 0 github.com/mcasperson/OctopusTerraformExport/cmd
         shell: bash
         env:
           LICENSE: ${{ secrets.LICENSE }}

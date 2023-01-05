@@ -134,56 +134,56 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 
 // performTest is wrapper that initialises Octopus, runs a test, and cleans up the containers
 func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusContainer) error) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
-
-	sqlServer, err := setupDatabase(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	octopusContainer, err := setupOctopus(ctx, "Server=172.17.0.1,"+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Clean up the container after the test is complete
-	defer func() {
-		octoTerminateErr := octopusContainer.Terminate(ctx)
-		sqlTerminateErr := sqlServer.Terminate(ctx)
-
-		if octoTerminateErr != nil || sqlTerminateErr != nil {
-			t.Fatalf("failed to terminate container: %v %v", octoTerminateErr, sqlTerminateErr)
-		}
-	}()
-
-	// give the server 5 minutes to start up
-	success := false
-	for start := time.Now(); ; {
-		if time.Since(start) > 5*time.Minute {
-			break
-		}
-
-		resp, err := http.Get(octopusContainer.URI + "/api")
-		if err == nil && resp.StatusCode == http.StatusOK {
-			success = true
-			t.Log("Successfully contacted the Octopus API")
-			break
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-
-	if !success {
-		t.Fatalf("Failed to access the Octopus API")
-	}
-
-	// perform the test with a retry because sometimes the containers fail to load
-	err = retry.Do(
+	err := retry.Do(
 		func() error {
+
+			if testing.Short() {
+				t.Skip("skipping integration test")
+			}
+
+			ctx := context.Background()
+
+			sqlServer, err := setupDatabase(ctx)
+			if err != nil {
+				return err
+			}
+
+			octopusContainer, err := setupOctopus(ctx, "Server=172.17.0.1,"+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
+			if err != nil {
+				return err
+			}
+
+			// Clean up the container after the test is complete
+			defer func() {
+				octoTerminateErr := octopusContainer.Terminate(ctx)
+				sqlTerminateErr := sqlServer.Terminate(ctx)
+
+				if octoTerminateErr != nil || sqlTerminateErr != nil {
+					t.Fatalf("failed to terminate container: %v %v", octoTerminateErr, sqlTerminateErr)
+				}
+			}()
+
+			// give the server 5 minutes to start up
+			success := false
+			for start := time.Now(); ; {
+				if time.Since(start) > 5*time.Minute {
+					break
+				}
+
+				resp, err := http.Get(octopusContainer.URI + "/api")
+				if err == nil && resp.StatusCode == http.StatusOK {
+					success = true
+					t.Log("Successfully contacted the Octopus API")
+					break
+				}
+
+				time.Sleep(10 * time.Second)
+			}
+
+			if !success {
+				t.Fatalf("Failed to access the Octopus API")
+			}
+
 			return testFunc(t, octopusContainer)
 		},
 		retry.Attempts(3),
