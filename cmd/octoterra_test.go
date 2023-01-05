@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -153,7 +154,13 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 				return err
 			}
 
-			octopusContainer, err := setupOctopus(ctx, "Server=172.17.0.1,"+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
+			// Different OSs have different ways of connecting to the host
+			sqlHostName := "172.17.0.1"
+			if runtime.GOOS == "windows" {
+				sqlHostName = "host.docker.internal"
+			}
+
+			octopusContainer, err := setupOctopus(ctx, "Server="+sqlHostName+","+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
 			if err != nil {
 				return err
 			}
@@ -219,7 +226,6 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 
 		os.Remove(terraformDir + p + "/.terraform.lock.hcl")
 		os.Remove(terraformDir + p + "/terraform.tfstate")
-		os.Remove(terraformDir + p + "/.terraform")
 
 		cmnd := exec.Command(
 			"terraform",
@@ -479,7 +485,7 @@ func TestAwsAccountExport(t *testing.T) {
 	})
 }
 
-// TestAzureAccountExport verifies that an AWS account can be reimported with the correct settings
+// TestAzureAccountExport verifies that an Azure account can be reimported with the correct settings
 func TestAzureAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
@@ -528,6 +534,124 @@ func TestAzureAccountExport(t *testing.T) {
 
 				if *v.TenantedDeploymentParticipation != "Untenanted" {
 					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatalf("Space must have an Azure account called \"Azure\"")
+		}
+
+		return nil
+	})
+}
+
+// TestUsernamePasswordAccountExport verifies that a username/password account can be reimported with the correct settings
+func TestUsernamePasswordAccountExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/5-userpassaccount")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{"-var=account_gke=secretgoeshere"})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Account]{}
+		err = octopusClient.GetAllResources("Accounts", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == "GKE" {
+				found = true
+				if *v.Username != "admin" {
+					t.Fatalf("The account must be have a username of \"admin\"")
+				}
+
+				if !v.Password.HasValue {
+					t.Fatalf("The account must be have a password")
+				}
+
+				if *v.Description != "A test account" {
+					t.Fatalf("The account must be have a description of \"A test account\"")
+				}
+
+				if *v.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+				}
+
+				if len(v.TenantTags) != 0 {
+					t.Fatalf("The account must be have no tenant tags")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatalf("Space must have an Azure account called \"Azure\"")
+		}
+
+		return nil
+	})
+}
+
+// TestGcpAccountExport verifies that a GCP account can be reimported with the correct settings
+func TestGcpAccountExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/6-gcpaccount")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{"-var=account_google=secretgoeshere"})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Account]{}
+		err = octopusClient.GetAllResources("Accounts", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == "Google" {
+				found = true
+				if !v.JsonKey.HasValue {
+					t.Fatalf("The account must be have a JSON key")
+				}
+
+				if *v.Description != "A test account" {
+					t.Fatalf("The account must be have a description of \"A test account\"")
+				}
+
+				if *v.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+				}
+
+				if len(v.TenantTags) != 0 {
+					t.Fatalf("The account must be have no tenant tags")
 				}
 			}
 		}
