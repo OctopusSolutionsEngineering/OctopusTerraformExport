@@ -163,6 +163,7 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 		Nullable:    false,
 		Sensitive:   false,
 		Description: "The name of the new space (the exported space was called " + *space.Name + ")",
+		Default:     space.Name,
 	}
 
 	file := hclwrite.NewEmptyFile()
