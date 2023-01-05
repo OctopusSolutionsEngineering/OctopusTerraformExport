@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"github.com/google/uuid"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
@@ -180,8 +181,13 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 		t.Fatalf("Failed to access the Octopus API")
 	}
 
-	// perform the test
-	err = testFunc(t, octopusContainer)
+	// perform the test with a retry because sometimes the containers fail to load
+	err = retry.Do(
+		func() error {
+			return testFunc(t, octopusContainer)
+		},
+		retry.Attempts(3),
+	)
 
 	if err != nil {
 		t.Fatalf(err.Error())

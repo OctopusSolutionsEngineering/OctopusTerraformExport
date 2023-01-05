@@ -9,6 +9,4 @@ resource "octopusdeploy_azure_service_principal" "account_azure" {
   password                          = "secretgoeshere"
   subscription_id                   = "95bf77d2-64b1-4ed2-9de1-b5451e3881f5"
   tenant_id                         = "18eb006b-c3c8-4a72-93cd-fe4b293f82ee"
-  azure_environment                 = ""
-  resource_manager_endpoint         = ""
 }

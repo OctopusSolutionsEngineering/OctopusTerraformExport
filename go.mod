@@ -3,9 +3,11 @@ module github.com/mcasperson/OctopusTerraformExport
 go 1.19
 
 require (
+	github.com/avast/retry-go/v4 v4.3.2
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
 	github.com/testcontainers/testcontainers-go v0.16.0
+	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 )
 
 require (
@@ -97,7 +99,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.8.0 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/theupdateframework/notary v0.7.0 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20220930225714-4638ad635be5 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
@@ -138,7 +140,6 @@ require (
 	k8s.io/apimachinery v0.24.1 // indirect
 	k8s.io/client-go v0.24.1 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
-	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
