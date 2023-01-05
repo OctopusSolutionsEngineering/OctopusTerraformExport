@@ -140,19 +140,21 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 	spaceName := "${var." + spaceResourceName + "_name}"
 
 	terraformResource := terraform.TerraformSpace{
-		Description:              space.Description,
-		IsDefault:                space.IsDefault,
-		IsTaskQueueStopped:       space.TaskQueueStopped,
-		Name:                     spaceResourceName,
-		SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
-		SpaceManagersTeams:       space.SpaceManagersTeams,
-		ResourceName:             &spaceName,
-		Type:                     "octopusdeploy_space",
+		Description:        space.Description,
+		IsDefault:          space.IsDefault,
+		IsTaskQueueStopped: space.TaskQueueStopped,
+		Name:               spaceResourceName,
+		//SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
+		//SpaceManagersTeams:       space.SpaceManagersTeams,
+		// TODO: import teams rather than defaulting to admins
+		SpaceManagersTeams: []string{"teams-administrators"},
+		ResourceName:       &spaceName,
+		Type:               "octopusdeploy_space",
 	}
 
 	spaceOutput := terraform.TerraformOutput{
 		Name:  "octopus_space_id",
-		Value: "octopusdeploy_space." + spaceResourceName + ".id",
+		Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
 	}
 
 	spaceNameVar := terraform.TerraformVariable{

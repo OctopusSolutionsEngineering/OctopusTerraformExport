@@ -7,12 +7,18 @@ import (
 )
 
 type FileWriter struct {
-	tempDir string
+	dest string
 }
 
-func NewFileWriter() *FileWriter {
+func NewFileWriterToTempDir() *FileWriter {
 	return &FileWriter{
-		tempDir: os.TempDir() + string(os.PathSeparator) + uuid.New().String() + string(os.PathSeparator),
+		dest: os.TempDir() + string(os.PathSeparator) + uuid.New().String() + string(os.PathSeparator),
+	}
+}
+
+func NewFileWriter(dest string) *FileWriter {
+	return &FileWriter{
+		dest: dest,
 	}
 }
 
@@ -22,17 +28,17 @@ func (c FileWriter) Write(files map[string]string) (string, error) {
 			return "", err
 		}
 	}
-	return c.tempDir, nil
+	return c.dest, nil
 }
 
 func (c FileWriter) write(filename string, contents string) error {
 	// create the directory
-	if err := os.MkdirAll(filepath.Dir(c.tempDir+filename), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(c.dest+filename), os.ModePerm); err != nil {
 		return nil
 	}
 
 	// create the file
-	f, err := os.Create(c.tempDir + filename)
+	f, err := os.Create(c.dest + filename)
 
 	if err != nil {
 		return err

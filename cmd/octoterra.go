@@ -10,8 +10,15 @@ import (
 )
 
 func main() {
-	url, space, apiKey := parseUrl()
+	url, space, apiKey, dest := parseUrl()
+	err := ConvertToTerraform(url, space, apiKey, dest)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
 
+func ConvertToTerraform(url string, space string, apiKey string, dest string) error {
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -25,19 +32,15 @@ func main() {
 	hcl, err := spaceConverter.ToHcl()
 
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		return err
 	}
 
-	err = writeFiles(hcl)
+	err = writeFiles(hcl, dest)
 
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
+	return err
 }
 
-func parseUrl() (string, string, string) {
+func parseUrl() (string, string, string, string) {
 	var url string
 	flag.StringVar(&url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 
@@ -47,13 +50,16 @@ func parseUrl() (string, string, string) {
 	var apiKey string
 	flag.StringVar(&apiKey, "apiKey", "", "The Octopus api key")
 
+	var dest string
+	flag.StringVar(&dest, "dest", "", "The directory to place the Terraform files in")
+
 	flag.Parse()
 
-	return url, space, apiKey
+	return url, space, apiKey, dest
 }
 
-func writeFiles(files map[string]string) error {
-	writer := writers.NewFileWriter()
+func writeFiles(files map[string]string, dest string) error {
+	writer := writers.NewFileWriter(dest)
 	//writer := writers.ConsoleWriter{}
 	output, err := writer.Write(files)
 	if err != nil {

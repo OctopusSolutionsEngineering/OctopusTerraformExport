@@ -6,7 +6,7 @@ resource "octopusdeploy_space" "octopus_space_test" {
 }
 
 output "octopus_space_id" {
-  value = "octopusdeploy_space.octopus_space_test.id"
+  value = octopusdeploy_space.octopus_space_test.id
 }
 
 variable "octopus_space_test_name" {

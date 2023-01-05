@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"net/http"
@@ -183,7 +186,7 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 
 // initialiseOctopus uses Terraform to populate the test Octopus instance, making sure to clean up
 // any files generated during previous Terraform executions to avoid conflicts and locking issues.
-func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string) error {
+func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, vars []string) error {
 	path, err := os.Getwd()
 	if err != nil {
 		return err
@@ -208,13 +211,15 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 
 	t.Log(string(out))
 
-	cmnd = exec.Command(
-		"terraform",
+	newArgs := append([]string{
 		"apply",
 		"-auto-approve",
 		"-no-color",
-		"-var=octopus_server="+container.URI,
-		"-var=octopus_apikey="+API_KEY)
+		"-var=octopus_server=" + container.URI,
+		"-var=octopus_apikey=" + API_KEY,
+	}, vars...)
+
+	cmnd = exec.Command("terraform", newArgs...)
 	cmnd.Dir = terraformDir
 	out, err = cmnd.Output()
 
@@ -228,11 +233,78 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 	return nil
 }
 
+func getOutputVariable(t *testing.T, terraformDir string, outputVar string) (string, error) {
+	cmnd := exec.Command(
+		"terraform",
+		"output",
+		"-raw",
+		outputVar)
+	cmnd.Dir = terraformDir
+	out, err := cmnd.Output()
+
+	if err != nil {
+		t.Log(string(err.(*exec.ExitError).Stderr))
+		return "", err
+	}
+
+	return string(out), nil
+}
+
+func getTempDir() string {
+	return os.TempDir() + string(os.PathSeparator) + uuid.New().String() + string(os.PathSeparator)
+}
+
+func createClient(container *octopusContainer, space string) *client.OctopusClient {
+	return &client.OctopusClient{
+		Url:    container.URI,
+		Space:  space,
+		ApiKey: API_KEY,
+	}
+}
+
 func TestSpaceExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
-		err := initialiseOctopus(t, container, "../test/terraform/1-singlespace")
+		// Arrange
+		terraformDir := "../test/terraform/1-singlespace"
+		err := initialiseOctopus(t, container, terraformDir, []string{})
+
 		if err != nil {
 			return err
+		}
+
+		newSpaceId, err := getOutputVariable(t, terraformDir, "octopus_space_id")
+
+		// Act
+		tempDir := getTempDir()
+		t.Log("Temp dir is: " + tempDir)
+		defer os.Remove(tempDir)
+
+		err = ConvertToTerraform(container.URI, newSpaceId, API_KEY, tempDir)
+
+		if err != nil {
+			return err
+		}
+
+		err = initialiseOctopus(t, container, tempDir, []string{"-var=octopus_space_test_name=Test2"})
+
+		recreatedSpaceId, err := getOutputVariable(t, tempDir, "octopus_space_id")
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		space := octopus.Space{}
+		err = octopusClient.GetSpace(&space)
+
+		if err != nil {
+			return err
+		}
+
+		if *space.Name != "Test2" {
+			t.Fatalf("New space must have the name Test2")
 		}
 
 		return nil
