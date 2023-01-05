@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/avast/retry-go/v4"
 	"github.com/google/uuid"
@@ -86,6 +87,10 @@ func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 
 // setupOctopus creates an Octopus container
 func setupOctopus(ctx context.Context, connString string) (*octopusContainer, error) {
+	if os.Getenv("LICENSE") == "" {
+		return nil, errors.New("the LICENSE environment variable must be set to a base 64 encoded Octopus license key")
+	}
+
 	req := testcontainers.ContainerRequest{
 		Image:        "octopusdeploy/octopusdeploy",
 		ExposedPorts: []string{"8080/tcp"},
