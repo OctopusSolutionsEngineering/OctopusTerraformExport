@@ -35,7 +35,6 @@ func (c ChannelConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformChannel{
 				Type:         "octopusdeploy_channel",
 				Name:         resourceName,
-				SpaceId:      c.SpaceResourceName,
 				ResourceName: channel.Name,
 				Description:  channel.Description,
 				LifecycleId:  c.LifecycleMap[channel.LifecycleId],
@@ -47,7 +46,7 @@ func (c ChannelConverter) ToHcl() (map[string]string, map[string]string, error) 
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			channelMap[channel.Id] = "${octopusdeploy_channel." + resourceName + ".id}"
 		}
 	}

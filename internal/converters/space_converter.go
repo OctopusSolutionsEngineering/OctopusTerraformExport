@@ -26,7 +26,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	}
 
 	results := map[string]string{
-		"space.tf": spaceTf,
+		"space_creation/space.tf": spaceTf,
 	}
 
 	// Generate space population common files
@@ -34,7 +34,8 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// merge the maps
 	for k, v := range commonProjectFiles {
-		results[k] = v
+		results["space_creation/"+k] = v
+		results["space_population/"+k] = v
 	}
 
 	// Convert the feeds
@@ -137,7 +138,7 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 	}
 
 	spaceResourceName := "octopus_space_" + util.SanitizeName(space.Name)
-	spaceName := "${var." + spaceResourceName + "_name}"
+	spaceName := "${var.octopus_space_name}"
 
 	terraformResource := terraform.TerraformSpace{
 		Description:        space.Description,
@@ -158,7 +159,7 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 	}
 
 	spaceNameVar := terraform.TerraformVariable{
-		Name:        spaceResourceName + "_name",
+		Name:        "octopus_space_name",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,

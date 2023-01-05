@@ -56,7 +56,7 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 		}
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-		resources[resourceName+".tf"] = string(file.Bytes())
+		resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
 	}
 
 	return resources, nil

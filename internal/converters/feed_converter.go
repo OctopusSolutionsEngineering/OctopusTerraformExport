@@ -92,7 +92,6 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			RegistryPath:                      resource.RegistryPath,
 			Username:                          resource.Username,
 			ApiVersion:                        resource.ApiVersion,
-			SpaceId:                           "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 		}
 		file := hclwrite.NewEmptyFile()
@@ -111,7 +110,6 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			AccessKey:                         resource.AccessKey,
 			SecretKey:                         &password,
 			Region:                            nil,
-			SpaceId:                           "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 		}
 		file := hclwrite.NewEmptyFile()
@@ -128,7 +126,6 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Name:                              resourceName,
 			ResourceName:                      resource.Name,
 			FeedUri:                           resource.FeedUri,
-			SpaceId:                           "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			Username:                          resource.Username,
 			Password:                          &password,
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
@@ -149,7 +146,6 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Name:                              resourceName,
 			ResourceName:                      resource.Name,
 			FeedUri:                           resource.FeedUri,
-			SpaceId:                           "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			Username:                          resource.Username,
 			Password:                          &password,
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
@@ -170,7 +166,6 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Name:                              resourceName,
 			ResourceName:                      resource.Name,
 			FeedUri:                           resource.FeedUri,
-			SpaceId:                           "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			Username:                          resource.Username,
 			Password:                          &password,
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
@@ -189,7 +184,6 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Name:                              resourceName,
 			ResourceName:                      resource.Name,
 			FeedUri:                           resource.FeedUri,
-			SpaceId:                           "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			Username:                          resource.Username,
 			Password:                          &password,
 			IsEnhancedMode:                    resource.EnhancedMode,

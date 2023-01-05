@@ -40,12 +40,11 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 				Name:         projectName,
 				ResourceName: project.Name,
 				Description:  project.Description,
-				SpaceId:      "${octopusdeploy_space." + c.SpaceResourceName + ".id}",
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results[projectName+".tf"] = string(file.Bytes())
+			results["space_population/"+projectName+".tf"] = string(file.Bytes())
 			projectGroupVar = "${octopusdeploy_project_group." + projectName + ".id}"
 		}
 
@@ -101,7 +100,7 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, error) {
 	}
 	file := hclwrite.NewEmptyFile()
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-	results[resourceName+".tf"] = string(file.Bytes())
+	results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 
 	// Convert the projects
 	projects, err := ProjectConverter{

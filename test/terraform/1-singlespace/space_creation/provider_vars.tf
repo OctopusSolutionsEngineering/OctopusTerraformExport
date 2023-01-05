@@ -10,3 +10,9 @@ variable "octopus_apikey" {
   sensitive   = true
   description = "The API key used to access the Octopus server. See https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for details on creating an API key."
 }
+variable "octopus_space_id" {
+  type        = string
+  nullable    = false
+  sensitive   = false
+  description = "The space ID to populate"
+}

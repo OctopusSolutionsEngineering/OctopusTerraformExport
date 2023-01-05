@@ -81,7 +81,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results[projectName+".tf"] = string(file.Bytes())
+		results["space_population/"+projectName+".tf"] = string(file.Bytes())
 
 		if project.DeploymentProcessId != nil {
 			deploymentProcess, err := DeploymentProcessConverter{

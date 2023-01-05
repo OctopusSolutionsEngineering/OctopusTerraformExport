@@ -187,49 +187,69 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 
 // initialiseOctopus uses Terraform to populate the test Octopus instance, making sure to clean up
 // any files generated during previous Terraform executions to avoid conflicts and locking issues.
-func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, vars []string) error {
+func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, spaceName string) error {
 	path, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 	t.Log("Working dir: " + path)
 
-	os.Remove(terraformDir + "/.terraform.lock.hcl")
-	os.Remove(terraformDir + "/terraform.tfstate")
-	os.Remove(terraformDir + "/.terraform")
+	// First loop initialises the new space, second populates the space
+	spaceId := "Spaces-1"
+	for i, p := range []string{"/space_creation", "/space_population"} {
 
-	cmnd := exec.Command(
-		"terraform",
-		"init",
-		"-no-color")
-	cmnd.Dir = terraformDir
-	out, err := cmnd.Output()
+		os.Remove(terraformDir + p + "/.terraform.lock.hcl")
+		os.Remove(terraformDir + p + "/terraform.tfstate")
+		os.Remove(terraformDir + p + "/.terraform")
 
-	if err != nil {
-		t.Log(string(err.(*exec.ExitError).Stderr))
-		return err
+		cmnd := exec.Command(
+			"terraform",
+			"init",
+			"-no-color")
+		cmnd.Dir = terraformDir + p
+		out, err := cmnd.Output()
+
+		if err != nil {
+			t.Log(string(err.(*exec.ExitError).Stderr))
+			return err
+		}
+
+		t.Log(string(out))
+
+		// when initialising the new space, we need to define a new space name as a variable
+		vars := []string{}
+		if i == 0 {
+			vars = []string{"-var=octopus_space_name=" + spaceName}
+		}
+
+		newArgs := append([]string{
+			"apply",
+			"-auto-approve",
+			"-no-color",
+			"-var=octopus_server=" + container.URI,
+			"-var=octopus_apikey=" + API_KEY,
+			"-var=octopus_space_id=" + spaceId,
+		}, vars...)
+
+		cmnd = exec.Command("terraform", newArgs...)
+		cmnd.Dir = terraformDir + p
+		out, err = cmnd.Output()
+
+		if err != nil {
+			t.Log(string(err.(*exec.ExitError).Stderr))
+			return err
+		}
+
+		t.Log(string(out))
+
+		// get the ID of any new space created, which will be used in the subsequent Terraform executions
+		spaceId, err = getOutputVariable(t, terraformDir+p, "octopus_space_id")
+
+		if err != nil {
+			t.Log(string(err.(*exec.ExitError).Stderr))
+			return err
+		}
 	}
-
-	t.Log(string(out))
-
-	newArgs := append([]string{
-		"apply",
-		"-auto-approve",
-		"-no-color",
-		"-var=octopus_server=" + container.URI,
-		"-var=octopus_apikey=" + API_KEY,
-	}, vars...)
-
-	cmnd = exec.Command("terraform", newArgs...)
-	cmnd.Dir = terraformDir
-	out, err = cmnd.Output()
-
-	if err != nil {
-		t.Log(string(err.(*exec.ExitError).Stderr))
-		return err
-	}
-
-	t.Log(string(out))
 
 	return nil
 }
@@ -264,13 +284,13 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 }
 
 func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string) (string, error) {
-	err := initialiseOctopus(t, container, terraformDir, []string{})
+	err := initialiseOctopus(t, container, terraformDir, "Test2")
 
 	if err != nil {
 		return "", err
 	}
 
-	return getOutputVariable(t, terraformDir, "octopus_space_id")
+	return getOutputVariable(t, terraformDir+"/space_creation", "octopus_space_id")
 }
 
 func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (string, error) {
@@ -283,13 +303,13 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (stri
 		return "", err
 	}
 
-	err = initialiseOctopus(t, container, tempDir, []string{"-var=octopus_space_test_name=Test2"})
+	err = initialiseOctopus(t, container, tempDir, "Test3")
 
 	if err != nil {
 		return "", err
 	}
 
-	return getOutputVariable(t, tempDir, "octopus_space_id")
+	return getOutputVariable(t, tempDir+"/space_creation", "octopus_space_id")
 }
 
 func TestSpaceExport(t *testing.T) {
@@ -336,6 +356,50 @@ func TestSpaceExport(t *testing.T) {
 
 		if slices.Index(space.SpaceManagersTeams, "teams-administrators") == -1 {
 			t.Fatalf("New space must have teams-administrators as a manager team")
+		}
+
+		return nil
+	})
+}
+
+func TestProjectGroupExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/2-projectgroup")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId)
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
+		err = octopusClient.GetAllResources("ProjectGroups", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, v := range collection.Items {
+			if *v.Name == "Test" {
+				found = true
+				if *v.Description != "Test Description" {
+					t.Fatalf("The project group must be have a description of \"Test Description\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatalf("Space must have a project group called \"Test\"")
 		}
 
 		return nil

@@ -1,5 +1,5 @@
 resource "octopusdeploy_space" "octopus_space_test" {
-  name                  = "${var.octopus_space_test_name}"
+  name                  = "${var.octopus_space_name}"
   is_default            = false
   is_task_queue_stopped = false
   description           = "My test space"
@@ -10,7 +10,7 @@ output "octopus_space_id" {
   value = octopusdeploy_space.octopus_space_test.id
 }
 
-variable "octopus_space_test_name" {
+variable "octopus_space_name" {
   type        = string
   nullable    = false
   sensitive   = false

@@ -41,7 +41,7 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			lifecycleMap[lifecycle.Id] = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
 		} else {
 			terraformResource := terraform.TerraformLifecycle{
@@ -64,7 +64,7 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			lifecycleMap[lifecycle.Id] = "${octopusdeploy_lifecycle." + resourceName + ".id}"
 		}
 	}

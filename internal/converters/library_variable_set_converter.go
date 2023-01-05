@@ -29,7 +29,6 @@ func (c LibraryVariableSetConverter) ToHclById(id string) (map[string]string, ma
 	terraformResource := terraform.TerraformLibraryVariableSet{
 		Type:         "octopusdeploy_library_variable_set",
 		Name:         resourceName,
-		SpaceId:      c.SpaceResourceName,
 		ResourceName: resource.Name,
 		Description:  resource.Description,
 		Template:     c.convertTemplate(resource.Templates),

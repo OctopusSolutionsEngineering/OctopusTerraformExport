@@ -34,7 +34,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformAwsAccount{
 				Type:                            "octopusdeploy_aws_account",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -59,7 +58,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_aws_account." + resourceName + ".id}"
 		}
 
@@ -68,7 +67,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformAzureServicePrincipal{
 				Type:                            "octopusdeploy_azure_service_principal",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -97,7 +95,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
@@ -107,7 +105,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformAzureSubscription{
 				Type:                            "octopusdeploy_azure_service_principal",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -148,7 +145,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(thumbprintVariableResourceBlock, "type", "string")
 			file.Body().AppendBlock(thumbprintVariableResourceBlock)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
@@ -157,7 +154,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformGcpAccount{
 				Type:                            "octopusdeploy_gcp_account",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -181,7 +177,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
@@ -190,7 +186,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformTokenAccount{
 				Type:                            "octopusdeploy_token_account",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -214,7 +209,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
@@ -223,7 +218,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformUsernamePasswordAccount{
 				Type:                            "octopusdeploy_username_password_account",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -248,7 +242,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 
@@ -258,7 +252,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformSshAccount{
 				Type:                            "octopusdeploy_username_password_account",
 				Name:                            resourceName,
-				SpaceId:                         c.SpaceResourceName,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -296,7 +289,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
 			file.Body().AppendBlock(certFileVariableResourceBlock)
 
-			results[resourceName+".tf"] = string(file.Bytes())
+			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 		}
 	}

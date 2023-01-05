@@ -47,7 +47,7 @@ func (c WorkerPoolConverter) ToHcl() (map[string]string, map[string]string, erro
 				file := hclwrite.NewEmptyFile()
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
-				results[resourceName+".tf"] = string(file.Bytes())
+				results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 				workerPoolMap[pool.Id] = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
 			} else {
 				terraformResource := terraform.TerraformWorkerPool{
@@ -62,26 +62,46 @@ func (c WorkerPoolConverter) ToHcl() (map[string]string, map[string]string, erro
 				file := hclwrite.NewEmptyFile()
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-				results[resourceName+".tf"] = string(file.Bytes())
+				results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 				workerPoolMap[pool.Id] = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
 			}
 		}
 
 		if pool.WorkerPoolType == "StaticWorkerPool" {
-			terraformResource := terraform.TerraformWorkerPool{
-				Type:         "octopusdeploy_static_worker_pool",
-				Name:         resourceName,
-				ResourceName: pool.Name,
-				Description:  pool.Description,
-				IsDefault:    pool.IsDefault,
-				SortOrder:    pool.SortOrder,
-				WorkerType:   pool.WorkerType,
-			}
-			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			/*
+				This is the default pool available in every space. Use a data lookup for this pool.
+			*/
+			if pool.Name == "Default Worker Pool" {
+				data := terraform.TerraformWorkerPoolData{
+					Type:         "octopusdeploy_worker_pools",
+					Name:         resourceName,
+					ResourceName: &pool.Name,
+					Ids:          nil,
+					PartialName:  nil,
+					Skip:         0,
+					Take:         1,
+				}
+				file := hclwrite.NewEmptyFile()
+				file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
-			results[resourceName+".tf"] = string(file.Bytes())
-			workerPoolMap[pool.Id] = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
+				results["space_population/"+resourceName+".tf"] = string(file.Bytes())
+				workerPoolMap[pool.Id] = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
+			} else {
+				terraformResource := terraform.TerraformWorkerPool{
+					Type:         "octopusdeploy_static_worker_pool",
+					Name:         resourceName,
+					ResourceName: pool.Name,
+					Description:  pool.Description,
+					IsDefault:    pool.IsDefault,
+					SortOrder:    pool.SortOrder,
+					WorkerType:   pool.WorkerType,
+				}
+				file := hclwrite.NewEmptyFile()
+				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+				results["space_population/"+resourceName+".tf"] = string(file.Bytes())
+				workerPoolMap[pool.Id] = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
+			}
 		}
 	}
 
