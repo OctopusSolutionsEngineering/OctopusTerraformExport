@@ -6,9 +6,13 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"net/http"
+	"os"
+	"os/exec"
 	"testing"
 	"time"
 )
+
+const API_KEY = "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345"
 
 type octopusContainer struct {
 	testcontainers.Container
@@ -79,12 +83,13 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 		Image:        "octopusdeploy/octopusdeploy",
 		ExposedPorts: []string{"8080/tcp"},
 		Env: map[string]string{
-			"ACCEPT_EULA":          "Y",
-			"DB_CONNECTION_STRING": connString,
-			"ADMIN_API_KEY":        "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345",
-			"DISABLE_DIND":         "Y",
-			"ADMIN_USERNAME":       "admin",
-			"ADMIN_PASSWORD":       "Password01!",
+			"ACCEPT_EULA":                   "Y",
+			"DB_CONNECTION_STRING":          connString,
+			"ADMIN_API_KEY":                 API_KEY,
+			"DISABLE_DIND":                  "Y",
+			"ADMIN_USERNAME":                "admin",
+			"ADMIN_PASSWORD":                "Password01!",
+			"OCTOPUS_SERVER_BASE64_LICENSE": os.Getenv("LICENSE"),
 		},
 		Privileged: false,
 		WaitingFor: wait.ForLog("Listening for HTTP requests on").WithStartupTimeout(10 * time.Minute),
@@ -115,12 +120,12 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 		return nil, err
 	}
 
-	uri := fmt.Sprintf("http://%s:%s/api", ip, mappedPort.Port())
+	uri := fmt.Sprintf("http://%s:%s", ip, mappedPort.Port())
 
 	return &octopusContainer{Container: container, URI: uri}, nil
 }
 
-func TestOctopusExportAndRecreate(t *testing.T) {
+func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusContainer) error) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -154,7 +159,7 @@ func TestOctopusExportAndRecreate(t *testing.T) {
 			break
 		}
 
-		resp, err := http.Get(octopusContainer.URI)
+		resp, err := http.Get(octopusContainer.URI + "/api")
 		if err == nil && resp.StatusCode == http.StatusOK {
 			success = true
 			t.Log("Successfully contacted the Octopus API")
@@ -165,7 +170,71 @@ func TestOctopusExportAndRecreate(t *testing.T) {
 	}
 
 	if !success {
-		t.Fatal("Failed to access the Octopus API")
+		t.Fatalf("Failed to access the Octopus API")
 	}
 
+	// perform the test
+	err = testFunc(t, octopusContainer)
+
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+}
+
+// initialiseOctopus uses Terraform to populate the test Octopus instance, making sure to clean up
+// any files generated during previous Terraform executions to avoid conflicts and locking issues.
+func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string) error {
+	path, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	t.Log("Working dir: " + path)
+
+	os.Remove(terraformDir + "/.terraform.lock.hcl")
+	os.Remove(terraformDir + "/terraform.tfstate")
+	os.Remove(terraformDir + "/.terraform")
+
+	cmnd := exec.Command(
+		"terraform",
+		"init",
+		"-no-color")
+	cmnd.Dir = terraformDir
+	out, err := cmnd.Output()
+
+	if err != nil {
+		t.Log(string(err.(*exec.ExitError).Stderr))
+		return err
+	}
+
+	t.Log(string(out))
+
+	cmnd = exec.Command(
+		"terraform",
+		"apply",
+		"-auto-approve",
+		"-no-color",
+		"-var=octopus_server="+container.URI,
+		"-var=octopus_apikey="+API_KEY)
+	cmnd.Dir = terraformDir
+	out, err = cmnd.Output()
+
+	if err != nil {
+		t.Log(string(err.(*exec.ExitError).Stderr))
+		return err
+	}
+
+	t.Log(string(out))
+
+	return nil
+}
+
+func TestSpaceExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		err := initialiseOctopus(t, container, "../test/terraform/1-singlespace")
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

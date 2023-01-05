@@ -15,3 +15,8 @@
 # vendor/
 
 octoterra
+octoterra.exe
+
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/.terraform/
