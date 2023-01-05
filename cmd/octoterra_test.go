@@ -155,6 +155,11 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 
 			// Clean up the container after the test is complete
 			defer func() {
+				// This fixes the "can not get logs from container which is dead or marked for removal" error
+				// See https://github.com/testcontainers/testcontainers-go/issues/606
+				octopusContainer.StopLogProducer()
+				sqlServer.StopLogProducer()
+
 				octoTerminateErr := octopusContainer.Terminate(ctx)
 				sqlTerminateErr := sqlServer.Terminate(ctx)
 
