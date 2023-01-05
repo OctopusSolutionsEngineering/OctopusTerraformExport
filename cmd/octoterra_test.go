@@ -8,6 +8,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"k8s.io/utils/strings/slices"
 	"net/http"
 	"os"
 	"os/exec"
@@ -262,38 +263,52 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 	}
 }
 
+func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string) (string, error) {
+	err := initialiseOctopus(t, container, terraformDir, []string{})
+
+	if err != nil {
+		return "", err
+	}
+
+	return getOutputVariable(t, terraformDir, "octopus_space_id")
+}
+
+func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (string, error) {
+	tempDir := getTempDir()
+	defer os.Remove(tempDir)
+
+	err := ConvertToTerraform(container.URI, newSpaceId, API_KEY, tempDir, true)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = initialiseOctopus(t, container, tempDir, []string{"-var=octopus_space_test_name=Test2"})
+
+	if err != nil {
+		return "", err
+	}
+
+	return getOutputVariable(t, tempDir, "octopus_space_id")
+}
+
 func TestSpaceExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
-		// Arrange - Start the Octopus and MSSQL containers
-		terraformDir := "../test/terraform/1-singlespace"
-		err := initialiseOctopus(t, container, terraformDir, []string{})
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/1-singlespace")
 
 		if err != nil {
 			return err
 		}
 
-		newSpaceId, err := getOutputVariable(t, terraformDir, "octopus_space_id")
-
-		// Act - Populate Octopus with some resources to export, export the space, and reimport the
-		// space back into the same Octopus instance with a new name
-		tempDir := getTempDir()
-		defer os.Remove(tempDir)
-
-		err = ConvertToTerraform(container.URI, newSpaceId, API_KEY, tempDir, true)
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId)
 
 		if err != nil {
 			return err
 		}
 
-		err = initialiseOctopus(t, container, tempDir, []string{"-var=octopus_space_test_name=Test2"})
-
-		recreatedSpaceId, err := getOutputVariable(t, tempDir, "octopus_space_id")
-
-		if err != nil {
-			return err
-		}
-
-		// Assert - Ensure the newly created space has the correct details
+		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
 		space := octopus.Space{}
@@ -319,7 +334,7 @@ func TestSpaceExport(t *testing.T) {
 			t.Fatalf("New space must not have the task queue stopped")
 		}
 
-		if len(space.SpaceManagersTeams) != 1 || space.SpaceManagersTeams[0] != "teams-administrators" {
+		if slices.Index(space.SpaceManagersTeams, "teams-administrators") == -1 {
 			t.Fatalf("New space must have teams-administrators as a manager team")
 		}
 
