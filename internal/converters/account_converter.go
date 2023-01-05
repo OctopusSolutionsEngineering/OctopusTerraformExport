@@ -34,6 +34,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformAwsAccount{
 				Type:                            "octopusdeploy_aws_account",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -67,6 +68,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformAzureServicePrincipal{
 				Type:                            "octopusdeploy_azure_service_principal",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -105,6 +107,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformAzureSubscription{
 				Type:                            "octopusdeploy_azure_service_principal",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -154,6 +157,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformGcpAccount{
 				Type:                            "octopusdeploy_gcp_account",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -186,6 +190,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformTokenAccount{
 				Type:                            "octopusdeploy_token_account",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -218,6 +223,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformUsernamePasswordAccount{
 				Type:                            "octopusdeploy_username_password_account",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,
@@ -252,6 +258,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			terraformResource := terraform.TerraformSshAccount{
 				Type:                            "octopusdeploy_username_password_account",
 				Name:                            resourceName,
+				ResourceName:                    account.Name,
 				Description:                     account.Description,
 				Environments:                    nil,
 				TenantTags:                      account.TenantTags,

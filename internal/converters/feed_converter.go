@@ -79,7 +79,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${data.octopusdeploy_feeds.feeds[0].id}"}
 	}
 
@@ -98,7 +98,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${octopusdeploy_docker_container_registry." + resourceName + ".id}"}
 	}
 
@@ -116,7 +116,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${octopusdeploy_aws_elastic_container_registry." + resourceName + ".id}"}
 	}
 
@@ -136,7 +136,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${octopusdeploy_maven_feed." + resourceName + ".id}"}
 	}
 
@@ -156,7 +156,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${octopusdeploy_github_repository_feed." + resourceName + ".id}"}
 	}
 
@@ -174,7 +174,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${octopusdeploy_helm_feed." + resourceName + ".id}"}
 	}
 
@@ -195,7 +195,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
+			"space_population/" + resourceName + ".tf": string(file.Bytes()),
 		}, map[string]string{resource.Id: "${octopusdeploy_nuget_feed." + resourceName + ".id}"}
 	}
 

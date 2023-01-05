@@ -190,7 +190,7 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 
 // initialiseOctopus uses Terraform to populate the test Octopus instance, making sure to clean up
 // any files generated during previous Terraform executions to avoid conflicts and locking issues.
-func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, spaceName string) error {
+func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, spaceName string, populateVars []string) error {
 	path, err := os.Getwd()
 	if err != nil {
 		return err
@@ -223,6 +223,8 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 		vars := []string{}
 		if i == 0 {
 			vars = []string{"-var=octopus_space_name=" + spaceName}
+		} else {
+			vars = populateVars
 		}
 
 		newArgs := append([]string{
@@ -291,7 +293,7 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 
 // arrangeTest initialises Octopus and MSSQL
 func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string) (string, error) {
-	err := initialiseOctopus(t, container, terraformDir, "Test2")
+	err := initialiseOctopus(t, container, terraformDir, "Test2", []string{})
 
 	if err != nil {
 		return "", err
@@ -301,7 +303,7 @@ func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string)
 }
 
 // actTest exports the Octopus configuration as Terraform, and reimports it as a new space
-func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (string, error) {
+func actTest(t *testing.T, container *octopusContainer, newSpaceId string, populateVars []string) (string, error) {
 	tempDir := getTempDir()
 	defer os.Remove(tempDir)
 
@@ -311,7 +313,7 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string) (stri
 		return "", err
 	}
 
-	err = initialiseOctopus(t, container, tempDir, "Test3")
+	err = initialiseOctopus(t, container, tempDir, "Test3", populateVars)
 
 	if err != nil {
 		return "", err
@@ -331,7 +333,7 @@ func TestSpaceExport(t *testing.T) {
 		}
 
 		// Act
-		recreatedSpaceId, err := actTest(t, container, newSpaceId)
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
 
 		if err != nil {
 			return err
@@ -382,7 +384,7 @@ func TestProjectGroupExport(t *testing.T) {
 		}
 
 		// Act
-		recreatedSpaceId, err := actTest(t, container, newSpaceId)
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
 
 		if err != nil {
 			return err
@@ -410,6 +412,51 @@ func TestProjectGroupExport(t *testing.T) {
 
 		if !found {
 			t.Fatalf("Space must have a project group called \"Test\"")
+		}
+
+		return nil
+	})
+}
+
+// TestAwsAccountExport verifies that an AWS account can be reimported with the correct settings
+func TestAwsAccountExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/3-awsaccount")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{"-var=account_aws_account=secretgoeshere"})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Account]{}
+		err = octopusClient.GetAllResources("Accounts", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == "AWS Account" {
+				found = true
+				if *v.AccessKey != "ABCDEFGHIJKLMNOPQRST" {
+					t.Fatalf("The account must be have an access key of \"ABCDEFGHIJKLMNOPQRST\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatalf("Space must have aan AWS account called \"AWS Account\"")
 		}
 
 		return nil
