@@ -6,5 +6,5 @@ type TerraformProjectGroup struct {
 	ResourceName      *string `hcl:"name"`
 	Description       *string `hcl:"description"`
 	RetentionPolicyId *string `hcl:"retention_policy_id"`
-	SpaceId           string  `hcl:"space_id"`
+	SpaceId           *string `hcl:"space_id"`
 }

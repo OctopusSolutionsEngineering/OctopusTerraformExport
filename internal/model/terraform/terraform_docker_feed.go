@@ -7,7 +7,7 @@ type TerraformEcrFeed struct {
 	AccessKey                         *string  `hcl:"access_key"`
 	SecretKey                         *string  `hcl:"secret_key"`
 	Region                            *string  `hcl:"region"`
-	SpaceId                           string   `hcl:"space_id"`
+	SpaceId                           *string  `hcl:"space_id"`
 	PackageAcquisitionLocationOptions []string `hcl:"package_acquisition_location_options"`
 }
 
@@ -19,7 +19,7 @@ type TerraformDockerFeed struct {
 	RegistryPath                      *string  `hcl:"registry_path"`
 	Username                          *string  `hcl:"username"`
 	ApiVersion                        *string  `hcl:"api_version"`
-	SpaceId                           string   `hcl:"space_id"`
+	SpaceId                           *string  `hcl:"space_id"`
 	PackageAcquisitionLocationOptions []string `hcl:"package_acquisition_location_options"`
 }
 
@@ -32,7 +32,7 @@ type TerraformGitHubRepoFeed struct {
 	DownloadAttempts                  *int     `hcl:"download_attempts"`
 	DownloadRetryBackoffSeconds       *int     `hcl:"download_retry_backoff_seconds"`
 	Username                          *string  `hcl:"username"`
-	SpaceId                           string   `hcl:"space_id"`
+	SpaceId                           *string  `hcl:"space_id"`
 	PackageAcquisitionLocationOptions []string `hcl:"package_acquisition_location_options"`
 }
 
@@ -43,7 +43,7 @@ type TerraformHelmFeed struct {
 	Password                          *string  `hcl:"password"`
 	FeedUri                           *string  `hcl:"feed_uri"`
 	Username                          *string  `hcl:"username"`
-	SpaceId                           string   `hcl:"space_id"`
+	SpaceId                           *string  `hcl:"space_id"`
 	PackageAcquisitionLocationOptions []string `hcl:"package_acquisition_location_options"`
 }
 
@@ -52,7 +52,7 @@ type TerraformMavenFeed struct {
 	Name                              string   `hcl:"name,label"`
 	ResourceName                      *string  `hcl:"name"`
 	FeedUri                           *string  `hcl:"feed_uri"`
-	SpaceId                           string   `hcl:"space_id"`
+	SpaceId                           *string  `hcl:"space_id"`
 	Username                          *string  `hcl:"username"`
 	Password                          *string  `hcl:"password"`
 	PackageAcquisitionLocationOptions []string `hcl:"package_acquisition_location_options"`
@@ -65,7 +65,7 @@ type TerraformNuGetFeed struct {
 	Name                              string   `hcl:"name,label"`
 	ResourceName                      *string  `hcl:"name"`
 	FeedUri                           *string  `hcl:"feed_uri"`
-	SpaceId                           string   `hcl:"space_id"`
+	SpaceId                           *string  `hcl:"space_id"`
 	Username                          *string  `hcl:"username"`
 	Password                          *string  `hcl:"password"`
 	IsEnhancedMode                    bool     `hcl:"is_enhanced_mode"`

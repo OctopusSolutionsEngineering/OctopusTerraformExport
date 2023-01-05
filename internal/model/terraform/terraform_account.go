@@ -3,7 +3,7 @@ package terraform
 type TerraformAwsAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
@@ -16,7 +16,7 @@ type TerraformAwsAccount struct {
 type TerraformAzureServicePrincipal struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
@@ -33,7 +33,7 @@ type TerraformAzureServicePrincipal struct {
 type TerraformAzureSubscription struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
@@ -50,7 +50,7 @@ type TerraformAzureSubscription struct {
 type TerraformGcpAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
@@ -62,7 +62,7 @@ type TerraformGcpAccount struct {
 type TerraformSshAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
@@ -76,7 +76,7 @@ type TerraformSshAccount struct {
 type TerraformTokenAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
@@ -88,7 +88,7 @@ type TerraformTokenAccount struct {
 type TerraformUsernamePasswordAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
-	SpaceId                         string   `hcl:"space_id"`
+	SpaceId                         *string  `hcl:"space_id"`
 	Description                     *string  `hcl:"description"`
 	Environments                    []string `hcl:"environments"`
 	TenantTags                      []string `hcl:"tenant_tags"`
