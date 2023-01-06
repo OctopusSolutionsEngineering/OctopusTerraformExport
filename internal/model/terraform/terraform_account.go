@@ -42,12 +42,14 @@ type TerraformAzureSubscription struct {
 	TenantTags                      []string `hcl:"tenant_tags"`
 	Tenants                         []string `hcl:"tenants"`
 	TenantedDeploymentParticipation *string  `hcl:"tenanted_deployment_participation"`
-	ManagementEndpoint              *string  `hcl:"management_endpoint"`
-	StorageEndpointSuffix           *string  `hcl:"storage_endpoint_suffix"`
-	SubscriptionId                  *string  `hcl:"subscription_id"`
-	AzureEnvironment                *string  `hcl:"azure_environment"`
-	Certificate                     *string  `hcl:"certificate"`
-	CertificateThumbprint           *string  `hcl:"certificate_thumbprint"`
+	// ManagementEndpoint is required, even if it is a blank string
+	ManagementEndpoint string `hcl:"management_endpoint"`
+	// StorageEndpointSuffix is required, even if it is a blank string
+	StorageEndpointSuffix string  `hcl:"storage_endpoint_suffix"`
+	SubscriptionId        *string `hcl:"subscription_id"`
+	AzureEnvironment      *string `hcl:"azure_environment"`
+	Certificate           *string `hcl:"certificate"`
+	CertificateThumbprint *string `hcl:"certificate_thumbprint"`
 }
 
 type TerraformGcpAccount struct {

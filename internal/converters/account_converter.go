@@ -103,9 +103,8 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 
 		if account.AccountType == "AzureSubscription" {
 			certVariable := "${var." + resourceName + "_cert}"
-			certThumbprintVariable := "${var." + resourceName + "_cert_thumbprint}"
 			terraformResource := terraform.TerraformAzureSubscription{
-				Type:                            "octopusdeploy_azure_service_principal",
+				Type:                            "octopusdeploy_azure_subscription_account",
 				Name:                            resourceName,
 				ResourceName:                    account.Name,
 				Description:                     account.Description,
@@ -113,24 +112,15 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				TenantTags:                      account.TenantTags,
 				Tenants:                         nil,
 				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-				ManagementEndpoint:              account.ResourceManagementEndpointBaseUri,
-				StorageEndpointSuffix:           account.ServiceManagementEndpointSuffix,
+				ManagementEndpoint:              util.EmptyIfNil(account.ResourceManagementEndpointBaseUri),
+				StorageEndpointSuffix:           util.EmptyIfNil(account.ServiceManagementEndpointSuffix),
 				SubscriptionId:                  account.SubscriptionNumber,
-				AzureEnvironment:                account.AzureEnvironment,
+				AzureEnvironment:                util.NilIfEmpty(account.AzureEnvironment),
 				Certificate:                     &certVariable,
-				CertificateThumbprint:           &certThumbprintVariable,
 			}
 
 			secretVariableResource := terraform.TerraformVariable{
 				Name:        resourceName + "_cert",
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The Azure certificate associated with the account " + account.Name,
-			}
-
-			thumbprintVariableResource := terraform.TerraformVariable{
-				Name:        resourceName + "_cert_thumbprint",
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
@@ -143,10 +133,6 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
-
-			thumbprintVariableResourceBlock := gohcl.EncodeAsBlock(thumbprintVariableResource, "variable")
-			util.WriteUnquotedAttribute(thumbprintVariableResourceBlock, "type", "string")
-			file.Body().AppendBlock(thumbprintVariableResourceBlock)
 
 			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
