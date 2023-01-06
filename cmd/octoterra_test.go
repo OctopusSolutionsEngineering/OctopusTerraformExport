@@ -1092,3 +1092,84 @@ func TestEcrFeedExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestMavenFeedExport verifies that a maven feed can be reimported with the correct settings
+func TestMavenFeedExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/13-mavenfeed", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=feed_maven_password=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Feed]{}
+		err = octopusClient.GetAllResources("Feeds", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		feedName := "Docker"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == feedName {
+				found = true
+
+				if *v.FeedType != "Maven" {
+					t.Fatal("The feed must have a type of \"Maven\"")
+				}
+
+				if *v.Username != "username" {
+					t.Fatal("The feed must have a username of \"username\"")
+				}
+
+				if *v.DownloadAttempts != 5 {
+					t.Fatal("The feed must be have a downloads attempts set to \"5\"")
+				}
+
+				if *v.DownloadRetryBackoffSeconds != 10 {
+					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
+				}
+
+				if *v.FeedUri != "https://repo.maven.apache.org/maven2/" {
+					t.Fatal("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
+				}
+
+				foundExecutionTarget := false
+				foundServer := false
+				for _, o := range v.PackageAcquisitionLocationOptions {
+					if o == "ExecutionTarget" {
+						foundExecutionTarget = true
+					}
+
+					if o == "Server" {
+						foundServer = true
+					}
+				}
+
+				if !(foundExecutionTarget && foundServer) {
+					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+		}
+
+		return nil
+	})
+}
