@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"k8s.io/utils/strings/slices"
@@ -213,7 +214,7 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 
 // initialiseOctopus uses Terraform to populate the test Octopus instance, making sure to clean up
 // any files generated during previous Terraform executions to avoid conflicts and locking issues.
-func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, spaceName string, populateVars []string) error {
+func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir string, spaceName string, initialiseVars []string, populateVars []string) error {
 	path, err := os.Getwd()
 	if err != nil {
 		return err
@@ -244,7 +245,7 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 		// when initialising the new space, we need to define a new space name as a variable
 		vars := []string{}
 		if i == 0 {
-			vars = []string{"-var=octopus_space_name=" + spaceName}
+			vars = append(initialiseVars, "-var=octopus_space_name="+spaceName)
 		} else {
 			vars = populateVars
 		}
@@ -314,8 +315,8 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 }
 
 // arrangeTest initialises Octopus and MSSQL
-func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string) (string, error) {
-	err := initialiseOctopus(t, container, terraformDir, "Test2", []string{})
+func arrangeTest(t *testing.T, container *octopusContainer, terraformDir string, populateVars []string) (string, error) {
+	err := initialiseOctopus(t, container, terraformDir, "Test2", []string{}, populateVars)
 
 	if err != nil {
 		return "", err
@@ -335,7 +336,7 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string, popul
 		return "", err
 	}
 
-	err = initialiseOctopus(t, container, tempDir, "Test3", populateVars)
+	err = initialiseOctopus(t, container, tempDir, "Test3", []string{}, populateVars)
 
 	if err != nil {
 		return "", err
@@ -348,7 +349,7 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string, popul
 func TestSpaceExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/1-singlespace")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/1-singlespace", []string{})
 
 		if err != nil {
 			return err
@@ -399,7 +400,7 @@ func TestSpaceExport(t *testing.T) {
 func TestProjectGroupExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/2-projectgroup")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/2-projectgroup", []string{})
 
 		if err != nil {
 			return err
@@ -444,7 +445,7 @@ func TestProjectGroupExport(t *testing.T) {
 func TestAwsAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/3-awsaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/3-awsaccount", []string{})
 
 		if err != nil {
 			return err
@@ -489,7 +490,7 @@ func TestAwsAccountExport(t *testing.T) {
 func TestAzureAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/4-azureaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/4-azureaccount", []string{})
 
 		if err != nil {
 			return err
@@ -550,7 +551,7 @@ func TestAzureAccountExport(t *testing.T) {
 func TestUsernamePasswordAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/5-userpassaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/5-userpassaccount", []string{})
 
 		if err != nil {
 			return err
@@ -611,7 +612,7 @@ func TestUsernamePasswordAccountExport(t *testing.T) {
 func TestGcpAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/6-gcpaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/6-gcpaccount", []string{})
 
 		if err != nil {
 			return err
@@ -668,7 +669,7 @@ func TestGcpAccountExport(t *testing.T) {
 func TestSshAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/7-sshaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/7-sshaccount", []string{})
 
 		if err != nil {
 			return err
@@ -738,7 +739,7 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/8-azuresubscriptionaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/8-azuresubscriptionaccount", []string{})
 
 		if err != nil {
 			return err
@@ -798,7 +799,7 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 func TestTokenAccountExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/9-tokenaccount")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/9-tokenaccount", []string{})
 
 		if err != nil {
 			return err
@@ -862,7 +863,7 @@ func TestTokenAccountExport(t *testing.T) {
 func TestHelmFeedExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
-		newSpaceId, err := arrangeTest(t, container, "../test/terraform/10-helmfeed")
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/10-helmfeed", []string{})
 
 		if err != nil {
 			return err
@@ -893,12 +894,177 @@ func TestHelmFeedExport(t *testing.T) {
 			if v.Name == feedName {
 				found = true
 
+				if *v.FeedType != "Helm" {
+					t.Fatal("The feed must have a type of \"Helm\"")
+				}
+
 				if *v.Username != "username" {
 					t.Fatal("The feed must have a username of \"username\"")
 				}
 
 				if *v.FeedUri != "https://charts.helm.sh/stable/" {
 					t.Fatal("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
+				}
+
+				foundExecutionTarget := false
+				foundNotAcquired := false
+				for _, o := range v.PackageAcquisitionLocationOptions {
+					if o == "ExecutionTarget" {
+						foundExecutionTarget = true
+					}
+
+					if o == "NotAcquired" {
+						foundNotAcquired = true
+					}
+				}
+
+				if !(foundExecutionTarget && foundNotAcquired) {
+					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestDockerFeedExport verifies that a docker feed can be reimported with the correct settings
+func TestDockerFeedExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/11-dockerfeed", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=feed_docker_password=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Feed]{}
+		err = octopusClient.GetAllResources("Feeds", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		feedName := "Docker"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == feedName {
+				found = true
+
+				if *v.FeedType != "Docker" {
+					t.Fatal("The feed must have a type of \"Docker\"")
+				}
+
+				if *v.Username != "username" {
+					t.Fatal("The feed must have a username of \"username\"")
+				}
+
+				if *v.ApiVersion != "v1" {
+					t.Fatal("The feed must be have a API version of \"v1\"")
+				}
+
+				if *v.FeedUri != "https://index.docker.io" {
+					t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+				}
+
+				foundExecutionTarget := false
+				foundNotAcquired := false
+				for _, o := range v.PackageAcquisitionLocationOptions {
+					if o == "ExecutionTarget" {
+						foundExecutionTarget = true
+					}
+
+					if o == "NotAcquired" {
+						foundNotAcquired = true
+					}
+				}
+
+				if !(foundExecutionTarget && foundNotAcquired) {
+					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestEcrFeedExport verifies that a ecr feed can be reimported with the correct settings
+func TestEcrFeedExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		if os.Getenv("ECR_ACCESS_KEY") == "" {
+			return errors.New("the ECR_ACCESS_KEY environment variable must be set a valid AWS access key")
+		}
+
+		if os.Getenv("ECR_SECRET_KEY") == "" {
+			return errors.New("the ECR_SECRET_KEY environment variable must be set a valid AWS secret key")
+		}
+
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/12-ecrfeed", []string{
+			"-var=feed_ecr_access_key=" + os.Getenv("ECR_ACCESS_KEY"),
+			"-var=feed_ecr_secret_key=" + os.Getenv("ECR_SECRET_KEY"),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=feed_ecr_password=" + os.Getenv("ECR_SECRET_KEY"),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Feed]{}
+		err = octopusClient.GetAllResources("Feeds", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		feedName := "ECR"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == feedName {
+				found = true
+
+				if *v.FeedType != "AwsElasticContainerRegistry" {
+					t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + util.EmptyIfNil(v.FeedType) + "\"")
+				}
+
+				if *v.AccessKey != os.Getenv("ECR_ACCESS_KEY") {
+					t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + util.EmptyIfNil(v.AccessKey) + "\"")
+				}
+
+				if *v.Region != "us-east-1" {
+					t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + util.EmptyIfNil(v.Region) + "\"")
 				}
 
 				foundExecutionTarget := false

@@ -81,7 +81,7 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),
-		}, map[string]string{resource.Id: "${data.octopusdeploy_feeds.feeds[0].id}"}
+		}, map[string]string{resource.Id: "${data.octopusdeploy_feeds.built_in_feed.feeds[0].id}"}
 	}
 
 	if *resource.FeedType == "Docker" {
@@ -94,9 +94,23 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Username:                          resource.Username,
 			ApiVersion:                        resource.ApiVersion,
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
+			FeedUri:                           resource.FeedUri,
 		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        passwordName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password used by the feed " + resource.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),
@@ -110,11 +124,24 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			ResourceName:                      resource.Name,
 			AccessKey:                         resource.AccessKey,
 			SecretKey:                         &password,
-			Region:                            nil,
+			Region:                            resource.Region,
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        passwordName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password used by the feed " + resource.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),
@@ -133,8 +160,21 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			DownloadAttempts:                  resource.DownloadAttempts,
 			DownloadRetryBackoffSeconds:       resource.DownloadRetryBackoffSeconds,
 		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        passwordName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password used by the feed " + resource.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),
@@ -153,8 +193,21 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			DownloadAttempts:                  resource.DownloadAttempts,
 			DownloadRetryBackoffSeconds:       resource.DownloadRetryBackoffSeconds,
 		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        passwordName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password used by the feed " + resource.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),
@@ -205,8 +258,21 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			DownloadAttempts:                  resource.DownloadAttempts,
 			DownloadRetryBackoffSeconds:       resource.DownloadRetryBackoffSeconds,
 		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        passwordName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password used by the feed " + resource.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),

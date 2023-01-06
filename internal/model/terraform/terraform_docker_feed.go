@@ -20,6 +20,7 @@ type TerraformDockerFeed struct {
 	Username                          *string  `hcl:"username"`
 	ApiVersion                        *string  `hcl:"api_version"`
 	SpaceId                           *string  `hcl:"space_id"`
+	FeedUri                           *string  `hcl:"feed_uri"`
 	PackageAcquisitionLocationOptions []string `hcl:"package_acquisition_location_options"`
 }
 
