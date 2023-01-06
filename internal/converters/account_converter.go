@@ -256,7 +256,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			secretVariable := "${var." + resourceName + "}"
 			certFileVariable := "${var." + resourceName + "_cert}"
 			terraformResource := terraform.TerraformSshAccount{
-				Type:                            "octopusdeploy_username_password_account",
+				Type:                            "octopusdeploy_ssh_key_account",
 				Name:                            resourceName,
 				ResourceName:                    account.Name,
 				Description:                     account.Description,
