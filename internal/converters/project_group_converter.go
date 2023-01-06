@@ -29,7 +29,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
-		projectName := "project_group_" + util.SanitizeName(project.Name)
+		projectName := "project_group_" + util.SanitizeNamePointer(project.Name)
 		var projectGroupVar string
 
 		if *project.Name == "Default Project Group" {
@@ -81,7 +81,7 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, error) {
 
 	results := map[string]string{}
 
-	resourceName := util.SanitizeName(resource.Name)
+	resourceName := util.SanitizeNamePointer(resource.Name)
 
 	terraformResource := terraform.TerraformProject{
 		Type:                            "octopusdeploy_project",

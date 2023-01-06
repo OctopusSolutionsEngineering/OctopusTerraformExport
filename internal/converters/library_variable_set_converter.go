@@ -24,7 +24,7 @@ func (c LibraryVariableSetConverter) ToHclById(id string) (map[string]string, ma
 
 	file := hclwrite.NewEmptyFile()
 
-	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
+	resourceName := "library_variable_set_" + util.SanitizeNamePointer(resource.Name)
 
 	terraformResource := terraform.TerraformLibraryVariableSet{
 		Type:         "octopusdeploy_library_variable_set",

@@ -65,7 +65,8 @@ func (c FeedConverter) GetResourceType() string {
 
 func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, map[string]string) {
 	resourceName := "feed_" + util.SanitizeName(resource.Name)
-	password := "${var." + resourceName + "_password}"
+	passwordName := resourceName + "_password"
+	password := "${var." + passwordName + "}"
 
 	if *resource.FeedType == "BuiltIn" {
 		terraformResource := terraform.TerraformFeedData{
@@ -170,8 +171,21 @@ func (c FeedConverter) convertFeed(resource octopus.Feed) (map[string]string, ma
 			Password:                          &password,
 			PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        passwordName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password used by the feed " + resource.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
 
 		return map[string]string{
 			"space_population/" + resourceName + ".tf": string(file.Bytes()),

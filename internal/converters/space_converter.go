@@ -137,7 +137,7 @@ func (c SpaceConverter) createSpaceTf() (string, string, error) {
 		return "", "", err
 	}
 
-	spaceResourceName := "octopus_space_" + util.SanitizeName(space.Name)
+	spaceResourceName := "octopus_space_" + util.SanitizeNamePointer(space.Name)
 	spaceName := "${var.octopus_space_name}"
 
 	terraformResource := terraform.TerraformSpace{

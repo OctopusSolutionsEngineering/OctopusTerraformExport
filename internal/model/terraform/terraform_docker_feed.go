@@ -3,7 +3,7 @@ package terraform
 type TerraformEcrFeed struct {
 	Type                              string   `hcl:"type,label"`
 	Name                              string   `hcl:"name,label"`
-	ResourceName                      *string  `hcl:"name"`
+	ResourceName                      string   `hcl:"name"`
 	AccessKey                         *string  `hcl:"access_key"`
 	SecretKey                         *string  `hcl:"secret_key"`
 	Region                            *string  `hcl:"region"`
@@ -14,7 +14,7 @@ type TerraformEcrFeed struct {
 type TerraformDockerFeed struct {
 	Type                              string   `hcl:"type,label"`
 	Name                              string   `hcl:"name,label"`
-	ResourceName                      *string  `hcl:"name"`
+	ResourceName                      string   `hcl:"name"`
 	Password                          *string  `hcl:"password"`
 	RegistryPath                      *string  `hcl:"registry_path"`
 	Username                          *string  `hcl:"username"`
@@ -26,7 +26,7 @@ type TerraformDockerFeed struct {
 type TerraformGitHubRepoFeed struct {
 	Type                              string   `hcl:"type,label"`
 	Name                              string   `hcl:"name,label"`
-	ResourceName                      *string  `hcl:"name"`
+	ResourceName                      string   `hcl:"name"`
 	Password                          *string  `hcl:"password"`
 	FeedUri                           *string  `hcl:"feed_uri"`
 	DownloadAttempts                  *int     `hcl:"download_attempts"`
@@ -39,7 +39,7 @@ type TerraformGitHubRepoFeed struct {
 type TerraformHelmFeed struct {
 	Type                              string   `hcl:"type,label"`
 	Name                              string   `hcl:"name,label"`
-	ResourceName                      *string  `hcl:"name"`
+	ResourceName                      string   `hcl:"name"`
 	Password                          *string  `hcl:"password"`
 	FeedUri                           *string  `hcl:"feed_uri"`
 	Username                          *string  `hcl:"username"`
@@ -50,7 +50,7 @@ type TerraformHelmFeed struct {
 type TerraformMavenFeed struct {
 	Type                              string   `hcl:"type,label"`
 	Name                              string   `hcl:"name,label"`
-	ResourceName                      *string  `hcl:"name"`
+	ResourceName                      string   `hcl:"name"`
 	FeedUri                           *string  `hcl:"feed_uri"`
 	SpaceId                           *string  `hcl:"space_id"`
 	Username                          *string  `hcl:"username"`
@@ -63,7 +63,7 @@ type TerraformMavenFeed struct {
 type TerraformNuGetFeed struct {
 	Type                              string   `hcl:"type,label"`
 	Name                              string   `hcl:"name,label"`
-	ResourceName                      *string  `hcl:"name"`
+	ResourceName                      string   `hcl:"name"`
 	FeedUri                           *string  `hcl:"feed_uri"`
 	SpaceId                           *string  `hcl:"space_id"`
 	Username                          *string  `hcl:"username"`

@@ -26,7 +26,7 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 	file := hclwrite.NewEmptyFile()
 
 	for _, v := range resource.Variables {
-		resourceName := parentName + "_" + util.SanitizeName(v.Name)
+		resourceName := parentName + "_" + util.SanitizeNamePointer(v.Name)
 
 		terraformResource := terraform.TerraformProjectVariable{
 			Name:           resourceName,

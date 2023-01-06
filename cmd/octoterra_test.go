@@ -857,3 +857,72 @@ func TestTokenAccountExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestHelmFeedExport verifies that a helm feed can be reimported with the correct settings
+func TestHelmFeedExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/10-helmfeed")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=feed_helm_password=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Feed]{}
+		err = octopusClient.GetAllResources("Feeds", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		feedName := "Helm"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == feedName {
+				found = true
+
+				if *v.Username != "username" {
+					t.Fatal("The feed must have a username of \"username\"")
+				}
+
+				if *v.FeedUri != "https://charts.helm.sh/stable/" {
+					t.Fatal("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
+				}
+
+				foundExecutionTarget := false
+				foundNotAcquired := false
+				for _, o := range v.PackageAcquisitionLocationOptions {
+					if o == "ExecutionTarget" {
+						foundExecutionTarget = true
+					}
+
+					if o == "NotAcquired" {
+						foundNotAcquired = true
+					}
+				}
+
+				if !(foundExecutionTarget && foundNotAcquired) {
+					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+		}
+
+		return nil
+	})
+}
