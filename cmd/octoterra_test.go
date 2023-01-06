@@ -1209,8 +1209,8 @@ func TestNugetFeedExport(t *testing.T) {
 			if v.Name == feedName {
 				found = true
 
-				if *v.FeedType != "Nuget" {
-					t.Fatal("The feed must have a type of \"Nuget\"")
+				if *v.FeedType != "NuGet" {
+					t.Fatal("The feed must have a type of \"NuGet\"")
 				}
 
 				if !v.EnhancedMode {
