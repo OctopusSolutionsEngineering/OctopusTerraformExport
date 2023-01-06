@@ -793,3 +793,67 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestTokenAccountExport verifies that a token account can be reimported with the correct settings
+func TestTokenAccountExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/9-tokenaccount")
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=account_token=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Account]{}
+		err = octopusClient.GetAllResources("Accounts", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		accountName := "Token"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == accountName {
+				found = true
+				if v.AccountType != "Token" {
+					t.Fatal("The account must be have a type of \"Token\"")
+				}
+
+				if !v.Token.HasValue {
+					t.Fatal("The account must be have a token")
+				}
+
+				if *v.Description != "A test account" {
+					t.Fatal("The account must be have a description of \"A test account\"")
+				}
+
+				if *v.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
+				}
+
+				if len(v.TenantTags) != 0 {
+					t.Fatal("The account must be have no tenant tags")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an account called \"" + accountName + "\"")
+		}
+
+		return nil
+	})
+}
