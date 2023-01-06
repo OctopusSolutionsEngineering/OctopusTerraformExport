@@ -695,10 +695,15 @@ func TestSshAccountExport(t *testing.T) {
 			return err
 		}
 
+		accountName := "SSH"
 		found := false
 		for _, v := range collection.Items {
-			if v.Name == "SSH" {
+			if v.Name == accountName {
 				found = true
+				if v.AccountType != "SshKeyPair" {
+					t.Fatal("The account must be have a type of \"SshKeyPair\"")
+				}
+
 				if *v.Username != "admin" {
 					t.Fatal("The account must be have a username of \"admin\"")
 				}
@@ -713,13 +718,13 @@ func TestSshAccountExport(t *testing.T) {
 				}
 
 				if len(v.TenantTags) != 0 {
-					t.Fatalf("The account must be have no tenant tags")
+					t.Fatal("The account must be have no tenant tags")
 				}
 			}
 		}
 
 		if !found {
-			t.Fatalf("Space must have an account called \"SSH\"")
+			t.Fatal("Space must have an account called \"" + accountName + "\"")
 		}
 
 		return nil
