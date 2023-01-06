@@ -1258,3 +1258,62 @@ func TestNugetFeedExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestWorkerPoolExport verifies that a static worker pool can be reimported with the correct settings
+func TestWorkerPoolExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/15-workerpool", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.WorkerPool]{}
+		err = octopusClient.GetAllResources("WorkerPools", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		workerPoolName := "Docker"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == workerPoolName {
+				found = true
+
+				if v.WorkerPoolType != "StaticWorkerPool" {
+					t.Fatal("The worker pool must be have a type of \"StaticWorkerPool\" (was \"" + v.WorkerPoolType + "\"")
+				}
+
+				if *v.Description != "A test worker pool" {
+					t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + util.EmptyIfNil(v.Description) + "\"")
+				}
+
+				if v.SortOrder != 3 {
+					t.Fatal("The worker pool must be have a sort order of \"3\" (was \"" + fmt.Sprint(v.SortOrder) + "\"")
+				}
+
+				if v.IsDefault {
+					t.Fatal("The worker pool must be must not be the default")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an worker pool called \"" + workerPoolName + "\"")
+		}
+
+		return nil
+	})
+}
