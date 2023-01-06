@@ -1122,7 +1122,7 @@ func TestMavenFeedExport(t *testing.T) {
 			return err
 		}
 
-		feedName := "Docker"
+		feedName := "Maven"
 		found := false
 		for _, v := range collection.Items {
 			if v.Name == feedName {
@@ -1146,6 +1146,91 @@ func TestMavenFeedExport(t *testing.T) {
 
 				if *v.FeedUri != "https://repo.maven.apache.org/maven2/" {
 					t.Fatal("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
+				}
+
+				foundExecutionTarget := false
+				foundServer := false
+				for _, o := range v.PackageAcquisitionLocationOptions {
+					if o == "ExecutionTarget" {
+						foundExecutionTarget = true
+					}
+
+					if o == "Server" {
+						foundServer = true
+					}
+				}
+
+				if !(foundExecutionTarget && foundServer) {
+					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestNugetFeedExport verifies that a nuget feed can be reimported with the correct settings
+func TestNugetFeedExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/14-nugetfeed", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=feed_nuget_password=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Feed]{}
+		err = octopusClient.GetAllResources("Feeds", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		feedName := "Nuget"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == feedName {
+				found = true
+
+				if *v.FeedType != "Nuget" {
+					t.Fatal("The feed must have a type of \"Nuget\"")
+				}
+
+				if !v.EnhancedMode {
+					t.Fatal("The feed must have enhanced mode set to true")
+				}
+
+				if *v.Username != "username" {
+					t.Fatal("The feed must have a username of \"username\"")
+				}
+
+				if *v.DownloadAttempts != 5 {
+					t.Fatal("The feed must be have a downloads attempts set to \"5\"")
+				}
+
+				if *v.DownloadRetryBackoffSeconds != 10 {
+					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
+				}
+
+				if *v.FeedUri != "https://index.docker.io" {
+					t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
 				}
 
 				foundExecutionTarget := false
