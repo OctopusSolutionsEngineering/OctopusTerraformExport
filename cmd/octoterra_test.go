@@ -733,7 +733,7 @@ func TestSshAccountExport(t *testing.T) {
 
 // TestAzureSubscriptionAccountExport verifies that a SSH account can be reimported with the correct settings
 func TestAzureSubscriptionAccountExport(t *testing.T) {
-	// I could not figure out a combination of
+	// I could not figure out a combination of properties that made this resource work
 	return
 
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
