@@ -1317,3 +1317,58 @@ func TestWorkerPoolExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestEnvironmentExport verifies that an environment can be reimported with the correct settings
+func TestEnvironmentExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/16-environment", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Environment]{}
+		err = octopusClient.GetAllResources("Environments", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Development"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "A test environment" {
+					t.Fatal("The environment must be have a description of \"A test environment\" (was \"" + util.EmptyIfNil(v.Description) + "\"")
+				}
+
+				if !v.AllowDynamicInfrastructure {
+					t.Fatal("The environment must have dynamic infrastructure enabled.")
+				}
+
+				if v.UseGuidedFailure {
+					t.Fatal("The environment must not have guided failure enabled.")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an environment called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}

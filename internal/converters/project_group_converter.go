@@ -30,7 +30,6 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 
 	for _, project := range collection.Items {
 		projectName := "project_group_" + util.SanitizeNamePointer(project.Name)
-		var projectGroupVar string
 
 		if *project.Name == "Default Project Group" {
 			// todo - create lookup for existing project group
@@ -44,8 +43,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/"+projectName+".tf"] = string(file.Bytes())
-			projectGroupVar = "${octopusdeploy_project_group." + projectName + ".id}"
+			results["space_population/project_"+projectName+".tf"] = string(file.Bytes())
 		}
 
 		// Convert the projects
@@ -53,7 +51,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 			Client:                   c.Client,
 			SpaceResourceName:        c.SpaceResourceName,
 			ProjectGroupResourceName: projectName,
-			ProjectGroupId:           projectGroupVar,
+			ProjectGroupId:           project.Id,
 			FeedMap:                  c.FeedMap,
 			LifecycleMap:             c.LifecycleMap,
 			WorkPoolMap:              c.WorkPoolMap,

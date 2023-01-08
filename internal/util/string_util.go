@@ -1,5 +1,9 @@
 package util
 
+import (
+	"strings"
+)
+
 func NilIfEmpty(input *string) *string {
 	if input == nil {
 		return nil
@@ -26,4 +30,12 @@ func DefaultIfEmptyOrNil(input *string, defaultValue string) string {
 	}
 
 	return *input
+}
+
+func EnsureSuffix(input string, suffix string) string {
+	if strings.HasSuffix(input, suffix) {
+		return input
+	}
+
+	return input + suffix
 }

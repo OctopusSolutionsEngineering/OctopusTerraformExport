@@ -12,6 +12,7 @@ import (
 type LifecycleConverter struct {
 	Client            client.OctopusClient
 	SpaceResourceName string
+	EnvironmentsMap   map[string]string
 }
 
 func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error) {
