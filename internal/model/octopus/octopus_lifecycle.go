@@ -22,7 +22,7 @@ type Phase struct {
 }
 
 type Policy struct {
-	Unit              *string
-	QuantityToKeep    *int
-	ShouldKeepForever *bool
+	Unit              string
+	QuantityToKeep    int
+	ShouldKeepForever bool
 }

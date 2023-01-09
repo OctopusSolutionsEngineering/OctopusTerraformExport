@@ -1372,3 +1372,74 @@ func TestEnvironmentExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestLifecycleExport verifies that a lifecycle can be reimported with the correct settings
+func TestLifecycleExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/17-lifecycle", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Lifecycle]{}
+		err = octopusClient.GetAllResources("Lifecycles", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Simple"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "A test lifecycle" {
+					t.Fatal("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
+					t.Fatal("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + string(rune(v.TentacleRetentionPolicy.QuantityToKeep)) + "\")")
+				}
+
+				if v.TentacleRetentionPolicy.ShouldKeepForever {
+					t.Fatal("The lifecycle must be have a tentacle retention not set to keep forever")
+				}
+
+				if v.TentacleRetentionPolicy.Unit != "Items" {
+					t.Fatal("The lifecycle must be have a tentacle retention unit set to \"Items\" (was \"" + v.TentacleRetentionPolicy.Unit + "\")")
+				}
+
+				if v.ReleaseRetentionPolicy.QuantityToKeep != 1 {
+					t.Fatal("The lifecycle must be have a release retention policy of \"1\" (was \"" + string(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
+				}
+
+				if !v.ReleaseRetentionPolicy.ShouldKeepForever {
+					t.Fatal("The lifecycle must be have a release retention set to keep forever")
+				}
+
+				if v.ReleaseRetentionPolicy.Unit != "Days" {
+					t.Fatal("The lifecycle must be have a release retention unit set to \"Days\" (was \"" + v.ReleaseRetentionPolicy.Unit + "\")")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an lifecycle called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}

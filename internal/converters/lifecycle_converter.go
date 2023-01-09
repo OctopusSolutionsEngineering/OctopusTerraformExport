@@ -27,7 +27,7 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 	lifecycleMap := map[string]string{}
 
 	for _, lifecycle := range collection.Items {
-		resourceName := "lifecycle_" + util.SanitizeNamePointer(&lifecycle.Name)
+		resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Name)
 
 		// Assume the default lifecycle already exists
 		if lifecycle.Name == "Default Lifecycle" {
@@ -119,8 +119,8 @@ func (c LifecycleConverter) convertPhases(phases []octopus.Phase) []terraform.Te
 	terraformPhases := make([]terraform.TerraformPhase, 0)
 	for _, v := range phases {
 		terraformPhases = append(terraformPhases, terraform.TerraformPhase{
-			AutomaticDeploymentTargets:         v.AutomaticDeploymentTargets,
-			OptionalDeploymentTargets:          v.OptionalDeploymentTargets,
+			AutomaticDeploymentTargets:         c.convertTargets(v.AutomaticDeploymentTargets),
+			OptionalDeploymentTargets:          c.convertTargets(v.OptionalDeploymentTargets),
 			Name:                               v.Name,
 			IsOptionalPhase:                    v.IsOptionalPhase,
 			MinimumEnvironmentsBeforePromotion: v.MinimumEnvironmentsBeforePromotion,
@@ -137,4 +137,14 @@ func (c LifecycleConverter) convertPhases(phases []octopus.Phase) []terraform.Te
 		})
 	}
 	return terraformPhases
+}
+
+func (c LifecycleConverter) convertTargets(environments []string) []string {
+	converted := make([]string, len(environments))
+
+	for i, v := range environments {
+		converted[i] = c.EnvironmentsMap[v]
+	}
+
+	return converted
 }
