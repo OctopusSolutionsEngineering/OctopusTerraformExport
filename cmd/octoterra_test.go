@@ -1597,8 +1597,8 @@ func TestProjectExport(t *testing.T) {
 					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
 				}
 
-				if util.EmptyIfNil(v.ProjectConnectivityPolicy.SkipMachineBehavior) != "SkipUnavailableMachines" {
-					t.Fatal("The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + util.EmptyIfNil(v.ProjectConnectivityPolicy.SkipMachineBehavior) + "\")")
+				if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
+					t.Fatal("The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\")")
 				}
 			}
 		}
