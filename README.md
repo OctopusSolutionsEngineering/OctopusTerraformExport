@@ -15,6 +15,9 @@ Get the compiled binaries from the [releases](https://github.com/mcasperson/Octo
 
 ## To Do
 
+The following resources are not completely exported:
+* octopusdeploy_project
+
 The following resources have yet to be exported:
 
 * octopusdeploy_tenant
