@@ -78,8 +78,8 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Password:                        &secretVariable,
 				SubscriptionId:                  account.SubscriptionNumber,
 				TenantId:                        account.TenantId,
-				AzureEnvironment:                util.NilIfEmpty(account.AzureEnvironment),
-				ResourceManagerEndpoint:         util.NilIfEmpty(account.ResourceManagementEndpointBaseUri),
+				AzureEnvironment:                util.NilIfEmptyPointer(account.AzureEnvironment),
+				ResourceManagerEndpoint:         util.NilIfEmptyPointer(account.ResourceManagementEndpointBaseUri),
 			}
 
 			secretVariableResource := terraform.TerraformVariable{
@@ -115,7 +115,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				ManagementEndpoint:              util.EmptyIfNil(account.ResourceManagementEndpointBaseUri),
 				StorageEndpointSuffix:           util.EmptyIfNil(account.ServiceManagementEndpointSuffix),
 				SubscriptionId:                  account.SubscriptionNumber,
-				AzureEnvironment:                util.NilIfEmpty(account.AzureEnvironment),
+				AzureEnvironment:                util.NilIfEmptyPointer(account.AzureEnvironment),
 				Certificate:                     &certVariable,
 			}
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func NilIfEmpty(input *string) *string {
+func NilIfEmptyPointer(input *string) *string {
 	if input == nil {
 		return nil
 	}
@@ -14,6 +14,14 @@ func NilIfEmpty(input *string) *string {
 	}
 
 	return input
+}
+
+func NilIfEmpty(input string) *string {
+	if input == "" {
+		return nil
+	}
+
+	return &input
 }
 
 func EmptyIfNil(input *string) string {

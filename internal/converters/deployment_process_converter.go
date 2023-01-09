@@ -11,26 +11,27 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client      client.OctopusClient
-	FeedMap     map[string]string
-	WorkPoolMap map[string]string
-	AccountsMap map[string]string
+	Client        client.OctopusClient
+	FeedMap       map[string]string
+	WorkPoolMap   map[string]string
+	AccountsMap   map[string]string
+	ProjectLookup string
 }
 
-func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map[string]string, error) {
+func (c DeploymentProcessConverter) ToHclById(id string) (map[string]string, string, error) {
 	resource := octopus.DeploymentProcess{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	resourceName := "deployment_process_" + util.SanitizeNamePointer(&parentName)
+	resourceName := "deployment_process_" + util.SanitizeNamePointer(&c.ProjectLookup)
 
 	terraformResource := terraform.TerraformDeploymentProcess{
 		Type:      "octopusdeploy_deployment_process",
 		Name:      resourceName,
-		ProjectId: "${octopusdeploy_project." + parentName + ".id}",
+		ProjectId: c.ProjectLookup,
 		Step:      make([]terraform.TerraformStep, len(resource.Steps)),
 	}
 
@@ -84,8 +85,8 @@ func (c DeploymentProcessConverter) ToHclById(id string, parentName string) (map
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 	return map[string]string{
-		resourceName + ".tf": string(file.Bytes()),
-	}, nil
+		"space_population/" + resourceName + ".tf": string(file.Bytes()),
+	}, resourceName, nil
 }
 
 func (c DeploymentProcessConverter) GetResourceType() string {

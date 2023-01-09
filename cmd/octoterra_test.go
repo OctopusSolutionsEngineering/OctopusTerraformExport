@@ -40,6 +40,17 @@ func (g *TestLogConsumer) Accept(l testcontainers.Log) {
 	fmt.Println(string(l.Content))
 }
 
+func enableContainerLogging(container testcontainers.Container, ctx context.Context) error {
+	// Display the container logs
+	err := container.StartLogProducer(ctx)
+	if err != nil {
+		return err
+	}
+	g := TestLogConsumer{}
+	container.FollowOutput(&g)
+	return nil
+}
+
 // setupDatabase creates a MSSQL container
 func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 	req := testcontainers.ContainerRequest{
@@ -61,14 +72,6 @@ func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Display the container logs
-	container.StartLogProducer(ctx)
-	if err != nil {
-		// do something with err
-	}
-	g := TestLogConsumer{}
-	container.FollowOutput(&g)
 
 	ip, err := container.Host(ctx)
 	if err != nil {
@@ -117,12 +120,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 	}
 
 	// Display the container logs
-	container.StartLogProducer(ctx)
-	if err != nil {
-		// do something with err
-	}
-	g := TestLogConsumer{}
-	container.FollowOutput(&g)
+	enableContainerLogging(container, ctx)
 
 	ip, err := container.Host(ctx)
 	if err != nil {
@@ -1601,6 +1599,89 @@ func TestProjectExport(t *testing.T) {
 
 				if util.EmptyIfNil(v.ProjectConnectivityPolicy.SkipMachineBehavior) != "SkipUnavailableMachines" {
 					t.Fatal("The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + util.EmptyIfNil(v.ProjectConnectivityPolicy.SkipMachineBehavior) + "\")")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestProjectChannelExport verifies that a project channel can be reimported with the correct settings
+func TestProjectChannelExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/20-channel", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Project]{}
+		err = octopusClient.GetAllResources("Projects", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				collection := octopus.GeneralCollection[octopus.Channel]{}
+				err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &collection)
+
+				channelName := "Test"
+				foundChannel := false
+
+				for _, c := range collection.Items {
+					if c.Name == channelName {
+						foundChannel = true
+
+						if util.EmptyIfNil(c.Description) != "Test channel" {
+							t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + util.EmptyIfNil(c.Description) + "\")")
+						}
+
+						if !c.IsDefault {
+							t.Fatal("The channel must be be the default")
+						}
+
+						if len(c.Rules) != 1 {
+							t.Fatal("The channel must have one rule")
+						}
+
+						if util.EmptyIfNil(c.Rules[0].Tag) != "^$" {
+							t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + util.EmptyIfNil(c.Rules[0].Tag) + "\")")
+						}
+
+						if util.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
+							t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + util.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
+						}
+
+						if util.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
+							t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + util.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+						}
+					}
+				}
+
+				if !foundChannel {
+					t.Fatal("Project must have an channel called \"" + channelName + "\"")
 				}
 			}
 		}

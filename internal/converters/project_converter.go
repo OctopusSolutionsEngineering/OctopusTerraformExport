@@ -31,8 +31,10 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 
 	results := map[string]string{}
 
+	channelDependencies := make([]string, 0)
+
 	for _, project := range collection.Items {
-		projectName := util.SanitizeName(project.Name)
+		projectName := "project_" + util.SanitizeName(project.Name)
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,
@@ -55,13 +57,17 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 
 		results["space_population/project_"+projectName+".tf"] = string(file.Bytes())
 
+		// note the project as a channel dependency
+		channelDependencies = append(channelDependencies, "octopusdeploy_project."+projectName)
+
 		if project.DeploymentProcessId != nil {
-			deploymentProcess, err := DeploymentProcessConverter{
-				Client:      c.Client,
-				FeedMap:     c.FeedMap,
-				WorkPoolMap: c.WorkPoolMap,
-				AccountsMap: c.AccountsMap,
-			}.ToHclById(*project.DeploymentProcessId, projectName)
+			deploymentProcess, deploymentProcessId, err := DeploymentProcessConverter{
+				Client:        c.Client,
+				FeedMap:       c.FeedMap,
+				WorkPoolMap:   c.WorkPoolMap,
+				AccountsMap:   c.AccountsMap,
+				ProjectLookup: "${octopusdeploy_project." + projectName + ".id}",
+			}.ToHclById(*project.DeploymentProcessId)
 
 			if err != nil {
 				return nil, err
@@ -71,6 +77,9 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			for k, v := range deploymentProcess {
 				results[k] = v
 			}
+
+			// note the deployment project as a channel dependency
+			channelDependencies = append(channelDependencies, "octopusdeploy_deployment_process."+deploymentProcessId)
 		}
 
 		if project.VariableSetId != nil {
@@ -94,7 +103,9 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			Client:            c.Client,
 			SpaceResourceName: c.SpaceResourceName,
 			ProjectId:         project.Id,
+			ProjectLookup:     "${octopusdeploy_project." + projectName + ".id}",
 			LifecycleMap:      c.LifecycleMap,
+			DependsOn:         channelDependencies,
 		}.ToHcl()
 
 		if err != nil {
