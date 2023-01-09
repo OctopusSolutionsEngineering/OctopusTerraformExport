@@ -83,6 +83,25 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the environments
+	variables, variableMap, err := LibraryVariableSetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range variables {
+		results[k] = v
+	}
+
 	// Convert the lifecycles
 	lifecycles, lifecycleMap, err := LifecycleConverter{
 		Client:            c.Client,
@@ -116,12 +135,13 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// Convert the projects groups
 	projects, err := ProjectGroupConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		FeedMap:           feedMap,
-		LifecycleMap:      lifecycleMap,
-		WorkPoolMap:       poolMap,
-		AccountsMap:       accountsMap,
+		Client:                c.Client,
+		SpaceResourceName:     spaceResourceName,
+		FeedMap:               feedMap,
+		LifecycleMap:          lifecycleMap,
+		WorkPoolMap:           poolMap,
+		AccountsMap:           accountsMap,
+		LibraryVariableSetMap: variableMap,
 	}.ToHcl()
 
 	if err != nil {

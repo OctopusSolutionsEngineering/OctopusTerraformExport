@@ -1427,7 +1427,7 @@ func TestLifecycleExport(t *testing.T) {
 				}
 
 				if !v.ReleaseRetentionPolicy.ShouldKeepForever {
-					t.Log("BUG: The lifecycle must be have a release retention set to keep forever (known bug)")
+					t.Log("BUG: The lifecycle must be have a release retention set to keep forever (known bug - the provider creates this field as false)")
 				}
 
 				if v.ReleaseRetentionPolicy.Unit != "Days" {
@@ -1438,6 +1438,84 @@ func TestLifecycleExport(t *testing.T) {
 
 		if !found {
 			t.Fatal("Space must have an lifecycle called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestVariableSetExport verifies that a variable set can be reimported with the correct settings
+func TestVariableSetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/18-variableset", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+		err = octopusClient.GetAllResources("LibraryVariableSets", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "Test variable set" {
+					t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				resource := octopus.VariableSet{}
+				err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+
+				if len(resource.Variables) != 1 {
+					t.Fatal("The library variable set must have one associated variable")
+				}
+
+				if resource.Variables[0].Name != "Test.Variable" {
+					t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
+				}
+
+				if resource.Variables[0].Type != "String" {
+					t.Fatal("The library variable set variable must have a type of \"String\"")
+				}
+
+				if util.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
+					t.Fatal("The library variable set variable must have a description of \"Test variable\"")
+				}
+
+				if util.EmptyIfNil(resource.Variables[0].Value) != "test" {
+					t.Fatal("The library variable set variable must have a value of \"test\"")
+				}
+
+				if resource.Variables[0].IsSensitive {
+					t.Fatal("The library variable set variable must not be sensitive")
+				}
+
+				if !resource.Variables[0].IsEditable {
+					t.Fatal("The library variable set variable must be editable")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an library variable set called \"" + resourceName + "\"")
 		}
 
 		return nil

@@ -7,13 +7,20 @@ type VariableSet struct {
 
 type Variable struct {
 	Id          *string
-	Name        *string
+	Name        string
 	Value       *string
 	Description *string
+	Scope       Scope
 	IsEditable  bool
 	Type        string
 	IsSensitive bool
 	Prompt      Prompt
+}
+
+type Scope struct {
+	Environment []string
+	Role        []string
+	Machine     []string
 }
 
 type Prompt struct {

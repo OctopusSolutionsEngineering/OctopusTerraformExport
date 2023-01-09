@@ -10,12 +10,13 @@ import (
 )
 
 type ProjectGroupConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	FeedMap           map[string]string
-	LifecycleMap      map[string]string
-	WorkPoolMap       map[string]string
-	AccountsMap       map[string]string
+	Client                client.OctopusClient
+	SpaceResourceName     string
+	FeedMap               map[string]string
+	LifecycleMap          map[string]string
+	WorkPoolMap           map[string]string
+	AccountsMap           map[string]string
+	LibraryVariableSetMap map[string]string
 }
 
 func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
@@ -55,6 +56,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, error) {
 			FeedMap:                  c.FeedMap,
 			LifecycleMap:             c.LifecycleMap,
 			WorkPoolMap:              c.WorkPoolMap,
+			LibraryVariableSetMap:    c.LibraryVariableSetMap,
 		}.ToHcl()
 		if err != nil {
 			return nil, err

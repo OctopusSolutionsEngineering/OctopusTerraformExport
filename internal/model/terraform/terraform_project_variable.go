@@ -5,7 +5,7 @@ type TerraformProjectVariable struct {
 	Name           string                          `hcl:"name,label"`
 	OwnerId        string                          `hcl:"owner_id"`
 	Value          *string                         `hcl:"value"`
-	ResourceName   *string                         `hcl:"name"`
+	ResourceName   string                          `hcl:"name"`
 	ResourceType   string                          `hcl:"type"`
 	Description    *string                         `hcl:"description"`
 	SensitiveValue *string                         `hcl:"sensitive_value"`

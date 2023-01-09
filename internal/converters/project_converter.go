@@ -18,6 +18,7 @@ type ProjectConverter struct {
 	LifecycleMap             map[string]string
 	WorkPoolMap              map[string]string
 	AccountsMap              map[string]string
+	LibraryVariableSetMap    map[string]string
 }
 
 func (c ProjectConverter) ToHcl() (map[string]string, error) {
@@ -31,35 +32,6 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
-
-		/*
-			Convert library variable sets.
-			This may be duplicated if multiple projects reference the same set,
-			but that is fine as converting the set multiple times produces the
-			same outcome.
-		*/
-		variableSetMap := map[string]string{}
-		for _, v := range project.IncludedLibraryVariableSetIds {
-			variables, variableMap, err := LibraryVariableSetConverter{
-				Client:            c.Client,
-				SpaceResourceName: c.SpaceResourceName,
-			}.ToHclById(v)
-
-			if err != nil {
-				return nil, err
-			}
-
-			// merge the maps
-			for k, v := range variableMap {
-				variableSetMap[k] = v
-			}
-
-			// merge the results
-			for k, v := range variables {
-				results[k] = v
-			}
-		}
-
 		projectName := util.SanitizeNamePointer(project.Name)
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
@@ -76,12 +48,12 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 			Template:                        c.convertTemplates(project.Templates),
-			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, variableSetMap),
+			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, c.LibraryVariableSetMap),
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results["space_population/"+projectName+".tf"] = string(file.Bytes())
+		results["space_population/project_"+projectName+".tf"] = string(file.Bytes())
 
 		if project.DeploymentProcessId != nil {
 			deploymentProcess, err := DeploymentProcessConverter{
@@ -105,7 +77,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			variableSet, err := VariableSetConverter{
 				Client:      c.Client,
 				AccountsMap: c.AccountsMap,
-			}.ToHclById(*project.VariableSetId, projectName)
+			}.ToHclById(*project.VariableSetId, projectName, "${var.octopusdeploy_project."+projectName+".id}")
 
 			if err != nil {
 				return nil, err

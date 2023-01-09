@@ -14,7 +14,7 @@ type VariableSetConverter struct {
 	AccountsMap map[string]string
 }
 
-func (c VariableSetConverter) ToHclById(id string, parentName string) (map[string]string, error) {
+func (c VariableSetConverter) ToHclById(id string, parentName string, parentIdProperty string) (map[string]string, error) {
 	resource := octopus.VariableSet{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -26,12 +26,12 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 	file := hclwrite.NewEmptyFile()
 
 	for _, v := range resource.Variables {
-		resourceName := parentName + "_" + util.SanitizeNamePointer(v.Name)
+		resourceName := parentName + "_" + util.SanitizeName(v.Name)
 
 		terraformResource := terraform.TerraformProjectVariable{
 			Name:           resourceName,
 			Type:           "octopusdeploy_variable",
-			OwnerId:        "octopusdeploy_project." + parentName + ".id",
+			OwnerId:        parentIdProperty,
 			Value:          c.replaceAccountIds(v.Value),
 			ResourceName:   v.Name,
 			ResourceType:   v.Type,
@@ -47,7 +47,7 @@ func (c VariableSetConverter) ToHclById(id string, parentName string) (map[strin
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The secret variable value associated with the variable " + *v.Name,
+				Description: "The secret variable value associated with the variable " + v.Name,
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
