@@ -1411,7 +1411,7 @@ func TestLifecycleExport(t *testing.T) {
 				}
 
 				if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
-					t.Fatal("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + string(rune(v.TentacleRetentionPolicy.QuantityToKeep)) + "\")")
+					t.Fatal("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
 				}
 
 				if v.TentacleRetentionPolicy.ShouldKeepForever {
@@ -1423,7 +1423,7 @@ func TestLifecycleExport(t *testing.T) {
 				}
 
 				if v.ReleaseRetentionPolicy.QuantityToKeep != 1 {
-					t.Fatal("The lifecycle must be have a release retention policy of \"1\" (was \"" + string(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
+					t.Fatal("The lifecycle must be have a release retention policy of \"1\" (was \"" + fmt.Sprint(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
 				}
 
 				if !v.ReleaseRetentionPolicy.ShouldKeepForever {
