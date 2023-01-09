@@ -51,6 +51,11 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 			Template:                        c.convertTemplates(project.Templates),
 			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, c.LibraryVariableSetMap),
+			ConnectivityPolicy: terraform.TerraformConnectivityPolicy{
+				AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
+				ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
+				SkipMachineBehavior:         project.ProjectConnectivityPolicy.SkipMachineBehavior,
+			},
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))

@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
@@ -63,7 +64,8 @@ func (c DeploymentProcessConverter) ToHclById(id string) (map[string]string, str
 				TenantTags:                    a.TenantTags,
 				Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 				Condition:                     a.Condition,
-				Properties:                    c.replaceIds(util.SanitizeMap(a.Properties)),
+				RunOnServer:                   c.getRunOnServer(a.Properties),
+				Properties:                    c.removeUnnecessaryFields(c.replaceIds(util.SanitizeMap(a.Properties))),
 			}
 
 			for k, p := range a.Packages {
@@ -107,6 +109,26 @@ func (c DeploymentProcessConverter) convertContainer(container octopus.Container
 func (c DeploymentProcessConverter) replaceIds(properties map[string]string) map[string]string {
 	return c.replaceAccountIds(
 		c.replaceAccountIds(properties))
+}
+
+// removeUnnecessaryFields removes generic property bag values that have more specific terraform properties
+func (c DeploymentProcessConverter) removeUnnecessaryFields(properties map[string]string) map[string]string {
+	sanitisedProperties := map[string]string{}
+	for k, v := range properties {
+		if k != "Octopus.Action.RunOnServer" {
+			sanitisedProperties[k] = v
+		}
+	}
+	return sanitisedProperties
+}
+
+func (c DeploymentProcessConverter) getRunOnServer(properties map[string]any) bool {
+	v, ok := properties["Octopus.Action.RunOnServer"]
+	if ok {
+		return strings.ToLower(fmt.Sprint(v)) == "true"
+	}
+
+	return true
 }
 
 // replaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.

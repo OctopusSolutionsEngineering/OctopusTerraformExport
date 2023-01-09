@@ -3,7 +3,7 @@ package octopus
 type ProjectConnectivityPolicy struct {
 	AllowDeploymentsToNoTargets bool
 	ExcludeUnhealthyTargets     bool
-	SkipMachineBehavior         *string
+	SkipMachineBehavior         string
 }
 
 type Template struct {
