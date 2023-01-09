@@ -17,7 +17,7 @@ type Template struct {
 
 type Project struct {
 	Id                              string
-	Name                            *string
+	Name                            string
 	Slug                            *string
 	Description                     *string
 	AutoCreateRelease               bool

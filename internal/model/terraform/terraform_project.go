@@ -3,7 +3,7 @@ package terraform
 type TerraformProject struct {
 	Type                            string              `hcl:"type,label"`
 	Name                            string              `hcl:"name,label"`
-	ResourceName                    *string             `hcl:"name"`
+	ResourceName                    string              `hcl:"name"`
 	AutoCreateRelease               bool                `hcl:"auto_create_release"`
 	DefaultGuidedFailureMode        *string             `hcl:"default_guided_failure_mode"`
 	DefaultToSkipIfAlreadyInstalled bool                `hcl:"default_to_skip_if_already_installed"`

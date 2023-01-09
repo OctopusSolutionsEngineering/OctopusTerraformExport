@@ -1521,3 +1521,94 @@ func TestVariableSetExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestProjectExport verifies that a project can be reimported with the correct settings
+func TestProjectExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/19-project", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Project]{}
+		err = octopusClient.GetAllResources("Projects", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "Test project" {
+					t.Fatal("The project must be have a description of \"Test project\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				if v.AutoCreateRelease {
+					t.Fatal("The project must not have auto release create enabled")
+				}
+
+				if util.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
+					t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + util.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+				}
+
+				if v.DefaultToSkipIfAlreadyInstalled {
+					t.Fatal("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
+				}
+
+				if v.DiscreteChannelRelease {
+					t.Fatal("The project must not have DiscreteChannelRelease enabled")
+				}
+
+				if v.IsDisabled {
+					t.Fatal("The project must not have IsDisabled enabled")
+				}
+
+				if v.IsVersionControlled {
+					t.Fatal("The project must not have IsVersionControlled enabled")
+				}
+
+				if util.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
+					t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + util.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
+				}
+
+				if len(v.IncludedLibraryVariableSetIds) != 0 {
+					t.Fatal("The project must not have any library variable sets")
+				}
+
+				if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
+					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+				}
+
+				if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
+					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+				}
+
+				if util.EmptyIfNil(v.ProjectConnectivityPolicy.SkipMachineBehavior) != "SkipUnavailableMachines" {
+					t.Fatal("The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + util.EmptyIfNil(v.ProjectConnectivityPolicy.SkipMachineBehavior) + "\")")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}

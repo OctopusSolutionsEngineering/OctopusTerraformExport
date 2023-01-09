@@ -81,7 +81,7 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, error) {
 
 	results := map[string]string{}
 
-	resourceName := util.SanitizeNamePointer(resource.Name)
+	resourceName := util.SanitizeName(resource.Name)
 
 	terraformResource := terraform.TerraformProject{
 		Type:                            "octopusdeploy_project",

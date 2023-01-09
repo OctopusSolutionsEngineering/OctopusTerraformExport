@@ -32,7 +32,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 	results := map[string]string{}
 
 	for _, project := range collection.Items {
-		projectName := util.SanitizeNamePointer(project.Name)
+		projectName := util.SanitizeName(project.Name)
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,
