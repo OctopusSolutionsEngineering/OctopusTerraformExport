@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-const API_KEY = "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345"
+const ApiKey = "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345"
 
 type octopusContainer struct {
 	testcontainers.Container
@@ -102,7 +102,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 		Env: map[string]string{
 			"ACCEPT_EULA":                   "Y",
 			"DB_CONNECTION_STRING":          connString,
-			"ADMIN_API_KEY":                 API_KEY,
+			"ADMIN_API_KEY":                 ApiKey,
 			"DISABLE_DIND":                  "Y",
 			"ADMIN_USERNAME":                "admin",
 			"ADMIN_PASSWORD":                "Password01!",
@@ -252,7 +252,7 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 			"-auto-approve",
 			"-no-color",
 			"-var=octopus_server=" + container.URI,
-			"-var=octopus_apikey=" + API_KEY,
+			"-var=octopus_apikey=" + ApiKey,
 			"-var=octopus_space_id=" + spaceId,
 		}, vars...)
 
@@ -307,7 +307,7 @@ func createClient(container *octopusContainer, space string) *client.OctopusClie
 	return &client.OctopusClient{
 		Url:    container.URI,
 		Space:  space,
-		ApiKey: API_KEY,
+		ApiKey: ApiKey,
 	}
 }
 
@@ -327,7 +327,7 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string, popul
 	tempDir := getTempDir()
 	defer os.Remove(tempDir)
 
-	err := ConvertToTerraform(container.URI, newSpaceId, API_KEY, tempDir, true)
+	err := ConvertToTerraform(container.URI, newSpaceId, ApiKey, tempDir, true)
 
 	if err != nil {
 		return "", err
@@ -1681,6 +1681,80 @@ func TestProjectChannelExport(t *testing.T) {
 
 				if !foundChannel {
 					t.Fatal("Project must have an channel called \"" + channelName + "\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestTagSetExport verifies that a tag set can be reimported with the correct settings
+func TestTagSetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/21-tagset", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.TagSet]{}
+		err = octopusClient.GetAllResources("TagSets", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "tag1"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "Test tagset" {
+					t.Fatal("The tag set must be have a description of \"Test tagset\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				if v.SortOrder != 0 {
+					t.Fatal("The tag set must be have a sort order of \"0\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
+				}
+
+				tagAFound := false
+				for _, u := range v.Tags {
+					if u.Name == "a" {
+						tagAFound = true
+
+						if util.EmptyIfNil(u.Description) != "tag a" {
+							t.Fatal("The tag a must be have a description of \"tag a\" (was \"" + util.EmptyIfNil(u.Description) + "\")")
+						}
+
+						if u.Color != "#333333" {
+							t.Fatal("The tag a must be have a color of \"#333333\" (was \"" + u.Color + "\")")
+						}
+
+						if u.SortOrder != 2 {
+							t.Fatal("The tag a must be have a sort order of \"2\" (was \"" + fmt.Sprint(u.SortOrder) + "\")")
+						}
+					}
+				}
+
+				if !tagAFound {
+					t.Fatal("Tag Set must have an tag called \"a\"")
 				}
 			}
 		}

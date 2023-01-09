@@ -38,13 +38,13 @@ func (c EnvironmentConverter) ToHcl() (map[string]string, map[string]string, err
 			UseGuidedFailure:           environment.UseGuidedFailure,
 			SortOrder:                  0,
 			JiraExtensionSettings: &terraform.TerraformJiraExtensionSettings{
-				EnvironmentType: c.GetJiraExtensionSettings(environment),
+				EnvironmentType: c.getJiraExtensionSettings(environment),
 			},
 			JiraServiceManagementExtensionSettings: &terraform.TerraformJiraServiceManagementExtensionSettings{
-				IsEnabled: c.GetJiraServiceManagementExtensionSettings(environment),
+				IsEnabled: c.getJiraServiceManagementExtensionSettings(environment),
 			},
 			ServicenowExtensionSettings: &terraform.TerraformServicenowExtensionSettings{
-				IsEnabled: c.GetServiceNowChangeControlled(environment),
+				IsEnabled: c.getServiceNowChangeControlled(environment),
 			},
 		}
 		file := hclwrite.NewEmptyFile()
@@ -57,7 +57,7 @@ func (c EnvironmentConverter) ToHcl() (map[string]string, map[string]string, err
 	return results, resultsMap, nil
 }
 
-func (c EnvironmentConverter) GetServiceNowChangeControlled(env octopus.Environment) bool {
+func (c EnvironmentConverter) getServiceNowChangeControlled(env octopus.Environment) bool {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "servicenow-integration" {
 			v, ok := setting.Values["ServiceNowChangeControlled"]
@@ -74,7 +74,7 @@ func (c EnvironmentConverter) GetServiceNowChangeControlled(env octopus.Environm
 	return false
 }
 
-func (c EnvironmentConverter) GetJiraServiceManagementExtensionSettings(env octopus.Environment) bool {
+func (c EnvironmentConverter) getJiraServiceManagementExtensionSettings(env octopus.Environment) bool {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "jiraservicemanagement-integration" {
 			v, ok := setting.Values["JsmChangeControlled"]
@@ -91,7 +91,7 @@ func (c EnvironmentConverter) GetJiraServiceManagementExtensionSettings(env octo
 	return false
 }
 
-func (c EnvironmentConverter) GetJiraExtensionSettings(env octopus.Environment) string {
+func (c EnvironmentConverter) getJiraExtensionSettings(env octopus.Environment) string {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "jira-integration" {
 			v, ok := setting.Values["JiraEnvironmentType"]

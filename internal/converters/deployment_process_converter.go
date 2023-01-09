@@ -27,7 +27,7 @@ func (c DeploymentProcessConverter) ToHclById(id string) (map[string]string, str
 		return nil, "", err
 	}
 
-	resourceName := "deployment_process_" + util.SanitizeNamePointer(&c.ProjectLookup)
+	resourceName := "deployment_process_" + util.SanitizeName(c.ProjectLookup)
 
 	terraformResource := terraform.TerraformDeploymentProcess{
 		Type:      "octopusdeploy_deployment_process",

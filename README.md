@@ -22,8 +22,6 @@ The following resources have yet to be exported:
 
 * octopusdeploy_tenant
 * octopusdeploy_certificate
-* octopusdeploy_tag
-* octopusdeploy_tag_set
 * octopusdeploy_tenant_common_variable
 * octopusdeploy_tenant_project_variable
 

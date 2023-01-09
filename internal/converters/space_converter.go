@@ -133,6 +133,21 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the tag sets
+	tagSets, _, err := TagSetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range tagSets {
+		results[k] = v
+	}
+
 	// Convert the projects groups
 	projects, err := ProjectGroupConverter{
 		Client:                c.Client,
