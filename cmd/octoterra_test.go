@@ -169,7 +169,6 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 				// This fixes the "can not get logs from container which is dead or marked for removal" error
 				// See https://github.com/testcontainers/testcontainers-go/issues/606
 				octopusContainer.StopLogProducer()
-				sqlServer.StopLogProducer()
 
 				octoTerminateErr := octopusContainer.Terminate(ctx)
 				sqlTerminateErr := sqlServer.Terminate(ctx)
@@ -1598,7 +1597,7 @@ func TestProjectExport(t *testing.T) {
 				}
 
 				if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
-					t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-2/Projects")
+					t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
 				}
 			}
 		}
