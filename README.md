@@ -25,7 +25,6 @@ The following resources have yet to be exported:
 * octopusdeploy_tenant_common_variable
 * octopusdeploy_tenant_project_variable
 
-* octopusdeploy_git_credential
 * octopusdeploy_machine_policy
 * octopusdeploy_project_deployment_target_trigger
 * octopusdeploy_scoped_user_role

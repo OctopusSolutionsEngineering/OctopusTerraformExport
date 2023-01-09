@@ -1760,7 +1760,64 @@ func TestTagSetExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an tag set called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestGitCredentialsExport verifies that a git credential can be reimported with the correct settings
+func TestGitCredentialsExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/22-gitcredentialtest", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=gitcredential_test=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.GitCredentials]{}
+		err = octopusClient.GetAllResources("Git-Credentials", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "test"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "test git credential" {
+					t.Fatal("The git credential must be have a description of \"test git credential\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				if v.Details.Username != "admin" {
+					t.Fatal("The git credential must be have a username of \"admin\" (was \"" + v.Details.Username + "\")")
+				}
+
+				if v.Details.Type != "UsernamePassword" {
+					t.Fatal("The git credential must be have a credential type of \"UsernamePassword\" (was \"" + v.Details.Type + "\")")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an git credential called \"" + resourceName + "\"")
 		}
 
 		return nil

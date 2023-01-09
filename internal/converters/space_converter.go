@@ -148,6 +148,21 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the git credentials
+	gitCredentials, _, err := GitCredentialsConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range gitCredentials {
+		results[k] = v
+	}
+
 	// Convert the projects groups
 	projects, err := ProjectGroupConverter{
 		Client:                c.Client,
