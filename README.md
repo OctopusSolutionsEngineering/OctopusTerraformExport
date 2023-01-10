@@ -28,7 +28,6 @@ The following resources have yet to be exported:
 * octopusdeploy_machine_policy
 * octopusdeploy_project_deployment_target_trigger
 * octopusdeploy_scoped_user_role
-* octopusdeploy_script_module
 * octopusdeploy_team
 * octopusdeploy_user
 * octopusdeploy_user_role

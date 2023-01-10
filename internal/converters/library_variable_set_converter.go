@@ -7,6 +7,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"strings"
 )
 
 type LibraryVariableSetConverter struct {
@@ -32,34 +33,66 @@ func (c LibraryVariableSetConverter) ToHcl() (map[string]string, map[string]stri
 		resourceName := "library_variable_set_" + util.SanitizeName(v.Name)
 		resourceIdProperty := "${octopusdeploy_library_variable_set." + resourceName + ".id}"
 
-		terraformResource := terraform.TerraformLibraryVariableSet{
-			Type:         "octopusdeploy_library_variable_set",
-			Name:         resourceName,
-			ResourceName: v.Name,
-			Description:  v.Description,
-			Template:     c.convertTemplate(v.Templates),
+		if util.EmptyIfNil(v.ContentType) == "Variables" {
+			terraformResource := terraform.TerraformLibraryVariableSet{
+				Type:         "octopusdeploy_library_variable_set",
+				Name:         resourceName,
+				ResourceName: v.Name,
+				Description:  v.Description,
+				Template:     c.convertTemplate(v.Templates),
+			}
+
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+			resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
+			resourcesMap[v.Id] = resourceIdProperty
+
+			// Export variable set
+			variableSet, err := VariableSetConverter{
+				Client:      c.Client,
+				AccountsMap: c.AccountsMap,
+			}.ToHclById(v.VariableSetId, util.SanitizeName(v.Name), resourceIdProperty)
+
+			if err != nil {
+				return nil, nil, err
+			}
+
+			// merge the maps
+			for k, v := range variableSet {
+				resources[k] = v
+			}
+		} else if util.EmptyIfNil(v.ContentType) == "ScriptModule" {
+			variable := octopus.VariableSet{}
+			err = c.Client.GetResourceById("Variables", v.VariableSetId, &variable)
+
+			script := ""
+			scriptLanguage := ""
+			for _, u := range variable.Variables {
+				if u.Name == "Octopus.Script.Module["+v.Name+"]" {
+					script = strings.Clone(*u.Value)
+				}
+
+				if u.Name == "Octopus.Script.Module.Language["+v.Name+"]" {
+					scriptLanguage = strings.Clone(*u.Value)
+				}
+			}
+
+			terraformResource := terraform.TerraformScriptModule{
+				Type:         "octopusdeploy_script_module",
+				Name:         resourceName,
+				ResourceName: v.Name,
+				Description:  v.Description,
+				Script: terraform.TerraformScriptModuleScript{
+					Body:   script,
+					Syntax: scriptLanguage,
+				},
+			}
+
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+			resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
+			resourcesMap[v.Id] = resourceIdProperty
 		}
-
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-		resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
-		resourcesMap[v.Id] = resourceIdProperty
-
-		// Export variable set
-		variableSet, err := VariableSetConverter{
-			Client:      c.Client,
-			AccountsMap: c.AccountsMap,
-		}.ToHclById(v.VariableSetId, util.SanitizeName(v.Name), resourceIdProperty)
-
-		if err != nil {
-			return nil, nil, err
-		}
-
-		// merge the maps
-		for k, v := range variableSet {
-			resources[k] = v
-		}
-
 	}
 
 	return resources, resourcesMap, nil

@@ -1823,3 +1823,106 @@ func TestGitCredentialsExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestScriptModuleExport verifies that a script module set can be reimported with the correct settings
+func TestScriptModuleExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/23-scriptmodule", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+		err = octopusClient.GetAllResources("LibraryVariableSets", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test2"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "Test script module" {
+					t.Fatal("The library variable set must be have a description of \"Test script module\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				resource := octopus.VariableSet{}
+				err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+
+				if len(resource.Variables) != 2 {
+					t.Fatal("The library variable set must have two associated variables")
+				}
+
+				foundScript := false
+				foundLanguage := false
+				for _, u := range resource.Variables {
+					if u.Name == "Octopus.Script.Module[Test2]" {
+						foundScript = true
+
+						if u.Type != "String" {
+							t.Fatal("The library variable set variable must have a type of \"String\"")
+						}
+
+						if util.EmptyIfNil(u.Value) != "echo \"hi\"" {
+							t.Fatal("The library variable set variable must have a value of \"\"echo \\\"hi\\\"\"\"")
+						}
+
+						if u.IsSensitive {
+							t.Fatal("The library variable set variable must not be sensitive")
+						}
+
+						if !u.IsEditable {
+							t.Fatal("The library variable set variable must be editable")
+						}
+					}
+
+					if u.Name == "Octopus.Script.Module.Language[Test2]" {
+						foundLanguage = true
+
+						if u.Type != "String" {
+							t.Fatal("The library variable set variable must have a type of \"String\"")
+						}
+
+						if util.EmptyIfNil(u.Value) != "PowerShell" {
+							t.Fatal("The library variable set variable must have a value of \"PowerShell\"")
+						}
+
+						if u.IsSensitive {
+							t.Fatal("The library variable set variable must not be sensitive")
+						}
+
+						if !u.IsEditable {
+							t.Fatal("The library variable set variable must be editable")
+						}
+					}
+				}
+
+				if !foundLanguage || !foundScript {
+					t.Fatal("Script module must create two variables for script and language")
+				}
+
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an library variable set called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
