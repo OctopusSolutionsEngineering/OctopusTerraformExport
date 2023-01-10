@@ -184,7 +184,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	}
 
 	// Convert the tenants
-	tenants, _, err := TenantConverter{
+	tenants, tenantsMap, err := TenantConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
 		EnvironmentsMap:   environmentsMap,
@@ -197,6 +197,23 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// merge the maps
 	for k, v := range tenants {
+		results[k] = v
+	}
+
+	// Convert the certificates
+	certificates, _, err := CertificateConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+		EnvironmentsMap:   environmentsMap,
+		TenantsMap:        tenantsMap,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range certificates {
 		results[k] = v
 	}
 
