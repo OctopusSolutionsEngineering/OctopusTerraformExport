@@ -21,15 +21,16 @@ type ProjectConverter struct {
 	LibraryVariableSetMap    map[string]string
 }
 
-func (c ProjectConverter) ToHcl() (map[string]string, error) {
+func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) {
 	collection := octopus.GeneralCollection[octopus.Project]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	results := map[string]string{}
+	resultsMap := map[string]string{}
 
 	channelDependencies := make([]string, 0)
 
@@ -60,6 +61,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
+		resultsMap[project.Id] = "${octopusdeploy_project." + projectName + ".id}"
 		results["space_population/project_"+projectName+".tf"] = string(file.Bytes())
 
 		// note the project as a channel dependency
@@ -75,7 +77,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			}.ToHclById(*project.DeploymentProcessId)
 
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			// merge the maps
@@ -94,7 +96,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 			}.ToHclById(*project.VariableSetId, projectName, "${var.octopusdeploy_project."+projectName+".id}")
 
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			// merge the maps
@@ -114,7 +116,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		}.ToHcl()
 
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// merge the maps
@@ -123,7 +125,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, error) {
 		}
 	}
 
-	return results, nil
+	return results, resultsMap, nil
 }
 
 func (c ProjectConverter) GetResourceType() string {

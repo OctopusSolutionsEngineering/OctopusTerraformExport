@@ -1926,3 +1926,64 @@ func TestScriptModuleExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestTenantsExport verifies that a git credential can be reimported with the correct settings
+func TestTenantsExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/24-tenants", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Tenant]{}
+		err = octopusClient.GetAllResources("Tenants", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Team A"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if util.EmptyIfNil(v.Description) != "Test tenant" {
+					t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				}
+
+				if len(v.TenantTags) != 2 {
+					t.Fatal("The tenant must have two tags")
+				}
+
+				if len(v.ProjectEnvironments) != 1 {
+					t.Fatal("The tenant must have one project environment")
+				}
+
+				for _, u := range v.ProjectEnvironments {
+					if len(u) != 3 {
+						t.Fatal("The tenant must have be linked to three environments")
+					}
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an tenant called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
