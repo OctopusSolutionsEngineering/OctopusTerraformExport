@@ -21,7 +21,7 @@ type TenantVariableConverter struct {
 }
 
 func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
-	collection := octopus.GeneralCollection[octopus.TenantVariable]{}
+	collection := []octopus.TenantVariable{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -32,7 +32,7 @@ func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
 
 	projectVariableIndex := 0
 	commonVariableIndex := 0
-	for _, tenant := range collection.Items {
+	for _, tenant := range collection {
 
 		file := hclwrite.NewEmptyFile()
 		for _, p := range tenant.ProjectVariables {
@@ -50,7 +50,6 @@ func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
 						TenantId:      c.TenantsMap[tenant.TenantId],
 						Value:         &value,
 					}
-					file := hclwrite.NewEmptyFile()
 					file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 				}
 			}
@@ -69,7 +68,6 @@ func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
 					TenantId:             tenant.TenantId,
 					Value:                &value,
 				}
-				file := hclwrite.NewEmptyFile()
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 			}
 		}
