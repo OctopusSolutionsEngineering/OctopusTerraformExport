@@ -7,7 +7,7 @@ type ProjectConnectivityPolicy struct {
 }
 
 type Template struct {
-	Id              *string
+	Id              string
 	Name            *string
 	Label           *string
 	HelpText        *string

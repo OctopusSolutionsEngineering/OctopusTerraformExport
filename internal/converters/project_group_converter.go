@@ -19,16 +19,17 @@ type ProjectGroupConverter struct {
 	LibraryVariableSetMap map[string]string
 }
 
-func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, map[string]string, error) {
 	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	results := map[string]string{}
 	resultsMap := map[string]string{}
+	templatesMap := map[string]string{}
 
 	for _, project := range collection.Items {
 		projectName := "project_group_" + util.SanitizeNamePointer(project.Name)
@@ -49,7 +50,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, er
 		}
 
 		// Convert the projects
-		projects, projectsMap, err := ProjectConverter{
+		projects, projectsMap, projectTemplatesMap, err := ProjectConverter{
 			Client:                   c.Client,
 			SpaceResourceName:        c.SpaceResourceName,
 			ProjectGroupResourceName: projectName,
@@ -60,7 +61,7 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, er
 			LibraryVariableSetMap:    c.LibraryVariableSetMap,
 		}.ToHcl()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		// merge the maps
@@ -71,17 +72,21 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, er
 		for k, v := range projectsMap {
 			resultsMap[k] = v
 		}
+
+		for k, v := range projectTemplatesMap {
+			templatesMap[k] = v
+		}
 	}
 
-	return results, resultsMap, nil
+	return results, resultsMap, templatesMap, nil
 }
 
-func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, map[string]string, error) {
+func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, map[string]string, map[string]string, error) {
 	resource := octopus.Project{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	results := map[string]string{}
@@ -108,7 +113,7 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, map[stri
 	results["space_population/"+resourceName+".tf"] = string(file.Bytes())
 
 	// Convert the projects
-	projects, projectMap, err := ProjectConverter{
+	projects, projectMap, projectTemplatesMap, err := ProjectConverter{
 		Client:                   c.Client,
 		SpaceResourceName:        c.SpaceResourceName,
 		ProjectGroupResourceName: resourceName,
@@ -116,7 +121,7 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, map[stri
 		AccountsMap:              c.AccountsMap,
 	}.ToHcl()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// merge the maps
@@ -126,7 +131,7 @@ func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, map[stri
 
 	return map[string]string{
 		resourceName + ".tf": string(file.Bytes()),
-	}, projectMap, nil
+	}, projectMap, projectTemplatesMap, nil
 }
 
 func (c ProjectGroupConverter) ToHclByName(name string) (map[string]string, error) {

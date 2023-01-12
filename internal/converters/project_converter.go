@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
@@ -21,21 +22,23 @@ type ProjectConverter struct {
 	LibraryVariableSetMap    map[string]string
 }
 
-func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, map[string]string, error) {
 	collection := octopus.GeneralCollection[octopus.Project]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	results := map[string]string{}
 	resultsMap := map[string]string{}
+	templateMap := map[string]string{}
 
 	channelDependencies := make([]string, 0)
 
 	for _, project := range collection.Items {
 		projectName := "project_" + util.SanitizeName(project.Name)
+		projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,
@@ -50,7 +53,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) 
 			LifecycleId:                     c.LifecycleMap[project.LifecycleId],
 			ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
-			Template:                        c.convertTemplates(project.Templates),
+			Template:                        projectTemplates,
 			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, c.LibraryVariableSetMap),
 			ConnectivityPolicy: terraform.TerraformConnectivityPolicy{
 				AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
@@ -77,12 +80,16 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) 
 			}.ToHclById(*project.DeploymentProcessId)
 
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 
 			// merge the maps
 			for k, v := range deploymentProcess {
 				results[k] = v
+			}
+
+			for k, v := range projectTemplateMap {
+				templateMap[k] = v
 			}
 
 			// note the deployment project as a channel dependency
@@ -96,7 +103,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) 
 			}.ToHclById(*project.VariableSetId, projectName, "${var.octopusdeploy_project."+projectName+".id}")
 
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 
 			// merge the maps
@@ -116,7 +123,7 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) 
 		}.ToHcl()
 
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		// merge the maps
@@ -125,16 +132,17 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, error) 
 		}
 	}
 
-	return results, resultsMap, nil
+	return results, resultsMap, templateMap, nil
 }
 
 func (c ProjectConverter) GetResourceType() string {
 	return "ProjectGroups/" + c.ProjectGroupId + "/projects"
 }
 
-func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template) []terraform.TerraformTemplate {
+func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, map[string]string) {
+	templateMap := map[string]string{}
 	collection := make([]terraform.TerraformTemplate, 0)
-	for _, v := range actionPackages {
+	for i, v := range actionPackages {
 		collection = append(collection, terraform.TerraformTemplate{
 			Name:            v.Name,
 			Label:           v.Label,
@@ -142,8 +150,9 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template) []
 			DefaultValue:    v.DefaultValue,
 			DisplaySettings: v.DisplaySettings,
 		})
+		templateMap[v.Id] = "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}"
 	}
-	return collection
+	return collection, templateMap
 }
 
 func (c ProjectConverter) convertLibraryVariableSets(setIds []string, libraryMap map[string]string) []string {

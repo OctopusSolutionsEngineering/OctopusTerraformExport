@@ -20,6 +20,7 @@ type TerraformProject struct {
 }
 
 type TerraformTemplate struct {
+	Id              *string           `hcl:"id"`
 	Name            *string           `hcl:"name"`
 	Label           *string           `hcl:"label"`
 	HelpText        *string           `hcl:"help_text"`
