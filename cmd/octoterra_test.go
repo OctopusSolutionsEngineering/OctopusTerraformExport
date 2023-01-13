@@ -97,7 +97,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image:        "octopusdeploy/octopusdeploy",
+		Image:        "octopusdeploy/octopusdeploy:2022.2",
 		ExposedPorts: []string{"8080/tcp"},
 		Env: map[string]string{
 			"ACCEPT_EULA":                   "Y",
