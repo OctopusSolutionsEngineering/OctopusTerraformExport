@@ -2087,7 +2087,7 @@ func TestTenantVariablesExport(t *testing.T) {
 			return err
 		}
 
-		resourceName := "Test project"
+		resourceName := "Test"
 		found := false
 		for _, tenantVariable := range collection {
 			for _, project := range tenantVariable.ProjectVariables {
