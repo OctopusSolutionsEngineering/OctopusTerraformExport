@@ -2094,6 +2094,8 @@ func TestTenantVariablesExport(t *testing.T) {
 				if project.ProjectName == resourceName {
 					for _, variables := range project.Variables {
 						for _, value := range variables {
+							// we expect one project variable to be defined
+							found = true
 							if value != "my value" {
 								t.Fatal("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
 							}
