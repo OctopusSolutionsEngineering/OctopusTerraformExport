@@ -58,20 +58,20 @@ jobs:
         with:
           name: Dependencies Updates
           path: dependencyUpdates.txt
-      - name: Test
-        run: go test -timeout 0 github.com/mcasperson/OctopusTerraformExport/cmd
-        shell: bash
-        env:
-          LICENSE: ${{ secrets.LICENSE }}
-          ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
-          ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
 #      - name: Test
-#        run: go install gotest.tools/gotestsum@latest; gotestsum --junitfile results.xml -- -timeout 0 -json ./...
+#        run: go test -timeout 0 github.com/mcasperson/OctopusTerraformExport/cmd
 #        shell: bash
 #        env:
 #          LICENSE: ${{ secrets.LICENSE }}
 #          ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
 #          ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
+      - name: Test
+        run: go install gotest.tools/gotestsum@latest; gotestsum --junitfile results.xml -- -timeout 0 -json ./...
+        shell: bash
+        env:
+          LICENSE: ${{ secrets.LICENSE }}
+          ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
+          ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
       - if: always()
         name: Report
         uses: dorny/test-reporter@v1

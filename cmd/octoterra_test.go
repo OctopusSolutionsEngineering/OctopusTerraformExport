@@ -97,6 +97,8 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 	}
 
 	req := testcontainers.ContainerRequest{
+		// Be aware that later versions of Octopus killed Github Actions.
+		// I think maybe they used more memory? 2022.2 works fine though.
 		Image:        "octopusdeploy/octopusdeploy:2022.2",
 		ExposedPorts: []string{"8080/tcp"},
 		Env: map[string]string{
@@ -2052,6 +2054,57 @@ func TestCertificateExport(t *testing.T) {
 
 		if !found {
 			t.Fatal("Space must have an tenant called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestTenantVariablesExport verifies that a tenant variables can be reimported with the correct settings
+func TestTenantVariablesExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/26-tenant_variables", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := []octopus.TenantVariable{}
+		err = octopusClient.GetAllResources("TenantVariables/All", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test project"
+		found := false
+		for _, tenantVariable := range collection {
+			for _, project := range tenantVariable.ProjectVariables {
+				if project.ProjectName == resourceName {
+					for _, variables := range project.Variables {
+						for _, value := range variables {
+							if value != "my value" {
+								t.Fatal("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an tenant project variable for the project called \"" + resourceName + "\"")
 		}
 
 		return nil

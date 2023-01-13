@@ -18,6 +18,7 @@ type TenantVariableConverter struct {
 	LibraryVariableSetMap map[string]string
 	TenantsMap            map[string]string
 	ProjectTemplatesMap   map[string]string
+	CommonTemplatesMap    map[string]string
 }
 
 func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
@@ -64,7 +65,7 @@ func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
 					Name:                 variableName,
 					Id:                   nil,
 					LibraryVariableSetId: c.LibraryVariableSetMap[l.LibraryVariableSetId],
-					TemplateId:           id,
+					TemplateId:           c.CommonTemplatesMap[id],
 					TenantId:             tenant.TenantId,
 					Value:                &value,
 				}

@@ -83,8 +83,8 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the environments
-	variables, variableMap, err := LibraryVariableSetConverter{
+	// Convert the library variables
+	variables, variableMap, templateMap, err := LibraryVariableSetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
 	}.ToHcl()
@@ -219,11 +219,14 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// Convert the tenant variables
 	tenantVariables, err := TenantVariableConverter{
-		Client:              c.Client,
-		SpaceResourceName:   spaceResourceName,
-		EnvironmentsMap:     environmentsMap,
-		TenantsMap:          tenantsMap,
-		ProjectTemplatesMap: projectsTemplateMap,
+		Client:                c.Client,
+		SpaceResourceName:     spaceResourceName,
+		EnvironmentsMap:       environmentsMap,
+		ProjectsMap:           projectsMap,
+		LibraryVariableSetMap: variableMap,
+		TenantsMap:            tenantsMap,
+		ProjectTemplatesMap:   projectsTemplateMap,
+		CommonTemplatesMap:    templateMap,
 	}.ToHcl()
 
 	if err != nil {
