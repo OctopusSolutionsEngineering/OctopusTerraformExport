@@ -66,7 +66,7 @@ func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
 					Id:                   nil,
 					LibraryVariableSetId: c.LibraryVariableSetMap[l.LibraryVariableSetId],
 					TemplateId:           c.CommonTemplatesMap[id],
-					TenantId:             tenant.TenantId,
+					TenantId:             c.TenantsMap[tenant.TenantId],
 					Value:                &value,
 				}
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
