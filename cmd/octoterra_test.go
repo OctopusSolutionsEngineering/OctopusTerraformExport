@@ -2114,8 +2114,8 @@ func TestTenantVariablesExport(t *testing.T) {
 	})
 }
 
-// TestMachinePolicyVariablesExport verifies that a machine policies can be reimported with the correct settings
-func TestMachinePolicyVariablesExport(t *testing.T) {
+// TestMachinePolicyExport verifies that a machine policies can be reimported with the correct settings
+func TestMachinePolicyExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
 		newSpaceId, err := arrangeTest(t, container, "../test/terraform/27-machinepolicy", []string{})
@@ -2227,6 +2227,73 @@ func TestMachinePolicyVariablesExport(t *testing.T) {
 
 		if !found {
 			t.Fatal("Space must have an machine policy for the project called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestProjectTriggerExport verifies that a project trigger can be reimported with the correct settings
+func TestProjectTriggerExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/28-projecttrigger", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Project]{}
+		err = octopusClient.GetAllResources("Projects", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		foundProject := false
+		foundTrigger := false
+		for _, project := range collection.Items {
+			if project.Name == resourceName {
+				foundProject = true
+
+				triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+				err = octopusClient.GetAllResources("Projects/"+project.Id+"/Triggers", &triggers)
+
+				for _, trigger := range triggers.Items {
+					foundTrigger = true
+
+					if trigger.Name != "test" {
+						t.Fatal("The project must have a trigger called \"test\" (was \"" + trigger.Name + "\")")
+					}
+
+					if trigger.Filter.FilterType != "MachineFilter" {
+						t.Fatal("The project trigger must have Filter.FilterType set to \"MachineFilter\" (was \"" + trigger.Filter.FilterType + "\")")
+					}
+
+					if trigger.Filter.EventGroups[0] != "MachineAvailableForDeployment" {
+						t.Fatal("The project trigger must have Filter.EventGroups[0] set to \"MachineFilter\" (was \"" + trigger.Filter.EventGroups[0] + "\")")
+					}
+				}
+			}
+		}
+
+		if !foundProject {
+			t.Fatal("Space must have an project \"" + resourceName + "\"")
+		}
+
+		if !foundTrigger {
+			t.Fatal("Project must have a trigger trigger")
 		}
 
 		return nil

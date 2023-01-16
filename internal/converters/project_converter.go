@@ -130,6 +130,24 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, map[str
 		for k, v := range lifecycles {
 			results[k] = v
 		}
+
+		// Convert the project triggers
+		triggers, err := ProjectTriggerConverter{
+			Client:            c.Client,
+			SpaceResourceName: c.SpaceResourceName,
+			ProjectId:         project.Id,
+			ProjectLookup:     "${octopusdeploy_project." + projectName + ".id}",
+			ProjectName:       project.Name,
+		}.ToHcl()
+
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		// merge the maps
+		for k, v := range triggers {
+			results[k] = v
+		}
 	}
 
 	return results, resultsMap, templateMap, nil
