@@ -239,7 +239,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	}
 
 	// Convert the machine policies
-	machinePolicies, _, err := MachinePolicyConverter{
+	machinePolicies, machinePoliciesMap, err := MachinePolicyConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
 	}.ToHcl()
@@ -257,6 +257,9 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	k8sTargets, _, err := KubernetesTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
+		MachinePolicyMap:  machinePoliciesMap,
+		AccountMap:        accountsMap,
+		EnvironmentMap:    environmentsMap,
 	}.ToHcl()
 
 	if err != nil {

@@ -12,6 +12,9 @@ import (
 type KubernetesTargetConverter struct {
 	Client            client.OctopusClient
 	SpaceResourceName string
+	MachinePolicyMap  map[string]string
+	AccountMap        map[string]string
+	EnvironmentMap    map[string]string
 }
 
 func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
@@ -31,7 +34,7 @@ func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string
 
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
 				ClusterUrl:          util.EmptyIfNil(target.Endpoint.ClusterUrl),
-				Environments:        target.EnvironmentIds,
+				Environments:        c.lookupEnvironments(target.EnvironmentIds),
 				Name:                targetName,
 				Roles:               target.Roles,
 				ClusterCertificate:  target.Endpoint.ClusterCertificate,
@@ -39,7 +42,7 @@ func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string
 				HealthStatus:        nil,
 				Id:                  nil,
 				IsDisabled:          util.NilIfFalse(target.IsDisabled),
-				MachinePolicyId:     util.NilIfEmpty(target.MachinePolicyId),
+				MachinePolicyId:     c.getMachinePolicy(target.MachinePolicyId),
 				Namespace:           target.Endpoint.Namespace,
 				OperatingSystem:     nil,
 				ProxyId:             nil,
@@ -90,7 +93,7 @@ func (c KubernetesTargetConverter) GetResourceType() string {
 func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformAwsAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAws" {
 		return &terraform.TerraformAwsAccountAuthentication{
-			AccountId:                 util.EmptyIfNil(target.Endpoint.Authentication.AccountId),
+			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId),
 			ClusterName:               util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			AssumeRole:                target.Endpoint.Authentication.AssumeRole,
 			AssumeRoleExternalId:      target.Endpoint.Authentication.AssumeRoleExternalId,
@@ -107,7 +110,7 @@ func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpoint
 func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesStandard" {
 		return &terraform.TerraformAccountAuthentication{
-			AccountId: util.EmptyIfNil(target.Endpoint.Authentication.AccountId),
+			AccountId: c.getAccount(target.Endpoint.Authentication.AccountId),
 		}
 	}
 
@@ -117,7 +120,7 @@ func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpoint
 func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformGcpAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesGoogleCloud" {
 		return &terraform.TerraformGcpAccountAuthentication{
-			AccountId:                 util.EmptyIfNil(target.Endpoint.Authentication.AccountId),
+			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId),
 			ClusterName:               util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			Project:                   util.EmptyIfNil(target.Endpoint.Authentication.Project),
 			ImpersonateServiceAccount: target.Endpoint.Authentication.ImpersonateServiceAccount,
@@ -144,11 +147,38 @@ func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpoin
 func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformAzureServicePrincipalAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAzure" {
 		return &terraform.TerraformAzureServicePrincipalAuthentication{
-			AccountId:            util.EmptyIfNil(target.Endpoint.Authentication.AccountId),
+			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId),
 			ClusterName:          util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			ClusterResourceGroup: util.EmptyIfNil(target.Endpoint.Authentication.ClusterResourceGroup),
 		}
 	}
 
 	return nil
+}
+
+func (c KubernetesTargetConverter) lookupEnvironments(envs []string) []string {
+	newEnvs := make([]string, len(envs))
+	for i, v := range envs {
+		newEnvs[i] = c.EnvironmentMap[v]
+	}
+	return newEnvs
+}
+
+func (c KubernetesTargetConverter) getAccount(accountPointer *string) string {
+	account := util.EmptyIfNil(accountPointer)
+	accountLookup, ok := c.AccountMap[account]
+	if !ok {
+		return ""
+	}
+
+	return accountLookup
+}
+
+func (c KubernetesTargetConverter) getMachinePolicy(machine string) *string {
+	machineLookup, ok := c.MachinePolicyMap[machine]
+	if !ok {
+		return nil
+	}
+
+	return &machineLookup
 }
