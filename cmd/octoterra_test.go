@@ -2299,3 +2299,53 @@ func TestProjectTriggerExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestK8sTargetExport verifies that a machine can be reimported with the correct settings
+func TestK8sTargetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/29-k8starget", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=account_aws_account=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
+		err = octopusClient.GetAllResources("Machines", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		foundResource := false
+
+		for _, machine := range collection.Items {
+			if machine.Name == resourceName {
+				foundResource = true
+
+				if util.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
+					t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + util.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+				}
+			}
+		}
+
+		if !foundResource {
+			t.Fatal("Space must have a target \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}

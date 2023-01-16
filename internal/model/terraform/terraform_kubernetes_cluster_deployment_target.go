@@ -1,9 +1,11 @@
 package terraform
 
 type TerraformKubernetesEndpointResource struct {
+	Type                            string   `hcl:"type,label"`
+	Name                            string   `hcl:"name,label"`
 	ClusterUrl                      string   `hcl:"cluster_url"`
 	Environments                    []string `hcl:"environments"`
-	Name                            string   `hcl:"name"`
+	ResourceName                    string   `hcl:"name"`
 	Roles                           []string `hcl:"roles"`
 	ClusterCertificate              *string  `hcl:"cluster_certificate"`
 	DefaultWorkerPoolId             *string  `hcl:"default_worker_pool_id"`
@@ -24,8 +26,8 @@ type TerraformKubernetesEndpointResource struct {
 	TenantTags                      []string `hcl:"tenant_tags"`
 	TenantedDeploymentParticipation string   `hcl:"tenanted_deployment_participation"`
 	Tenants                         []string `hcl:"tenants"`
-	Thumbprint                      string   `hcl:"thumbprint"`
-	Uri                             string   `hcl:"uri"`
+	Thumbprint                      *string  `hcl:"thumbprint"`
+	Uri                             *string  `hcl:"uri"`
 
 	Endpoint  TerraformKubernetesEndpoint  `hcl:"endpoint,block"`
 	Container TerraformKubernetesContainer `hcl:"container,block"`
