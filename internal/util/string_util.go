@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -32,6 +33,22 @@ func EmptyIfNil(input *string) string {
 	return *input
 }
 
+func FalseIfNil(input *bool) bool {
+	if input == nil {
+		return false
+	}
+
+	return *input
+}
+
+func NilIfFalse(input bool) *bool {
+	if !input {
+		return nil
+	}
+
+	return &input
+}
+
 func DefaultIfEmptyOrNil(input *string, defaultValue string) string {
 	if input == nil || *input == "" {
 		return defaultValue
@@ -46,4 +63,29 @@ func EnsureSuffix(input string, suffix string) string {
 	}
 
 	return input + suffix
+}
+
+func ParseBool(input string) bool {
+	value, err := strconv.ParseBool(input)
+
+	if err != nil {
+		return false
+	}
+
+	return value
+}
+
+func ParseBoolPointer(input *string) *bool {
+	if input == nil {
+		return nil
+	}
+
+	value, err := strconv.ParseBool(*input)
+
+	if err != nil {
+		retValue := false
+		return &retValue
+	}
+
+	return &value
 }

@@ -19,11 +19,6 @@ The following resources are not completely exported:
 * octopusdeploy_project
 
 The following resources have yet to be exported:
-
-* octopusdeploy_scoped_user_role
-* octopusdeploy_team
-* octopusdeploy_user
-* octopusdeploy_user_role
 * octopusdeploy_azure_cloud_service_deployment_target
 * octopusdeploy_azure_service_fabric_cluster_deployment_target
 * octopusdeploy_azure_web_app_deployment_target
@@ -34,5 +29,7 @@ The following resources have yet to be exported:
 * octopusdeploy_polling_tentacle_deployment_target
 * octopusdeploy_ssh_connection_deployment_target
 
-
-
+* octopusdeploy_scoped_user_role
+* octopusdeploy_team
+* octopusdeploy_user
+* octopusdeploy_user_role

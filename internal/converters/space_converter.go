@@ -253,6 +253,21 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the machine policies
+	k8sTargets, _, err := KubernetesTargetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range k8sTargets {
+		results[k] = v
+	}
+
 	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
 	for k, v := range results {
 		results[k] = strings.ReplaceAll(v, "$${", "${")
