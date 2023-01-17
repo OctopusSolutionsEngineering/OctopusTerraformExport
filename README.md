@@ -22,7 +22,6 @@ The following resources have yet to be exported:
 * octopusdeploy_azure_cloud_service_deployment_target
 * octopusdeploy_azure_service_fabric_cluster_deployment_target
 * octopusdeploy_azure_web_app_deployment_target
-* octopusdeploy_offline_package_drop_deployment_target
 
 * octopusdeploy_scoped_user_role
 * octopusdeploy_team
