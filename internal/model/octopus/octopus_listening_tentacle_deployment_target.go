@@ -25,7 +25,16 @@ type ListeningEndpointResource struct {
 
 // ListeningTentacleEndpointResource is based on ListeningTentacleEndpointResource from the client library
 type ListeningTentacleEndpointResource struct {
-	CommunicationStyle string
-	Uri                string
-	ProxyId            string
+	CommunicationStyle     string
+	Uri                    string
+	ProxyId                string
+	TentacleVersionDetails TentacleVersionDetails
+}
+
+type TentacleVersionDetails struct {
+	UpgradeLocked    bool
+	Version          string
+	UpgradeSuggested bool
+	UpgradeRequired  bool
+	UpgradeAvailable bool
 }

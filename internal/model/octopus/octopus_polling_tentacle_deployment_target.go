@@ -8,8 +8,8 @@ type PollingEndpointResource struct {
 	TenantIds                       []string
 	TenantTags                      []string
 	TenantedDeploymentParticipation string
-	Thumbprint                      *string
-	Uri                             *string
+	Thumbprint                      string
+	Uri                             string
 	IsDisabled                      bool
 	MachinePolicyId                 string
 	HealthStatus                    string
@@ -25,6 +25,7 @@ type PollingEndpointResource struct {
 
 // PollingTentacleEndpointResource is based on PollingTentacleEndpointResource from the client library
 type PollingTentacleEndpointResource struct {
-	CommunicationStyle string
-	Uri                string
+	CommunicationStyle     string
+	Uri                    string
+	TentacleVersionDetails TentacleVersionDetails
 }

@@ -24,7 +24,6 @@ The following resources have yet to be exported:
 * octopusdeploy_azure_web_app_deployment_target
 * octopusdeploy_cloud_region_deployment_target
 * octopusdeploy_offline_package_drop_deployment_target
-* octopusdeploy_polling_tentacle_deployment_target
 
 * octopusdeploy_scoped_user_role
 * octopusdeploy_team
