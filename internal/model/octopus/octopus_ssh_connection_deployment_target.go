@@ -28,7 +28,7 @@ type SshConnectionDeploymentTargetEndpoint struct {
 	CommunicationStyle string
 	AccountId          string
 	Host               string
-	Port               string
+	Port               int
 	Fingerprint        string
 	ProxyId            string
 	DotNetCorePlatform string

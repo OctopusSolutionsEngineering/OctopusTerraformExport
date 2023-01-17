@@ -135,7 +135,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			file.Body().AppendBlock(block)
 
 			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+			accountMap[account.Id] = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
 		}
 
 		if account.AccountType == "GoogleCloudAccount" {
@@ -168,7 +168,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			file.Body().AppendBlock(block)
 
 			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+			accountMap[account.Id] = "${octopusdeploy_gcp_account." + resourceName + ".id}"
 		}
 
 		if account.AccountType == "Token" {
@@ -201,7 +201,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			file.Body().AppendBlock(block)
 
 			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+			accountMap[account.Id] = "${octopusdeploy_token_account." + resourceName + ".id}"
 		}
 
 		if account.AccountType == "UsernamePassword" {
@@ -235,7 +235,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			file.Body().AppendBlock(block)
 
 			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+			accountMap[account.Id] = "${octopusdeploy_username_password_account." + resourceName + ".id}"
 		}
 
 		if account.AccountType == "SshKeyPair" {
@@ -283,7 +283,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			file.Body().AppendBlock(certFileVariableResourceBlock)
 
 			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+			accountMap[account.Id] = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
 		}
 	}
 

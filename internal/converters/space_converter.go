@@ -253,8 +253,27 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the machine policies
+	// Convert the k8s targets policies
 	k8sTargets, _, err := KubernetesTargetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+		MachinePolicyMap:  machinePoliciesMap,
+		AccountMap:        accountsMap,
+		EnvironmentMap:    environmentsMap,
+		WorkerPoolMap:     poolMap,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range k8sTargets {
+		results[k] = v
+	}
+
+	// Convert the ssh targets policies
+	sshTargets, _, err := SshTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
 		MachinePolicyMap:  machinePoliciesMap,
@@ -267,7 +286,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	}
 
 	// merge the maps
-	for k, v := range k8sTargets {
+	for k, v := range sshTargets {
 		results[k] = v
 	}
 

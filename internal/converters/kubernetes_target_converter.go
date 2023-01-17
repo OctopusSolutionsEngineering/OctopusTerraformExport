@@ -15,6 +15,7 @@ type KubernetesTargetConverter struct {
 	MachinePolicyMap  map[string]string
 	AccountMap        map[string]string
 	EnvironmentMap    map[string]string
+	WorkerPoolMap     map[string]string
 }
 
 func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
@@ -40,7 +41,7 @@ func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
 				ClusterCertificate:              target.Endpoint.ClusterCertificate,
-				DefaultWorkerPoolId:             nil,
+				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId),
 				HealthStatus:                    nil,
 				Id:                              nil,
 				IsDisabled:                      util.NilIfFalse(target.IsDisabled),
@@ -61,12 +62,7 @@ func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string
 				Thumbprint:                      nil,
 				Uri:                             target.Uri,
 				Endpoint: terraform.TerraformKubernetesEndpoint{
-					CommunicationStyle:  "Kubernetes",
-					ClusterCertificate:  target.Endpoint.ClusterCertificate,
-					ClusterUrl:          target.Endpoint.ClusterUrl,
-					Namespace:           target.Endpoint.Namespace,
-					SkipTlsVerification: util.ParseBoolPointer(target.Endpoint.SkipTlsVerification),
-					DefaultWorkerPoolId: target.Endpoint.DefaultWorkerPoolId,
+					CommunicationStyle: "Kubernetes",
 				},
 				Container: terraform.TerraformKubernetesContainer{
 					FeedId: target.Endpoint.Container.FeedId,
@@ -179,6 +175,16 @@ func (c KubernetesTargetConverter) getAccount(accountPointer *string) string {
 
 func (c KubernetesTargetConverter) getMachinePolicy(machine string) *string {
 	machineLookup, ok := c.MachinePolicyMap[machine]
+	if !ok {
+		return nil
+	}
+
+	return &machineLookup
+}
+
+func (c KubernetesTargetConverter) getWorkerPool(poolPointer *string) *string {
+	pool := util.EmptyIfNil(poolPointer)
+	machineLookup, ok := c.WorkerPoolMap[pool]
 	if !ok {
 		return nil
 	}
