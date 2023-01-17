@@ -8,8 +8,8 @@ type ListeningEndpointResource struct {
 	TenantIds                       []string
 	TenantTags                      []string
 	TenantedDeploymentParticipation string
-	Thumbprint                      *string
-	Uri                             *string
+	Thumbprint                      string
+	Uri                             string
 	IsDisabled                      bool
 	MachinePolicyId                 string
 	HealthStatus                    string

@@ -2408,3 +2408,67 @@ func TestSshTargetExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestListeningTargetExport verifies that a listening machine can be reimported with the correct settings
+func TestListeningTargetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/31-listeningtarget", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
+		err = octopusClient.GetAllResources("Machines", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		foundResource := false
+
+		for _, machine := range collection.Items {
+			if machine.Name == resourceName {
+				foundResource = true
+
+				if machine.Uri != "https://tentacle/" {
+					t.Fatal("The machine must have a Uri of \"https://tentacle/\" (was \"" + machine.Uri + "\")")
+				}
+
+				if machine.Thumbprint != "55E05FD1B0F76E60F6DA103988056CE695685FD1" {
+					t.Fatal("The machine must have a Thumbprint of \"55E05FD1B0F76E60F6DA103988056CE695685FD1\" (was \"" + machine.Thumbprint + "\")")
+				}
+
+				if len(machine.Roles) != 1 {
+					t.Fatal("The machine must have 1 role")
+				}
+
+				if machine.Roles[0] != "vm" {
+					t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
+				}
+
+				if machine.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+				}
+			}
+		}
+
+		if !foundResource {
+			t.Fatal("Space must have a target \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
