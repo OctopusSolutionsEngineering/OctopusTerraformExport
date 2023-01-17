@@ -308,7 +308,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the ssh targets policies
+	// Convert the polling targets policies
 	pollingTargets, _, err := PollingTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -323,6 +323,23 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// merge the maps
 	for k, v := range pollingTargets {
+		results[k] = v
+	}
+
+	// Convert the cloud region targets policies
+	cloudRegionTargets, _, err := CloudRegionTargetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+		MachinePolicyMap:  machinePoliciesMap,
+		EnvironmentMap:    environmentsMap,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range cloudRegionTargets {
 		results[k] = v
 	}
 

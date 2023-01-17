@@ -2536,3 +2536,59 @@ func TestPollingTargetExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestCloudRegionTargetExport verifies that a cloud region can be reimported with the correct settings
+func TestCloudRegionTargetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/33-cloudregiontarget", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
+		err = octopusClient.GetAllResources("Machines", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		foundResource := false
+
+		for _, machine := range collection.Items {
+			if machine.Name == resourceName {
+				foundResource = true
+
+				if len(machine.Roles) != 1 {
+					t.Fatal("The machine must have 1 role")
+				}
+
+				if machine.Roles[0] != "cloud" {
+					t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+				}
+
+				if machine.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+				}
+			}
+		}
+
+		if !foundResource {
+			t.Fatal("Space must have a target \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}

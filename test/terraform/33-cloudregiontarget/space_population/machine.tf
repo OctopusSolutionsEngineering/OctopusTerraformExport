@@ -5,21 +5,18 @@ data "octopusdeploy_machine_policies" "default_machine_policy" {
   take         = 1
 }
 
-resource "octopusdeploy_listening_tentacle_deployment_target" "target_vm_listening_ngrok" {
+resource "octopusdeploy_cloud_region_deployment_target" "target_region1" {
   environments                      = ["${octopusdeploy_environment.development_environment.id}"]
   name                              = "Test"
-  roles                             = ["vm"]
-  tentacle_url                      = "https://tentacle/"
-  thumbprint                        = "55E05FD1B0F76E60F6DA103988056CE695685FD1"
+  roles                             = ["cloud"]
+  default_worker_pool_id            = ""
+  health_status                     = "Healthy"
   is_disabled                       = false
-  is_in_process                     = false
   machine_policy_id                 = "${data.octopusdeploy_machine_policies.default_machine_policy.machine_policies[0].id}"
   shell_name                        = "Unknown"
   shell_version                     = "Unknown"
   tenant_tags                       = []
   tenanted_deployment_participation = "Untenanted"
   tenants                           = []
-
-  tentacle_version_details {
-  }
+  thumbprint                        = ""
 }
