@@ -367,6 +367,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		MachinePolicyMap:  machinePoliciesMap,
 		EnvironmentMap:    environmentsMap,
 		AccountMap:        accountsMap,
+		WorkerPoolMap:     poolMap,
 	}.ToHcl()
 
 	if err != nil {
@@ -384,6 +385,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		SpaceResourceName: spaceResourceName,
 		MachinePolicyMap:  machinePoliciesMap,
 		EnvironmentMap:    environmentsMap,
+		WorkerPoolMap:     poolMap,
 	}.ToHcl()
 
 	if err != nil {
@@ -392,6 +394,25 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// merge the maps
 	for k, v := range azureServiceFabricTargets {
+		results[k] = v
+	}
+
+	// Convert the azure web app targets
+	azureWebAppTargets, _, err := AzureWebAppTargetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+		MachinePolicyMap:  machinePoliciesMap,
+		EnvironmentMap:    environmentsMap,
+		AccountMap:        accountsMap,
+		WorkerPoolMap:     poolMap,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range azureWebAppTargets {
 		results[k] = v
 	}
 

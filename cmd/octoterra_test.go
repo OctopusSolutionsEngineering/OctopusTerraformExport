@@ -2807,3 +2807,75 @@ func TestAzureServiceFabricTargetExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestAzureWebAppTargetExport verifies that a web app target can be reimported with the correct settings
+func TestAzureWebAppTargetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/37-webapptarget", []string{
+			"-var=account_sales_account=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=account_sales_account=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
+		err = octopusClient.GetAllResources("Machines", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Web App"
+		foundResource := false
+
+		for _, machine := range collection.Items {
+			if machine.Name == resourceName {
+				foundResource = true
+
+				if len(machine.Roles) != 1 {
+					t.Fatal("The machine must have 1 role")
+				}
+
+				if machine.Roles[0] != "cloud" {
+					t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+				}
+
+				if machine.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+				}
+
+				if machine.Endpoint.ResourceGroupName != "mattc-webapp" {
+					t.Fatal("The machine must have a Endpoint.ResourceGroupName of \"mattc-webapp\" (was \"" + machine.Endpoint.ResourceGroupName + "\")")
+				}
+
+				if machine.Endpoint.WebAppName != "mattc-webapp" {
+					t.Fatal("The machine must have a Endpoint.WebAppName of \"mattc-webapp\" (was \"" + machine.Endpoint.WebAppName + "\")")
+				}
+
+				if machine.Endpoint.WebAppSlotName != "slot1" {
+					t.Fatal("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
+				}
+			}
+		}
+
+		if !foundResource {
+			t.Fatal("Space must have a target \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}

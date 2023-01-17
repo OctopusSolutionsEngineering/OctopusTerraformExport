@@ -14,6 +14,7 @@ type AzureServiceFabricTargetConverter struct {
 	SpaceResourceName string
 	MachinePolicyMap  map[string]string
 	EnvironmentMap    map[string]string
+	WorkerPoolMap     map[string]string
 }
 
 func (c AzureServiceFabricTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
@@ -62,6 +63,10 @@ func (c AzureServiceFabricTargetConverter) ToHcl() (map[string]string, map[strin
 				Tenants:                         target.TenantIds,
 				Thumbprint:                      &target.Thumbprint,
 				Uri:                             nil,
+				Endpoint: terraform.TerraformAzureServiceFabricClusterDeploymentTargetEndpoint{
+					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId),
+					CommunicationStyle:  "AzureServiceFabricCluster",
+				},
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
@@ -100,6 +105,15 @@ func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string) []s
 
 func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string) *string {
 	machineLookup, ok := c.MachinePolicyMap[machine]
+	if !ok {
+		return nil
+	}
+
+	return &machineLookup
+}
+
+func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string) *string {
+	machineLookup, ok := c.WorkerPoolMap[pool]
 	if !ok {
 		return nil
 	}
