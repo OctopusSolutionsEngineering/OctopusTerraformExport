@@ -236,7 +236,13 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 		out, err := cmnd.Output()
 
 		if err != nil {
-			t.Log(string(err.(*exec.ExitError).Stderr))
+			exitError, ok := err.(*exec.ExitError)
+			if ok {
+				t.Log(string(exitError.Stderr))
+			} else {
+				t.Log(err.Error())
+			}
+
 			return err
 		}
 
@@ -2718,6 +2724,78 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 
 				if !machine.Endpoint.UseCurrentInstanceCount {
 					t.Fatal("The machine must have Endpoint.UseCurrentInstanceCount set")
+				}
+			}
+		}
+
+		if !foundResource {
+			t.Fatal("Space must have a target \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestAzureServiceFabricTargetExport verifies that an service fabric target can be reimported with the correct settings
+func TestAzureServiceFabricTargetExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrangeTest(t, container, "../test/terraform/36-servicefabrictarget", []string{
+			"-var=target_service_fabric=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := actTest(t, container, newSpaceId, []string{
+			"-var=target_service_fabric=whatever",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
+		err = octopusClient.GetAllResources("Machines", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Service Fabric"
+		foundResource := false
+
+		for _, machine := range collection.Items {
+			if machine.Name == resourceName {
+				foundResource = true
+
+				if len(machine.Roles) != 1 {
+					t.Fatal("The machine must have 1 role")
+				}
+
+				if machine.Roles[0] != "cloud" {
+					t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+				}
+
+				if machine.TenantedDeploymentParticipation != "Untenanted" {
+					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+				}
+
+				if machine.Endpoint.ConnectionEndpoint != "http://endpoint" {
+					t.Fatal("The machine must have a Endpoint.ConnectionEndpoint of \"http://endpoint\" (was \"" + machine.Endpoint.ConnectionEndpoint + "\")")
+				}
+
+				if machine.Endpoint.AadCredentialType != "UserCredential" {
+					t.Fatal("The machine must have a Endpoint.AadCredentialType of \"UserCredential\" (was \"" + machine.Endpoint.AadCredentialType + "\")")
+				}
+
+				if machine.Endpoint.AadUserCredentialUsername != "username" {
+					t.Fatal("The machine must have a Endpoint.AadUserCredentialUsername of \"username\" (was \"" + machine.Endpoint.AadUserCredentialUsername + "\")")
 				}
 			}
 		}

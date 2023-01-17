@@ -378,6 +378,23 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
+	// Convert the azure cloud service targets
+	azureServiceFabricTargets, _, err := AzureServiceFabricTargetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+		MachinePolicyMap:  machinePoliciesMap,
+		EnvironmentMap:    environmentsMap,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range azureServiceFabricTargets {
+		results[k] = v
+	}
+
 	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
 	for k, v := range results {
 		results[k] = strings.ReplaceAll(v, "$${", "${")

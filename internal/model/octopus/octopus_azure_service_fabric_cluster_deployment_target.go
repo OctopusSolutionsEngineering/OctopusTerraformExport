@@ -1,6 +1,6 @@
 package octopus
 
-type CloudRegionResource struct {
+type AzureServiceFabricResource struct {
 	Id                              string
 	Name                            string
 	EnvironmentIds                  []string
@@ -20,10 +20,20 @@ type CloudRegionResource struct {
 	ShellName                       string
 	ShellVersion                    string
 	Architecture                    string
-	Endpoint                        CloudRegionEndpointResource
+	Endpoint                        AzureServiceFabricEndpointResource
 }
 
-type CloudRegionEndpointResource struct {
-	CommunicationStyle  string
-	DefaultWorkerPoolId string
+type AzureServiceFabricEndpointResource struct {
+	CommunicationStyle        string
+	ConnectionEndpoint        string
+	SecurityMode              string
+	ServerCertThumbprint      string
+	ClientCertVariable        string
+	CertificateStoreLocation  string
+	CertificateStoreName      string
+	AadCredentialType         string
+	AadClientCredentialSecret string
+	AadUserCredentialUsername string
+	AadUserCredentialPassword Secret
+	DefaultWorkerPoolId       string
 }
