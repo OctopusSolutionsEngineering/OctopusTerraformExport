@@ -253,7 +253,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the k8s targets policies
+	// Convert the k8s targets
 	k8sTargets, _, err := KubernetesTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -272,7 +272,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the ssh targets policies
+	// Convert the ssh targets
 	sshTargets, _, err := SshTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -290,7 +290,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the ssh targets policies
+	// Convert the ssh targets
 	listeningTargets, _, err := ListeningTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -308,7 +308,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the polling targets policies
+	// Convert the polling targets
 	pollingTargets, _, err := PollingTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -326,7 +326,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the cloud region targets policies
+	// Convert the cloud region targets
 	cloudRegionTargets, _, err := CloudRegionTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -343,7 +343,7 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 		results[k] = v
 	}
 
-	// Convert the cloud region targets policies
+	// Convert the cloud region targets
 	offlineDropTargets, _, err := OfflineDropTargetConverter{
 		Client:            c.Client,
 		SpaceResourceName: spaceResourceName,
@@ -357,6 +357,24 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	// merge the maps
 	for k, v := range offlineDropTargets {
+		results[k] = v
+	}
+
+	// Convert the azure cloud service targets
+	azureCloudServiceTargets, _, err := AzureCloudServiceTargetConverter{
+		Client:            c.Client,
+		SpaceResourceName: spaceResourceName,
+		MachinePolicyMap:  machinePoliciesMap,
+		EnvironmentMap:    environmentsMap,
+		AccountMap:        accountsMap,
+	}.ToHcl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the maps
+	for k, v := range azureCloudServiceTargets {
 		results[k] = v
 	}
 
