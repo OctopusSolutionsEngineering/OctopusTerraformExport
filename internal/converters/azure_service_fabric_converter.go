@@ -63,10 +63,7 @@ func (c AzureServiceFabricTargetConverter) ToHcl() (map[string]string, map[strin
 				Tenants:                         target.TenantIds,
 				Thumbprint:                      &target.Thumbprint,
 				Uri:                             nil,
-				Endpoint: terraform.TerraformAzureServiceFabricClusterDeploymentTargetEndpoint{
-					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId),
-					CommunicationStyle:  "AzureServiceFabricCluster",
-				},
+				Endpoint:                        nil,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))

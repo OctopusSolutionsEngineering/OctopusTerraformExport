@@ -57,7 +57,7 @@ func (c AzureWebAppTargetConverter) ToHcl() (map[string]string, map[string]strin
 				Thumbprint:                      &target.Thumbprint,
 				Uri:                             nil,
 				WebAppSlotName:                  &target.Endpoint.WebAppSlotName,
-				Endpoint: terraform.TerraformAzureWebAppDeploymentTargetEndpoint{
+				Endpoint: &terraform.TerraformAzureWebAppDeploymentTargetEndpoint{
 					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId),
 					CommunicationStyle:  "AzureWebApp",
 				},

@@ -2663,7 +2663,7 @@ func TestOfflineDropTargetExport(t *testing.T) {
 	})
 }
 
-// TestAzureCloudServiceTargetExport verifies that an offline drop can be reimported with the correct settings
+// TestAzureCloudServiceTargetExport verifies that a azure cloud service target can be reimported with the correct settings
 func TestAzureCloudServiceTargetExport(t *testing.T) {
 	// I could not figure out a combination of properties that made the octopusdeploy_azure_subscription_account resource work
 	return
@@ -2736,7 +2736,7 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 	})
 }
 
-// TestAzureServiceFabricTargetExport verifies that an service fabric target can be reimported with the correct settings
+// TestAzureServiceFabricTargetExport verifies that a service fabric target can be reimported with the correct settings
 func TestAzureServiceFabricTargetExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange

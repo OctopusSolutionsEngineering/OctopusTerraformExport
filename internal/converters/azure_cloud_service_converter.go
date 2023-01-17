@@ -60,7 +60,7 @@ func (c AzureCloudServiceTargetConverter) ToHcl() (map[string]string, map[string
 				Thumbprint:                      &target.Thumbprint,
 				Uri:                             nil,
 				UseCurrentInstanceCount:         &target.Endpoint.UseCurrentInstanceCount,
-				Endpoint: terraform.TerraformAzureCloudServiceDeploymentTargetEndpoint{
+				Endpoint: &terraform.TerraformAzureCloudServiceDeploymentTargetEndpoint{
 					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId),
 					CommunicationStyle:  "AzureCloudService",
 				},
