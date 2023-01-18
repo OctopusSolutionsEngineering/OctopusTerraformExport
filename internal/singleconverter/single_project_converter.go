@@ -54,6 +54,9 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 	// TODO: Need to export channels
 	// TODO: Need to export git credentials
 	// TODO: Need to export project triggers
+	// TODO: Need to export lifecycles
+	// TODO: Need to export tenants
+	// TODO: Need to export certificates
 
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
