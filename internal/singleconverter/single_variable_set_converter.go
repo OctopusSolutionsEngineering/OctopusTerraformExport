@@ -28,11 +28,13 @@ func (c SingleVariableSetConverter) ToHclById(id string, parentName string, pare
 
 		resourceName := parentName + "_" + util.SanitizeName(v.Name)
 
+		// TODO: need to export accounts
+
 		thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
 		thisResource.Id = v.Id
 		thisResource.ResourceType = c.GetResourceType()
 		thisResource.Lookup = "${octopusdeploy_variable." + resourceName + ".id}"
-		thisResource.ToHcl = func(resources map[string]ResourceDetails) (string, error) {
+		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
 				Type:           "octopusdeploy_variable",

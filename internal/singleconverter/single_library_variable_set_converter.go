@@ -12,9 +12,7 @@ import (
 )
 
 type SingleLibraryVariableSetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	AccountsMap       map[string]string
+	Client client.OctopusClient
 }
 
 func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -48,7 +46,7 @@ func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *Re
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_library_variable_set." + resourceName + ".id}"
-	thisResource.ToHcl = func(resources map[string]ResourceDetails) (string, error) {
+	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
 

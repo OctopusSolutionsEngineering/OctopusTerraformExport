@@ -80,12 +80,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 }
 
 func processResources(resources []singleconverter.ResourceDetails) (map[string]string, error) {
-	resourceMap := map[string]singleconverter.ResourceDetails{}
 	fileMap := map[string]string{}
-
-	for _, r := range resources {
-		resourceMap[r.ResourceType+r.Id] = r
-	}
 
 	for _, r := range resources {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
@@ -94,7 +89,7 @@ func processResources(resources []singleconverter.ResourceDetails) (map[string]s
 			continue
 		}
 
-		hcl, err := r.ToHcl(resourceMap)
+		hcl, err := r.ToHcl()
 
 		if err != nil {
 			return nil, err

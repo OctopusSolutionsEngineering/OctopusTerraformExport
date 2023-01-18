@@ -10,8 +10,7 @@ import (
 )
 
 type SingleProjectGroupConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client client.OctopusClient
 }
 
 func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]ResourceDetails, error) {
@@ -31,7 +30,7 @@ func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]Res
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
-	thisResource.ToHcl = func(resources map[string]ResourceDetails) (string, error) {
+	thisResource.ToHcl = func() (string, error) {
 
 		if *resource.Name == "Default Project Group" {
 			// todo - create lookup for existing project group

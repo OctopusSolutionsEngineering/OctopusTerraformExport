@@ -1,6 +1,6 @@
 package singleconverter
 
-type ToHcl func(map[string]ResourceDetails) (string, error)
+type ToHcl func() (string, error)
 
 // ResourceDetails is used to capture the dependencies required by the root resources that was
 // exported. The process works like this:

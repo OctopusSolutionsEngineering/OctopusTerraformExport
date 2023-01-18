@@ -12,8 +12,7 @@ import (
 
 // SingleProjectConverter exports a single project and its dependencies
 type SingleProjectConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client client.OctopusClient
 }
 
 // ToHclById is a "smart" export that exports a single project and the dependencies
@@ -32,8 +31,7 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 
 	// The project group is a dependency that we need to lookup
 	projectGroupDependencies, err := SingleProjectGroupConverter{
-		Client:            c.Client,
-		SpaceResourceName: c.SpaceResourceName,
+		Client: c.Client,
 	}.ToHclById(project.ProjectGroupId, false)
 	dependencies.AddResource(projectGroupDependencies...)
 
@@ -44,8 +42,7 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 	// The library variables are dependencies
 	for _, v := range project.IncludedLibraryVariableSetIds {
 		err := SingleLibraryVariableSetConverter{
-			Client:            c.Client,
-			SpaceResourceName: c.SpaceResourceName,
+			Client: c.Client,
 		}.ToHclById(v, dependencies)
 
 		if err != nil {
@@ -54,12 +51,15 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 	}
 
 	// TODO: Need to export deployment process
+	// TODO: Need to export channels
+	// TODO: Need to export git credentials
+	// TODO: Need to export project triggers
 
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_project." + projectName + ".id}"
-	thisResource.ToHcl = func(resources map[string]ResourceDetails) (string, error) {
+	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
@@ -72,11 +72,11 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 			DiscreteChannelRelease:          project.DiscreteChannelRelease,
 			IsDisabled:                      project.IsDisabled,
 			IsVersionControlled:             project.IsVersionControlled,
-			LifecycleId:                     resources["Lifecycles"+project.LifecycleId].Lookup,
-			ProjectGroupId:                  resources["ProjectGroups"+project.ProjectGroupId].Lookup,
+			LifecycleId:                     dependencies.GetResource("Lifecycles", project.LifecycleId),
+			ProjectGroupId:                  dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 			Template:                        projectTemplates,
-			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, resources),
+			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
 			ConnectivityPolicy: terraform.TerraformConnectivityPolicy{
 				AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
 				ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
@@ -119,10 +119,10 @@ func (c SingleProjectConverter) convertTemplates(actionPackages []octopus.Templa
 	return collection, templateMap
 }
 
-func (c SingleProjectConverter) convertLibraryVariableSets(setIds []string, resources map[string]ResourceDetails) []string {
+func (c SingleProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *ResourceDetailsCollection) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
-		collection = append(collection, resources["LibraryVariableSets"+v].Lookup)
+		collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
 	}
 	return collection
 }
