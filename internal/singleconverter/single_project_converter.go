@@ -73,7 +73,15 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
-	// TODO: Need to export channels
+	// The channels are a dependency that we need to lookup
+	err = SingleChannelConverter{
+		Client: c.Client,
+	}.ToHcl(project.Id, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Need to export git credentials
 	// TODO: Need to export project triggers
 	// TODO: Need to export tenants

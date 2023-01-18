@@ -6,7 +6,7 @@ type Channel struct {
 	Slug        *string
 	Description *string
 	LifecycleId string
-	ProjectId   *string
+	ProjectId   string
 	IsDefault   bool
 	Rules       []Rule
 	TenantTags  []string
