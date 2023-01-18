@@ -5,20 +5,29 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
+	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
 )
 
 func main() {
-	url, space, apiKey, dest, console := parseUrl()
-	err := ConvertToTerraform(url, space, apiKey, dest, console)
+	url, space, apiKey, dest, console, projectId := parseUrl()
+
+	var err error = nil
+
+	if projectId != "" {
+		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId)
+	} else {
+		err = ConvertSpaceToTerraform(url, space, apiKey, dest, console)
+	}
+
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
 
-func ConvertToTerraform(url string, space string, apiKey string, dest string, console bool) error {
+func ConvertSpaceToTerraform(url string, space string, apiKey string, dest string, console bool) error {
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -35,12 +44,61 @@ func ConvertToTerraform(url string, space string, apiKey string, dest string, co
 		return err
 	}
 
-	err = writeFiles(hcl, dest, console)
+	err = writeFiles(util.UnEscapeDollar(hcl), dest, console)
 
 	return err
 }
 
-func parseUrl() (string, string, string, string, bool) {
+func ConvertProjectToTerraform(url string, space string, apiKey string, dest string, console bool, projectId string) error {
+	client := client.OctopusClient{
+		Url:    url,
+		Space:  space,
+		ApiKey: apiKey,
+	}
+
+	converter := converters.SingleProjectConverter{
+		Client: client,
+	}
+
+	resources, err := converter.ToHclById(projectId)
+
+	if err != nil {
+		return err
+	}
+
+	hcl, err := processResources(resources)
+
+	if err != nil {
+		return err
+	}
+
+	err = writeFiles(util.UnEscapeDollar(hcl), dest, console)
+
+	return err
+}
+
+func processResources(resources []converters.ResourceDetails) (map[string]string, error) {
+	resourceMap := map[string]converters.ResourceDetails{}
+	fileMap := map[string]string{}
+
+	for _, r := range resources {
+		resourceMap[r.ResourceType+r.Id] = r
+	}
+
+	for _, r := range resources {
+		hcl, err := r.ToHcl(resourceMap)
+
+		if err != nil {
+			return nil, err
+		}
+
+		fileMap[r.FileName] = hcl
+	}
+
+	return fileMap, nil
+}
+
+func parseUrl() (string, string, string, string, bool, string) {
 	var url string
 	flag.StringVar(&url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 
@@ -56,9 +114,12 @@ func parseUrl() (string, string, string, string, bool) {
 	var console bool
 	flag.BoolVar(&console, "console", false, "Dump Terraform files to the console")
 
+	var projectId string
+	flag.StringVar(&projectId, "projectId", "", "Limit the export to a single project")
+
 	flag.Parse()
 
-	return url, space, apiKey, dest, console
+	return url, space, apiKey, dest, console, projectId
 }
 
 func writeFiles(files map[string]string, dest string, console bool) error {

@@ -89,3 +89,12 @@ func ParseBoolPointer(input *string) *bool {
 
 	return &value
 }
+
+func UnEscapeDollar(fileMap map[string]string) map[string]string {
+	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
+	for k, v := range fileMap {
+		fileMap[k] = strings.ReplaceAll(v, "$${", "${")
+	}
+
+	return fileMap
+}

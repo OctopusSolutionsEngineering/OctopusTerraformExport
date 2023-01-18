@@ -7,7 +7,6 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
-	"strings"
 )
 
 // SpaceConverter creates the files required to create a new space. These files are used in a separate
@@ -414,11 +413,6 @@ func (c SpaceConverter) ToHcl() (map[string]string, error) {
 	// merge the maps
 	for k, v := range azureWebAppTargets {
 		results[k] = v
-	}
-
-	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
-	for k, v := range results {
-		results[k] = strings.ReplaceAll(v, "$${", "${")
 	}
 
 	return results, nil

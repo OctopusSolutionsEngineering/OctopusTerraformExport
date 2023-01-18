@@ -81,59 +81,6 @@ func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, ma
 	return results, resultsMap, templatesMap, nil
 }
 
-func (c ProjectGroupConverter) ToHclById(id string) (map[string]string, map[string]string, map[string]string, error) {
-	resource := octopus.Project{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
-
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	results := map[string]string{}
-
-	resourceName := util.SanitizeName(resource.Name)
-
-	terraformResource := terraform.TerraformProject{
-		Type:                            "octopusdeploy_project",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		AutoCreateRelease:               resource.AutoCreateRelease,
-		DefaultGuidedFailureMode:        resource.DefaultGuidedFailureMode,
-		DefaultToSkipIfAlreadyInstalled: resource.DefaultToSkipIfAlreadyInstalled,
-		Description:                     resource.Description,
-		DiscreteChannelRelease:          resource.DiscreteChannelRelease,
-		IsDisabled:                      resource.IsDisabled,
-		IsVersionControlled:             resource.IsVersionControlled,
-		LifecycleId:                     resource.LifecycleId,
-		ProjectGroupId:                  resource.ProjectGroupId,
-		TenantedDeploymentParticipation: resource.TenantedDeploymentMode,
-	}
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-	results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-
-	// Convert the projects
-	projects, projectMap, projectTemplatesMap, err := ProjectConverter{
-		Client:                   c.Client,
-		SpaceResourceName:        c.SpaceResourceName,
-		ProjectGroupResourceName: resourceName,
-		ProjectGroupId:           resource.Id,
-		AccountsMap:              c.AccountsMap,
-	}.ToHcl()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// merge the maps
-	for k, v := range projects {
-		results[k] = v
-	}
-
-	return map[string]string{
-		resourceName + ".tf": string(file.Bytes()),
-	}, projectMap, projectTemplatesMap, nil
-}
-
 func (c ProjectGroupConverter) ToHclByName(name string) (map[string]string, error) {
 	return map[string]string{}, nil
 }

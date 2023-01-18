@@ -336,7 +336,7 @@ func actTest(t *testing.T, container *octopusContainer, newSpaceId string, popul
 	tempDir := getTempDir()
 	defer os.Remove(tempDir)
 
-	err := ConvertToTerraform(container.URI, newSpaceId, ApiKey, tempDir, true)
+	err := ConvertSpaceToTerraform(container.URI, newSpaceId, ApiKey, tempDir, true)
 
 	if err != nil {
 		return "", err
