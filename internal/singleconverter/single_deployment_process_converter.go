@@ -29,52 +29,15 @@ func (c SingleDeploymentProcessConverter) ToHclById(id string, projectName strin
 	thisResource := ResourceDetails{}
 
 	// Export linked accounts
-	accountRegex, _ := regexp.Compile("Accounts-\\d+")
-	for _, step := range resource.Steps {
-		for _, action := range step.Actions {
-			for _, prop := range action.Properties {
-				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := SingleAccountConverter{
-						Client: c.Client,
-					}.ToHclById(account, dependencies)
-
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
+	err = c.exportAccounts(resource, dependencies)
+	if err != nil {
+		return err
 	}
 
 	// Export linked feeds
-	feedRegex, _ := regexp.Compile("Feeds-\\d+")
-	for _, step := range resource.Steps {
-		for _, action := range step.Actions {
-
-			for _, pack := range action.Packages {
-				if pack.FeedId != nil {
-					err := SingleFeedConverter{
-						Client: c.Client,
-					}.ToHclById(util.EmptyIfNil(pack.FeedId), dependencies)
-
-					if err != nil {
-						return err
-					}
-				}
-			}
-
-			for _, prop := range action.Properties {
-				for _, feed := range feedRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := SingleFeedConverter{
-						Client: c.Client,
-					}.ToHclById(feed, dependencies)
-
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
+	err = c.exportFeeds(resource, dependencies)
+	if err != nil {
+		return err
 	}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -147,6 +110,61 @@ func (c SingleDeploymentProcessConverter) ToHclById(id string, projectName strin
 
 func (c SingleDeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
+}
+
+func (c SingleDeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+	feedRegex, _ := regexp.Compile("Feeds-\\d+")
+	for _, step := range resource.Steps {
+		for _, action := range step.Actions {
+
+			for _, pack := range action.Packages {
+				if pack.FeedId != nil {
+					err := SingleFeedConverter{
+						Client: c.Client,
+					}.ToHclById(util.EmptyIfNil(pack.FeedId), dependencies)
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			for _, prop := range action.Properties {
+				for _, feed := range feedRegex.FindAllString(fmt.Sprint(prop), -1) {
+					err := SingleFeedConverter{
+						Client: c.Client,
+					}.ToHclById(feed, dependencies)
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c SingleDeploymentProcessConverter) exportAccounts(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+	accountRegex, _ := regexp.Compile("Accounts-\\d+")
+	for _, step := range resource.Steps {
+		for _, action := range step.Actions {
+			for _, prop := range action.Properties {
+				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
+					err := SingleAccountConverter{
+						Client: c.Client,
+					}.ToHclById(account, dependencies)
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c SingleDeploymentProcessConverter) convertContainer(container octopus.Container) *terraform.TerraformContainer {

@@ -31,7 +31,7 @@ func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *Re
 	if util.EmptyIfNil(resource.ContentType) == "Variables" {
 		err := SingleVariableSetConverter{
 			Client: c.Client,
-		}.ToHclById(resource.VariableSetId, resourceName, resource.Id, dependencies)
+		}.ToHclById(resource.VariableSetId, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
 
 		if err != nil {
 			return err

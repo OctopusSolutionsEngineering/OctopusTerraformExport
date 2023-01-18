@@ -154,7 +154,7 @@ func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request
 	return req, nil
 }
 
-func (o OctopusClient) getCollectionRequest(resourceType string) (*http.Request, error) {
+func (o OctopusClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
 	spaceUrl, err := o.getSpaceBaseUrl()
 
 	if err != nil {
@@ -162,6 +162,18 @@ func (o OctopusClient) getCollectionRequest(resourceType string) (*http.Request,
 	}
 
 	requestURL := spaceUrl + "/" + resourceType + "?take=10000"
+
+	for _, q := range queryParams {
+
+		if len(q) == 1 {
+			requestURL += "&" + url.QueryEscape(q[0])
+		}
+
+		if len(q) == 2 {
+			requestURL += "&" + url.QueryEscape(q[0]) + "=" + url.QueryEscape(q[1])
+		}
+	}
+
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 	if err != nil {
@@ -232,8 +244,8 @@ func (o OctopusClient) GetResourceByName(resourceType string, names string) {
 
 }
 
-func (o OctopusClient) GetAllResources(resourceType string, resources any) error {
-	req, err := o.getCollectionRequest(resourceType)
+func (o OctopusClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) error {
+	req, err := o.getCollectionRequest(resourceType, queryParams...)
 
 	if err != nil {
 		return err

@@ -29,7 +29,7 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 
 	projectName := "project_" + util.SanitizeName(project.Name)
 
-	// The project group is a dependency that we need to lookup
+	// Export the project group
 	err = SingleProjectGroupConverter{
 		Client: c.Client,
 	}.ToHclById(project.ProjectGroupId, false, dependencies)
@@ -53,7 +53,18 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 	projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
 	dependencies.AddResource(projectTemplateMap...)
 
-	// The library variables are dependencies
+	// Export the variable set
+	if project.VariableSetId != nil {
+		err = SingleVariableSetConverter{
+			Client: c.Client,
+		}.ToHclById(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the library sets
 	for _, v := range project.IncludedLibraryVariableSetIds {
 		err := SingleLibraryVariableSetConverter{
 			Client: c.Client,
@@ -64,7 +75,7 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 		}
 	}
 
-	// The lifecycle is a dependency that we need to lookup
+	// Export the lifecycles
 	err = SingleLifecycleConverter{
 		Client: c.Client,
 	}.ToHclById(project.LifecycleId, dependencies)
@@ -73,7 +84,7 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
-	// The channels are a dependency that we need to lookup
+	// Export the channels
 	err = SingleChannelConverter{
 		Client: c.Client,
 	}.ToHcl(project.Id, dependencies)
@@ -82,10 +93,25 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
+	// Export the triggers
+	err = SingleProjectTriggerConverter{
+		Client: c.Client,
+	}.ToHcl(project.Id, project.Name, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the tenants
+	err = SingleTenantConverter{
+		Client: c.Client,
+	}.ToHcl(project.Id, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Need to export git credentials
-	// TODO: Need to export project triggers
-	// TODO: Need to export tenants
-	// TODO: Need to export certificates
 
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
