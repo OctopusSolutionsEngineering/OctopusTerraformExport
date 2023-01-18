@@ -16,6 +16,9 @@ type SpaceConverter struct {
 	Client client.OctopusClient
 }
 
+// ToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
+// with no filter and with the least number of network calls. It is "dumb" in the sense that things like
+// dependencies are manually resolved through the order in which resources are exported.
 func (c SpaceConverter) ToHcl() (map[string]string, error) {
 
 	spaceResourceName, spaceTf, err := c.createSpaceTf()

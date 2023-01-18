@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
+	"github.com/mcasperson/OctopusTerraformExport/internal/singleconverter"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
@@ -56,7 +57,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		ApiKey: apiKey,
 	}
 
-	converter := converters.SingleProjectConverter{
+	converter := singleconverter.SingleProjectConverter{
 		Client: client,
 	}
 

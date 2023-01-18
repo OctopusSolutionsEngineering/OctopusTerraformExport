@@ -1,9 +1,10 @@
-package converters
+package singleconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
@@ -14,7 +15,7 @@ type SingleProjectGroupConverter struct {
 	SpaceResourceName string
 }
 
-func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]ResourceDetails, error) {
+func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]converters.ResourceDetails, error) {
 	resource := octopus.ProjectGroup{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -22,8 +23,8 @@ func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]Res
 		return nil, err
 	}
 
-	dependencies := make([]ResourceDetails, 0)
-	thisResource := ResourceDetails{}
+	dependencies := make([]converters.ResourceDetails, 0)
+	thisResource := converters.ResourceDetails{}
 
 	projectName := "project_group_" + util.SanitizeNamePointer(resource.Name)
 
@@ -31,7 +32,7 @@ func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]Res
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
-	thisResource.ToHcl = func(resources map[string]ResourceDetails) (string, error) {
+	thisResource.ToHcl = func(resources map[string]converters.ResourceDetails) (string, error) {
 
 		if *resource.Name == "Default Project Group" {
 			// todo - create lookup for existing project group
