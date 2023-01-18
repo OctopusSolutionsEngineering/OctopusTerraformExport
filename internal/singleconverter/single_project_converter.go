@@ -15,8 +15,6 @@ type SingleProjectConverter struct {
 	Client client.OctopusClient
 }
 
-// ToHclById is a "smart" export that exports a single project and the dependencies
-// required to support it.
 func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	project := octopus.Project{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
@@ -25,12 +23,16 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
+	return c.toHcl(project, dependencies)
+}
+
+func (c SingleProjectConverter) toHcl(project octopus.Project, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	projectName := "project_" + util.SanitizeName(project.Name)
 
 	// Export the project group
-	err = SingleProjectGroupConverter{
+	err := SingleProjectGroupConverter{
 		Client: c.Client,
 	}.ToHclById(project.ProjectGroupId, false, dependencies)
 

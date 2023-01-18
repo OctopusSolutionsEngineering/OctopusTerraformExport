@@ -21,17 +21,30 @@ func (c SingleLifecycleConverter) ToHclById(id string, dependencies *ResourceDet
 		return err
 	}
 
+	return c.toHcl(lifecycle, dependencies)
+
+}
+
+func (c SingleLifecycleConverter) toHcl(lifecycle octopus.Lifecycle, dependencies *ResourceDetailsCollection) error {
 	// The environments are a dependency that we need to lookup
 	for _, phase := range lifecycle.Phases {
 		for _, auto := range phase.AutomaticDeploymentTargets {
-			err = SingleEnvironmentConverter{
+			err := SingleEnvironmentConverter{
 				Client: c.Client,
 			}.ToHclById(auto, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
 		for _, optional := range phase.OptionalDeploymentTargets {
-			err = SingleEnvironmentConverter{
+			err := SingleEnvironmentConverter{
 				Client: c.Client,
 			}.ToHclById(optional, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 

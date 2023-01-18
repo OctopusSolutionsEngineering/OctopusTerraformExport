@@ -21,6 +21,10 @@ func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool, depend
 		return err
 	}
 
+	return c.toHcl(resource, recursive, dependencies)
+}
+
+func (c SingleProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	projectName := "project_group_" + util.SanitizeNamePointer(resource.Name)

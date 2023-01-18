@@ -23,6 +23,10 @@ func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *Re
 		return err
 	}
 
+	return c.toHcl(resource, dependencies)
+}
+
+func (c SingleLibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
@@ -64,7 +68,11 @@ func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *Re
 			return string(file.Bytes()), nil
 		} else if util.EmptyIfNil(resource.ContentType) == "ScriptModule" {
 			variable := octopus.VariableSet{}
-			err = c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
+			err := c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
+
+			if err != nil {
+				return "", err
+			}
 
 			script := ""
 			scriptLanguage := ""

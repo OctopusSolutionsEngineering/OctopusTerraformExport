@@ -24,12 +24,16 @@ func (c SingleDeploymentProcessConverter) ToHclById(id string, projectName strin
 		return err
 	}
 
+	return c.toHcl(resource, projectName, dependencies)
+}
+
+func (c SingleDeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, projectName string, dependencies *ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + util.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
 
 	// Export linked accounts
-	err = c.exportAccounts(resource, dependencies)
+	err := c.exportAccounts(resource, dependencies)
 	if err != nil {
 		return err
 	}

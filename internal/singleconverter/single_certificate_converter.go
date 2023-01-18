@@ -21,6 +21,10 @@ func (c SingleCertificateConverter) ToHclById(id string, dependencies *ResourceD
 		return err
 	}
 
+	return c.toHcl(certificate, dependencies)
+}
+
+func (c SingleCertificateConverter) toHcl(certificate octopus.Certificate, dependencies *ResourceDetailsCollection) error {
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.
 		It is assumed the exported project links up all required environments, and the certificate

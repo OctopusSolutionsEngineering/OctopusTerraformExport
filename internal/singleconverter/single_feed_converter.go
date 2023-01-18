@@ -26,6 +26,10 @@ func (c SingleFeedConverter) ToHclById(id string, dependencies *ResourceDetailsC
 		return err
 	}
 
+	return c.toHcl(resource, dependencies)
+}
+
+func (c SingleFeedConverter) toHcl(resource octopus.Feed, dependencies *ResourceDetailsCollection) error {
 	resourceName := "feed_" + util.SanitizeName(resource.Name)
 	passwordName := resourceName + "_password"
 	password := "${var." + passwordName + "}"

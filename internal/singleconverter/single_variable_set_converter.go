@@ -23,6 +23,10 @@ func (c SingleVariableSetConverter) ToHclById(id string, parentName string, pare
 		return err
 	}
 
+	return c.toHcl(resource, parentName, parentLookup, dependencies)
+}
+
+func (c SingleVariableSetConverter) toHcl(resource octopus.VariableSet, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	file := hclwrite.NewEmptyFile()
 
 	for _, v := range resource.Variables {
@@ -31,7 +35,7 @@ func (c SingleVariableSetConverter) ToHclById(id string, parentName string, pare
 		resourceName := parentName + "_" + util.SanitizeName(v.Name)
 
 		// Export linked accounts
-		err = c.exportAccounts(v.Value, dependencies)
+		err := c.exportAccounts(v.Value, dependencies)
 		if err != nil {
 			return err
 		}

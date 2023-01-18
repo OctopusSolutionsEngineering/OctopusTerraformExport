@@ -22,6 +22,10 @@ func (c SingleAccountConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
+	return c.toHcl(resource, dependencies)
+}
+
+func (c SingleAccountConverter) toHcl(resource octopus.Account, dependencies *ResourceDetailsCollection) error {
 	resourceName := "account_" + util.SanitizeName(resource.Name)
 
 	thisResource := ResourceDetails{}

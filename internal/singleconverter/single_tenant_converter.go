@@ -22,32 +22,40 @@ func (c SingleTenantConverter) ToHcl(projectId string, dependencies *ResourceDet
 	}
 
 	for _, tenant := range collection.Items {
-		tenantName := "tenant_" + util.SanitizeName(tenant.Name)
-
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + tenantName + ".tf"
-		thisResource.Id = tenant.Id
-		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_tenant." + tenantName + ".id}"
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform.TerraformTenant{
-				Type:               "octopusdeploy_tenant",
-				Name:               tenantName,
-				ResourceName:       tenant.Name,
-				Id:                 nil,
-				ClonedFromTenantId: nil,
-				Description:        util.NilIfEmptyPointer(tenant.Description),
-				TenantTags:         tenant.TenantTags,
-				ProjectEnvironment: c.getProjects(tenant.ProjectEnvironments, dependencies),
-			}
-			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-			return string(file.Bytes()), nil
+		err = c.toHcl(tenant, projectId, dependencies)
+		if err != nil {
+			return nil
 		}
-
-		dependencies.AddResource(thisResource)
 	}
+	return nil
+}
+
+func (c SingleTenantConverter) toHcl(tenant octopus.Tenant, projectId string, dependencies *ResourceDetailsCollection) error {
+	tenantName := "tenant_" + util.SanitizeName(tenant.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + tenantName + ".tf"
+	thisResource.Id = tenant.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_tenant." + tenantName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformTenant{
+			Type:               "octopusdeploy_tenant",
+			Name:               tenantName,
+			ResourceName:       tenant.Name,
+			Id:                 nil,
+			ClonedFromTenantId: nil,
+			Description:        util.NilIfEmptyPointer(tenant.Description),
+			TenantTags:         tenant.TenantTags,
+			ProjectEnvironment: c.getProjects(tenant.ProjectEnvironments, dependencies),
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

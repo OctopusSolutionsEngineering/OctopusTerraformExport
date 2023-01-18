@@ -22,32 +22,41 @@ func (c SingleProjectTriggerConverter) ToHcl(projectId string, projectName strin
 	}
 
 	for _, projectTrigger := range collection.Items {
-		projectTriggerName := "projecttrigger_" + util.SanitizeName(projectName) + "_" + util.SanitizeName(projectTrigger.Name)
-
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
-		thisResource.Id = projectTrigger.Id
-		thisResource.ResourceType = c.GetResourceType(projectId)
-		thisResource.Lookup = "${octopusdeploy_project_deployment_target_trigger." + projectTriggerName + ".id}"
-		thisResource.ToHcl = func() (string, error) {
-
-			terraformResource := terraform.TerraformProjectTrigger{
-				Type:            "octopusdeploy_project_deployment_target_trigger",
-				Name:            projectTriggerName,
-				ResourceName:    projectTrigger.Name,
-				ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
-				EventCategories: projectTrigger.Filter.EventCategories,
-				EnvironmentIds:  projectTrigger.Filter.EnvironmentIds,
-				EventGroups:     projectTrigger.Filter.EventGroups,
-				Roles:           projectTrigger.Filter.Roles,
-				ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,
-				Id:              nil,
-			}
-			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-			return string(file.Bytes()), nil
+		err = c.toHcl(projectTrigger, projectId, projectName, dependencies)
+		if err != nil {
+			return err
 		}
+	}
+
+	return nil
+}
+
+func (c SingleProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+	projectTriggerName := "projecttrigger_" + util.SanitizeName(projectName) + "_" + util.SanitizeName(projectTrigger.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
+	thisResource.Id = projectTrigger.Id
+	thisResource.ResourceType = c.GetResourceType(projectId)
+	thisResource.Lookup = "${octopusdeploy_project_deployment_target_trigger." + projectTriggerName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformProjectTrigger{
+			Type:            "octopusdeploy_project_deployment_target_trigger",
+			Name:            projectTriggerName,
+			ResourceName:    projectTrigger.Name,
+			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			EventCategories: projectTrigger.Filter.EventCategories,
+			EnvironmentIds:  projectTrigger.Filter.EnvironmentIds,
+			EventGroups:     projectTrigger.Filter.EventGroups,
+			Roles:           projectTrigger.Filter.Roles,
+			ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,
+			Id:              nil,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		return string(file.Bytes()), nil
 	}
 
 	return nil

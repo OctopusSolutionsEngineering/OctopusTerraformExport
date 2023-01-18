@@ -21,6 +21,10 @@ func (c SingleEnvironmentConverter) ToHclById(id string, dependencies *ResourceD
 		return err
 	}
 
+	return c.toHcl(environment, dependencies)
+}
+
+func (c SingleEnvironmentConverter) toHcl(environment octopus.Environment, dependencies *ResourceDetailsCollection) error {
 	resourceName := "environment_" + util.SanitizeName(environment.Name)
 
 	thisResource := ResourceDetails{}
