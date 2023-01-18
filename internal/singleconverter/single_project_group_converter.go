@@ -13,15 +13,14 @@ type SingleProjectGroupConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]ResourceDetails, error) {
+func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.ProjectGroup{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	dependencies := make([]ResourceDetails, 0)
 	thisResource := ResourceDetails{}
 
 	projectName := "project_group_" + util.SanitizeNamePointer(resource.Name)
@@ -53,9 +52,8 @@ func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool) ([]Res
 		// export child projects
 	}
 
-	dependencies = append(dependencies, thisResource)
-
-	return dependencies, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c SingleProjectGroupConverter) GetResourceType() string {

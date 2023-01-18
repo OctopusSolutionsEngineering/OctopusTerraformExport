@@ -208,7 +208,7 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	}
 
 	if res.StatusCode != 200 {
-		return errors.New("did not find the requested resource")
+		return errors.New("did not find the requested resource: " + resourceType + " " + id)
 	}
 	defer res.Body.Close()
 

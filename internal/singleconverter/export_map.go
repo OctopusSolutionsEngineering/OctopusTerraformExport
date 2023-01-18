@@ -39,6 +39,17 @@ func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
 	c.Resources = append(c.Resources, resource...)
 }
 
+func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []ResourceDetails {
+	resources := make([]ResourceDetails, 0)
+	for _, r := range c.Resources {
+		if r.ResourceType == resourceType {
+			resources = append(resources, r)
+		}
+	}
+
+	return resources
+}
+
 func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) string {
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {

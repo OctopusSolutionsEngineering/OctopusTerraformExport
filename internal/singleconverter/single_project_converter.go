@@ -30,10 +30,24 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 	projectName := "project_" + util.SanitizeName(project.Name)
 
 	// The project group is a dependency that we need to lookup
-	projectGroupDependencies, err := SingleProjectGroupConverter{
+	err = SingleProjectGroupConverter{
 		Client: c.Client,
-	}.ToHclById(project.ProjectGroupId, false)
-	dependencies.AddResource(projectGroupDependencies...)
+	}.ToHclById(project.ProjectGroupId, false, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the deployment process
+	if project.DeploymentProcessId != nil {
+		err = SingleDeploymentProcessConverter{
+			Client: c.Client,
+		}.ToHclById(*project.DeploymentProcessId, projectName, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
@@ -50,11 +64,18 @@ func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetai
 		}
 	}
 
-	// TODO: Need to export deployment process
+	// The lifecycle is a dependency that we need to lookup
+	err = SingleLifecycleConverter{
+		Client: c.Client,
+	}.ToHclById(project.LifecycleId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Need to export channels
 	// TODO: Need to export git credentials
 	// TODO: Need to export project triggers
-	// TODO: Need to export lifecycles
 	// TODO: Need to export tenants
 	// TODO: Need to export certificates
 

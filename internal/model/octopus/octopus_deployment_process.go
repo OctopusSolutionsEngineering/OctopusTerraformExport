@@ -1,8 +1,8 @@
 package octopus
 
 type DeploymentProcess struct {
-	Id        *string
-	ProjectId *string
+	Id        string
+	ProjectId string
 	Steps     []Step
 }
 
