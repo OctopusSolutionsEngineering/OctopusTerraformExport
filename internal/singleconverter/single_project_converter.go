@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
@@ -17,16 +16,17 @@ type SingleProjectConverter struct {
 	SpaceResourceName string
 }
 
-func (c SingleProjectConverter) ToHclById(id string) ([]converters.ResourceDetails, error) {
+// ToHclById is a "smart" export that exports a single project and the dependencies
+// required to support it.
+func (c SingleProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	project := octopus.Project{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	dependencies := make([]converters.ResourceDetails, 0)
-	thisResource := converters.ResourceDetails{}
+	thisResource := ResourceDetails{}
 
 	projectName := "project_" + util.SanitizeName(project.Name)
 
@@ -35,23 +35,23 @@ func (c SingleProjectConverter) ToHclById(id string) ([]converters.ResourceDetai
 		Client:            c.Client,
 		SpaceResourceName: c.SpaceResourceName,
 	}.ToHclById(project.ProjectGroupId, false)
-	dependencies = append(dependencies, projectGroupDependencies...)
+	dependencies.AddResource(projectGroupDependencies...)
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
-	dependencies = append(dependencies, projectTemplateMap...)
+	dependencies.AddResource(projectTemplateMap...)
 
 	// The library variables are dependencies
-	// TODO: Need to have single variable sets exported
-	//for _, v := range project.IncludedLibraryVariableSetIds {
-	//	dependencies = append(dependencies, ResourceDetails{
-	//		Id:           v,
-	//		ResourceType: "LibraryVariableSets",
-	//		Lookup:       "",
-	//		FileName:     "",
-	//		ToHcl:        nil,
-	//	})
-	//}
+	for _, v := range project.IncludedLibraryVariableSetIds {
+		err := SingleLibraryVariableSetConverter{
+			Client:            c.Client,
+			SpaceResourceName: c.SpaceResourceName,
+		}.ToHclById(v, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	// TODO: Need to export deployment process
 
@@ -59,7 +59,7 @@ func (c SingleProjectConverter) ToHclById(id string) ([]converters.ResourceDetai
 	thisResource.Id = project.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_project." + projectName + ".id}"
-	thisResource.ToHcl = func(resources map[string]converters.ResourceDetails) (string, error) {
+	thisResource.ToHcl = func(resources map[string]ResourceDetails) (string, error) {
 
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
@@ -87,18 +87,17 @@ func (c SingleProjectConverter) ToHclById(id string) ([]converters.ResourceDetai
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 		return string(file.Bytes()), nil
 	}
+	dependencies.AddResource(thisResource)
 
-	dependencies = append(dependencies, thisResource)
-
-	return dependencies, nil
+	return nil
 }
 
 func (c SingleProjectConverter) GetResourceType() string {
 	return "Projects"
 }
 
-func (c SingleProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []converters.ResourceDetails) {
-	templateMap := make([]converters.ResourceDetails, 0)
+func (c SingleProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
 		collection = append(collection, terraform.TerraformTemplate{
@@ -109,7 +108,7 @@ func (c SingleProjectConverter) convertTemplates(actionPackages []octopus.Templa
 			DisplaySettings: v.DisplaySettings,
 		})
 
-		templateMap = append(templateMap, converters.ResourceDetails{
+		templateMap = append(templateMap, ResourceDetails{
 			Id:           "",
 			ResourceType: "",
 			Lookup:       "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
@@ -120,7 +119,7 @@ func (c SingleProjectConverter) convertTemplates(actionPackages []octopus.Templa
 	return collection, templateMap
 }
 
-func (c SingleProjectConverter) convertLibraryVariableSets(setIds []string, resources map[string]converters.ResourceDetails) []string {
+func (c SingleProjectConverter) convertLibraryVariableSets(setIds []string, resources map[string]ResourceDetails) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
 		collection = append(collection, resources["LibraryVariableSets"+v].Lookup)

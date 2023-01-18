@@ -6,7 +6,7 @@ type VariableSet struct {
 }
 
 type Variable struct {
-	Id          *string
+	Id          string
 	Name        string
 	Value       *string
 	Description *string

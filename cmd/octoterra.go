@@ -61,13 +61,14 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		Client: client,
 	}
 
-	resources, err := converter.ToHclById(projectId)
+	dependencies := singleconverter.ResourceDetailsCollection{}
+	err := converter.ToHclById(projectId, &dependencies)
 
 	if err != nil {
 		return err
 	}
 
-	hcl, err := processResources(resources)
+	hcl, err := processResources(dependencies.Resources)
 
 	if err != nil {
 		return err
@@ -78,8 +79,8 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 	return err
 }
 
-func processResources(resources []converters.ResourceDetails) (map[string]string, error) {
-	resourceMap := map[string]converters.ResourceDetails{}
+func processResources(resources []singleconverter.ResourceDetails) (map[string]string, error) {
+	resourceMap := map[string]singleconverter.ResourceDetails{}
 	fileMap := map[string]string{}
 
 	for _, r := range resources {
@@ -87,6 +88,12 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 	}
 
 	for _, r := range resources {
+		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
+		// In these cases, ToHcl is nil.
+		if r.ToHcl == nil {
+			continue
+		}
+
 		hcl, err := r.ToHcl(resourceMap)
 
 		if err != nil {
