@@ -52,6 +52,12 @@ func (c SingleVariableSetConverter) toHcl(resource octopus.VariableSet, parentNa
 			return err
 		}
 
+		// Export linked worker pools
+		err = c.exportWorkerPools(v.Value, dependencies)
+		if err != nil {
+			return err
+		}
+
 		thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
 		thisResource.Id = v.Id
 		thisResource.ResourceType = c.GetResourceType()
@@ -62,6 +68,7 @@ func (c SingleVariableSetConverter) toHcl(resource octopus.VariableSet, parentNa
 			value := c.getAccount(v.Value, dependencies)
 			value = c.getFeeds(value, dependencies)
 			value = c.getCertificates(value, dependencies)
+			value = c.getWorkerPools(value, dependencies)
 
 			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
@@ -219,6 +226,39 @@ func (c SingleVariableSetConverter) getCertificates(value *string, dependencies 
 	regex, _ := regexp.Compile("Certificates-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("Certificates", cert))
+	}
+
+	return &retValue
+}
+
+func (c SingleVariableSetConverter) exportWorkerPools(value *string, dependencies *ResourceDetailsCollection) error {
+	if value == nil {
+		return nil
+	}
+
+	regex, _ := regexp.Compile("WorkerPools-\\d+")
+	for _, cert := range regex.FindAllString(*value, -1) {
+		err := SingleWorkerPoolConverter{
+			Client: c.Client,
+		}.ToHclById(cert, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c SingleVariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
+	if value == nil {
+		return nil
+	}
+
+	retValue := *value
+	regex, _ := regexp.Compile("WorkerPools-\\d+")
+	for _, cert := range regex.FindAllString(*value, -1) {
+		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("WorkerPools", cert))
 	}
 
 	return &retValue

@@ -44,6 +44,12 @@ func (c SingleDeploymentProcessConverter) toHcl(resource octopus.DeploymentProce
 		return err
 	}
 
+	// Export linked worker pools
+	err = c.exportWorkerPools(resource, dependencies)
+	if err != nil {
+		return err
+	}
+
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -163,6 +169,24 @@ func (c SingleDeploymentProcessConverter) exportAccounts(resource octopus.Deploy
 					if err != nil {
 						return err
 					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c SingleDeploymentProcessConverter) exportWorkerPools(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+	for _, step := range resource.Steps {
+		for _, action := range step.Actions {
+			if action.WorkerPoolId != "" {
+				err := SingleWorkerPoolConverter{
+					Client: c.Client,
+				}.ToHclById(action.WorkerPoolId, dependencies)
+
+				if err != nil {
+					return err
 				}
 			}
 		}
