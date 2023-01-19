@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -10,12 +10,12 @@ import (
 	"strings"
 )
 
-type SingleChannelConverter struct {
+type ChannelConverter struct {
 	Client    client.OctopusClient
 	DependsOn []string
 }
 
-func (c SingleChannelConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -34,7 +34,7 @@ func (c SingleChannelConverter) ToHcl(projectId string, dependencies *ResourceDe
 	return nil
 }
 
-func (c SingleChannelConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	channel := octopus.Channel{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &channel)
 
@@ -45,11 +45,11 @@ func (c SingleChannelConverter) ToHclById(id string, dependencies *ResourceDetai
 	return c.toHcl(channel, dependencies)
 }
 
-func (c SingleChannelConverter) toHcl(channel octopus.Channel, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) toHcl(channel octopus.Channel, dependencies *ResourceDetailsCollection) error {
 	if channel.Name != "Default" {
 
 		// The lifecycle is a dependency that we need to lookup
-		err := SingleLifecycleConverter{
+		err := LifecycleConverter{
 			Client: c.Client,
 		}.ToHclById(channel.LifecycleId, dependencies)
 
@@ -95,7 +95,7 @@ func (c SingleChannelConverter) toHcl(channel octopus.Channel, dependencies *Res
 	return nil
 }
 
-func (c SingleChannelConverter) getLifecycleId(lifecycleId string, dependencies *ResourceDetailsCollection) *string {
+func (c ChannelConverter) getLifecycleId(lifecycleId string, dependencies *ResourceDetailsCollection) *string {
 	if lifecycleId == "" {
 		return nil
 	}
@@ -104,15 +104,15 @@ func (c SingleChannelConverter) getLifecycleId(lifecycleId string, dependencies 
 	return &lifecycleLookup
 }
 
-func (c SingleChannelConverter) GetResourceType() string {
+func (c ChannelConverter) GetResourceType() string {
 	return "Channels"
 }
 
-func (c SingleChannelConverter) GetGroupResourceType(projectId string) string {
+func (c ChannelConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/channels"
 }
 
-func (c SingleChannelConverter) convertRules(rules []octopus.Rule) []terraform.TerraformRule {
+func (c ChannelConverter) convertRules(rules []octopus.Rule) []terraform.TerraformRule {
 	terraformRules := make([]terraform.TerraformRule, 0)
 	for _, v := range rules {
 		terraformRules = append(terraformRules, terraform.TerraformRule{
@@ -124,7 +124,7 @@ func (c SingleChannelConverter) convertRules(rules []octopus.Rule) []terraform.T
 	return terraformRules
 }
 
-func (c SingleChannelConverter) convertActionPackages(actionPackages []octopus.ActionPackage) []terraform.TerraformActionPackage {
+func (c ChannelConverter) convertActionPackages(actionPackages []octopus.ActionPackage) []terraform.TerraformActionPackage {
 	collection := make([]terraform.TerraformActionPackage, 0)
 	for _, v := range actionPackages {
 		collection = append(collection, terraform.TerraformActionPackage{

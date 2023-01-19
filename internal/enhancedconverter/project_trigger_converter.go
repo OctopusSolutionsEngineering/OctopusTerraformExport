@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleProjectTriggerConverter struct {
+type ProjectTriggerConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleProjectTriggerConverter) ToHcl(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) ToHcl(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetResourceType(projectId), &collection)
 
@@ -31,7 +31,7 @@ func (c SingleProjectTriggerConverter) ToHcl(projectId string, projectName strin
 	return nil
 }
 
-func (c SingleProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	projectTriggerName := "projecttrigger_" + util.SanitizeName(projectName) + "_" + util.SanitizeName(projectTrigger.Name)
 
 	thisResource := ResourceDetails{}
@@ -62,6 +62,6 @@ func (c SingleProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigg
 	return nil
 }
 
-func (c SingleProjectTriggerConverter) GetResourceType(projectId string) string {
+func (c ProjectTriggerConverter) GetResourceType(projectId string) string {
 	return "Projects/" + projectId + "/Triggers"
 }

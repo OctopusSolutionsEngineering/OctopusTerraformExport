@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"fmt"
@@ -12,11 +12,11 @@ import (
 	"strings"
 )
 
-type SingleDeploymentProcessConverter struct {
+type DeploymentProcessConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleDeploymentProcessConverter) ToHclById(id string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclById(id string, projectName string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.DeploymentProcess{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -27,7 +27,7 @@ func (c SingleDeploymentProcessConverter) ToHclById(id string, projectName strin
 	return c.toHcl(resource, projectName, dependencies)
 }
 
-func (c SingleDeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, projectName string, dependencies *ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + util.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
@@ -118,18 +118,18 @@ func (c SingleDeploymentProcessConverter) toHcl(resource octopus.DeploymentProce
 	return nil
 }
 
-func (c SingleDeploymentProcessConverter) GetResourceType() string {
+func (c DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c SingleDeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
 	feedRegex, _ := regexp.Compile("Feeds-\\d+")
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 
 			for _, pack := range action.Packages {
 				if pack.FeedId != nil {
-					err := SingleFeedConverter{
+					err := FeedConverter{
 						Client: c.Client,
 					}.ToHclById(util.EmptyIfNil(pack.FeedId), dependencies)
 
@@ -141,7 +141,7 @@ func (c SingleDeploymentProcessConverter) exportFeeds(resource octopus.Deploymen
 
 			for _, prop := range action.Properties {
 				for _, feed := range feedRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := SingleFeedConverter{
+					err := FeedConverter{
 						Client: c.Client,
 					}.ToHclById(feed, dependencies)
 
@@ -156,13 +156,13 @@ func (c SingleDeploymentProcessConverter) exportFeeds(resource octopus.Deploymen
 	return nil
 }
 
-func (c SingleDeploymentProcessConverter) exportAccounts(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportAccounts(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
 	accountRegex, _ := regexp.Compile("Accounts-\\d+")
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 			for _, prop := range action.Properties {
 				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := SingleAccountConverter{
+					err := AccountConverter{
 						Client: c.Client,
 					}.ToHclById(account, dependencies)
 
@@ -177,11 +177,11 @@ func (c SingleDeploymentProcessConverter) exportAccounts(resource octopus.Deploy
 	return nil
 }
 
-func (c SingleDeploymentProcessConverter) exportWorkerPools(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportWorkerPools(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 			if action.WorkerPoolId != "" {
-				err := SingleWorkerPoolConverter{
+				err := WorkerPoolConverter{
 					Client: c.Client,
 				}.ToHclById(action.WorkerPoolId, dependencies)
 
@@ -195,7 +195,7 @@ func (c SingleDeploymentProcessConverter) exportWorkerPools(resource octopus.Dep
 	return nil
 }
 
-func (c SingleDeploymentProcessConverter) convertContainer(container octopus.Container) *terraform.TerraformContainer {
+func (c DeploymentProcessConverter) convertContainer(container octopus.Container) *terraform.TerraformContainer {
 	if container.Image != nil || container.FeedId != nil {
 		return &terraform.TerraformContainer{
 			FeedId: container.FeedId,
@@ -206,12 +206,12 @@ func (c SingleDeploymentProcessConverter) convertContainer(container octopus.Con
 	return nil
 }
 
-func (c SingleDeploymentProcessConverter) replaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c DeploymentProcessConverter) replaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	return c.replaceAccountIds(c.replaceAccountIds(properties, dependencies), dependencies)
 }
 
 // removeUnnecessaryFields removes generic property bag values that have more specific terraform properties
-func (c SingleDeploymentProcessConverter) removeUnnecessaryFields(properties map[string]string) map[string]string {
+func (c DeploymentProcessConverter) removeUnnecessaryFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
 		if k != "Octopus.Action.RunOnServer" {
@@ -221,7 +221,7 @@ func (c SingleDeploymentProcessConverter) removeUnnecessaryFields(properties map
 	return sanitisedProperties
 }
 
-func (c SingleDeploymentProcessConverter) getRunOnServer(properties map[string]any) bool {
+func (c DeploymentProcessConverter) getRunOnServer(properties map[string]any) bool {
 	v, ok := properties["Octopus.Action.RunOnServer"]
 	if ok {
 		return strings.ToLower(fmt.Sprint(v)) == "true"
@@ -232,7 +232,7 @@ func (c SingleDeploymentProcessConverter) getRunOnServer(properties map[string]a
 
 // replaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c SingleDeploymentProcessConverter) replaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c DeploymentProcessConverter) replaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Feeds") {
 			if strings.Contains(v, v2.Id) {
@@ -246,7 +246,7 @@ func (c SingleDeploymentProcessConverter) replaceFeedIds(properties map[string]s
 
 // replaceAccountIds looks for any property value that is a valid account ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c SingleDeploymentProcessConverter) replaceAccountIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c DeploymentProcessConverter) replaceAccountIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Accounts") {
 			if strings.Contains(v, v2.Id) {

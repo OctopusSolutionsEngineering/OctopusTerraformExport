@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-type SingleVariableSetConverter struct {
+type VariableSetConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleVariableSetConverter) ToHclById(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) ToHclById(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.VariableSet{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -26,7 +26,7 @@ func (c SingleVariableSetConverter) ToHclById(id string, parentName string, pare
 	return c.toHcl(resource, parentName, parentLookup, dependencies)
 }
 
-func (c SingleVariableSetConverter) toHcl(resource octopus.VariableSet, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) toHcl(resource octopus.VariableSet, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	file := hclwrite.NewEmptyFile()
 
 	for _, v := range resource.Variables {
@@ -107,11 +107,11 @@ func (c SingleVariableSetConverter) toHcl(resource octopus.VariableSet, parentNa
 	return nil
 }
 
-func (c SingleVariableSetConverter) GetResourceType() string {
+func (c VariableSetConverter) GetResourceType() string {
 	return "Variables"
 }
 
-func (c SingleVariableSetConverter) convertSecretValue(variable octopus.Variable, parentName string) *string {
+func (c VariableSetConverter) convertSecretValue(variable octopus.Variable, parentName string) *string {
 	if variable.IsSensitive {
 		value := "${var." + parentName + "}"
 		return &value
@@ -120,7 +120,7 @@ func (c SingleVariableSetConverter) convertSecretValue(variable octopus.Variable
 	return nil
 }
 
-func (c SingleVariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
+func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
 	if prompt.Label != nil || prompt.Description != nil {
 		return &terraform.TerraformProjectVariablePrompt{
 			Description: prompt.Description,
@@ -132,14 +132,14 @@ func (c SingleVariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraf
 	return nil
 }
 
-func (c SingleVariableSetConverter) exportAccounts(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportAccounts(value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
 	accountRegex, _ := regexp.Compile("Accounts-\\d+")
 	for _, account := range accountRegex.FindAllString(*value, -1) {
-		err := SingleAccountConverter{
+		err := AccountConverter{
 			Client: c.Client,
 		}.ToHclById(account, dependencies)
 
@@ -151,7 +151,7 @@ func (c SingleVariableSetConverter) exportAccounts(value *string, dependencies *
 	return nil
 }
 
-func (c SingleVariableSetConverter) getAccount(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -165,14 +165,14 @@ func (c SingleVariableSetConverter) getAccount(value *string, dependencies *Reso
 	return &retValue
 }
 
-func (c SingleVariableSetConverter) exportFeeds(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportFeeds(value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
 	feedRegex, _ := regexp.Compile("Feeds-\\d+")
 	for _, account := range feedRegex.FindAllString(*value, -1) {
-		err := SingleFeedConverter{
+		err := FeedConverter{
 			Client: c.Client,
 		}.ToHclById(account, dependencies)
 
@@ -184,7 +184,7 @@ func (c SingleVariableSetConverter) exportFeeds(value *string, dependencies *Res
 	return nil
 }
 
-func (c SingleVariableSetConverter) getFeeds(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -198,14 +198,14 @@ func (c SingleVariableSetConverter) getFeeds(value *string, dependencies *Resour
 	return &retValue
 }
 
-func (c SingleVariableSetConverter) exportCertificates(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportCertificates(value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
 	regex, _ := regexp.Compile("Certificates-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
-		err := SingleCertificateConverter{
+		err := CertificateConverter{
 			Client: c.Client,
 		}.ToHclById(cert, dependencies)
 
@@ -217,7 +217,7 @@ func (c SingleVariableSetConverter) exportCertificates(value *string, dependenci
 	return nil
 }
 
-func (c SingleVariableSetConverter) getCertificates(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c VariableSetConverter) getCertificates(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -231,14 +231,14 @@ func (c SingleVariableSetConverter) getCertificates(value *string, dependencies 
 	return &retValue
 }
 
-func (c SingleVariableSetConverter) exportWorkerPools(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportWorkerPools(value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
 	regex, _ := regexp.Compile("WorkerPools-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
-		err := SingleWorkerPoolConverter{
+		err := WorkerPoolConverter{
 			Client: c.Client,
 		}.ToHclById(cert, dependencies)
 
@@ -250,7 +250,7 @@ func (c SingleVariableSetConverter) exportWorkerPools(value *string, dependencie
 	return nil
 }
 
-func (c SingleVariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c VariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}

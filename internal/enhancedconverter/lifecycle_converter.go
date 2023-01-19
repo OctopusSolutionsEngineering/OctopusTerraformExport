@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleLifecycleConverter struct {
+type LifecycleConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleLifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	lifecycle := octopus.Lifecycle{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
 
@@ -25,11 +25,11 @@ func (c SingleLifecycleConverter) ToHclById(id string, dependencies *ResourceDet
 
 }
 
-func (c SingleLifecycleConverter) toHcl(lifecycle octopus.Lifecycle, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, dependencies *ResourceDetailsCollection) error {
 	// The environments are a dependency that we need to lookup
 	for _, phase := range lifecycle.Phases {
 		for _, auto := range phase.AutomaticDeploymentTargets {
-			err := SingleEnvironmentConverter{
+			err := EnvironmentConverter{
 				Client: c.Client,
 			}.ToHclById(auto, dependencies)
 
@@ -38,7 +38,7 @@ func (c SingleLifecycleConverter) toHcl(lifecycle octopus.Lifecycle, dependencie
 			}
 		}
 		for _, optional := range phase.OptionalDeploymentTargets {
-			err := SingleEnvironmentConverter{
+			err := EnvironmentConverter{
 				Client: c.Client,
 			}.ToHclById(optional, dependencies)
 
@@ -103,11 +103,11 @@ func (c SingleLifecycleConverter) toHcl(lifecycle octopus.Lifecycle, dependencie
 	return nil
 }
 
-func (c SingleLifecycleConverter) GetResourceType() string {
+func (c LifecycleConverter) GetResourceType() string {
 	return "Lifecycles"
 }
 
-func (c SingleLifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *ResourceDetailsCollection) []terraform.TerraformPhase {
+func (c LifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *ResourceDetailsCollection) []terraform.TerraformPhase {
 	terraformPhases := make([]terraform.TerraformPhase, 0)
 	for _, v := range phases {
 		terraformPhases = append(terraformPhases, terraform.TerraformPhase{
@@ -131,7 +131,7 @@ func (c SingleLifecycleConverter) convertPhases(phases []octopus.Phase, dependen
 	return terraformPhases
 }
 
-func (c SingleLifecycleConverter) convertTargets(environments []string, dependencies *ResourceDetailsCollection) []string {
+func (c LifecycleConverter) convertTargets(environments []string, dependencies *ResourceDetailsCollection) []string {
 	converted := make([]string, len(environments))
 
 	for i, v := range environments {

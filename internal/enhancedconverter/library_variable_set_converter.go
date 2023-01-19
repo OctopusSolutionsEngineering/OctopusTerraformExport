@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"fmt"
@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-type SingleLibraryVariableSetConverter struct {
+type LibraryVariableSetConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.LibraryVariableSet{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -26,14 +26,14 @@ func (c SingleLibraryVariableSetConverter) ToHclById(id string, dependencies *Re
 	return c.toHcl(resource, dependencies)
 }
 
-func (c SingleLibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, dependencies *ResourceDetailsCollection) error {
+func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
 
 	// The project group is a dependency that we need to lookup
 	if util.EmptyIfNil(resource.ContentType) == "Variables" {
-		err := SingleVariableSetConverter{
+		err := VariableSetConverter{
 			Client: c.Client,
 		}.ToHclById(resource.VariableSetId, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
 
@@ -108,11 +108,11 @@ func (c SingleLibraryVariableSetConverter) toHcl(resource octopus.LibraryVariabl
 	return nil
 }
 
-func (c SingleLibraryVariableSetConverter) GetResourceType() string {
+func (c LibraryVariableSetConverter) GetResourceType() string {
 	return "LibraryVariableSets"
 }
 
-func (c SingleLibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+func (c LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {

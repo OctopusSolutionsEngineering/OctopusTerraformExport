@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleEnvironmentConverter struct {
+type EnvironmentConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleEnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	environment := octopus.Environment{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
 
@@ -24,7 +24,7 @@ func (c SingleEnvironmentConverter) ToHclById(id string, dependencies *ResourceD
 	return c.toHcl(environment, dependencies)
 }
 
-func (c SingleEnvironmentConverter) toHcl(environment octopus.Environment, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) toHcl(environment octopus.Environment, dependencies *ResourceDetailsCollection) error {
 	resourceName := "environment_" + util.SanitizeName(environment.Name)
 
 	thisResource := ResourceDetails{}
@@ -63,7 +63,7 @@ func (c SingleEnvironmentConverter) toHcl(environment octopus.Environment, depen
 	return nil
 }
 
-func (c SingleEnvironmentConverter) getServiceNowChangeControlled(env octopus.Environment) bool {
+func (c EnvironmentConverter) getServiceNowChangeControlled(env octopus.Environment) bool {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "servicenow-integration" {
 			v, ok := setting.Values["ServiceNowChangeControlled"]
@@ -80,7 +80,7 @@ func (c SingleEnvironmentConverter) getServiceNowChangeControlled(env octopus.En
 	return false
 }
 
-func (c SingleEnvironmentConverter) getJiraServiceManagementExtensionSettings(env octopus.Environment) bool {
+func (c EnvironmentConverter) getJiraServiceManagementExtensionSettings(env octopus.Environment) bool {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "jiraservicemanagement-integration" {
 			v, ok := setting.Values["JsmChangeControlled"]
@@ -97,7 +97,7 @@ func (c SingleEnvironmentConverter) getJiraServiceManagementExtensionSettings(en
 	return false
 }
 
-func (c SingleEnvironmentConverter) getJiraExtensionSettings(env octopus.Environment) string {
+func (c EnvironmentConverter) getJiraExtensionSettings(env octopus.Environment) string {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "jira-integration" {
 			v, ok := setting.Values["JiraEnvironmentType"]
@@ -114,6 +114,6 @@ func (c SingleEnvironmentConverter) getJiraExtensionSettings(env octopus.Environ
 	return "unmapped"
 }
 
-func (c SingleEnvironmentConverter) GetResourceType() string {
+func (c EnvironmentConverter) GetResourceType() string {
 	return "Environments"
 }

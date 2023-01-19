@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"errors"
@@ -10,11 +10,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleAccountConverter struct {
+type AccountConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleAccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.Account{}
 	err := c.Client.GetResourceById(id, c.GetResourceType(), &resource)
 
@@ -25,7 +25,7 @@ func (c SingleAccountConverter) ToHclById(id string, dependencies *ResourceDetai
 	return c.toHcl(resource, dependencies)
 }
 
-func (c SingleAccountConverter) toHcl(resource octopus.Account, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) toHcl(resource octopus.Account, dependencies *ResourceDetailsCollection) error {
 	resourceName := "account_" + util.SanitizeName(resource.Name)
 
 	thisResource := ResourceDetails{}
@@ -308,6 +308,6 @@ func (c SingleAccountConverter) toHcl(resource octopus.Account, dependencies *Re
 	return nil
 }
 
-func (c SingleAccountConverter) GetResourceType() string {
+func (c AccountConverter) GetResourceType() string {
 	return "Accounts"
 }

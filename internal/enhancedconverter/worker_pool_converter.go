@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleWorkerPoolConverter struct {
+type WorkerPoolConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleWorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	pool := octopus.WorkerPool{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &pool)
 
@@ -24,7 +24,7 @@ func (c SingleWorkerPoolConverter) ToHclById(id string, dependencies *ResourceDe
 	return c.toHcl(pool, dependencies)
 }
 
-func (c SingleWorkerPoolConverter) toHcl(pool octopus.WorkerPool, dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "workerpool_" + util.SanitizeNamePointer(&pool.Name)
 
 	thisResource := ResourceDetails{}
@@ -125,6 +125,6 @@ func (c SingleWorkerPoolConverter) toHcl(pool octopus.WorkerPool, dependencies *
 	return nil
 }
 
-func (c SingleWorkerPoolConverter) GetResourceType() string {
+func (c WorkerPoolConverter) GetResourceType() string {
 	return "WorkerPools"
 }

@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleCertificateConverter struct {
+type CertificateConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleCertificateConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	certificate := octopus.Certificate{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
 
@@ -24,7 +24,7 @@ func (c SingleCertificateConverter) ToHclById(id string, dependencies *ResourceD
 	return c.toHcl(certificate, dependencies)
 }
 
-func (c SingleCertificateConverter) toHcl(certificate octopus.Certificate, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) toHcl(certificate octopus.Certificate, dependencies *ResourceDetailsCollection) error {
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.
 		It is assumed the exported project links up all required environments, and the certificate
@@ -107,11 +107,11 @@ func (c SingleCertificateConverter) toHcl(certificate octopus.Certificate, depen
 	return nil
 }
 
-func (c SingleCertificateConverter) GetResourceType() string {
+func (c CertificateConverter) GetResourceType() string {
 	return "Certificates"
 }
 
-func (c SingleCertificateConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, 0)
 	for _, v := range envs {
 		environment := dependencies.GetResource("Environments", v)
@@ -122,7 +122,7 @@ func (c SingleCertificateConverter) lookupEnvironments(envs []string, dependenci
 	return newEnvs
 }
 
-func (c SingleCertificateConverter) lookupTenants(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c CertificateConverter) lookupTenants(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newTenants := make([]string, 0)
 	for _, v := range envs {
 		tenant := dependencies.GetResource("Tenants", v)

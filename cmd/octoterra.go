@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
-	"github.com/mcasperson/OctopusTerraformExport/internal/singleconverter"
+	"github.com/mcasperson/OctopusTerraformExport/internal/enhancedconverter"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
@@ -57,11 +57,11 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		ApiKey: apiKey,
 	}
 
-	converter := singleconverter.SingleProjectConverter{
+	converter := enhancedconverter.ProjectConverter{
 		Client: client,
 	}
 
-	dependencies := singleconverter.ResourceDetailsCollection{}
+	dependencies := enhancedconverter.ResourceDetailsCollection{}
 	err := converter.ToHclById(projectId, &dependencies)
 
 	if err != nil {
@@ -79,7 +79,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 	return err
 }
 
-func processResources(resources []singleconverter.ResourceDetails) (map[string]string, error) {
+func processResources(resources []enhancedconverter.ResourceDetails) (map[string]string, error) {
 	fileMap := map[string]string{}
 
 	for _, r := range resources {

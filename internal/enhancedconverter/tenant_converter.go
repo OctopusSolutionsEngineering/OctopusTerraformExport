@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleTenantConverter struct {
+type TenantConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleTenantConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c TenantConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
@@ -22,7 +22,7 @@ func (c SingleTenantConverter) ToHcl(projectId string, dependencies *ResourceDet
 	}
 
 	for _, tenant := range collection.Items {
-		err = c.toHcl(tenant, projectId, dependencies)
+		err = c.toHcl(tenant, dependencies)
 		if err != nil {
 			return nil
 		}
@@ -30,7 +30,17 @@ func (c SingleTenantConverter) ToHcl(projectId string, dependencies *ResourceDet
 	return nil
 }
 
-func (c SingleTenantConverter) toHcl(tenant octopus.Tenant, projectId string, dependencies *ResourceDetailsCollection) error {
+func (c TenantConverter) toHcl(tenant octopus.Tenant, dependencies *ResourceDetailsCollection) error {
+
+	// Export all the tag sets
+	err := TagSetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	tenantName := "tenant_" + util.SanitizeName(tenant.Name)
 
 	thisResource := ResourceDetails{}
@@ -60,11 +70,11 @@ func (c SingleTenantConverter) toHcl(tenant octopus.Tenant, projectId string, de
 	return nil
 }
 
-func (c SingleTenantConverter) GetResourceType() string {
+func (c TenantConverter) GetResourceType() string {
 	return "Tenants"
 }
 
-func (c SingleTenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) []terraform.TerraformProjectEnvironment {
+func (c TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) []terraform.TerraformProjectEnvironment {
 	terraformProjectEnvironments := make([]terraform.TerraformProjectEnvironment, len(tags))
 	index := 0
 	for k, v := range tags {
@@ -77,7 +87,7 @@ func (c SingleTenantConverter) getProjects(tags map[string][]string, dependencie
 	return terraformProjectEnvironments
 }
 
-func (c SingleTenantConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c TenantConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)

@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
@@ -9,11 +9,11 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleProjectGroupConverter struct {
+type ProjectGroupConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) ToHclById(id string, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.ProjectGroup{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -24,7 +24,7 @@ func (c SingleProjectGroupConverter) ToHclById(id string, recursive bool, depend
 	return c.toHcl(resource, recursive, dependencies)
 }
 
-func (c SingleProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	projectName := "project_group_" + util.SanitizeNamePointer(resource.Name)
@@ -60,6 +60,6 @@ func (c SingleProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recurs
 	return nil
 }
 
-func (c SingleProjectGroupConverter) GetResourceType() string {
+func (c ProjectGroupConverter) GetResourceType() string {
 	return "ProjectGroups"
 }

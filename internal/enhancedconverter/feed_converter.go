@@ -1,4 +1,4 @@
-package singleconverter
+package enhancedconverter
 
 import (
 	"errors"
@@ -10,15 +10,15 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-type SingleFeedConverter struct {
+type FeedConverter struct {
 	Client client.OctopusClient
 }
 
-func (c SingleFeedConverter) GetResourceType() string {
+func (c FeedConverter) GetResourceType() string {
 	return "Feeds"
 }
 
-func (c SingleFeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.Feed{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -29,7 +29,7 @@ func (c SingleFeedConverter) ToHclById(id string, dependencies *ResourceDetailsC
 	return c.toHcl(resource, dependencies)
 }
 
-func (c SingleFeedConverter) toHcl(resource octopus.Feed, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) toHcl(resource octopus.Feed, dependencies *ResourceDetailsCollection) error {
 	resourceName := "feed_" + util.SanitizeName(resource.Name)
 	passwordName := resourceName + "_password"
 	password := "${var." + passwordName + "}"
