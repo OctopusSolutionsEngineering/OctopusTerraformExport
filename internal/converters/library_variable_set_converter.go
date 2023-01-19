@@ -50,22 +50,19 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, 
 
 	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
 
+	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName)
+	dependencies.AddResource(projectTemplateMap...)
 
-	if recursive {
-		// The project group is a dependency that we need to lookup
-		if util.EmptyIfNil(resource.ContentType) == "Variables" {
-			err := VariableSetConverter{
-				Client: c.Client,
-			}.ToHclById(resource.VariableSetId, true, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
+	// The project group is a dependency that we need to lookup regardless of whether recursive is set
+	if util.EmptyIfNil(resource.ContentType) == "Variables" {
+		err := VariableSetConverter{
+			Client: c.Client,
+		}.ToHclById(resource.VariableSetId, true, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
 
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
-
-		// The templates are dependencies that we export as part of the project
-		dependencies.AddResource(projectTemplateMap...)
 	}
 
 	thisResource.FileName = "space_population/library_variable_set_" + resourceName + ".tf"

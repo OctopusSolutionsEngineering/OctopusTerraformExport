@@ -11,6 +11,9 @@ import (
 	"strings"
 )
 
+// VariableSetConverter exports variable sets.
+// Note that we only access variable sets as dependencies of other resources, like project variables or
+// library variable sets. There is no global variable set export option.
 type VariableSetConverter struct {
 	Client client.OctopusClient
 }
