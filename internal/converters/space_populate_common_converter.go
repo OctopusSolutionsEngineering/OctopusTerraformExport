@@ -8,19 +8,19 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-// SpacePopulateCommonGenerator creates the common terraform files required to populate a space
+// TerraformProviderGenerator creates the common terraform files required to populate a space
 // including the provider, terraform config, and common vars
-type SpacePopulateCommonGenerator struct {
+type TerraformProviderGenerator struct {
 	Client client.OctopusClient
 }
 
-func (c SpacePopulateCommonGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
 	c.createProvider(directory, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, dependencies)
 }
 
-func (c SpacePopulateCommonGenerator) createProvider(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createProvider(directory string, dependencies *ResourceDetailsCollection) {
 	thisResource := ResourceDetails{}
 	thisResource.FileName = directory + "/provider.tf"
 	thisResource.Id = ""
@@ -41,7 +41,7 @@ func (c SpacePopulateCommonGenerator) createProvider(directory string, dependenc
 	dependencies.AddResource(thisResource)
 }
 
-func (c SpacePopulateCommonGenerator) createTerraformConfig(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createTerraformConfig(directory string, dependencies *ResourceDetailsCollection) {
 	thisResource := ResourceDetails{}
 	thisResource.FileName = directory + "/config.tf"
 	thisResource.Id = ""
@@ -56,7 +56,7 @@ func (c SpacePopulateCommonGenerator) createTerraformConfig(directory string, de
 	dependencies.AddResource(thisResource)
 }
 
-func (c SpacePopulateCommonGenerator) createVariables(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createVariables(directory string, dependencies *ResourceDetailsCollection) {
 	thisResource := ResourceDetails{}
 	thisResource.FileName = directory + "/provider_vars.tf"
 	thisResource.Id = ""

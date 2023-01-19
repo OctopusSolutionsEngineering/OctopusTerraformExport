@@ -65,12 +65,13 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		ApiKey: apiKey,
 	}
 
-	converter := converters.ProjectConverter{
-		Client: client,
-	}
-
 	dependencies := converters.ResourceDetailsCollection{}
-	err := converter.ToHclById(projectId, &dependencies)
+
+	converters.TerraformProviderGenerator{}.ToHcl("space_population", &dependencies)
+
+	err := converters.ProjectConverter{
+		Client: client,
+	}.ToHclById(projectId, &dependencies)
 
 	if err != nil {
 		return err
@@ -87,6 +88,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 	return err
 }
 
+// processResources creates a map of file names to file content
 func processResources(resources []converters.ResourceDetails) (map[string]string, error) {
 	fileMap := map[string]string{}
 

@@ -27,7 +27,7 @@ func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	// Generate common terraform config files
-	pacePopulateCommonGenerator := SpacePopulateCommonGenerator{}
+	pacePopulateCommonGenerator := TerraformProviderGenerator{}
 	pacePopulateCommonGenerator.ToHcl("space_population", dependencies)
 	pacePopulateCommonGenerator.ToHcl("space_creation", dependencies)
 

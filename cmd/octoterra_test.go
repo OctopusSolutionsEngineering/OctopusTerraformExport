@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -238,24 +239,24 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 			The two directories that Terraform is run in are captured in the terraformProjectDirs slice.
 	*/
 	terraformProjectDirs := []string{}
-	if _, err := os.Stat(terraformDir + "/space_creation"); err == nil {
+	if _, err := os.Stat(filepath.Join(terraformDir, "space_creation")); err == nil {
 		// The space export creates a dir called space_creation to create the exported space
-		terraformProjectDirs = append(terraformProjectDirs, terraformDir+"/space_creation")
+		terraformProjectDirs = append(terraformProjectDirs, filepath.Join(terraformDir, "space_creation"))
 	} else {
 		// The project export does not export the space, so we need a generic project to create the new space
-		terraformProjectDirs = append(terraformProjectDirs, "../test/terraform/z-createspace")
+		terraformProjectDirs = append(terraformProjectDirs, filepath.Join("..", "test", "terraform", "z-createspace"))
 	}
-	terraformProjectDirs = append(terraformProjectDirs, terraformDir+"/space_population")
+	terraformProjectDirs = append(terraformProjectDirs, filepath.Join(terraformDir, "space_population"))
 
 	// First loop initialises the new space, second populates the space
 	spaceId := "Spaces-1"
 	for i, terraformProjectDir := range terraformProjectDirs {
 
 		if !DisableTerraformInit {
-			os.Remove(terraformProjectDir + "/.terraform.lock.hcl")
+			os.Remove(filepath.Join(terraformProjectDir, ".terraform.lock.hcl"))
 		}
 
-		os.Remove(terraformProjectDir + "/terraform.tfstate")
+		os.Remove(filepath.Join(terraformProjectDir, "terraform.tfstate"))
 
 		if !DisableTerraformInit {
 			args := []string{"init", "-no-color"}
@@ -374,7 +375,11 @@ func arrange(t *testing.T, container *octopusContainer, terraformDir string, pop
 		return "", err
 	}
 
-	return getOutputVariable(t, terraformDir+"/space_creation", "octopus_space_id")
+	if _, err := os.Stat(filepath.Join(terraformDir, "space_creation")); err == nil {
+		return getOutputVariable(t, filepath.Join(terraformDir, "space_creation"), "octopus_space_id")
+	} else {
+		return getOutputVariable(t, filepath.Join("..", "test", "terraform", "z-createspace"), "octopus_space_id")
+	}
 }
 
 // act exports the Octopus configuration as Terraform, and reimports it as a new space
@@ -398,7 +403,7 @@ func act(t *testing.T, container *octopusContainer, newSpaceId string, populateV
 		return "", err
 	}
 
-	return getOutputVariable(t, tempDir+"/space_creation", "octopus_space_id")
+	return getOutputVariable(t, filepath.Join(tempDir, "space_creation"), "octopus_space_id")
 }
 
 // actProjectExport exports a single Octopus project as Terraform, and reimports it as a new space
@@ -406,7 +411,7 @@ func actProjectExport(t *testing.T, container *octopusContainer, terraformDir st
 	tempDir := getTempDir()
 	defer os.Remove(tempDir)
 
-	projectId, err := getOutputVariable(t, terraformDir+"/space_population", projectVar)
+	projectId, err := getOutputVariable(t, filepath.Join(terraformDir, "space_population"), projectVar)
 
 	if err != nil {
 		return "", err
@@ -424,7 +429,7 @@ func actProjectExport(t *testing.T, container *octopusContainer, terraformDir st
 		return "", err
 	}
 
-	return getOutputVariable(t, tempDir+"/space_creation", "octopus_space_id")
+	return getOutputVariable(t, filepath.Join("..", "test", "terraform", "z-createspace"), "octopus_space_id")
 }
 
 // TestSpaceExport verifies that a space can be reimported with the correct settings
@@ -3006,6 +3011,10 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		projectCollection := octopus.GeneralCollection[octopus.Project]{}
 		err = octopusClient.GetAllResources("Projects", &projectCollection)
 
+		if err != nil {
+			return err
+		}
+
 		if len(projectCollection.Items) != 1 {
 			t.Fatalf("There must only be one project")
 		}
@@ -3021,7 +3030,11 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		}
 
 		variableSet := octopus.VariableSet{}
-		err = octopusClient.GetResourceById("VariableSets", *projectCollection.Items[0].VariableSetId, &variableSet)
+		err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+
+		if err != nil {
+			return err
+		}
 
 		if len(variableSet.Variables) != 1 {
 			t.Fatalf("The project must have 1 variable")
