@@ -10,27 +10,52 @@ import (
 )
 
 type EnvironmentConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client client.OctopusClient
 }
 
-func (c EnvironmentConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Environment]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, environment := range collection.Items {
-		environmentName := "environment_" + util.SanitizeName(environment.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	environment := octopus.Environment{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(environment, true, dependencies)
+}
+
+func (c EnvironmentConverter) toHcl(environment octopus.Environment, recursive bool, dependencies *ResourceDetailsCollection) error {
+	resourceName := "environment_" + util.SanitizeName(environment.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = environment.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_environment." + resourceName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformEnvironment{
 			Type:                       "octopusdeploy_environment",
-			Name:                       environmentName,
+			Name:                       resourceName,
 			SpaceId:                    nil,
 			ResourceName:               environment.Name,
 			Description:                environment.Description,
@@ -50,11 +75,11 @@ func (c EnvironmentConverter) ToHcl() (map[string]string, map[string]string, err
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results["space_population/environment_"+environmentName+".tf"] = string(file.Bytes())
-		resultsMap[environment.Id] = "${octopusdeploy_environment." + environmentName + ".id}"
+		return string(file.Bytes()), nil
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c EnvironmentConverter) getServiceNowChangeControlled(env octopus.Environment) bool {

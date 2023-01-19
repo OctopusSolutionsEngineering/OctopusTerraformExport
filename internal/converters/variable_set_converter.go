@@ -7,59 +7,106 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"regexp"
+	"strings"
 )
 
 type VariableSetConverter struct {
-	Client      client.OctopusClient
-	AccountsMap map[string]string
+	Client client.OctopusClient
 }
 
-func (c VariableSetConverter) ToHclById(id string, parentName string, parentIdProperty string) (map[string]string, error) {
+func (c VariableSetConverter) ToHclById(id string, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.VariableSet{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	resources := map[string]string{}
+	return c.toHcl(resource, recursive, parentName, parentLookup, dependencies)
+}
+
+func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	file := hclwrite.NewEmptyFile()
 
 	for _, v := range resource.Variables {
+		thisResource := ResourceDetails{}
+
 		resourceName := parentName + "_" + util.SanitizeName(v.Name)
 
-		terraformResource := terraform.TerraformProjectVariable{
-			Name:           resourceName,
-			Type:           "octopusdeploy_variable",
-			OwnerId:        parentIdProperty,
-			Value:          c.replaceAccountIds(v.Value),
-			ResourceName:   v.Name,
-			ResourceType:   v.Type,
-			Description:    v.Description,
-			SensitiveValue: c.convertSecretValue(v, parentName),
-			IsSensitive:    v.IsSensitive,
-			Prompt:         c.convertPrompt(v.Prompt),
-		}
-
-		if v.IsSensitive {
-			secretVariableResource := terraform.TerraformVariable{
-				Name:        parentName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The secret variable value associated with the variable " + v.Name,
+		if recursive {
+			// Export linked accounts
+			err := c.exportAccounts(v.Value, dependencies)
+			if err != nil {
+				return err
 			}
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			// Export linked feeds
+			err = c.exportFeeds(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
+
+			// Export linked certificates
+			err = c.exportCertificates(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
+
+			// Export linked worker pools
+			err = c.exportWorkerPools(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
 		}
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-		resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
+		thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
+		thisResource.Id = v.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${octopusdeploy_variable." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+
+			// Replace anything that looks like an octopus resource reference
+			value := c.getAccount(v.Value, dependencies)
+			value = c.getFeeds(value, dependencies)
+			value = c.getCertificates(value, dependencies)
+			value = c.getWorkerPools(value, dependencies)
+
+			terraformResource := terraform.TerraformProjectVariable{
+				Name:           resourceName,
+				Type:           "octopusdeploy_variable",
+				OwnerId:        parentLookup,
+				Value:          value,
+				ResourceName:   v.Name,
+				ResourceType:   v.Type,
+				Description:    v.Description,
+				SensitiveValue: c.convertSecretValue(v, parentName),
+				IsSensitive:    v.IsSensitive,
+				Prompt:         c.convertPrompt(v.Prompt),
+			}
+
+			if v.IsSensitive {
+				secretVariableResource := terraform.TerraformVariable{
+					Name:        parentName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The secret variable value associated with the variable " + v.Name,
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				util.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
+
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+			return string(file.Bytes()), nil
+		}
+		dependencies.AddResource(thisResource)
 	}
 
-	return resources, nil
+	return nil
 }
 
 func (c VariableSetConverter) GetResourceType() string {
@@ -87,15 +134,134 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 	return nil
 }
 
-// replaceAccountIds swaps out an account ID with the resource lookup expression
-func (c VariableSetConverter) replaceAccountIds(variableValue *string) *string {
-	if variableValue == nil {
-		return variableValue
+func (c VariableSetConverter) exportAccounts(value *string, dependencies *ResourceDetailsCollection) error {
+	if value == nil {
+		return nil
 	}
 
-	if val, ok := c.AccountsMap[*variableValue]; ok {
-		return &val
+	accountRegex, _ := regexp.Compile("Accounts-\\d+")
+	for _, account := range accountRegex.FindAllString(*value, -1) {
+		err := AccountConverter{
+			Client: c.Client,
+		}.ToHclById(account, dependencies)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	return variableValue
+	return nil
+}
+
+func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDetailsCollection) *string {
+	if value == nil {
+		return nil
+	}
+
+	retValue := *value
+	accountRegex, _ := regexp.Compile("Accounts-\\d+")
+	for _, account := range accountRegex.FindAllString(*value, -1) {
+		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Accounts", account))
+	}
+
+	return &retValue
+}
+
+func (c VariableSetConverter) exportFeeds(value *string, dependencies *ResourceDetailsCollection) error {
+	if value == nil {
+		return nil
+	}
+
+	feedRegex, _ := regexp.Compile("Feeds-\\d+")
+	for _, account := range feedRegex.FindAllString(*value, -1) {
+		err := FeedConverter{
+			Client: c.Client,
+		}.ToHclById(account, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDetailsCollection) *string {
+	if value == nil {
+		return nil
+	}
+
+	retValue := *value
+	regex, _ := regexp.Compile("Feeds-\\d+")
+	for _, account := range regex.FindAllString(*value, -1) {
+		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Feeds", account))
+	}
+
+	return &retValue
+}
+
+func (c VariableSetConverter) exportCertificates(value *string, dependencies *ResourceDetailsCollection) error {
+	if value == nil {
+		return nil
+	}
+
+	regex, _ := regexp.Compile("Certificates-\\d+")
+	for _, cert := range regex.FindAllString(*value, -1) {
+		err := CertificateConverter{
+			Client: c.Client,
+		}.ToHclById(cert, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) getCertificates(value *string, dependencies *ResourceDetailsCollection) *string {
+	if value == nil {
+		return nil
+	}
+
+	retValue := *value
+	regex, _ := regexp.Compile("Certificates-\\d+")
+	for _, cert := range regex.FindAllString(*value, -1) {
+		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("Certificates", cert))
+	}
+
+	return &retValue
+}
+
+func (c VariableSetConverter) exportWorkerPools(value *string, dependencies *ResourceDetailsCollection) error {
+	if value == nil {
+		return nil
+	}
+
+	regex, _ := regexp.Compile("WorkerPools-\\d+")
+	for _, cert := range regex.FindAllString(*value, -1) {
+		err := WorkerPoolConverter{
+			Client: c.Client,
+		}.ToHclById(cert, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
+	if value == nil {
+		return nil
+	}
+
+	retValue := *value
+	regex, _ := regexp.Compile("WorkerPools-\\d+")
+	for _, cert := range regex.FindAllString(*value, -1) {
+		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("WorkerPools", cert))
+	}
+
+	return &retValue
 }

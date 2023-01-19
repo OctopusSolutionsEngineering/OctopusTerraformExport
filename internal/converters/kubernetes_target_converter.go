@@ -10,42 +10,72 @@ import (
 )
 
 type KubernetesTargetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	MachinePolicyMap  map[string]string
-	AccountMap        map[string]string
-	EnvironmentMap    map[string]string
-	WorkerPoolMap     map[string]string
+	Client client.OctopusClient
 }
 
-func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, target := range collection.Items {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.KubernetesEndpointResource{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	targetName := "target_" + util.SanitizeName(target.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_project." + targetName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 		if target.Endpoint.CommunicationStyle == "Kubernetes" {
-			targetName := "target_" + util.SanitizeName(target.Name)
 
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
 				Type:                            "octopusdeploy_kubernetes_cluster_deployment_target",
 				Name:                            targetName,
 				ClusterUrl:                      util.EmptyIfNil(target.Endpoint.ClusterUrl),
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds),
+				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
-				ClusterCertificate:              target.Endpoint.ClusterCertificate,
-				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId),
+				ClusterCertificate:              dependencies.GetResourcePointer("Certificate", target.Endpoint.ClusterCertificate),
+				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 				HealthStatus:                    nil,
 				Id:                              nil,
 				IsDisabled:                      util.NilIfFalse(target.IsDisabled),
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId),
+				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
 				Namespace:                       util.NilIfEmptyPointer(target.Endpoint.Namespace),
 				OperatingSystem:                 nil,
 				ProxyId:                         nil,
@@ -68,31 +98,33 @@ func (c KubernetesTargetConverter) ToHcl() (map[string]string, map[string]string
 					FeedId: target.Endpoint.Container.FeedId,
 					Image:  target.Endpoint.Container.Image,
 				},
-				Authentication:                      c.getK8sAuth(&target),
-				AwsAccountAuthentication:            c.getAwsAuth(&target),
-				AzureServicePrincipalAuthentication: c.getAzureAuth(&target),
-				CertificateAuthentication:           c.getCertAuth(&target),
-				GcpAccountAuthentication:            c.getGoogleAuth(&target),
+				Authentication:                      c.getK8sAuth(&target, dependencies),
+				AwsAccountAuthentication:            c.getAwsAuth(&target, dependencies),
+				AzureServicePrincipalAuthentication: c.getAzureAuth(&target, dependencies),
+				CertificateAuthentication:           c.getCertAuth(&target, dependencies),
+				GcpAccountAuthentication:            c.getGoogleAuth(&target, dependencies),
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/target_"+targetName+".tf"] = string(file.Bytes())
-			resultsMap[target.Id] = "${octopusdeploy_kubernetes_cluster_deployment_target." + targetName + ".id}"
+			return string(file.Bytes()), nil
 		}
+
+		return "", nil
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c KubernetesTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformAwsAccountAuthentication {
+func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAwsAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAws" {
 		return &terraform.TerraformAwsAccountAuthentication{
-			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId),
+			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
 			ClusterName:               util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			AssumeRole:                target.Endpoint.Authentication.AssumeRole,
 			AssumeRoleExternalId:      target.Endpoint.Authentication.AssumeRoleExternalId,
@@ -106,20 +138,20 @@ func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpoint
 	return nil
 }
 
-func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformAccountAuthentication {
+func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesStandard" {
 		return &terraform.TerraformAccountAuthentication{
-			AccountId: c.getAccount(target.Endpoint.Authentication.AccountId),
+			AccountId: c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
 		}
 	}
 
 	return nil
 }
 
-func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformGcpAccountAuthentication {
+func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformGcpAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesGoogleCloud" {
 		return &terraform.TerraformGcpAccountAuthentication{
-			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId),
+			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
 			ClusterName:               util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			Project:                   util.EmptyIfNil(target.Endpoint.Authentication.Project),
 			ImpersonateServiceAccount: target.Endpoint.Authentication.ImpersonateServiceAccount,
@@ -133,20 +165,20 @@ func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpo
 	return nil
 }
 
-func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformCertificateAuthentication {
+func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformCertificateAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesCertificate" {
 		return &terraform.TerraformCertificateAuthentication{
-			ClientCertificate: target.Endpoint.Authentication.ClientCertificate,
+			ClientCertificate: dependencies.GetResourcePointer("Certificates", target.Endpoint.Authentication.ClientCertificate),
 		}
 	}
 
 	return nil
 }
 
-func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformAzureServicePrincipalAuthentication {
+func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAzureServicePrincipalAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAzure" {
 		return &terraform.TerraformAzureServicePrincipalAuthentication{
-			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId),
+			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
 			ClusterName:          util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			ClusterResourceGroup: util.EmptyIfNil(target.Endpoint.Authentication.ClusterResourceGroup),
 		}
@@ -155,39 +187,101 @@ func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpoi
 	return nil
 }
 
-func (c KubernetesTargetConverter) lookupEnvironments(envs []string) []string {
+func (c KubernetesTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = c.EnvironmentMap[v]
+		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
 	return newEnvs
 }
 
-func (c KubernetesTargetConverter) getAccount(accountPointer *string) string {
-	account := util.EmptyIfNil(accountPointer)
-	accountLookup, ok := c.AccountMap[account]
-	if !ok {
+func (c KubernetesTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+	machineLookup := dependencies.GetResource("MachinePolicies", machine)
+	if machineLookup == "" {
+		return nil
+	}
+
+	return &machineLookup
+}
+
+func (c KubernetesTargetConverter) getAccount(account *string, dependencies *ResourceDetailsCollection) string {
+	if account == nil {
+		return ""
+	}
+
+	accountLookup := dependencies.GetResource("Accounts", *account)
+	if accountLookup == "" {
 		return ""
 	}
 
 	return accountLookup
 }
 
-func (c KubernetesTargetConverter) getMachinePolicy(machine string) *string {
-	machineLookup, ok := c.MachinePolicyMap[machine]
-	if !ok {
+func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *ResourceDetailsCollection) *string {
+	if pool == nil {
 		return nil
 	}
 
-	return &machineLookup
+	workerPoolLookup := dependencies.GetResource("WorkerPools", *pool)
+	if workerPoolLookup == "" {
+		return nil
+	}
+
+	return &workerPoolLookup
 }
 
-func (c KubernetesTargetConverter) getWorkerPool(poolPointer *string) *string {
-	pool := util.EmptyIfNil(poolPointer)
-	machineLookup, ok := c.WorkerPoolMap[pool]
-	if !ok {
-		return nil
+func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
 	}
 
-	return &machineLookup
+	// Export the accounts
+	if target.Endpoint.Authentication.AccountId != nil {
+		err = AccountConverter{
+			Client: c.Client,
+		}.ToHclById(*target.Endpoint.Authentication.AccountId, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the certificate
+	if target.Endpoint.Authentication.ClientCertificate != nil {
+		err = CertificateConverter{
+			Client: c.Client,
+		}.ToHclById(*target.Endpoint.Authentication.ClientCertificate, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if target.Endpoint.ClusterCertificate != nil {
+		err = CertificateConverter{
+			Client: c.Client,
+		}.ToHclById(*target.Endpoint.ClusterCertificate, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

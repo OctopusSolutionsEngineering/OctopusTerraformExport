@@ -10,33 +10,64 @@ import (
 )
 
 type AzureServiceFabricTargetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	MachinePolicyMap  map[string]string
-	EnvironmentMap    map[string]string
-	WorkerPoolMap     map[string]string
+	Client client.OctopusClient
 }
 
-func (c AzureServiceFabricTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, target := range collection.Items {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.AzureServiceFabricResource{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	targetName := "target_" + util.SanitizeName(target.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_azure_service_fabric_cluster_deployment_target." + targetName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 		if target.Endpoint.CommunicationStyle == "AzureServiceFabricCluster" {
-			targetName := "target_" + util.SanitizeName(target.Name)
+
 			passwordLookup := "${var." + targetName + "}"
 
 			terraformResource := terraform.TerraformAzureServiceFabricClusterDeploymentTarget{
 				Type:                            "octopusdeploy_azure_service_fabric_cluster_deployment_target",
 				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds),
+				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
 				ConnectionEndpoint:              target.Endpoint.ConnectionEndpoint,
@@ -49,7 +80,7 @@ func (c AzureServiceFabricTargetConverter) ToHcl() (map[string]string, map[strin
 				ClientCertificateVariable:       &target.Endpoint.ClientCertVariable,
 				HealthStatus:                    &target.HealthStatus,
 				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId),
+				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
 				OperatingSystem:                 nil,
 				SecurityMode:                    nil,
 				ServerCertificateThumbprint:     nil,
@@ -80,40 +111,67 @@ func (c AzureServiceFabricTargetConverter) ToHcl() (map[string]string, map[strin
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/target_"+targetName+".tf"] = string(file.Bytes())
-			resultsMap[target.Id] = "${octopusdeploy_azure_service_fabric_cluster_deployment_target." + targetName + ".id}"
+			return string(file.Bytes()), nil
 		}
+
+		return "", nil
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c AzureServiceFabricTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string) []string {
+func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = c.EnvironmentMap[v]
+		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
 	return newEnvs
 }
 
-func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string) *string {
-	machineLookup, ok := c.MachinePolicyMap[machine]
-	if !ok {
+func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+	machineLookup := dependencies.GetResource("MachinePolicies", machine)
+	if machineLookup == "" {
 		return nil
 	}
 
 	return &machineLookup
 }
 
-func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string) *string {
-	machineLookup, ok := c.WorkerPoolMap[pool]
-	if !ok {
+func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependencies *ResourceDetailsCollection) *string {
+	machineLookup := dependencies.GetResource("WorkerPools", pool)
+	if machineLookup == "" {
 		return nil
 	}
 
 	return &machineLookup
+}
+
+func (c AzureServiceFabricTargetConverter) exportDependencies(target octopus.AzureServiceFabricResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -10,26 +10,54 @@ import (
 )
 
 type CertificateConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	EnvironmentsMap   map[string]string
-	TenantsMap        map[string]string
+	Client client.OctopusClient
 }
 
-func (c CertificateConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Certificate]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, certificate := range collection.Items {
-		certificateName := "certificate_" + util.SanitizeName(certificate.Name)
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	certificate := octopus.Certificate{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(certificate, true, dependencies)
+}
+
+func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
+	/*
+		Note we don't export the tenants or environments that this certificate might be exposed to.
+		It is assumed the exported project links up all required environments, and the certificate
+		will link itself to any available environments or tenants.
+	*/
+
+	certificateName := "certificate_" + util.SanitizeName(certificate.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + certificateName + ".tf"
+	thisResource.Id = certificate.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_certificate." + certificateName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform.TerraformCertificate{
 			Type:            "octopusdeploy_certificate",
 			Name:            certificateName,
@@ -39,7 +67,7 @@ func (c CertificateConverter) ToHcl() (map[string]string, map[string]string, err
 			CertificateData: "${var." + certificateName + "_data}",
 			Archived:        &certificate.Archived,
 			//CertificateDataFormat:           certificate.CertificateDataFormat,
-			Environments: c.lookupEnvironments(certificate.EnvironmentIds),
+			Environments: c.lookupEnvironments(certificate.EnvironmentIds, dependencies),
 			//HasPrivateKey:                   certificate.HasPrivateKey,
 			//IsExpired:                       certificate.IsExpired,
 			//IssuerCommonName:                certificate.IssuerCommonName,
@@ -58,7 +86,7 @@ func (c CertificateConverter) ToHcl() (map[string]string, map[string]string, err
 			//SubjectOrganization:             certificate.SubjectOrganization,
 			TenantTags:                      &certificate.TenantTags,
 			TenantedDeploymentParticipation: &certificate.TenantedDeploymentParticipation,
-			Tenants:                         c.lookupTenants(certificate.TenantIds),
+			Tenants:                         c.lookupTenants(certificate.TenantIds, dependencies),
 			//Thumbprint:                      certificate.Thumbprint,
 			//Version:                         certificate.Version,
 		}
@@ -91,29 +119,35 @@ func (c CertificateConverter) ToHcl() (map[string]string, map[string]string, err
 		util.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
-		results["space_population/certificate_"+certificateName+".tf"] = string(file.Bytes())
-		resultsMap[certificate.Id] = "${octopusdeploy_certificate." + certificateName + ".id}"
+		return string(file.Bytes()), nil
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c CertificateConverter) GetResourceType() string {
 	return "Certificates"
 }
 
-func (c CertificateConverter) lookupEnvironments(envs []string) []string {
-	newEnvs := make([]string, len(envs))
-	for i, v := range envs {
-		newEnvs[i] = c.EnvironmentsMap[v]
+func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := dependencies.GetResource("Environments", v)
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
 	}
 	return newEnvs
 }
 
-func (c CertificateConverter) lookupTenants(envs []string) []string {
-	newTenants := make([]string, len(envs))
-	for i, v := range envs {
-		newTenants[i] = c.TenantsMap[v]
+func (c CertificateConverter) lookupTenants(envs []string, dependencies *ResourceDetailsCollection) []string {
+	newTenants := make([]string, 0)
+	for _, v := range envs {
+		tenant := dependencies.GetResource("Tenants", v)
+		if tenant != "" {
+			newTenants = append(newTenants, tenant)
+		}
 	}
 	return newTenants
 }

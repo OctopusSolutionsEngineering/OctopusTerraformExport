@@ -10,36 +10,68 @@ import (
 )
 
 type CloudRegionTargetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	MachinePolicyMap  map[string]string
-	EnvironmentMap    map[string]string
+	Client client.OctopusClient
 }
 
-func (c CloudRegionTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, target := range collection.Items {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.CloudRegionResource{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	targetName := "target_" + util.SanitizeName(target.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_cloud_region_deployment_target." + targetName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 		if target.Endpoint.CommunicationStyle == "None" {
-			targetName := "target_" + util.SanitizeName(target.Name)
 
 			terraformResource := terraform.TerraformCloudRegionDeploymentTarget{
 				Type:                            "octopusdeploy_cloud_region_deployment_target",
 				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds),
+				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
 				HealthStatus:                    &target.HealthStatus,
 				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId),
+				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
 				OperatingSystem:                 nil,
 				ShellName:                       &target.ShellName,
 				ShellVersion:                    &target.ShellVersion,
@@ -56,31 +88,58 @@ func (c CloudRegionTargetConverter) ToHcl() (map[string]string, map[string]strin
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/target_"+targetName+".tf"] = string(file.Bytes())
-			resultsMap[target.Id] = "${octopusdeploy_cloud_region_deployment_target." + targetName + ".id}"
+			return string(file.Bytes()), nil
 		}
+
+		return "", nil
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c CloudRegionTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c CloudRegionTargetConverter) lookupEnvironments(envs []string) []string {
+func (c CloudRegionTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = c.EnvironmentMap[v]
+		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
 	return newEnvs
 }
 
-func (c CloudRegionTargetConverter) getMachinePolicy(machine string) *string {
-	machineLookup, ok := c.MachinePolicyMap[machine]
-	if !ok {
+func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+	machineLookup := dependencies.GetResource("MachinePolicies", machine)
+	if machineLookup == "" {
 		return nil
 	}
 
 	return &machineLookup
+}
+
+func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -12,73 +12,98 @@ import (
 )
 
 type LibraryVariableSetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	AccountsMap       map[string]string
+	Client client.OctopusClient
 }
 
-func (c LibraryVariableSetConverter) ToHcl() (map[string]string, map[string]string, map[string]string, error) {
-	resource := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &resource)
+func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, nil, err
+		return err
 	}
 
-	resources := map[string]string{}
-	resourcesMap := map[string]string{}
-	templatesMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, v := range resource.Items {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.LibraryVariableSet{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+	thisResource := ResourceDetails{}
+
+	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
+
+	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName)
+
+	if recursive {
+		// The project group is a dependency that we need to lookup
+		if util.EmptyIfNil(resource.ContentType) == "Variables" {
+			err := VariableSetConverter{
+				Client: c.Client,
+			}.ToHclById(resource.VariableSetId, true, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		// The templates are dependencies that we export as part of the project
+		dependencies.AddResource(projectTemplateMap...)
+	}
+
+	thisResource.FileName = "space_population/library_variable_set_" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_library_variable_set." + resourceName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
 		file := hclwrite.NewEmptyFile()
 
-		resourceName := "library_variable_set_" + util.SanitizeName(v.Name)
-		resourceIdProperty := "${octopusdeploy_library_variable_set." + resourceName + ".id}"
-		templates, myTemplatesMap := c.convertTemplate(resourceName, v.Templates)
-		if util.EmptyIfNil(v.ContentType) == "Variables" {
+		if util.EmptyIfNil(resource.ContentType) == "Variables" {
 			terraformResource := terraform.TerraformLibraryVariableSet{
 				Type:         "octopusdeploy_library_variable_set",
 				Name:         resourceName,
-				ResourceName: v.Name,
-				Description:  v.Description,
-				Template:     templates,
+				ResourceName: resource.Name,
+				Description:  resource.Description,
+				Template:     projectTemplates,
 			}
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			resourcesMap[v.Id] = resourceIdProperty
-
-			// Export variable set
-			variableSet, err := VariableSetConverter{
-				Client:      c.Client,
-				AccountsMap: c.AccountsMap,
-			}.ToHclById(v.VariableSetId, util.SanitizeName(v.Name), resourceIdProperty)
+			return string(file.Bytes()), nil
+		} else if util.EmptyIfNil(resource.ContentType) == "ScriptModule" {
+			variable := octopus.VariableSet{}
+			err := c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
 
 			if err != nil {
-				return nil, nil, nil, err
+				return "", err
 			}
-
-			// merge the maps
-			for k, v := range variableSet {
-				resources[k] = v
-			}
-
-			for k, v := range myTemplatesMap {
-				templatesMap[k] = v
-			}
-		} else if util.EmptyIfNil(v.ContentType) == "ScriptModule" {
-			variable := octopus.VariableSet{}
-			err = c.Client.GetResourceById("Variables", v.VariableSetId, &variable)
 
 			script := ""
 			scriptLanguage := ""
 			for _, u := range variable.Variables {
-				if u.Name == "Octopus.Script.Module["+v.Name+"]" {
+				if u.Name == "Octopus.Script.Module["+resource.Name+"]" {
 					script = strings.Clone(*u.Value)
 				}
 
-				if u.Name == "Octopus.Script.Module.Language["+v.Name+"]" {
+				if u.Name == "Octopus.Script.Module.Language["+resource.Name+"]" {
 					scriptLanguage = strings.Clone(*u.Value)
 				}
 			}
@@ -86,8 +111,8 @@ func (c LibraryVariableSetConverter) ToHcl() (map[string]string, map[string]stri
 			terraformResource := terraform.TerraformScriptModule{
 				Type:         "octopusdeploy_script_module",
 				Name:         resourceName,
-				ResourceName: v.Name,
-				Description:  v.Description,
+				ResourceName: resource.Name,
+				Description:  resource.Description,
 				Script: terraform.TerraformScriptModuleScript{
 					Body:   script,
 					Syntax: scriptLanguage,
@@ -95,61 +120,39 @@ func (c LibraryVariableSetConverter) ToHcl() (map[string]string, map[string]stri
 			}
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-			resources["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			resourcesMap[v.Id] = resourceIdProperty
+			return string(file.Bytes()), nil
 		}
+
+		return "", nil
 	}
 
-	return resources, resourcesMap, templatesMap, nil
-}
-
-func (c LibraryVariableSetConverter) ToHclById(id string) (map[string]string, map[string]string, map[string]string, error) {
-	resource := octopus.LibraryVariableSet{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
-
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
-	templates, templatesMap := c.convertTemplate(resourceName, resource.Templates)
-	terraformResource := terraform.TerraformLibraryVariableSet{
-		Type:         "octopusdeploy_library_variable_set",
-		Name:         resourceName,
-		ResourceName: resource.Name,
-		Description:  resource.Description,
-		Template:     templates,
-	}
-
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-	return map[string]string{
-			resourceName + ".tf": string(file.Bytes()),
-		}, map[string]string{
-			resource.Id: "${octopusdeploy_library_variable_set." + resourceName + ".id}",
-		}, templatesMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c LibraryVariableSetConverter) GetResourceType() string {
 	return "LibraryVariableSets"
 }
 
-func (c LibraryVariableSetConverter) convertTemplate(parentName string, template []octopus.Template) ([]terraform.TerraformTemplate, map[string]string) {
-	templatesMap := map[string]string{}
-	terraformTemplates := make([]terraform.TerraformTemplate, 0)
-	for i, v := range template {
-		terraformTemplates = append(terraformTemplates, terraform.TerraformTemplate{
+func (c LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+	templateMap := make([]ResourceDetails, 0)
+	collection := make([]terraform.TerraformTemplate, 0)
+	for i, v := range actionPackages {
+		collection = append(collection, terraform.TerraformTemplate{
 			Name:            v.Name,
 			Label:           v.Label,
 			HelpText:        v.HelpText,
 			DefaultValue:    v.DefaultValue,
 			DisplaySettings: v.DisplaySettings,
 		})
-		templatesMap[v.Id] = "${octopusdeploy_library_variable_set." + parentName + ".template[" + fmt.Sprint(i) + "].id}"
-	}
 
-	return terraformTemplates, templatesMap
+		templateMap = append(templateMap, ResourceDetails{
+			Id:           v.Id,
+			ResourceType: "CommonTemplateMap",
+			Lookup:       "${octopusdeploy_library_variable_set." + libraryName + ".template[" + fmt.Sprint(i) + "].id}",
+			FileName:     "",
+			ToHcl:        nil,
+		})
+	}
+	return collection, templateMap
 }

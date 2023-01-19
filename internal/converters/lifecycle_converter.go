@@ -10,25 +10,78 @@ import (
 )
 
 type LifecycleConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	EnvironmentsMap   map[string]string
+	Client client.OctopusClient
 }
 
-func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Lifecycle]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	lifecycleMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, lifecycle := range collection.Items {
-		resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Name)
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	lifecycle := octopus.Lifecycle{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(lifecycle, true, dependencies)
+
+}
+
+func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	if recursive {
+		// The environments are a dependency that we need to lookup
+		for _, phase := range lifecycle.Phases {
+			for _, auto := range phase.AutomaticDeploymentTargets {
+				err := EnvironmentConverter{
+					Client: c.Client,
+				}.ToHclById(auto, dependencies)
+
+				if err != nil {
+					return err
+				}
+			}
+			for _, optional := range phase.OptionalDeploymentTargets {
+				err := EnvironmentConverter{
+					Client: c.Client,
+				}.ToHclById(optional, dependencies)
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = lifecycle.Id
+	thisResource.ResourceType = c.GetResourceType()
+	if lifecycle.Name == "Default Lifecycle" {
+		thisResource.Lookup = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
+	} else {
+		thisResource.Lookup = "${octopusdeploy_lifecycle." + resourceName + ".id}"
+	}
+	thisResource.ToHcl = func() (string, error) {
 		// Assume the default lifecycle already exists
 		if lifecycle.Name == "Default Lifecycle" {
 			data := terraform.TerraformLifecycleData{
@@ -42,15 +95,14 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			lifecycleMap[lifecycle.Id] = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
+			return string(file.Bytes()), nil
 		} else {
 			terraformResource := terraform.TerraformLifecycle{
 				Type:         "octopusdeploy_lifecycle",
 				Name:         resourceName,
 				ResourceName: lifecycle.Name,
 				Description:  lifecycle.Description,
-				Phase:        c.convertPhases(lifecycle.Phases),
+				Phase:        c.convertPhases(lifecycle.Phases, dependencies),
 				ReleaseRetentionPolicy: terraform.TerraformPolicy{
 					QuantityToKeep:    lifecycle.ReleaseRetentionPolicy.QuantityToKeep,
 					ShouldKeepForever: lifecycle.ReleaseRetentionPolicy.ShouldKeepForever,
@@ -65,62 +117,24 @@ func (c LifecycleConverter) ToHcl() (map[string]string, map[string]string, error
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			lifecycleMap[lifecycle.Id] = "${octopusdeploy_lifecycle." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 	}
 
-	return results, lifecycleMap, nil
-}
-
-func (c LifecycleConverter) ToHclById(id string) (map[string]string, error) {
-	lifecycle := octopus.Lifecycle{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resourceName := "lifecycle_" + util.SanitizeNamePointer(&lifecycle.Name)
-	terraformResource := terraform.TerraformLifecycle{
-		Type:         "octopusdeploy_lifecycle",
-		Name:         resourceName,
-		ResourceName: lifecycle.Name,
-		Description:  lifecycle.Description,
-		Phase:        c.convertPhases(lifecycle.Phases),
-		ReleaseRetentionPolicy: terraform.TerraformPolicy{
-			QuantityToKeep:    lifecycle.ReleaseRetentionPolicy.QuantityToKeep,
-			ShouldKeepForever: lifecycle.ReleaseRetentionPolicy.ShouldKeepForever,
-			Unit:              lifecycle.ReleaseRetentionPolicy.Unit,
-		},
-		TentacleRetentionPolicy: terraform.TerraformPolicy{
-			QuantityToKeep:    lifecycle.TentacleRetentionPolicy.QuantityToKeep,
-			ShouldKeepForever: lifecycle.TentacleRetentionPolicy.ShouldKeepForever,
-			Unit:              lifecycle.TentacleRetentionPolicy.Unit,
-		},
-	}
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-	return map[string]string{
-		resourceName + ".tf": string(file.Bytes()),
-	}, nil
-}
-
-func (c LifecycleConverter) ToHclByName(name string) (map[string]string, error) {
-	return map[string]string{}, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c LifecycleConverter) GetResourceType() string {
 	return "Lifecycles"
 }
 
-func (c LifecycleConverter) convertPhases(phases []octopus.Phase) []terraform.TerraformPhase {
+func (c LifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *ResourceDetailsCollection) []terraform.TerraformPhase {
 	terraformPhases := make([]terraform.TerraformPhase, 0)
 	for _, v := range phases {
 		terraformPhases = append(terraformPhases, terraform.TerraformPhase{
-			AutomaticDeploymentTargets:         c.convertTargets(v.AutomaticDeploymentTargets),
-			OptionalDeploymentTargets:          c.convertTargets(v.OptionalDeploymentTargets),
+			AutomaticDeploymentTargets:         c.convertTargets(v.AutomaticDeploymentTargets, dependencies),
+			OptionalDeploymentTargets:          c.convertTargets(v.OptionalDeploymentTargets, dependencies),
 			Name:                               v.Name,
 			IsOptionalPhase:                    v.IsOptionalPhase,
 			MinimumEnvironmentsBeforePromotion: v.MinimumEnvironmentsBeforePromotion,
@@ -139,11 +153,11 @@ func (c LifecycleConverter) convertPhases(phases []octopus.Phase) []terraform.Te
 	return terraformPhases
 }
 
-func (c LifecycleConverter) convertTargets(environments []string) []string {
+func (c LifecycleConverter) convertTargets(environments []string, dependencies *ResourceDetailsCollection) []string {
 	converted := make([]string, len(environments))
 
 	for i, v := range environments {
-		converted[i] = c.EnvironmentsMap[v]
+		converted[i] = dependencies.GetResource("Environments", v)
 	}
 
 	return converted

@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"errors"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
@@ -10,37 +11,79 @@ import (
 )
 
 type AccountConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client client.OctopusClient
 }
 
-func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Account]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	accountMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, account := range collection.Items {
-		resourceName := "account_" + util.SanitizeNamePointer(&account.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.Account{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
+	// TODO: export environments
+
+	resourceName := "account_" + util.SanitizeName(resource.Name)
+
+	thisResource := ResourceDetails{}
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	if resource.AccountType == "AmazonWebServicesAccount" {
+		thisResource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
+	} else if resource.AccountType == "AzureServicePrincipal" {
+		thisResource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+	} else if resource.AccountType == "AzureSubscription" {
+		thisResource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+	} else if resource.AccountType == "GoogleCloudAccount" {
+		thisResource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
+	} else if resource.AccountType == "Token" {
+		thisResource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
+	} else if resource.AccountType == "UsernamePassword" {
+		thisResource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
+	} else if resource.AccountType == "SshKeyPair" {
+		thisResource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+	}
+	thisResource.ToHcl = func() (string, error) {
 
 		// Assume the default lifecycle already exists
-		if account.AccountType == "AmazonWebServicesAccount" {
+		if resource.AccountType == "AmazonWebServicesAccount" {
 			secretVariable := "${var." + resourceName + "}"
 			terraformResource := terraform.TerraformAwsAccount{
 				Type:                            "octopusdeploy_aws_account",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-				AccessKey:                       account.AccessKey,
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
+				AccessKey:                       resource.AccessKey,
 				SecretKey:                       &secretVariable,
 			}
 
@@ -49,7 +92,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The AWS secret key associated with the account " + account.Name,
+				Description: "The AWS secret key associated with the account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -59,27 +102,26 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_aws_account." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 
-		if account.AccountType == "AzureServicePrincipal" {
+		if resource.AccountType == "AzureServicePrincipal" {
 			secretVariable := "${var." + resourceName + "}"
 			terraformResource := terraform.TerraformAzureServicePrincipal{
 				Type:                            "octopusdeploy_azure_service_principal",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-				ApplicationId:                   account.ClientId,
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
+				ApplicationId:                   resource.ClientId,
 				Password:                        &secretVariable,
-				SubscriptionId:                  account.SubscriptionNumber,
-				TenantId:                        account.TenantId,
-				AzureEnvironment:                util.NilIfEmptyPointer(account.AzureEnvironment),
-				ResourceManagerEndpoint:         util.NilIfEmptyPointer(account.ResourceManagementEndpointBaseUri),
+				SubscriptionId:                  resource.SubscriptionNumber,
+				TenantId:                        resource.TenantId,
+				AzureEnvironment:                util.NilIfEmptyPointer(resource.AzureEnvironment),
+				ResourceManagerEndpoint:         util.NilIfEmptyPointer(resource.ResourceManagementEndpointBaseUri),
 			}
 
 			secretVariableResource := terraform.TerraformVariable{
@@ -87,7 +129,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The Azure secret associated with the account " + account.Name,
+				Description: "The Azure secret associated with the account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -97,25 +139,24 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 
-		if account.AccountType == "AzureSubscription" {
+		if resource.AccountType == "AzureSubscription" {
 			certVariable := "${var." + resourceName + "_cert}"
 			terraformResource := terraform.TerraformAzureSubscription{
 				Type:                            "octopusdeploy_azure_subscription_account",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-				ManagementEndpoint:              util.EmptyIfNil(account.ResourceManagementEndpointBaseUri),
-				StorageEndpointSuffix:           util.EmptyIfNil(account.ServiceManagementEndpointSuffix),
-				SubscriptionId:                  account.SubscriptionNumber,
-				AzureEnvironment:                util.NilIfEmptyPointer(account.AzureEnvironment),
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
+				ManagementEndpoint:              util.EmptyIfNil(resource.ResourceManagementEndpointBaseUri),
+				StorageEndpointSuffix:           util.EmptyIfNil(resource.ServiceManagementEndpointSuffix),
+				SubscriptionId:                  resource.SubscriptionNumber,
+				AzureEnvironment:                util.NilIfEmptyPointer(resource.AzureEnvironment),
 				Certificate:                     &certVariable,
 			}
 
@@ -124,7 +165,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The Azure certificate associated with the account " + account.Name,
+				Description: "The Azure certificate associated with the account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -134,21 +175,20 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 
-		if account.AccountType == "GoogleCloudAccount" {
+		if resource.AccountType == "GoogleCloudAccount" {
 			secretVariable := "${var." + resourceName + "}"
 			terraformResource := terraform.TerraformGcpAccount{
 				Type:                            "octopusdeploy_gcp_account",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				JsonKey:                         &secretVariable,
 			}
 
@@ -157,7 +197,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The GCP JSON key associated with the account " + account.Name,
+				Description: "The GCP JSON key associated with the account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -167,21 +207,20 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_gcp_account." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 
-		if account.AccountType == "Token" {
+		if resource.AccountType == "Token" {
 			secretVariable := "${var." + resourceName + "}"
 			terraformResource := terraform.TerraformTokenAccount{
 				Type:                            "octopusdeploy_token_account",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				Token:                           &secretVariable,
 			}
 
@@ -190,7 +229,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The token associated with the account " + account.Name,
+				Description: "The token associated with the account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -200,22 +239,21 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_token_account." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 
-		if account.AccountType == "UsernamePassword" {
+		if resource.AccountType == "UsernamePassword" {
 			secretVariable := "${var." + resourceName + "}"
 			terraformResource := terraform.TerraformUsernamePasswordAccount{
 				Type:                            "octopusdeploy_username_password_account",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-				Username:                        account.Username,
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
+				Username:                        resource.Username,
 				Password:                        &secretVariable,
 			}
 
@@ -224,7 +262,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The password associated with the account " + account.Name,
+				Description: "The password associated with the account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -234,24 +272,23 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_username_password_account." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
 
-		if account.AccountType == "SshKeyPair" {
+		if resource.AccountType == "SshKeyPair" {
 			secretVariable := "${var." + resourceName + "}"
 			certFileVariable := "${var." + resourceName + "_cert}"
 			terraformResource := terraform.TerraformSshAccount{
 				Type:                            "octopusdeploy_ssh_key_account",
 				Name:                            resourceName,
-				ResourceName:                    account.Name,
-				Description:                     account.Description,
+				ResourceName:                    resource.Name,
+				Description:                     resource.Description,
 				Environments:                    nil,
-				TenantTags:                      account.TenantTags,
+				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
-				TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				PrivateKeyFile:                  &certFileVariable,
-				Username:                        account.Username,
+				Username:                        resource.Username,
 				PrivateKeyPassphrase:            &secretVariable,
 			}
 
@@ -260,7 +297,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The password associated with the certificate for account " + account.Name,
+				Description: "The password associated with the certificate for account " + resource.Name,
 			}
 
 			certFileVariableResource := terraform.TerraformVariable{
@@ -268,7 +305,7 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
-				Description: "The certificate file for account " + account.Name,
+				Description: "The certificate file for account " + resource.Name,
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -282,12 +319,14 @@ func (c AccountConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
 			file.Body().AppendBlock(certFileVariableResourceBlock)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			accountMap[account.Id] = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
+
+		return "", errors.New("found unsupported account type")
 	}
 
-	return results, accountMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c AccountConverter) GetResourceType() string {

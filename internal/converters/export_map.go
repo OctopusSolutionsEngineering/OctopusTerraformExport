@@ -1,4 +1,4 @@
-package enhancedconverter
+package converters
 
 type ToHcl func() (string, error)
 

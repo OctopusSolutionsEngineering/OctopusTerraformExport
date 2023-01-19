@@ -13,22 +13,55 @@ import (
 )
 
 type MachinePolicyConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client client.OctopusClient
 }
 
-func (c MachinePolicyConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.MachinePolicy]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
-
 	for _, machinePolicy := range collection.Items {
+		err = c.toHcl(machinePolicy, false, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	machinePolicy := octopus.MachinePolicy{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &machinePolicy)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(machinePolicy, true, dependencies)
+}
+
+func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	policyName := "machinepolicy_" + util.SanitizeName(machinePolicy.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + policyName + ".tf"
+	thisResource.Id = machinePolicy.Id
+	thisResource.ResourceType = c.GetResourceType()
+
+	if machinePolicy.Name == "Default Machine Policy" {
+		thisResource.Lookup = "${data.octopusdeploy_machine_policies.default_machine_policy.machine_policies[0].id}"
+	} else {
+		thisResource.Lookup = "${octopusdeploy_machine_policy." + policyName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
 		if machinePolicy.Name == "Default Machine Policy" {
 			data := terraform.TerraformMachinePolicyData{
 				Type:        "octopusdeploy_machine_policies",
@@ -41,11 +74,8 @@ func (c MachinePolicyConverter) ToHcl() (map[string]string, map[string]string, e
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
-			results["space_population/default_machine_policy.tf"] = string(file.Bytes())
-			resultsMap[machinePolicy.Id] = "${data.octopusdeploy_machine_policies.default_machine_policy.machine_policies[0].id}"
+			return string(file.Bytes()), nil
 		} else {
-
-			policyName := "machinepolicy_" + util.SanitizeName(machinePolicy.Name)
 
 			terraformResource := terraform.TerraformMachinePolicy{
 				Type:                         "octopusdeploy_machine_policy",
@@ -88,12 +118,12 @@ func (c MachinePolicyConverter) ToHcl() (map[string]string, map[string]string, e
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/machinepolicy_"+policyName+".tf"] = string(file.Bytes())
-			resultsMap[machinePolicy.Id] = "${octopusdeploy_machine_policy." + policyName + ".id}"
+			return string(file.Bytes()), nil
 		}
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c MachinePolicyConverter) GetResourceType() string {

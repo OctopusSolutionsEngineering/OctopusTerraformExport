@@ -11,74 +11,107 @@ import (
 )
 
 type TenantVariableConverter struct {
-	Client                client.OctopusClient
-	SpaceResourceName     string
-	EnvironmentsMap       map[string]string
-	ProjectsMap           map[string]string
-	LibraryVariableSetMap map[string]string
-	TenantsMap            map[string]string
-	ProjectTemplatesMap   map[string]string
-	CommonTemplatesMap    map[string]string
+	Client client.OctopusClient
 }
 
-func (c TenantVariableConverter) ToHcl() (map[string]string, error) {
+func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := []octopus.TenantVariable{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	results := map[string]string{}
+	for _, resource := range collection {
+		err = c.toHcl(resource, false, dependencies)
 
-	projectVariableIndex := 0
-	commonVariableIndex := 0
-	for _, tenant := range collection {
+		if err != nil {
+			return err
+		}
+	}
 
-		file := hclwrite.NewEmptyFile()
-		for _, p := range tenant.ProjectVariables {
-			for env, variable := range p.Variables {
-				for templateId, value := range variable {
-					projectVariableIndex++
-					variableName := "tenantprojectvariable" + fmt.Sprint(projectVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
+	return nil
+}
+
+func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.TenantVariable{}
+	err := c.Client.GetAllResources("Tenants/"+id+"/Variables", &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	for _, p := range tenant.ProjectVariables {
+
+		projectVariableIndex := 0
+
+		for env, variable := range p.Variables {
+			for templateId, value := range variable {
+				projectVariableIndex++
+				variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
+
+				thisResource := ResourceDetails{}
+				thisResource.FileName = "space_population/" + variableName + ".tf"
+				thisResource.Id = templateId
+				thisResource.ResourceType = c.GetResourceType()
+				thisResource.Lookup = "${octopusdeploy_tenant_project_variable." + variableName + ".id}"
+				thisResource.ToHcl = func() (string, error) {
+					file := hclwrite.NewEmptyFile()
+
 					terraformResource := terraform.TerraformTenantProjectVariable{
 						Type:          "octopusdeploy_tenant_project_variable",
 						Name:          variableName,
 						Id:            nil,
-						EnvironmentId: c.EnvironmentsMap[env],
-						ProjectId:     c.ProjectsMap[p.ProjectId],
-						TemplateId:    c.ProjectTemplatesMap[templateId],
-						TenantId:      c.TenantsMap[tenant.TenantId],
+						EnvironmentId: dependencies.GetResource("Environments", env),
+						ProjectId:     dependencies.GetResource("Projects", p.ProjectId),
+						TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
+						TenantId:      dependencies.GetResource("Tenants", tenant.TenantId),
 						Value:         &value,
 					}
 					file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+					return string(file.Bytes()), nil
 				}
+				dependencies.AddResource(thisResource)
 			}
 		}
+	}
 
-		for _, l := range tenant.LibraryVariables {
-			for id, value := range l.Variables {
-				commonVariableIndex++
-				variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
+	for _, l := range tenant.LibraryVariables {
+		commonVariableIndex := 0
+
+		for id, value := range l.Variables {
+			commonVariableIndex++
+			variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
+
+			thisResource := ResourceDetails{}
+			thisResource.FileName = "space_population/" + variableName + ".tf"
+			thisResource.Id = id
+			thisResource.ResourceType = c.GetResourceType()
+			thisResource.Lookup = "${octopusdeploy_tenant_common_variable." + variableName + ".id}"
+			thisResource.ToHcl = func() (string, error) {
+				file := hclwrite.NewEmptyFile()
 				terraformResource := terraform.TerraformTenantCommonVariable{
 					Type:                 "octopusdeploy_tenant_common_variable",
 					Name:                 variableName,
 					Id:                   nil,
-					LibraryVariableSetId: c.LibraryVariableSetMap[l.LibraryVariableSetId],
-					TemplateId:           c.CommonTemplatesMap[id],
-					TenantId:             c.TenantsMap[tenant.TenantId],
+					LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", l.LibraryVariableSetId),
+					TemplateId:           dependencies.GetResource("CommonTemplateMap", id),
+					TenantId:             dependencies.GetResource("Tenants", tenant.TenantId),
 					Value:                &value,
 				}
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+				return string(file.Bytes()), nil
 			}
+			dependencies.AddResource(thisResource)
 		}
-
-		tenantName := "tenantvariable_" + util.SanitizeName(tenant.TenantName)
-		results["space_population/tenantvariable_"+tenantName+".tf"] = string(file.Bytes())
-
 	}
 
-	return results, nil
+	return nil
 }
 
 func (c TenantVariableConverter) GetResourceType() string {

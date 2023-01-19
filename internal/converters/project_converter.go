@@ -11,34 +11,62 @@ import (
 )
 
 type ProjectConverter struct {
-	Client                   client.OctopusClient
-	SpaceResourceName        string
-	ProjectGroupResourceName string
-	ProjectGroupId           string
-	FeedMap                  map[string]string
-	LifecycleMap             map[string]string
-	WorkPoolMap              map[string]string
-	AccountsMap              map[string]string
-	LibraryVariableSetMap    map[string]string
+	Client client.OctopusClient
 }
 
-func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, map[string]string, error) {
+func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Project]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
-	templateMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	channelDependencies := make([]string, 0)
+		if err != nil {
+			return err
+		}
+	}
 
-	for _, project := range collection.Items {
-		projectName := "project_" + util.SanitizeName(project.Name)
-		projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
+	return nil
+}
+
+func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	project := octopus.Project{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(project, true, dependencies)
+}
+
+func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, dependencies *ResourceDetailsCollection) error {
+	thisResource := ResourceDetails{}
+
+	projectName := "project_" + util.SanitizeName(project.Name)
+
+	if recursive {
+		err := c.exportDependencies(project, projectName, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// The templates are dependencies that we export as part of the project
+	projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
+	dependencies.AddResource(projectTemplateMap...)
+
+	thisResource.FileName = "space_population/project_" + projectName + ".tf"
+	thisResource.Id = project.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_project." + projectName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
 		terraformResource := terraform.TerraformProject{
 			Type:                            "octopusdeploy_project",
 			Name:                            projectName,
@@ -50,11 +78,11 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, map[str
 			DiscreteChannelRelease:          project.DiscreteChannelRelease,
 			IsDisabled:                      project.IsDisabled,
 			IsVersionControlled:             project.IsVersionControlled,
-			LifecycleId:                     c.LifecycleMap[project.LifecycleId],
-			ProjectGroupId:                  "${octopusdeploy_project_group." + c.ProjectGroupResourceName + ".id}",
+			LifecycleId:                     dependencies.GetResource("Lifecycles", project.LifecycleId),
+			ProjectGroupId:                  dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 			Template:                        projectTemplates,
-			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, c.LibraryVariableSetMap),
+			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
 			ConnectivityPolicy: terraform.TerraformConnectivityPolicy{
 				AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
 				ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
@@ -63,102 +91,19 @@ func (c ProjectConverter) ToHcl() (map[string]string, map[string]string, map[str
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-		resultsMap[project.Id] = "${octopusdeploy_project." + projectName + ".id}"
-		results["space_population/project_"+projectName+".tf"] = string(file.Bytes())
-
-		// note the project as a channel dependency
-		channelDependencies = append(channelDependencies, "octopusdeploy_project."+projectName)
-
-		if project.DeploymentProcessId != nil {
-			deploymentProcess, deploymentProcessId, err := DeploymentProcessConverter{
-				Client:        c.Client,
-				FeedMap:       c.FeedMap,
-				WorkPoolMap:   c.WorkPoolMap,
-				AccountsMap:   c.AccountsMap,
-				ProjectLookup: "${octopusdeploy_project." + projectName + ".id}",
-			}.ToHclById(*project.DeploymentProcessId)
-
-			if err != nil {
-				return nil, nil, nil, err
-			}
-
-			// merge the maps
-			for k, v := range deploymentProcess {
-				results[k] = v
-			}
-
-			for k, v := range projectTemplateMap {
-				templateMap[k] = v
-			}
-
-			// note the deployment project as a channel dependency
-			channelDependencies = append(channelDependencies, "octopusdeploy_deployment_process."+deploymentProcessId)
-		}
-
-		if project.VariableSetId != nil {
-			variableSet, err := VariableSetConverter{
-				Client:      c.Client,
-				AccountsMap: c.AccountsMap,
-			}.ToHclById(*project.VariableSetId, projectName, "${var.octopusdeploy_project."+projectName+".id}")
-
-			if err != nil {
-				return nil, nil, nil, err
-			}
-
-			// merge the maps
-			for k, v := range variableSet {
-				results[k] = v
-			}
-		}
-
-		// export the channels
-		lifecycles, _, err := ChannelConverter{
-			Client:            c.Client,
-			SpaceResourceName: c.SpaceResourceName,
-			ProjectId:         project.Id,
-			ProjectLookup:     "${octopusdeploy_project." + projectName + ".id}",
-			LifecycleMap:      c.LifecycleMap,
-			DependsOn:         channelDependencies,
-		}.ToHcl()
-
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		// merge the maps
-		for k, v := range lifecycles {
-			results[k] = v
-		}
-
-		// Convert the project triggers
-		triggers, err := ProjectTriggerConverter{
-			Client:            c.Client,
-			SpaceResourceName: c.SpaceResourceName,
-			ProjectId:         project.Id,
-			ProjectLookup:     "${octopusdeploy_project." + projectName + ".id}",
-			ProjectName:       project.Name,
-		}.ToHcl()
-
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		// merge the maps
-		for k, v := range triggers {
-			results[k] = v
-		}
+		return string(file.Bytes()), nil
 	}
+	dependencies.AddResource(thisResource)
 
-	return results, resultsMap, templateMap, nil
+	return nil
 }
 
 func (c ProjectConverter) GetResourceType() string {
-	return "ProjectGroups/" + c.ProjectGroupId + "/projects"
+	return "Projects"
 }
 
-func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, map[string]string) {
-	templateMap := map[string]string{}
+func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
 		collection = append(collection, terraform.TerraformTemplate{
@@ -168,15 +113,106 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 			DefaultValue:    v.DefaultValue,
 			DisplaySettings: v.DisplaySettings,
 		})
-		templateMap[v.Id] = "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}"
+
+		templateMap = append(templateMap, ResourceDetails{
+			Id:           v.Id,
+			ResourceType: "ProjectTemplates",
+			Lookup:       "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
+			FileName:     "",
+			ToHcl:        nil,
+		})
 	}
 	return collection, templateMap
 }
 
-func (c ProjectConverter) convertLibraryVariableSets(setIds []string, libraryMap map[string]string) []string {
+func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *ResourceDetailsCollection) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
-		collection = append(collection, libraryMap[v])
+		collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
 	}
 	return collection
+}
+
+func (c ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+	// Export the project group
+	err := ProjectGroupConverter{
+		Client: c.Client,
+	}.ToHclById(project.ProjectGroupId, false, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the deployment process
+	if project.DeploymentProcessId != nil {
+		err = DeploymentProcessConverter{
+			Client: c.Client,
+		}.ToHclById(*project.DeploymentProcessId, true, projectName, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the variable set
+	if project.VariableSetId != nil {
+		err = VariableSetConverter{
+			Client: c.Client,
+		}.ToHclById(*project.VariableSetId, true, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the library sets
+	for _, v := range project.IncludedLibraryVariableSetIds {
+		err := LibraryVariableSetConverter{
+			Client: c.Client,
+		}.ToHclById(v, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the lifecycles
+	err = LifecycleConverter{
+		Client: c.Client,
+	}.ToHclById(project.LifecycleId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the channels
+	err = ChannelConverter{
+		Client: c.Client,
+	}.ToHcl(project.Id, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the triggers
+	err = ProjectTriggerConverter{
+		Client: c.Client,
+	}.ToHcl(project.Id, project.Name, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the tenants
+	err = TenantConverter{
+		Client: c.Client,
+	}.ToHclByProjectId(project.Id, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Need to export git credentials
+
+	return nil
 }

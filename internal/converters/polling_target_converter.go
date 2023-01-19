@@ -10,39 +10,69 @@ import (
 )
 
 type PollingTargetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	MachinePolicyMap  map[string]string
-	AccountMap        map[string]string
-	EnvironmentMap    map[string]string
+	Client client.OctopusClient
 }
 
-func (c PollingTargetConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, target := range collection.Items {
-		if target.Endpoint.CommunicationStyle == "TentacleActive" {
-			targetName := "target_" + util.SanitizeName(target.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.PollingEndpointResource{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, true, dependencies)
+}
+
+func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if target.Endpoint.CommunicationStyle == "TentacleActive" {
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		targetName := "target_" + util.SanitizeName(target.Name)
+
+		thisResource := ResourceDetails{}
+		thisResource.FileName = "space_population/" + targetName + ".tf"
+		thisResource.Id = target.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${octopusdeploy_polling_tentacle_deployment_target." + targetName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformPollingTentacleDeploymentTarget{
 				Type:                            "octopusdeploy_polling_tentacle_deployment_target",
 				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds),
+				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
 				TentacleUrl:                     target.Endpoint.Uri,
 				CertificateSignatureAlgorithm:   nil,
 				HealthStatus:                    nil,
 				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId),
+				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
 				OperatingSystem:                 nil,
 				ShellName:                       &target.ShellName,
 				ShellVersion:                    &target.ShellVersion,
@@ -59,31 +89,57 @@ func (c PollingTargetConverter) ToHcl() (map[string]string, map[string]string, e
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/target_"+targetName+".tf"] = string(file.Bytes())
-			resultsMap[target.Id] = "${octopusdeploy_polling_tentacle_deployment_target." + targetName + ".id}"
+			return string(file.Bytes()), nil
 		}
+
+		dependencies.AddResource(thisResource)
 	}
 
-	return results, resultsMap, nil
+	return nil
 }
 
 func (c PollingTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c PollingTargetConverter) lookupEnvironments(envs []string) []string {
+func (c PollingTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = c.EnvironmentMap[v]
+		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
 	return newEnvs
 }
 
-func (c PollingTargetConverter) getMachinePolicy(machine string) *string {
-	machineLookup, ok := c.MachinePolicyMap[machine]
-	if !ok {
+func (c PollingTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+	machineLookup := dependencies.GetResource("MachinePolicies", machine)
+	if machineLookup == "" {
 		return nil
 	}
 
 	return &machineLookup
+}
+
+func (c PollingTargetConverter) exportDependencies(target octopus.PollingEndpointResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

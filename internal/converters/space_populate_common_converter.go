@@ -4,7 +4,6 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/enhancedconverter"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
@@ -15,14 +14,14 @@ type SpacePopulateCommonGenerator struct {
 	Client client.OctopusClient
 }
 
-func (c SpacePopulateCommonGenerator) ToHcl(dependencies *enhancedconverter.ResourceDetailsCollection) {
+func (c SpacePopulateCommonGenerator) ToHcl(dependencies *ResourceDetailsCollection) {
 	c.createProvider(dependencies)
 	c.createTerraformConfig(dependencies)
 	c.createVariables(dependencies)
 }
 
-func (c SpacePopulateCommonGenerator) createProvider(dependencies *enhancedconverter.ResourceDetailsCollection) {
-	thisResource := enhancedconverter.ResourceDetails{}
+func (c SpacePopulateCommonGenerator) createProvider(dependencies *ResourceDetailsCollection) {
+	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/provider.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
@@ -42,8 +41,8 @@ func (c SpacePopulateCommonGenerator) createProvider(dependencies *enhancedconve
 	dependencies.AddResource(thisResource)
 }
 
-func (c SpacePopulateCommonGenerator) createTerraformConfig(dependencies *enhancedconverter.ResourceDetailsCollection) {
-	thisResource := enhancedconverter.ResourceDetails{}
+func (c SpacePopulateCommonGenerator) createTerraformConfig(dependencies *ResourceDetailsCollection) {
+	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/config.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
@@ -57,8 +56,8 @@ func (c SpacePopulateCommonGenerator) createTerraformConfig(dependencies *enhanc
 	dependencies.AddResource(thisResource)
 }
 
-func (c SpacePopulateCommonGenerator) createVariables(dependencies *enhancedconverter.ResourceDetailsCollection) {
-	thisResource := enhancedconverter.ResourceDetails{}
+func (c SpacePopulateCommonGenerator) createVariables(dependencies *ResourceDetailsCollection) {
+	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/config.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""

@@ -10,24 +10,48 @@ import (
 )
 
 type TagSetConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client client.OctopusClient
 }
 
-func (c TagSetConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
-
 	for _, tagSet := range collection.Items {
-		tagSetName := "tagset_" + util.SanitizeName(tagSet.Name)
+		err = c.toHcl(tagSet, false, dependencies)
 
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	tagSet := octopus.TagSet{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &tagSet)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(tagSet, true, dependencies)
+}
+
+func (c TagSetConverter) toHcl(tagSet octopus.TagSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+	tagSetName := "tagset_" + util.SanitizeName(tagSet.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + tagSetName + ".tf"
+	thisResource.Id = tagSet.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_tag_set." + tagSetName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform.TerraformTagSet{
 			Type:         "octopusdeploy_tag_set",
 			Name:         tagSetName,
@@ -38,11 +62,19 @@ func (c TagSetConverter) ToHcl() (map[string]string, map[string]string, error) {
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results["space_population/tagset_"+tagSetName+".tf"] = string(file.Bytes())
-		resultsMap[tagSet.Id] = "${octopusdeploy_tag_set." + tagSetName + ".id}"
+		return string(file.Bytes()), nil
+	}
+	dependencies.AddResource(thisResource)
 
-		for _, tag := range tagSet.Tags {
-			tagName := "tag_" + util.SanitizeName(tag.Name)
+	for _, tag := range tagSet.Tags {
+		tagName := "tag_" + util.SanitizeName(tag.Name)
+
+		tagResource := ResourceDetails{}
+		tagResource.FileName = "space_population/" + tagName + ".tf"
+		tagResource.Id = tagSet.Id
+		tagResource.ResourceType = c.GetResourceType()
+		tagResource.Lookup = "${octopusdeploy_tag." + tagName + ".id}"
+		tagResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTag{
 				Type:         "octopusdeploy_tag",
 				Name:         tagName,
@@ -55,12 +87,12 @@ func (c TagSetConverter) ToHcl() (map[string]string, map[string]string, error) {
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/tag_"+tagName+".tf"] = string(file.Bytes())
-			resultsMap[tag.Id] = "${octopusdeploy_tag." + tagName + ".id}"
+			return string(file.Bytes()), nil
 		}
+		dependencies.AddResource(tagResource)
 	}
 
-	return results, resultsMap, nil
+	return nil
 }
 
 func (c TagSetConverter) GetResourceType() string {

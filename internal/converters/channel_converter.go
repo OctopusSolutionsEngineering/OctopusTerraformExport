@@ -11,37 +11,69 @@ import (
 )
 
 type ChannelConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	ProjectId         string
-	ProjectLookup     string
-	LifecycleMap      map[string]string
-	DependsOn         []string
+	Client    client.OctopusClient
+	DependsOn []string
 }
 
-func (c ChannelConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c ChannelConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	channelMap := map[string]string{}
-
 	for _, channel := range collection.Items {
+		err = c.toHcl(channel, false, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c ChannelConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	channel := octopus.Channel{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &channel)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(channel, true, dependencies)
+}
+
+func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if channel.Name != "Default" {
+
+		if recursive {
+			// The lifecycle is a dependency that we need to lookup
+			err := LifecycleConverter{
+				Client: c.Client,
+			}.ToHclById(channel.LifecycleId, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+
 		resourceName := "channel_" + util.SanitizeNamePointer(&channel.Name)
 
-		// Assume the default lifecycle already exists
-		if channel.Name != "Default" {
+		thisResource := ResourceDetails{}
+		thisResource.FileName = "space_population/" + resourceName + ".tf"
+		thisResource.Id = channel.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${octopusdeploy_channel." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformChannel{
 				Type:         "octopusdeploy_channel",
 				Name:         resourceName,
 				ResourceName: channel.Name,
 				Description:  channel.Description,
-				LifecycleId:  c.getLifecycleId(channel.LifecycleId),
-				ProjectId:    c.ProjectLookup,
+				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),
+				ProjectId:    dependencies.GetResource("Projects", channel.ProjectId),
 				IsDefault:    channel.IsDefault,
 				Rule:         c.convertRules(channel.Rules),
 				TenantTags:   channel.TenantTags,
@@ -56,25 +88,30 @@ func (c ChannelConverter) ToHcl() (map[string]string, map[string]string, error) 
 			util.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(c.DependsOn[:], ",")+"]")
 			file.Body().AppendBlock(block)
 
-			results["space_population/"+resourceName+".tf"] = string(file.Bytes())
-			channelMap[channel.Id] = "${octopusdeploy_channel." + resourceName + ".id}"
+			return string(file.Bytes()), nil
 		}
+
+		dependencies.AddResource(thisResource)
 	}
 
-	return results, channelMap, nil
+	return nil
 }
 
-func (c ChannelConverter) getLifecycleId(lifecycleId string) *string {
+func (c ChannelConverter) getLifecycleId(lifecycleId string, dependencies *ResourceDetailsCollection) *string {
 	if lifecycleId == "" {
 		return nil
 	}
 
-	lifecycleLookup := c.LifecycleMap[lifecycleId]
+	lifecycleLookup := dependencies.GetResource("Lifecycles", lifecycleId)
 	return &lifecycleLookup
 }
 
 func (c ChannelConverter) GetResourceType() string {
-	return "Projects/" + c.ProjectId + "/channels"
+	return "Channels"
+}
+
+func (c ChannelConverter) GetGroupResourceType(projectId string) string {
+	return "Projects/" + projectId + "/channels"
 }
 
 func (c ChannelConverter) convertRules(rules []octopus.Rule) []terraform.TerraformRule {

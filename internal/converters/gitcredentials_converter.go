@@ -14,19 +14,46 @@ type GitCredentialsConverter struct {
 	SpaceResourceName string
 }
 
-func (c GitCredentialsConverter) ToHcl() (map[string]string, map[string]string, error) {
+func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.GitCredentials]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
-
 	for _, gitCredentials := range collection.Items {
-		gitCredentialsName := "gitcredential_" + util.SanitizeName(gitCredentials.Name)
+		err = c.toHcl(gitCredentials, false, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	gitCredentials := octopus.GitCredentials{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &gitCredentials)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(gitCredentials, true, dependencies)
+}
+
+func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	gitCredentialsName := "gitcredential_" + util.SanitizeName(gitCredentials.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + gitCredentialsName + ".tf"
+	thisResource.Id = gitCredentials.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_git_credential." + gitCredentialsName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformGitCredentials{
 			Type:         "octopusdeploy_git_credential",
@@ -52,11 +79,11 @@ func (c GitCredentialsConverter) ToHcl() (map[string]string, map[string]string, 
 		util.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
-		results["space_population/gitcredentails_"+gitCredentialsName+".tf"] = string(file.Bytes())
-		resultsMap[gitCredentials.Id] = "${octopusdeploy_tag_set." + gitCredentialsName + ".id}"
+		return string(file.Bytes()), nil
 	}
 
-	return results, resultsMap, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c GitCredentialsConverter) GetResourceType() string {

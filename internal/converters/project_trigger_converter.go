@@ -10,31 +10,42 @@ import (
 )
 
 type ProjectTriggerConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
-	ProjectId         string
-	ProjectLookup     string
-	ProjectName       string
+	Client client.OctopusClient
 }
 
-func (c ProjectTriggerConverter) ToHcl() (map[string]string, error) {
+func (c ProjectTriggerConverter) ToHcl(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+	err := c.Client.GetAllResources(c.GetResourceType(projectId), &collection)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	results := map[string]string{}
-
 	for _, projectTrigger := range collection.Items {
-		projectTriggerName := "projecttrigger_" + util.SanitizeName(c.ProjectName) + "_" + util.SanitizeName(projectTrigger.Name)
+		err = c.toHcl(projectTrigger, false, projectId, projectName, dependencies)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, recursive bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+	projectTriggerName := "projecttrigger_" + util.SanitizeName(projectName) + "_" + util.SanitizeName(projectTrigger.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
+	thisResource.Id = projectTrigger.Id
+	thisResource.ResourceType = c.GetResourceType(projectId)
+	thisResource.Lookup = "${octopusdeploy_project_deployment_target_trigger." + projectTriggerName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformProjectTrigger{
 			Type:            "octopusdeploy_project_deployment_target_trigger",
 			Name:            projectTriggerName,
 			ResourceName:    projectTrigger.Name,
-			ProjectId:       c.ProjectLookup,
+			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			EventCategories: projectTrigger.Filter.EventCategories,
 			EnvironmentIds:  projectTrigger.Filter.EnvironmentIds,
 			EventGroups:     projectTrigger.Filter.EventGroups,
@@ -45,12 +56,12 @@ func (c ProjectTriggerConverter) ToHcl() (map[string]string, error) {
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		results["space_population/projecttrigger_"+projectTriggerName+".tf"] = string(file.Bytes())
+		return string(file.Bytes()), nil
 	}
 
-	return results, nil
+	return nil
 }
 
-func (c ProjectTriggerConverter) GetResourceType() string {
-	return "Projects/" + c.ProjectId + "/Triggers"
+func (c ProjectTriggerConverter) GetResourceType(projectId string) string {
+	return "Projects/" + projectId + "/Triggers"
 }

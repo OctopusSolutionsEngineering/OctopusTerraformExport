@@ -4,7 +4,6 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/enhancedconverter"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
@@ -20,7 +19,7 @@ type SpaceConverter struct {
 // ToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
 // with no filter and with the least number of network calls. It is "dumb" in the sense that things like
 // dependencies are manually resolved through the order in which resources are exported.
-func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCollection) error {
+func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	err := c.createSpaceTf(dependencies)
 
@@ -32,7 +31,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	SpacePopulateCommonGenerator{}.ToHcl(dependencies)
 
 	// Convert the feeds
-	err = enhancedconverter.FeedConverter{
+	err = FeedConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -41,7 +40,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the accounts
-	err = enhancedconverter.AccountConverter{
+	err = AccountConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -50,7 +49,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the environments
-	err = enhancedconverter.EnvironmentConverter{
+	err = EnvironmentConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -59,7 +58,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the library variables
-	err = enhancedconverter.LibraryVariableSetConverter{
+	err = LibraryVariableSetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -68,7 +67,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the lifecycles
-	err = enhancedconverter.LifecycleConverter{
+	err = LifecycleConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -77,7 +76,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the worker pools
-	err = enhancedconverter.WorkerPoolConverter{
+	err = WorkerPoolConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -86,7 +85,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the tag sets
-	err = enhancedconverter.TagSetConverter{
+	err = TagSetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -95,7 +94,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the git credentials
-	err = enhancedconverter.GitCredentialsConverter{
+	err = GitCredentialsConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -104,7 +103,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the projects groups
-	err = enhancedconverter.ProjectGroupConverter{
+	err = ProjectGroupConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -113,7 +112,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the projects
-	err = enhancedconverter.ProjectConverter{
+	err = ProjectConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -122,7 +121,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the tenants
-	err = enhancedconverter.TenantConverter{
+	err = TenantConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -131,7 +130,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the certificates
-	err = enhancedconverter.CertificateConverter{
+	err = CertificateConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -140,7 +139,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the tenant variables
-	err = enhancedconverter.TenantVariableConverter{
+	err = TenantVariableConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -149,7 +148,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the machine policies
-	err = enhancedconverter.MachinePolicyConverter{
+	err = MachinePolicyConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -158,7 +157,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the k8s targets
-	err = enhancedconverter.KubernetesTargetConverter{
+	err = KubernetesTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -167,7 +166,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the ssh targets
-	err = enhancedconverter.SshTargetConverter{
+	err = SshTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -176,7 +175,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the ssh targets
-	err = enhancedconverter.ListeningTargetConverter{
+	err = ListeningTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -185,7 +184,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the polling targets
-	err = enhancedconverter.PollingTargetConverter{
+	err = PollingTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -194,7 +193,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the cloud region targets
-	err = enhancedconverter.CloudRegionTargetConverter{
+	err = CloudRegionTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -203,7 +202,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the cloud region targets
-	err = enhancedconverter.OfflineDropTargetConverter{
+	err = OfflineDropTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -212,7 +211,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the azure cloud service targets
-	err = enhancedconverter.AzureCloudServiceTargetConverter{
+	err = AzureCloudServiceTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -221,7 +220,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the azure cloud service targets
-	err = enhancedconverter.AzureServiceFabricTargetConverter{
+	err = AzureServiceFabricTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -230,7 +229,7 @@ func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCol
 	}
 
 	// Convert the azure web app targets
-	err = enhancedconverter.AzureWebAppTargetConverter{
+	err = AzureWebAppTargetConverter{
 		Client: c.Client,
 	}.ToHcl(dependencies)
 
@@ -245,7 +244,7 @@ func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
 }
 
-func (c SpaceConverter) createSpaceTf(dependencies *enhancedconverter.ResourceDetailsCollection) error {
+func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) error {
 	space := octopus.Space{}
 	err := c.Client.GetSpace(&space)
 
@@ -256,7 +255,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *enhancedconverter.ResourceDe
 	spaceResourceName := "octopus_space_" + util.SanitizeNamePointer(space.Name)
 	spaceName := "${var.octopus_space_name}"
 
-	thisResource := enhancedconverter.ResourceDetails{}
+	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_creation/" + spaceResourceName + ".tf"
 	thisResource.Id = space.Id
 	thisResource.ResourceType = "Spaces"

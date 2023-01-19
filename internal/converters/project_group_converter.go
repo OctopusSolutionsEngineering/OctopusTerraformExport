@@ -10,79 +10,73 @@ import (
 )
 
 type ProjectGroupConverter struct {
-	Client                client.OctopusClient
-	SpaceResourceName     string
-	FeedMap               map[string]string
-	LifecycleMap          map[string]string
-	WorkPoolMap           map[string]string
-	AccountsMap           map[string]string
-	LibraryVariableSetMap map[string]string
+	Client client.OctopusClient
 }
 
-func (c ProjectGroupConverter) ToHcl() (map[string]string, map[string]string, map[string]string, error) {
+func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return nil, nil, nil, err
+		return err
 	}
 
-	results := map[string]string{}
-	resultsMap := map[string]string{}
-	templatesMap := map[string]string{}
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
 
-	for _, project := range collection.Items {
-		projectName := "project_group_" + util.SanitizeNamePointer(project.Name)
+		if err != nil {
+			return err
+		}
+	}
 
-		if *project.Name == "Default Project Group" {
+	return nil
+}
+
+func (c ProjectGroupConverter) ToHclById(id string, recursive bool, dependencies *ResourceDetailsCollection) error {
+	resource := octopus.ProjectGroup{}
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, recursive, dependencies)
+}
+
+func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
+	thisResource := ResourceDetails{}
+
+	projectName := "project_group_" + util.SanitizeNamePointer(resource.Name)
+
+	thisResource.FileName = "space_population/projectgroup_" + projectName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
+		if *resource.Name == "Default Project Group" {
 			// todo - create lookup for existing project group
+			return "", nil
 		} else {
 			terraformResource := terraform.TerraformProjectGroup{
 				Type:         "octopusdeploy_project_group",
 				Name:         projectName,
-				ResourceName: project.Name,
-				Description:  project.Description,
+				ResourceName: resource.Name,
+				Description:  resource.Description,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			results["space_population/project_"+projectName+".tf"] = string(file.Bytes())
-		}
-
-		// Convert the projects
-		projects, projectsMap, projectTemplatesMap, err := ProjectConverter{
-			Client:                   c.Client,
-			SpaceResourceName:        c.SpaceResourceName,
-			ProjectGroupResourceName: projectName,
-			ProjectGroupId:           project.Id,
-			FeedMap:                  c.FeedMap,
-			LifecycleMap:             c.LifecycleMap,
-			WorkPoolMap:              c.WorkPoolMap,
-			LibraryVariableSetMap:    c.LibraryVariableSetMap,
-		}.ToHcl()
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		// merge the maps
-		for k, v := range projects {
-			results[k] = v
-		}
-
-		for k, v := range projectsMap {
-			resultsMap[k] = v
-		}
-
-		for k, v := range projectTemplatesMap {
-			templatesMap[k] = v
+			return string(file.Bytes()), nil
 		}
 	}
 
-	return results, resultsMap, templatesMap, nil
-}
+	if recursive {
+		// export child projects
+	}
 
-func (c ProjectGroupConverter) ToHclByName(name string) (map[string]string, error) {
-	return map[string]string{}, nil
+	dependencies.AddResource(thisResource)
+	return nil
 }
 
 func (c ProjectGroupConverter) GetResourceType() string {
