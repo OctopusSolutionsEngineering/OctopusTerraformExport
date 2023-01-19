@@ -8,6 +8,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -102,7 +103,9 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 			return nil, err
 		}
 
-		fileMap[r.FileName] = hcl
+		if len(strings.TrimSpace(hcl)) != 0 {
+			fileMap[r.FileName] = hcl
+		}
 	}
 
 	return fileMap, nil

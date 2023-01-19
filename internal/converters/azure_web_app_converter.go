@@ -44,23 +44,26 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 }
 
 func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if recursive {
-		err := c.exportDependencies(target, dependencies)
 
-		if err != nil {
-			return err
+	if target.Endpoint.CommunicationStyle == "AzureWebApp" {
+
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	targetName := "target_" + util.SanitizeName(target.Name)
+		targetName := "target_" + util.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
-	thisResource.FileName = "space_population/" + targetName + ".tf"
-	thisResource.Id = target.Id
-	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_azure_web_app_deployment_target." + targetName + ".id}"
-	thisResource.ToHcl = func() (string, error) {
-		if target.Endpoint.CommunicationStyle == "AzureWebApp" {
+		thisResource := ResourceDetails{}
+		thisResource.FileName = "space_population/" + targetName + ".tf"
+		thisResource.Id = target.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${octopusdeploy_azure_web_app_deployment_target." + targetName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+
 			terraformResource := terraform.TerraformAzureWebAppDeploymentTarget{
 				Type:                            "octopusdeploy_azure_web_app_deployment_target",
 				Name:                            targetName,
@@ -96,10 +99,9 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 			return string(file.Bytes()), nil
 		}
 
-		return "", nil
+		dependencies.AddResource(thisResource)
 	}
 
-	dependencies.AddResource(thisResource)
 	return nil
 }
 

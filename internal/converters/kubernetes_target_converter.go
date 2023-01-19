@@ -45,23 +45,23 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 
 func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-	if recursive {
-		err := c.exportDependencies(target, dependencies)
+	if target.Endpoint.CommunicationStyle == "Kubernetes" {
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	targetName := "target_" + util.SanitizeName(target.Name)
+		targetName := "target_" + util.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
-	thisResource.FileName = "space_population/" + targetName + ".tf"
-	thisResource.Id = target.Id
-	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_project." + targetName + ".id}"
-	thisResource.ToHcl = func() (string, error) {
-		if target.Endpoint.CommunicationStyle == "Kubernetes" {
+		thisResource := ResourceDetails{}
+		thisResource.FileName = "space_population/" + targetName + ".tf"
+		thisResource.Id = target.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${octopusdeploy_project." + targetName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
 				Type:                            "octopusdeploy_kubernetes_cluster_deployment_target",
@@ -110,10 +110,9 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			return string(file.Bytes()), nil
 		}
 
-		return "", nil
+		dependencies.AddResource(thisResource)
 	}
 
-	dependencies.AddResource(thisResource)
 	return nil
 }
 

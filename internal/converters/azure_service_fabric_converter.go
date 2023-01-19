@@ -44,23 +44,25 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 }
 
 func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if recursive {
-		err := c.exportDependencies(target, dependencies)
 
-		if err != nil {
-			return err
+	if target.Endpoint.CommunicationStyle == "AzureServiceFabricCluster" {
+
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	targetName := "target_" + util.SanitizeName(target.Name)
+		targetName := "target_" + util.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
-	thisResource.FileName = "space_population/" + targetName + ".tf"
-	thisResource.Id = target.Id
-	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_azure_service_fabric_cluster_deployment_target." + targetName + ".id}"
-	thisResource.ToHcl = func() (string, error) {
-		if target.Endpoint.CommunicationStyle == "AzureServiceFabricCluster" {
+		thisResource := ResourceDetails{}
+		thisResource.FileName = "space_population/" + targetName + ".tf"
+		thisResource.Id = target.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${octopusdeploy_azure_service_fabric_cluster_deployment_target." + targetName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
 
 			passwordLookup := "${var." + targetName + "}"
 
@@ -114,10 +116,9 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			return string(file.Bytes()), nil
 		}
 
-		return "", nil
+		dependencies.AddResource(thisResource)
 	}
 
-	dependencies.AddResource(thisResource)
 	return nil
 }
 
