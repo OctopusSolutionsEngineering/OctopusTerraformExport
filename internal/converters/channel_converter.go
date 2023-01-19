@@ -15,7 +15,7 @@ type ChannelConverter struct {
 	DependsOn map[string]string
 }
 
-func (c ChannelConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 

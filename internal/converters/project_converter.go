@@ -139,14 +139,16 @@ func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependenci
 	return collection
 }
 
-// exportChildDependencies exports those dependencies that are always required regardless of the recursive flag
+// exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
+// These are resources that have a mandatory project or parent ID field indicating they do not exist as standalone
+// resources.
 func (c ProjectConverter) exportChildDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	err := ChannelConverter{
 		Client: c.Client,
 		DependsOn: map[string]string{
 			"DeploymentProcesses": util.EmptyIfNil(project.DeploymentProcessId),
 		},
-	}.ToHcl(project.Id, dependencies)
+	}.ToHclByProjectId(project.Id, dependencies)
 
 	if err != nil {
 		return err
@@ -177,7 +179,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, proje
 	// Export the triggers
 	err = ProjectTriggerConverter{
 		Client: c.Client,
-	}.ToHcl(project.Id, project.Name, dependencies)
+	}.ToHclByProjectId(project.Id, project.Name, dependencies)
 
 	if err != nil {
 		return err
