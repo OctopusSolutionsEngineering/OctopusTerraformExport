@@ -22,7 +22,7 @@ func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCo
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,28 +40,12 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, dependencies *ResourceDetailsCollection) error {
-	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	if err != nil {
-		return err
-	}
-
-	// Export the environments
-	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
 		if err != nil {
 			return err
@@ -165,4 +149,29 @@ func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependenci
 	}
 
 	return &machineLookup
+}
+
+func (c AzureServiceFabricTargetConverter) exportDependencies(target octopus.AzureServiceFabricResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

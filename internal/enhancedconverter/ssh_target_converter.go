@@ -22,7 +22,7 @@ func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,35 +40,14 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if target.Endpoint.CommunicationStyle == "Ssh" {
 
-		// The machine policies need to be exported
-		err := MachinePolicyConverter{
-			Client: c.Client,
-		}.ToHclById(target.MachinePolicyId, dependencies)
-
-		if err != nil {
-			return err
-		}
-
-		// Export the accounts
-		err = AccountConverter{
-			Client: c.Client,
-		}.ToHclById(target.Endpoint.AccountId, dependencies)
-
-		if err != nil {
-			return err
-		}
-
-		// Export the environments
-		for _, e := range target.EnvironmentIds {
-			err = EnvironmentConverter{
-				Client: c.Client,
-			}.ToHclById(e, dependencies)
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
 
 			if err != nil {
 				return err
@@ -135,4 +114,38 @@ func (c SshTargetConverter) getAccount(account string, dependencies *ResourceDet
 	}
 
 	return accountLookup
+}
+
+func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the accounts
+	err = AccountConverter{
+		Client: c.Client,
+	}.ToHclById(target.Endpoint.AccountId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

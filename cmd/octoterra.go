@@ -39,7 +39,15 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		Client: client,
 	}
 
-	hcl, err := spaceConverter.ToHcl()
+	dependencies := enhancedconverter.ResourceDetailsCollection{}
+
+	err := spaceConverter.ToHcl(&dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	hcl, err := processResources(dependencies.Resources)
 
 	if err != nil {
 		return err

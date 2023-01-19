@@ -22,7 +22,7 @@ func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,25 +40,13 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if target.Endpoint.CommunicationStyle == "OfflineDrop" {
-		// The machine policies need to be exported
-		err := MachinePolicyConverter{
-			Client: c.Client,
-		}.ToHclById(target.MachinePolicyId, dependencies)
-
-		if err != nil {
-			return err
-		}
-
-		// Export the environments
-		for _, e := range target.EnvironmentIds {
-			err = EnvironmentConverter{
-				Client: c.Client,
-			}.ToHclById(e, dependencies)
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
 
 			if err != nil {
 				return err
@@ -128,4 +116,29 @@ func (c OfflineDropTargetConverter) getMachinePolicy(machine string, dependencie
 	}
 
 	return &machineLookup
+}
+
+func (c OfflineDropTargetConverter) exportDependencies(target octopus.OfflineDropResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

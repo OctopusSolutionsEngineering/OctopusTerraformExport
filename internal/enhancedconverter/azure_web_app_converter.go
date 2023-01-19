@@ -22,7 +22,7 @@ func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,33 +40,12 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, dependencies *ResourceDetailsCollection) error {
-	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the accounts
-	err = AccountConverter{
-		Client: c.Client,
-	}.ToHclById(target.Endpoint.AccountId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the environments
-	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
 		if err != nil {
 			return err
@@ -161,4 +140,38 @@ func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *Res
 	}
 
 	return &machineLookup
+}
+
+func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAppResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the accounts
+	err = AccountConverter{
+		Client: c.Client,
+	}.ToHclById(target.Endpoint.AccountId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

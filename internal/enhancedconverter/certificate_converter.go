@@ -22,7 +22,7 @@ func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,10 +40,10 @@ func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetails
 		return err
 	}
 
-	return c.toHcl(certificate, dependencies)
+	return c.toHcl(certificate, true, dependencies)
 }
 
-func (c CertificateConverter) toHcl(certificate octopus.Certificate, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.
 		It is assumed the exported project links up all required environments, and the certificate

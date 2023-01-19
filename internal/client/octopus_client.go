@@ -73,8 +73,8 @@ func (o OctopusClient) lookupSpaceAsName() (string, error) {
 	}
 
 	for _, space := range collection.Items {
-		if space.Id != nil && space.Name != nil && *space.Name == o.Space {
-			return *space.Id, nil
+		if space.Name != nil && *space.Name == o.Space {
+			return space.Id, nil
 		}
 	}
 

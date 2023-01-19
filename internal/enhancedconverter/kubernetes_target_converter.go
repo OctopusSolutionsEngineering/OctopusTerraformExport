@@ -22,7 +22,7 @@ func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,57 +40,13 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the accounts
-	if target.Endpoint.Authentication.AccountId != nil {
-		err = AccountConverter{
-			Client: c.Client,
-		}.ToHclById(*target.Endpoint.Authentication.AccountId, dependencies)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	// Export the certificate
-	if target.Endpoint.Authentication.ClientCertificate != nil {
-		err = CertificateConverter{
-			Client: c.Client,
-		}.ToHclById(*target.Endpoint.Authentication.ClientCertificate, dependencies)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	if target.Endpoint.ClusterCertificate != nil {
-		err = CertificateConverter{
-			Client: c.Client,
-		}.ToHclById(*target.Endpoint.ClusterCertificate, dependencies)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	// Export the environments
-	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
 		if err != nil {
 			return err
@@ -272,4 +228,60 @@ func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *Res
 	}
 
 	return &workerPoolLookup
+}
+
+func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the accounts
+	if target.Endpoint.Authentication.AccountId != nil {
+		err = AccountConverter{
+			Client: c.Client,
+		}.ToHclById(*target.Endpoint.Authentication.AccountId, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the certificate
+	if target.Endpoint.Authentication.ClientCertificate != nil {
+		err = CertificateConverter{
+			Client: c.Client,
+		}.ToHclById(*target.Endpoint.Authentication.ClientCertificate, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if target.Endpoint.ClusterCertificate != nil {
+		err = CertificateConverter{
+			Client: c.Client,
+		}.ToHclById(*target.Endpoint.ClusterCertificate, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

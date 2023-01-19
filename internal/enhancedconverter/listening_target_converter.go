@@ -22,7 +22,7 @@ func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection)
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,27 +40,15 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "TentaclePassive" {
 
-		// The machine policies need to be exported
-		err := MachinePolicyConverter{
-			Client: c.Client,
-		}.ToHclById(target.MachinePolicyId, dependencies)
-
-		if err != nil {
-			return err
-		}
-
-		// Export the environments
-		for _, e := range target.EnvironmentIds {
-			err = EnvironmentConverter{
-				Client: c.Client,
-			}.ToHclById(e, dependencies)
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
 
 			if err != nil {
 				return err
@@ -133,4 +121,29 @@ func (c ListeningTargetConverter) getMachinePolicy(machine string, dependencies 
 	}
 
 	return &machineLookup
+}
+
+func (c ListeningTargetConverter) exportDependencies(target octopus.ListeningEndpointResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

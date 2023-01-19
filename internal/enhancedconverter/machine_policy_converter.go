@@ -25,7 +25,7 @@ func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 	}
 
 	for _, machinePolicy := range collection.Items {
-		err = c.toHcl(machinePolicy, dependencies)
+		err = c.toHcl(machinePolicy, false, dependencies)
 
 		if err != nil {
 			return err
@@ -43,10 +43,10 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
-	return c.toHcl(machinePolicy, dependencies)
+	return c.toHcl(machinePolicy, true, dependencies)
 }
 
-func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	policyName := "machinepolicy_" + util.SanitizeName(machinePolicy.Name)
 

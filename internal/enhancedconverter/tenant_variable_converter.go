@@ -15,15 +15,15 @@ type TenantVariableConverter struct {
 }
 
 func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus.GeneralCollection[octopus.TenantVariable]{}
+	collection := []octopus.TenantVariable{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
 		return err
 	}
 
-	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+	for _, resource := range collection {
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -41,10 +41,10 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *Resour
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	for _, p := range tenant.ProjectVariables {
 

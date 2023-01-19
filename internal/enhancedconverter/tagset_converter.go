@@ -22,7 +22,7 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, tagSet := range collection.Items {
-		err = c.toHcl(tagSet, dependencies)
+		err = c.toHcl(tagSet, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,10 +40,10 @@ func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsColle
 		return err
 	}
 
-	return c.toHcl(tagSet, dependencies)
+	return c.toHcl(tagSet, true, dependencies)
 }
 
-func (c TagSetConverter) toHcl(tagSet octopus.TagSet, dependencies *ResourceDetailsCollection) error {
+func (c TagSetConverter) toHcl(tagSet octopus.TagSet, recursive bool, dependencies *ResourceDetailsCollection) error {
 	tagSetName := "tagset_" + util.SanitizeName(tagSet.Name)
 
 	thisResource := ResourceDetails{}

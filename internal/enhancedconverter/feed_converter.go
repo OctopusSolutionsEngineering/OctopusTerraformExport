@@ -27,7 +27,7 @@ func (c FeedConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -45,10 +45,10 @@ func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollect
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c FeedConverter) toHcl(resource octopus.Feed, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) toHcl(resource octopus.Feed, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "feed_" + util.SanitizeName(resource.Name)
 	passwordName := resourceName + "_password"
 	password := "${var." + passwordName + "}"
@@ -270,6 +270,11 @@ func (c FeedConverter) toHcl(resource octopus.Feed, dependencies *ResourceDetail
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
+		}
+
+		if util.EmptyIfNil(resource.FeedType) == "OctopusProject" {
+			// We don't do anything with this feed
+			return "", nil
 		}
 
 		return "", errors.New("found unexpected feed type: " + util.EmptyIfNil(resource.FeedType))

@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/enhancedconverter"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
@@ -19,457 +20,287 @@ type SpaceConverter struct {
 // ToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
 // with no filter and with the least number of network calls. It is "dumb" in the sense that things like
 // dependencies are manually resolved through the order in which resources are exported.
-func (c SpaceConverter) ToHcl() (map[string]string, error) {
+func (c SpaceConverter) ToHcl(dependencies *enhancedconverter.ResourceDetailsCollection) error {
 
-	spaceResourceName, spaceTf, err := c.createSpaceTf()
+	err := c.createSpaceTf(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	results := map[string]string{
-		"space_creation/space.tf": spaceTf,
+		return err
 	}
 
 	// Generate space population common files
-	commonProjectFiles := SpacePopulateCommonGenerator{}.ToHcl()
-
-	// merge the maps
-	for k, v := range commonProjectFiles {
-		results["space_creation/"+k] = v
-		results["space_population/"+k] = v
-	}
+	SpacePopulateCommonGenerator{}.ToHcl(dependencies)
 
 	// Convert the feeds
-	feeds, feedMap, err := FeedConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.FeedConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range feeds {
-		results[k] = v
+		return err
 	}
 
 	// Convert the accounts
-	accounts, accountsMap, err := AccountConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.AccountConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range accounts {
-		results[k] = v
+		return err
 	}
 
 	// Convert the environments
-	environments, environmentsMap, err := EnvironmentConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.EnvironmentConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range environments {
-		results[k] = v
+		return err
 	}
 
 	// Convert the library variables
-	variables, variableMap, templateMap, err := LibraryVariableSetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.LibraryVariableSetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range variables {
-		results[k] = v
+		return err
 	}
 
 	// Convert the lifecycles
-	lifecycles, lifecycleMap, err := LifecycleConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		EnvironmentsMap:   environmentsMap,
-	}.ToHcl()
+	err = enhancedconverter.LifecycleConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range lifecycles {
-		results[k] = v
+		return err
 	}
 
 	// Convert the worker pools
-	pools, poolMap, err := WorkerPoolConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.WorkerPoolConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range pools {
-		results[k] = v
+		return err
 	}
 
 	// Convert the tag sets
-	tagSets, _, err := TagSetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.TagSetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range tagSets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the git credentials
-	gitCredentials, _, err := GitCredentialsConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.GitCredentialsConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range gitCredentials {
-		results[k] = v
+		return err
 	}
 
 	// Convert the projects groups
-	projects, projectsMap, projectsTemplateMap, err := ProjectGroupConverter{
-		Client:                c.Client,
-		SpaceResourceName:     spaceResourceName,
-		FeedMap:               feedMap,
-		LifecycleMap:          lifecycleMap,
-		WorkPoolMap:           poolMap,
-		AccountsMap:           accountsMap,
-		LibraryVariableSetMap: variableMap,
-	}.ToHcl()
+	err = enhancedconverter.ProjectGroupConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// merge the maps
-	for k, v := range projects {
-		results[k] = v
+	// Convert the projects
+	err = enhancedconverter.ProjectConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
+
+	if err != nil {
+		return err
 	}
 
 	// Convert the tenants
-	tenants, tenantsMap, err := TenantConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		EnvironmentsMap:   environmentsMap,
-		ProjectsMap:       projectsMap,
-	}.ToHcl()
+	err = enhancedconverter.TenantConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range tenants {
-		results[k] = v
+		return err
 	}
 
 	// Convert the certificates
-	certificates, _, err := CertificateConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		EnvironmentsMap:   environmentsMap,
-		TenantsMap:        tenantsMap,
-	}.ToHcl()
+	err = enhancedconverter.CertificateConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range certificates {
-		results[k] = v
+		return err
 	}
 
 	// Convert the tenant variables
-	tenantVariables, err := TenantVariableConverter{
-		Client:                c.Client,
-		SpaceResourceName:     spaceResourceName,
-		EnvironmentsMap:       environmentsMap,
-		ProjectsMap:           projectsMap,
-		LibraryVariableSetMap: variableMap,
-		TenantsMap:            tenantsMap,
-		ProjectTemplatesMap:   projectsTemplateMap,
-		CommonTemplatesMap:    templateMap,
-	}.ToHcl()
+	err = enhancedconverter.TenantVariableConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range tenantVariables {
-		results[k] = v
+		return err
 	}
 
 	// Convert the machine policies
-	machinePolicies, machinePoliciesMap, err := MachinePolicyConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-	}.ToHcl()
+	err = enhancedconverter.MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range machinePolicies {
-		results[k] = v
+		return err
 	}
 
 	// Convert the k8s targets
-	k8sTargets, _, err := KubernetesTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		AccountMap:        accountsMap,
-		EnvironmentMap:    environmentsMap,
-		WorkerPoolMap:     poolMap,
-	}.ToHcl()
+	err = enhancedconverter.KubernetesTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range k8sTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the ssh targets
-	sshTargets, _, err := SshTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		AccountMap:        accountsMap,
-		EnvironmentMap:    environmentsMap,
-	}.ToHcl()
+	err = enhancedconverter.SshTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range sshTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the ssh targets
-	listeningTargets, _, err := ListeningTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		AccountMap:        accountsMap,
-		EnvironmentMap:    environmentsMap,
-	}.ToHcl()
+	err = enhancedconverter.ListeningTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range listeningTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the polling targets
-	pollingTargets, _, err := PollingTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		AccountMap:        accountsMap,
-		EnvironmentMap:    environmentsMap,
-	}.ToHcl()
+	err = enhancedconverter.PollingTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range pollingTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the cloud region targets
-	cloudRegionTargets, _, err := CloudRegionTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		EnvironmentMap:    environmentsMap,
-	}.ToHcl()
+	err = enhancedconverter.CloudRegionTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range cloudRegionTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the cloud region targets
-	offlineDropTargets, _, err := OfflineDropTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		EnvironmentMap:    environmentsMap,
-	}.ToHcl()
+	err = enhancedconverter.OfflineDropTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range offlineDropTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the azure cloud service targets
-	azureCloudServiceTargets, _, err := AzureCloudServiceTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		EnvironmentMap:    environmentsMap,
-		AccountMap:        accountsMap,
-		WorkerPoolMap:     poolMap,
-	}.ToHcl()
+	err = enhancedconverter.AzureCloudServiceTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range azureCloudServiceTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the azure cloud service targets
-	azureServiceFabricTargets, _, err := AzureServiceFabricTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		EnvironmentMap:    environmentsMap,
-		WorkerPoolMap:     poolMap,
-	}.ToHcl()
+	err = enhancedconverter.AzureServiceFabricTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// merge the maps
-	for k, v := range azureServiceFabricTargets {
-		results[k] = v
+		return err
 	}
 
 	// Convert the azure web app targets
-	azureWebAppTargets, _, err := AzureWebAppTargetConverter{
-		Client:            c.Client,
-		SpaceResourceName: spaceResourceName,
-		MachinePolicyMap:  machinePoliciesMap,
-		EnvironmentMap:    environmentsMap,
-		AccountMap:        accountsMap,
-		WorkerPoolMap:     poolMap,
-	}.ToHcl()
+	err = enhancedconverter.AzureWebAppTargetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// merge the maps
-	for k, v := range azureWebAppTargets {
-		results[k] = v
-	}
-
-	return results, nil
+	return nil
 }
 
 func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
 }
 
-func (c SpaceConverter) createSpaceTf() (string, string, error) {
+func (c SpaceConverter) createSpaceTf(dependencies *enhancedconverter.ResourceDetailsCollection) error {
 	space := octopus.Space{}
 	err := c.Client.GetSpace(&space)
 
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	spaceResourceName := "octopus_space_" + util.SanitizeNamePointer(space.Name)
 	spaceName := "${var.octopus_space_name}"
 
-	terraformResource := terraform.TerraformSpace{
-		Description:        space.Description,
-		IsDefault:          space.IsDefault,
-		IsTaskQueueStopped: space.TaskQueueStopped,
-		Name:               spaceResourceName,
-		//SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
-		//SpaceManagersTeams:       space.SpaceManagersTeams,
-		// TODO: import teams rather than defaulting to admins
-		SpaceManagersTeams: []string{"teams-administrators"},
-		ResourceName:       &spaceName,
-		Type:               "octopusdeploy_space",
+	thisResource := enhancedconverter.ResourceDetails{}
+	thisResource.FileName = "space_creation/" + spaceResourceName + ".tf"
+	thisResource.Id = space.Id
+	thisResource.ResourceType = "Spaces"
+	thisResource.Lookup = "${octopusdeploy_project." + spaceResourceName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformSpace{
+			Description:        space.Description,
+			IsDefault:          space.IsDefault,
+			IsTaskQueueStopped: space.TaskQueueStopped,
+			Name:               spaceResourceName,
+			//SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
+			//SpaceManagersTeams:       space.SpaceManagersTeams,
+			// TODO: import teams rather than defaulting to admins
+			SpaceManagersTeams: []string{"teams-administrators"},
+			ResourceName:       &spaceName,
+			Type:               "octopusdeploy_space",
+		}
+
+		spaceOutput := terraform.TerraformOutput{
+			Name:  "octopus_space_id",
+			Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
+		}
+
+		spaceNameVar := terraform.TerraformVariable{
+			Name:        "octopus_space_name",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   false,
+			Description: "The name of the new space (the exported space was called " + *space.Name + ")",
+			Default:     space.Name,
+		}
+
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
+
+		block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
+		util.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
 
-	spaceOutput := terraform.TerraformOutput{
-		Name:  "octopus_space_id",
-		Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
-	}
-
-	spaceNameVar := terraform.TerraformVariable{
-		Name:        "octopus_space_name",
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   false,
-		Description: "The name of the new space (the exported space was called " + *space.Name + ")",
-		Default:     space.Name,
-	}
-
-	file := hclwrite.NewEmptyFile()
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
-
-	block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
-	util.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return spaceResourceName, string(file.Bytes()), nil
+	dependencies.AddResource(thisResource)
+	return nil
 }

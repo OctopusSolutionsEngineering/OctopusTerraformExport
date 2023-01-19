@@ -22,7 +22,7 @@ func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,25 +40,13 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if target.Endpoint.CommunicationStyle == "TentacleActive" {
-		// The machine policies need to be exported
-		err := MachinePolicyConverter{
-			Client: c.Client,
-		}.ToHclById(target.MachinePolicyId, dependencies)
-
-		if err != nil {
-			return err
-		}
-
-		// Export the environments
-		for _, e := range target.EnvironmentIds {
-			err = EnvironmentConverter{
-				Client: c.Client,
-			}.ToHclById(e, dependencies)
+		if recursive {
+			err := c.exportDependencies(target, dependencies)
 
 			if err != nil {
 				return err
@@ -129,4 +117,29 @@ func (c PollingTargetConverter) getMachinePolicy(machine string, dependencies *R
 	}
 
 	return &machineLookup
+}
+
+func (c PollingTargetConverter) exportDependencies(target octopus.PollingEndpointResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

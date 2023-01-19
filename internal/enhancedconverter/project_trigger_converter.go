@@ -22,7 +22,7 @@ func (c ProjectTriggerConverter) ToHcl(projectId string, projectName string, dep
 	}
 
 	for _, projectTrigger := range collection.Items {
-		err = c.toHcl(projectTrigger, projectId, projectName, dependencies)
+		err = c.toHcl(projectTrigger, false, projectId, projectName, dependencies)
 		if err != nil {
 			return err
 		}
@@ -31,7 +31,7 @@ func (c ProjectTriggerConverter) ToHcl(projectId string, projectName string, dep
 	return nil
 }
 
-func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, recursive bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	projectTriggerName := "projecttrigger_" + util.SanitizeName(projectName) + "_" + util.SanitizeName(projectTrigger.Name)
 
 	thisResource := ResourceDetails{}

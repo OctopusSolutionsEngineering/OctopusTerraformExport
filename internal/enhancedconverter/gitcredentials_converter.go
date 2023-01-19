@@ -23,7 +23,7 @@ func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 	}
 
 	for _, gitCredentials := range collection.Items {
-		err = c.toHcl(gitCredentials, dependencies)
+		err = c.toHcl(gitCredentials, false, dependencies)
 
 		if err != nil {
 			return err
@@ -41,10 +41,10 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDeta
 		return err
 	}
 
-	return c.toHcl(gitCredentials, dependencies)
+	return c.toHcl(gitCredentials, true, dependencies)
 }
 
-func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	gitCredentialsName := "gitcredential_" + util.SanitizeName(gitCredentials.Name)
 

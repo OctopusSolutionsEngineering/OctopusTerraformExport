@@ -24,7 +24,7 @@ func (c ChannelConverter) ToHcl(projectId string, dependencies *ResourceDetailsC
 	}
 
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, dependencies)
+		err = c.toHcl(channel, false, dependencies)
 
 		if err != nil {
 			return err
@@ -42,19 +42,21 @@ func (c ChannelConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 		return err
 	}
 
-	return c.toHcl(channel, dependencies)
+	return c.toHcl(channel, true, dependencies)
 }
 
-func (c ChannelConverter) toHcl(channel octopus.Channel, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if channel.Name != "Default" {
 
-		// The lifecycle is a dependency that we need to lookup
-		err := LifecycleConverter{
-			Client: c.Client,
-		}.ToHclById(channel.LifecycleId, dependencies)
+		if recursive {
+			// The lifecycle is a dependency that we need to lookup
+			err := LifecycleConverter{
+				Client: c.Client,
+			}.ToHclById(channel.LifecycleId, dependencies)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 
 		resourceName := "channel_" + util.SanitizeNamePointer(&channel.Name)

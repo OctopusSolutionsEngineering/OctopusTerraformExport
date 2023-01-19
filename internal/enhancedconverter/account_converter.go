@@ -23,7 +23,7 @@ func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -35,16 +35,18 @@ func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.Account{}
-	err := c.Client.GetResourceById(id, c.GetResourceType(), &resource)
+	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c AccountConverter) toHcl(resource octopus.Account, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
+	// TODO: export environments
+
 	resourceName := "account_" + util.SanitizeName(resource.Name)
 
 	thisResource := ResourceDetails{}

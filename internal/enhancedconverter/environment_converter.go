@@ -22,7 +22,7 @@ func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,10 +40,10 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 		return err
 	}
 
-	return c.toHcl(environment, dependencies)
+	return c.toHcl(environment, true, dependencies)
 }
 
-func (c EnvironmentConverter) toHcl(environment octopus.Environment, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) toHcl(environment octopus.Environment, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "environment_" + util.SanitizeName(environment.Name)
 
 	thisResource := ResourceDetails{}

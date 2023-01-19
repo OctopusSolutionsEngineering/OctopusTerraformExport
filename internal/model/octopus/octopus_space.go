@@ -1,7 +1,7 @@
 package octopus
 
 type Space struct {
-	Id                       *string
+	Id                       string
 	Name                     *string
 	Description              *string
 	IsDefault                bool

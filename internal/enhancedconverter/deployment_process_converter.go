@@ -16,7 +16,7 @@ type DeploymentProcessConverter struct {
 	Client client.OctopusClient
 }
 
-func (c DeploymentProcessConverter) ToHclById(id string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclById(id string, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.DeploymentProcess{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -24,30 +24,32 @@ func (c DeploymentProcessConverter) ToHclById(id string, projectName string, dep
 		return err
 	}
 
-	return c.toHcl(resource, projectName, dependencies)
+	return c.toHcl(resource, recursive, projectName, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + util.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
 
-	// Export linked accounts
-	err := c.exportAccounts(resource, dependencies)
-	if err != nil {
-		return err
-	}
+	if recursive {
+		// Export linked accounts
+		err := c.exportAccounts(resource, dependencies)
+		if err != nil {
+			return err
+		}
 
-	// Export linked feeds
-	err = c.exportFeeds(resource, dependencies)
-	if err != nil {
-		return err
-	}
+		// Export linked feeds
+		err = c.exportFeeds(resource, dependencies)
+		if err != nil {
+			return err
+		}
 
-	// Export linked worker pools
-	err = c.exportWorkerPools(resource, dependencies)
-	if err != nil {
-		return err
+		// Export linked worker pools
+		err = c.exportWorkerPools(resource, dependencies)
+		if err != nil {
+			return err
+		}
 	}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

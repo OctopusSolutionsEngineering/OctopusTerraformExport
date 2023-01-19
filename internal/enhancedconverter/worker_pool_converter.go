@@ -22,7 +22,7 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,10 +40,10 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsC
 		return err
 	}
 
-	return c.toHcl(pool, dependencies)
+	return c.toHcl(pool, true, dependencies)
 }
 
-func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "workerpool_" + util.SanitizeNamePointer(&pool.Name)
 
 	thisResource := ResourceDetails{}

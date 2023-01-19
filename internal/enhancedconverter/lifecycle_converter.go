@@ -22,7 +22,7 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,29 +40,32 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return err
 	}
 
-	return c.toHcl(lifecycle, dependencies)
+	return c.toHcl(lifecycle, true, dependencies)
 
 }
 
-func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, dependencies *ResourceDetailsCollection) error {
-	// The environments are a dependency that we need to lookup
-	for _, phase := range lifecycle.Phases {
-		for _, auto := range phase.AutomaticDeploymentTargets {
-			err := EnvironmentConverter{
-				Client: c.Client,
-			}.ToHclById(auto, dependencies)
+func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-			if err != nil {
-				return err
+	if recursive {
+		// The environments are a dependency that we need to lookup
+		for _, phase := range lifecycle.Phases {
+			for _, auto := range phase.AutomaticDeploymentTargets {
+				err := EnvironmentConverter{
+					Client: c.Client,
+				}.ToHclById(auto, dependencies)
+
+				if err != nil {
+					return err
+				}
 			}
-		}
-		for _, optional := range phase.OptionalDeploymentTargets {
-			err := EnvironmentConverter{
-				Client: c.Client,
-			}.ToHclById(optional, dependencies)
+			for _, optional := range phase.OptionalDeploymentTargets {
+				err := EnvironmentConverter{
+					Client: c.Client,
+				}.ToHclById(optional, dependencies)
 
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

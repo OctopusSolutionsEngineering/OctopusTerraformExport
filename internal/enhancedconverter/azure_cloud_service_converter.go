@@ -22,7 +22,7 @@ func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCol
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -40,34 +40,13 @@ func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *Res
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the accounts
-	err = AccountConverter{
-		Client: c.Client,
-	}.ToHclById(target.Endpoint.AccountId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the environments
-	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
 		if err != nil {
 			return err
@@ -130,6 +109,40 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 
 func (c AzureCloudServiceTargetConverter) GetResourceType() string {
 	return "Machines"
+}
+
+func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.AzureCloudServiceResource, dependencies *ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := MachinePolicyConverter{
+		Client: c.Client,
+	}.ToHclById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the accounts
+	err = AccountConverter{
+		Client: c.Client,
+	}.ToHclById(target.Endpoint.AccountId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = EnvironmentConverter{
+			Client: c.Client,
+		}.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c AzureCloudServiceTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {

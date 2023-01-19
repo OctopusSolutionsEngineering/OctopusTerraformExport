@@ -24,7 +24,7 @@ func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollecti
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -42,28 +42,31 @@ func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *Resource
 		return err
 	}
 
-	return c.toHcl(resource, dependencies)
+	return c.toHcl(resource, true, dependencies)
 }
 
-func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, dependencies *ResourceDetailsCollection) error {
+func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
 
-	// The project group is a dependency that we need to lookup
-	if util.EmptyIfNil(resource.ContentType) == "Variables" {
-		err := VariableSetConverter{
-			Client: c.Client,
-		}.ToHclById(resource.VariableSetId, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName)
-	dependencies.AddResource(projectTemplateMap...)
+
+	if recursive {
+		// The project group is a dependency that we need to lookup
+		if util.EmptyIfNil(resource.ContentType) == "Variables" {
+			err := VariableSetConverter{
+				Client: c.Client,
+			}.ToHclById(resource.VariableSetId, true, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		// The templates are dependencies that we export as part of the project
+		dependencies.AddResource(projectTemplateMap...)
+	}
 
 	thisResource.FileName = "space_population/library_variable_set_" + resourceName + ".tf"
 	thisResource.Id = resource.Id

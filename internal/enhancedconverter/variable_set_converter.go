@@ -15,7 +15,7 @@ type VariableSetConverter struct {
 	Client client.OctopusClient
 }
 
-func (c VariableSetConverter) ToHclById(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) ToHclById(id string, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.VariableSet{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -23,10 +23,10 @@ func (c VariableSetConverter) ToHclById(id string, parentName string, parentLook
 		return err
 	}
 
-	return c.toHcl(resource, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, recursive, parentName, parentLookup, dependencies)
 }
 
-func (c VariableSetConverter) toHcl(resource octopus.VariableSet, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	file := hclwrite.NewEmptyFile()
 
 	for _, v := range resource.Variables {
@@ -34,28 +34,30 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, parentName str
 
 		resourceName := parentName + "_" + util.SanitizeName(v.Name)
 
-		// Export linked accounts
-		err := c.exportAccounts(v.Value, dependencies)
-		if err != nil {
-			return err
-		}
+		if recursive {
+			// Export linked accounts
+			err := c.exportAccounts(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
 
-		// Export linked feeds
-		err = c.exportFeeds(v.Value, dependencies)
-		if err != nil {
-			return err
-		}
+			// Export linked feeds
+			err = c.exportFeeds(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
 
-		// Export linked certificates
-		err = c.exportCertificates(v.Value, dependencies)
-		if err != nil {
-			return err
-		}
+			// Export linked certificates
+			err = c.exportCertificates(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
 
-		// Export linked worker pools
-		err = c.exportWorkerPools(v.Value, dependencies)
-		if err != nil {
-			return err
+			// Export linked worker pools
+			err = c.exportWorkerPools(v.Value, dependencies)
+			if err != nil {
+				return err
+			}
 		}
 
 		thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"

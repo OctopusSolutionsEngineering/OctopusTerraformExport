@@ -22,7 +22,7 @@ func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, dependencies)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -41,7 +41,7 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 	}
 
 	for _, tenant := range collection.Items {
-		err = c.toHcl(tenant, dependencies)
+		err = c.toHcl(tenant, true, dependencies)
 		if err != nil {
 			return nil
 		}
@@ -49,24 +49,26 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 	return nil
 }
 
-func (c TenantConverter) toHcl(tenant octopus.Tenant, dependencies *ResourceDetailsCollection) error {
+func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-	// Export all the tag sets
-	err := TagSetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	if recursive {
+		// Export all the tag sets
+		err := TagSetConverter{
+			Client: c.Client,
+		}.ToHcl(dependencies)
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	// Export the tenant variables
-	err = TenantVariableConverter{
-		Client: c.Client,
-	}.ToHclByTenantId(tenant.Id, dependencies)
+		// Export the tenant variables
+		err = TenantVariableConverter{
+			Client: c.Client,
+		}.ToHclByTenantId(tenant.Id, dependencies)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	tenantName := "tenant_" + util.SanitizeName(tenant.Name)
