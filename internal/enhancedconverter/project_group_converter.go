@@ -13,6 +13,25 @@ type ProjectGroupConverter struct {
 	Client client.OctopusClient
 }
 
+func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, false, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c ProjectGroupConverter) ToHclById(id string, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.ProjectGroup{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)

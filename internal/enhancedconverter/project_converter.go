@@ -10,9 +10,27 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
-// ProjectConverter exports a single project and its dependencies
 type ProjectConverter struct {
 	Client client.OctopusClient
+}
+
+func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Project]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -107,7 +125,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, dependencies *ResourceD
 	// Export the tenants
 	err = TenantConverter{
 		Client: c.Client,
-	}.ToHcl(project.Id, dependencies)
+	}.ToHclByProjectId(project.Id, dependencies)
 
 	if err != nil {
 		return err

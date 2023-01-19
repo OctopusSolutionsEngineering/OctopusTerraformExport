@@ -13,6 +13,25 @@ type LifecycleConverter struct {
 	Client client.OctopusClient
 }
 
+func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Lifecycle]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	lifecycle := octopus.Lifecycle{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)

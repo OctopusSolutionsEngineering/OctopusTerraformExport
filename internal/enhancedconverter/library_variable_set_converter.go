@@ -15,6 +15,25 @@ type LibraryVariableSetConverter struct {
 	Client client.OctopusClient
 }
 
+func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.LibraryVariableSet{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)

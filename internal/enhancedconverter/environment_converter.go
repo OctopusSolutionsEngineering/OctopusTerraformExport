@@ -13,6 +13,25 @@ type EnvironmentConverter struct {
 	Client client.OctopusClient
 }
 
+func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Environment]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	environment := octopus.Environment{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)

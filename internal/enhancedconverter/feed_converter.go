@@ -18,6 +18,25 @@ func (c FeedConverter) GetResourceType() string {
 	return "Feeds"
 }
 
+func (c FeedConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Feed]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.Feed{}
 	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)

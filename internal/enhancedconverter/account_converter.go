@@ -14,6 +14,25 @@ type AccountConverter struct {
 	Client client.OctopusClient
 }
 
+func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Account]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.Account{}
 	err := c.Client.GetResourceById(id, c.GetResourceType(), &resource)

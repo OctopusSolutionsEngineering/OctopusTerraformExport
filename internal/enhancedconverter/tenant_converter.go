@@ -13,7 +13,26 @@ type TenantConverter struct {
 	Client client.OctopusClient
 }
 
-func (c TenantConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Tenant]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range collection.Items {
+		err = c.toHcl(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
