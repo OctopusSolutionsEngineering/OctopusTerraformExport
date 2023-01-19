@@ -52,6 +52,8 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 
 		for env, variable := range p.Variables {
 			for templateId, value := range variable {
+				value := value
+
 				projectVariableIndex++
 				variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
 

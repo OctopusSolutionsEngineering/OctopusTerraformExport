@@ -67,6 +67,10 @@ func (c TagSetConverter) toHcl(tagSet octopus.TagSet, recursive bool, dependenci
 	dependencies.AddResource(thisResource)
 
 	for _, tag := range tagSet.Tags {
+		// capture the tag for the function literal below.
+		// https://go.dev/doc/faq#closures_and_goroutines
+		tag := tag
+
 		tagName := "tag_" + util.SanitizeName(tag.Name)
 
 		tagResource := ResourceDetails{}
