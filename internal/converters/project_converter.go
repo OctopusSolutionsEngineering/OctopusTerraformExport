@@ -140,8 +140,8 @@ func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependenci
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
-// These are resources that have a mandatory project or parent ID field indicating they do not exist as standalone
-// resources.
+// These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
+// from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
 func (c ProjectConverter) exportChildDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	err := ChannelConverter{
 		Client: c.Client,
