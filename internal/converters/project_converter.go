@@ -174,6 +174,15 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, proje
 		}
 	}
 
+	// Export the triggers
+	err = ProjectTriggerConverter{
+		Client: c.Client,
+	}.ToHcl(project.Id, project.Name, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -202,15 +211,6 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 	err = LifecycleConverter{
 		Client: c.Client,
 	}.ToHclById(project.LifecycleId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the triggers
-	err = ProjectTriggerConverter{
-		Client: c.Client,
-	}.ToHcl(project.Id, project.Name, dependencies)
 
 	if err != nil {
 		return err

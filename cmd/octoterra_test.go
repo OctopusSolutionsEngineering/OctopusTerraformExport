@@ -2307,7 +2307,7 @@ func TestProjectTriggerExport(t *testing.T) {
 		}
 
 		if !foundTrigger {
-			t.Fatal("Project must have a trigger trigger")
+			t.Fatal("Project must have a trigger")
 		}
 
 		return nil

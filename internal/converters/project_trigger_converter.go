@@ -59,6 +59,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, re
 		return string(file.Bytes()), nil
 	}
 
+	dependencies.AddResource(thisResource)
 	return nil
 }
 
