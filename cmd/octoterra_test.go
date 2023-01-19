@@ -23,6 +23,11 @@ import (
 
 const ApiKey = "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345"
 
+// DisableTerraformInit can be set to true to disable Terraform downloads.
+// This is useful if the terraform repo is down, as you can often just use
+// cached plugins.
+const DisableTerraformInit = false
+
 type octopusContainer struct {
 	testcontainers.Container
 	URI string
@@ -225,28 +230,31 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 	spaceId := "Spaces-1"
 	for i, p := range []string{"/space_creation", "/space_population"} {
 
-		os.Remove(terraformDir + p + "/.terraform.lock.hcl")
-		os.Remove(terraformDir + p + "/terraform.tfstate")
-
-		cmnd := exec.Command(
-			"terraform",
-			"init",
-			"-no-color")
-		cmnd.Dir = terraformDir + p
-		out, err := cmnd.Output()
-
-		if err != nil {
-			exitError, ok := err.(*exec.ExitError)
-			if ok {
-				t.Log(string(exitError.Stderr))
-			} else {
-				t.Log(err.Error())
-			}
-
-			return err
+		if !DisableTerraformInit {
+			os.Remove(terraformDir + p + "/.terraform.lock.hcl")
 		}
 
-		t.Log(string(out))
+		os.Remove(terraformDir + p + "/terraform.tfstate")
+
+		if !DisableTerraformInit {
+			args := []string{"init", "-no-color"}
+			cmnd := exec.Command("terraform", args...)
+			cmnd.Dir = terraformDir + p
+			out, err := cmnd.Output()
+
+			if err != nil {
+				exitError, ok := err.(*exec.ExitError)
+				if ok {
+					t.Log(string(exitError.Stderr))
+				} else {
+					t.Log(err.Error())
+				}
+
+				return err
+			}
+
+			t.Log(string(out))
+		}
 
 		// when initialising the new space, we need to define a new space name as a variable
 		vars := []string{}
@@ -265,9 +273,9 @@ func initialiseOctopus(t *testing.T, container *octopusContainer, terraformDir s
 			"-var=octopus_space_id=" + spaceId,
 		}, vars...)
 
-		cmnd = exec.Command("terraform", newArgs...)
+		cmnd := exec.Command("terraform", newArgs...)
 		cmnd.Dir = terraformDir + p
-		out, err = cmnd.Output()
+		out, err := cmnd.Output()
 
 		if err != nil {
 			t.Log(string(err.(*exec.ExitError).Stderr))

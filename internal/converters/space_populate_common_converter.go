@@ -14,15 +14,15 @@ type SpacePopulateCommonGenerator struct {
 	Client client.OctopusClient
 }
 
-func (c SpacePopulateCommonGenerator) ToHcl(dependencies *ResourceDetailsCollection) {
-	c.createProvider(dependencies)
-	c.createTerraformConfig(dependencies)
-	c.createVariables(dependencies)
+func (c SpacePopulateCommonGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
+	c.createProvider(directory, dependencies)
+	c.createTerraformConfig(directory, dependencies)
+	c.createVariables(directory, dependencies)
 }
 
-func (c SpacePopulateCommonGenerator) createProvider(dependencies *ResourceDetailsCollection) {
+func (c SpacePopulateCommonGenerator) createProvider(directory string, dependencies *ResourceDetailsCollection) {
 	thisResource := ResourceDetails{}
-	thisResource.FileName = "space_population/provider.tf"
+	thisResource.FileName = directory + "/provider.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
@@ -41,9 +41,9 @@ func (c SpacePopulateCommonGenerator) createProvider(dependencies *ResourceDetai
 	dependencies.AddResource(thisResource)
 }
 
-func (c SpacePopulateCommonGenerator) createTerraformConfig(dependencies *ResourceDetailsCollection) {
+func (c SpacePopulateCommonGenerator) createTerraformConfig(directory string, dependencies *ResourceDetailsCollection) {
 	thisResource := ResourceDetails{}
-	thisResource.FileName = "space_population/config.tf"
+	thisResource.FileName = directory + "/config.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
@@ -56,9 +56,9 @@ func (c SpacePopulateCommonGenerator) createTerraformConfig(dependencies *Resour
 	dependencies.AddResource(thisResource)
 }
 
-func (c SpacePopulateCommonGenerator) createVariables(dependencies *ResourceDetailsCollection) {
+func (c SpacePopulateCommonGenerator) createVariables(directory string, dependencies *ResourceDetailsCollection) {
 	thisResource := ResourceDetails{}
-	thisResource.FileName = "space_population/config.tf"
+	thisResource.FileName = directory + "/provider_vars.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""

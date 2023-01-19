@@ -17,8 +17,7 @@ type SpaceConverter struct {
 }
 
 // ToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
-// with no filter and with the least number of network calls. It is "dumb" in the sense that things like
-// dependencies are manually resolved through the order in which resources are exported.
+// with no filter and with the least number of network calls.
 func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	err := c.createSpaceTf(dependencies)
@@ -27,8 +26,10 @@ func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 		return err
 	}
 
-	// Generate space population common files
-	SpacePopulateCommonGenerator{}.ToHcl(dependencies)
+	// Generate common terraform config files
+	pacePopulateCommonGenerator := SpacePopulateCommonGenerator{}
+	pacePopulateCommonGenerator.ToHcl("space_population", dependencies)
+	pacePopulateCommonGenerator.ToHcl("space_creation", dependencies)
 
 	// Convert the feeds
 	err = FeedConverter{
