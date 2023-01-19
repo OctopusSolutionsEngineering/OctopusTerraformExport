@@ -92,7 +92,7 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 
 	for _, r := range resources {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
-		// In these cases, ToHclByProjectId is nil.
+		// In these cases, ToHcl is nil.
 		if r.ToHcl == nil {
 			continue
 		}
