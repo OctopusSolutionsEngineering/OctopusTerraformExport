@@ -12,7 +12,7 @@ import (
 
 type ChannelConverter struct {
 	Client    client.OctopusClient
-	DependsOn []string
+	DependsOn map[string]string
 }
 
 func (c ChannelConverter) ToHcl(projectId string, dependencies *ResourceDetailsCollection) error {
@@ -85,7 +85,17 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, depende
 			there is any relationship. In order for the channel to be created after the deployment process,
 			we must make this dependency explicit. Otherwise, the channel may be created without the deployment
 			process, and Octopus will reject the channel rules.*/
-			util.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(c.DependsOn[:], ",")+"]")
+			manualDependencies := make([]string, 0)
+			for t, r := range c.DependsOn {
+				if t != "" && r != "" {
+					dependency := dependencies.GetResource(t, r)
+					// This is a raw expression, so remove the surrounding brackets
+					dependency = strings.Replace(dependency, "${", "", -1)
+					dependency = strings.Replace(dependency, ".id}", "", -1)
+					manualDependencies = append(manualDependencies, dependency)
+				}
+			}
+			util.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(manualDependencies[:], ",")+"]")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil

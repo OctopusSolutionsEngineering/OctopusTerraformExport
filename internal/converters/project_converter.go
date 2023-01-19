@@ -57,6 +57,12 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, depende
 		}
 	}
 
+	err := c.exportChildDependencies(project, projectName, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
 	dependencies.AddResource(projectTemplateMap...)
@@ -133,11 +139,14 @@ func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependenci
 	return collection
 }
 
-func (c ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
-	// Export the project group
-	err := ProjectGroupConverter{
+// exportChildDependencies exports those dependencies that are always required regardless of the recursive flag
+func (c ProjectConverter) exportChildDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+	err := ChannelConverter{
 		Client: c.Client,
-	}.ToHclById(project.ProjectGroupId, false, dependencies)
+		DependsOn: map[string]string{
+			"DeploymentProcesses": util.EmptyIfNil(project.DeploymentProcessId),
+		},
+	}.ToHcl(project.Id, dependencies)
 
 	if err != nil {
 		return err
@@ -165,6 +174,19 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 		}
 	}
 
+	return nil
+}
+
+func (c ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+	// Export the project group
+	err := ProjectGroupConverter{
+		Client: c.Client,
+	}.ToHclById(project.ProjectGroupId, false, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	// Export the library sets
 	for _, v := range project.IncludedLibraryVariableSetIds {
 		err := LibraryVariableSetConverter{
@@ -180,15 +202,6 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 	err = LifecycleConverter{
 		Client: c.Client,
 	}.ToHclById(project.LifecycleId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the channels
-	err = ChannelConverter{
-		Client: c.Client,
-	}.ToHcl(project.Id, dependencies)
 
 	if err != nil {
 		return err
