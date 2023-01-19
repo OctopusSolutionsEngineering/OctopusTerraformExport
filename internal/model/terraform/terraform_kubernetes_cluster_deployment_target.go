@@ -61,7 +61,7 @@ type TerraformAzureServicePrincipalAuthentication struct {
 }
 
 type TerraformCertificateAuthentication struct {
-	ClientCertificate string `hcl:"client_certificate"`
+	ClientCertificate *string `hcl:"client_certificate"`
 }
 
 type TerraformGcpAccountAuthentication struct {

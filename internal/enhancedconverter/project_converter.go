@@ -169,8 +169,8 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 		})
 
 		templateMap = append(templateMap, ResourceDetails{
-			Id:           "",
-			ResourceType: "",
+			Id:           v.Id,
+			ResourceType: "ProjectTemplates",
 			Lookup:       "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
 			FileName:     "",
 			ToHcl:        nil,

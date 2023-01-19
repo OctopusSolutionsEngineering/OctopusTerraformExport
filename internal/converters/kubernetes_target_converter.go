@@ -136,7 +136,7 @@ func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpo
 func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformCertificateAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesCertificate" {
 		return &terraform.TerraformCertificateAuthentication{
-			ClientCertificate: util.EmptyIfNil(target.Endpoint.Authentication.ClientCertificate),
+			ClientCertificate: target.Endpoint.Authentication.ClientCertificate,
 		}
 	}
 

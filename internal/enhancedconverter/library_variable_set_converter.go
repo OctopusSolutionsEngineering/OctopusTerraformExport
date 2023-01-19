@@ -125,8 +125,8 @@ func (c LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.T
 		})
 
 		templateMap = append(templateMap, ResourceDetails{
-			Id:           "",
-			ResourceType: "",
+			Id:           v.Id,
+			ResourceType: "CommonTemplateMap",
 			Lookup:       "${octopusdeploy_library_variable_set." + libraryName + ".template[" + fmt.Sprint(i) + "].id}",
 			FileName:     "",
 			ToHcl:        nil,

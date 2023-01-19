@@ -41,6 +41,15 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, dependencies *ResourceDeta
 		return err
 	}
 
+	// Export the tenant variables
+	err = TenantVariableConverter{
+		Client: c.Client,
+	}.ToHclByTenantId(tenant.Id, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	tenantName := "tenant_" + util.SanitizeName(tenant.Name)
 
 	thisResource := ResourceDetails{}
