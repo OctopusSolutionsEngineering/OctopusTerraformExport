@@ -3044,6 +3044,54 @@ func TestSingleProjectGroupExport(t *testing.T) {
 			t.Fatalf("The project must have 1 variable called \"Test\"")
 		}
 
+		// Verify that the single channel was exported
+
+		channelsCollection := octopus.GeneralCollection[octopus.Channel]{}
+		err = octopusClient.GetAllResources("Channels", &channelsCollection)
+
+		if err != nil {
+			return err
+		}
+
+		foundChannel := false
+		for _, v := range channelsCollection.Items {
+			if v.Name == "Test 1" {
+				foundChannel = true
+			}
+
+			if v.Name == "Test 2" {
+				t.Fatalf("The second channel must not have been exported")
+			}
+		}
+
+		if !foundChannel {
+			t.Fatalf("The space must have a channel called \"Test 1\"")
+		}
+
+		// Verify that the single trigger was exported
+
+		triggersCollection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+		err = octopusClient.GetAllResources("ProjectTriggers", &triggersCollection)
+
+		if err != nil {
+			return err
+		}
+
+		foundTrigger := false
+		for _, v := range triggersCollection.Items {
+			if v.Name == "Test 1" {
+				foundTrigger = true
+			}
+
+			if v.Name == "Test 2" {
+				t.Fatalf("The second trigger must not have been exported")
+			}
+		}
+
+		if !foundTrigger {
+			t.Fatalf("The space must have a trigger called \"Test 1\"")
+		}
+
 		return nil
 	})
 }
