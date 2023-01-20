@@ -2985,203 +2985,279 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
-		err = octopusClient.GetAllResources("ProjectGroups", &collection)
+		// Test that the project exported its project group
+		err = func() error {
+			collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
+			err = octopusClient.GetAllResources("ProjectGroups", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			found := false
+			for _, v := range collection.Items {
+				if *v.Name == "Test" {
+					found = true
+					if *v.Description != "Test Description" {
+						t.Fatalf("The project group must be have a description of \"Test Description\"")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatalf("Space must have a project group called \"Test\"")
+			}
+			return nil
+		}()
 
 		if err != nil {
 			return err
-		}
-
-		// Test that the project exported its project group
-
-		found := false
-		for _, v := range collection.Items {
-			if *v.Name == "Test" {
-				found = true
-				if *v.Description != "Test Description" {
-					t.Fatalf("The project group must be have a description of \"Test Description\"")
-				}
-			}
-		}
-
-		if !found {
-			t.Fatalf("Space must have a project group called \"Test\"")
 		}
 
 		// Verify that the single project was exported
+		err = func() error {
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			err = octopusClient.GetAllResources("Projects", &projectCollection)
 
-		projectCollection := octopus.GeneralCollection[octopus.Project]{}
-		err = octopusClient.GetAllResources("Projects", &projectCollection)
+			if err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				t.Fatalf("There must only be one project")
+			}
+
+			if projectCollection.Items[0].Name != "Test" {
+				t.Fatalf("The project must be called \"Test\"")
+			}
+
+			// Verify that the variable set was imported
+
+			if projectCollection.Items[0].VariableSetId == nil {
+				t.Fatalf("The project must have a variable set")
+			}
+
+			variableSet := octopus.VariableSet{}
+			err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+
+			if err != nil {
+				return err
+			}
+
+			if len(variableSet.Variables) != 1 {
+				t.Fatalf("The project must have 1 variable")
+			}
+
+			if variableSet.Variables[0].Name != "Test" {
+				t.Fatalf("The project must have 1 variable called \"Test\"")
+			}
+			return nil
+		}()
 
 		if err != nil {
 			return err
-		}
-
-		if len(projectCollection.Items) != 1 {
-			t.Fatalf("There must only be one project")
-		}
-
-		if projectCollection.Items[0].Name != "Test" {
-			t.Fatalf("The project must be called \"Test\"")
-		}
-
-		// Verify that the variable set was imported
-
-		if projectCollection.Items[0].VariableSetId == nil {
-			t.Fatalf("The project must have a variable set")
-		}
-
-		variableSet := octopus.VariableSet{}
-		err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
-
-		if err != nil {
-			return err
-		}
-
-		if len(variableSet.Variables) != 1 {
-			t.Fatalf("The project must have 1 variable")
-		}
-
-		if variableSet.Variables[0].Name != "Test" {
-			t.Fatalf("The project must have 1 variable called \"Test\"")
 		}
 
 		// Verify that the single channel was exported
+		err = func() error {
+			channelsCollection := octopus.GeneralCollection[octopus.Channel]{}
+			err = octopusClient.GetAllResources("Channels", &channelsCollection)
 
-		channelsCollection := octopus.GeneralCollection[octopus.Channel]{}
-		err = octopusClient.GetAllResources("Channels", &channelsCollection)
+			if err != nil {
+				return err
+			}
+
+			foundChannel := false
+			for _, v := range channelsCollection.Items {
+				if v.Name == "Test 1" {
+					foundChannel = true
+				}
+
+				if v.Name == "Test 2" {
+					t.Fatalf("The second channel must not have been exported")
+				}
+			}
+
+			if !foundChannel {
+				t.Fatalf("The space must have a channel called \"Test 1\"")
+			}
+
+			return nil
+		}()
 
 		if err != nil {
 			return err
-		}
-
-		foundChannel := false
-		for _, v := range channelsCollection.Items {
-			if v.Name == "Test 1" {
-				foundChannel = true
-			}
-
-			if v.Name == "Test 2" {
-				t.Fatalf("The second channel must not have been exported")
-			}
-		}
-
-		if !foundChannel {
-			t.Fatalf("The space must have a channel called \"Test 1\"")
 		}
 
 		// Verify that the single trigger was exported
+		err = func() error {
+			triggersCollection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("ProjectTriggers", &triggersCollection)
 
-		triggersCollection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
-		err = octopusClient.GetAllResources("ProjectTriggers", &triggersCollection)
+			if err != nil {
+				return err
+			}
+
+			foundTrigger := false
+			for _, v := range triggersCollection.Items {
+				if v.Name == "Test 1" {
+					foundTrigger = true
+				}
+
+				if v.Name == "Test 2" {
+					t.Fatalf("The second trigger must not have been exported")
+				}
+			}
+
+			if !foundTrigger {
+				t.Fatalf("The space must have a trigger called \"Test 1\"")
+			}
+
+			return nil
+		}()
 
 		if err != nil {
 			return err
-		}
-
-		foundTrigger := false
-		for _, v := range triggersCollection.Items {
-			if v.Name == "Test 1" {
-				foundTrigger = true
-			}
-
-			if v.Name == "Test 2" {
-				t.Fatalf("The second trigger must not have been exported")
-			}
-		}
-
-		if !foundTrigger {
-			t.Fatalf("The space must have a trigger called \"Test 1\"")
 		}
 
 		// Verify that the single tenant was exported
+		err = func() error {
+			tenantsCollection := octopus.GeneralCollection[octopus.Tenant]{}
+			err = octopusClient.GetAllResources("Tenants", &tenantsCollection)
 
-		tenantsCollection := octopus.GeneralCollection[octopus.Tenant]{}
-		err = octopusClient.GetAllResources("Tenants", &tenantsCollection)
+			if err != nil {
+				return err
+			}
+
+			foundTenant := false
+			for _, v := range tenantsCollection.Items {
+				if v.Name == "Team A" {
+					foundTenant = true
+				}
+
+				if v.Name == "Team B" {
+					t.Fatalf("The second tenant must not have been exported")
+				}
+			}
+
+			if !foundTenant {
+				t.Fatalf("The space must have a tenant called \"Team A\"")
+			}
+			return nil
+		}()
 
 		if err != nil {
 			return err
-		}
-
-		foundTenant := false
-		for _, v := range tenantsCollection.Items {
-			if v.Name == "Team A" {
-				foundTenant = true
-			}
-
-			if v.Name == "Team B" {
-				t.Fatalf("The second tenant must not have been exported")
-			}
-		}
-
-		if !foundTenant {
-			t.Fatalf("The space must have a tenant called \"Team A\"")
 		}
 
 		// Verify that the tenant tags were exported
+		err = func() error {
+			tagsCollection := octopus.GeneralCollection[octopus.TagSet]{}
+			err = octopusClient.GetAllResources("TagSets", &tagsCollection)
 
-		tagsCollection := octopus.GeneralCollection[octopus.TagSet]{}
-		err = octopusClient.GetAllResources("TagSets", &tagsCollection)
+			if err != nil {
+				return err
+			}
+
+			foundTag := false
+			for _, v := range tagsCollection.Items {
+				if v.Name == "tag1" {
+					foundTag = true
+				}
+
+				if v.Name == "tag2" {
+					t.Fatalf("The space must not have a tagset called \"tag2\"")
+				}
+			}
+
+			if !foundTag {
+				t.Fatalf("The space must have a tagset called \"tag1\"")
+			}
+			return nil
+		}()
 
 		if err != nil {
 			return err
-		}
-
-		foundTag := false
-		for _, v := range tagsCollection.Items {
-			if v.Name == "tag1" {
-				foundTag = true
-			}
-
-			if v.Name == "tag2" {
-				t.Fatalf("The space must not have a tagset called \"tag2\"")
-			}
-		}
-
-		if !foundTag {
-			t.Fatalf("The space must have a tagset called \"tag1\"")
 		}
 
 		// Verify that the environments were exported
+		err = func() error {
+			environmentsCollection := octopus.GeneralCollection[octopus.Tenant]{}
+			err = octopusClient.GetAllResources("Environments", &environmentsCollection)
 
-		environmentsCollection := octopus.GeneralCollection[octopus.Tenant]{}
-		err = octopusClient.GetAllResources("Environments", &environmentsCollection)
+			if err != nil {
+				return err
+			}
+
+			foundEnvironmentDev := false
+			foundEnvironmentTest := false
+			foundEnvironmentProduction := false
+			for _, v := range environmentsCollection.Items {
+				if v.Name == "Development" {
+					foundEnvironmentDev = true
+				}
+
+				if v.Name == "Test" {
+					foundEnvironmentTest = true
+				}
+
+				if v.Name == "Production" {
+					foundEnvironmentProduction = true
+				}
+
+				if v.Name == "Blah" {
+					t.Fatalf("The environment called \"Blah\" must not been exported")
+				}
+			}
+
+			if !foundEnvironmentDev {
+				t.Fatalf("The space must have a space called \"Deveopment\"")
+			}
+
+			if !foundEnvironmentTest {
+				t.Fatalf("The space must have a space called \"Test\"")
+			}
+
+			if !foundEnvironmentProduction {
+				t.Fatalf("The space must have a space called \"Production\"")
+			}
+
+			return nil
+		}()
 
 		if err != nil {
 			return err
 		}
 
-		foundEnvironmentDev := false
-		foundEnvironmentTest := false
-		foundEnvironmentProduction := false
-		for _, v := range environmentsCollection.Items {
-			if v.Name == "Development" {
-				foundEnvironmentDev = true
+		// Verify that the library variable set was exported
+		err = func() error {
+			libraryVariableSetCollection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+			err = octopusClient.GetAllResources("LibraryVariableSets", &libraryVariableSetCollection)
+
+			if err != nil {
+				return err
 			}
 
-			if v.Name == "Test" {
-				foundEnvironmentTest = true
+			foundLibraryVariableSet := false
+			for _, v := range libraryVariableSetCollection.Items {
+				if v.Name == "Test" {
+					foundLibraryVariableSet = true
+				}
+
+				if v.Name == "Test2" {
+					t.Fatalf("The library variable set called \"Test2\" must not been exported")
+				}
 			}
 
-			if v.Name == "Production" {
-				foundEnvironmentProduction = true
+			if !foundLibraryVariableSet {
+				t.Fatalf("The space must have a library variable called \"Test\"")
 			}
 
-			if v.Name == "Blah" {
-				t.Fatalf("The environment called \"Blah\" must not been exported")
-			}
-		}
+			return nil
+		}()
 
-		if !foundEnvironmentDev {
-			t.Fatalf("The space must have a space called \"Deveopment\"")
-		}
-
-		if !foundEnvironmentTest {
-			t.Fatalf("The space must have a space called \"Test\"")
-		}
-
-		if !foundEnvironmentProduction {
-			t.Fatalf("The space must have a space called \"Production\"")
+		if err != nil {
+			return err
 		}
 
 		return nil

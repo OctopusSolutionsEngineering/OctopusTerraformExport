@@ -20,7 +20,7 @@ resource "octopusdeploy_project" "project_1" {
   project_group_id                     = octopusdeploy_project_group.project_group_test.id
   tenanted_deployment_participation    = "Untenanted"
   space_id                             = var.octopus_space_id
-  included_library_variable_sets       = []
+  included_library_variable_sets       = [octopusdeploy_library_variable_set.octopus_library_variable_set.id]
   versioning_strategy {
     template = "#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.LastPatch}.#{Octopus.Version.NextRevision}"
   }
