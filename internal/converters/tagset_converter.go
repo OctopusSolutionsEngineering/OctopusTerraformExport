@@ -75,8 +75,8 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus.TagSet, recursive bool, 
 
 		tagResource := ResourceDetails{}
 		tagResource.FileName = "space_population/" + tagName + ".tf"
-		tagResource.Id = tagSet.Id
-		tagResource.ResourceType = c.GetResourceType()
+		tagResource.Id = tag.Id
+		tagResource.ResourceType = "Tags"
 		tagResource.Lookup = "${octopusdeploy_tag." + tagName + ".id}"
 		tagResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTag{

@@ -105,13 +105,15 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependenci
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		// Explicitly describe the dependency between a target and a tag set
-		dependsOn := make([]string, len(tagSetDependencies))
-		for i, t := range tagSetDependencies {
-			dependency := dependencies.GetResource("TagSets", t)
-			// This is a raw expression, so remove the surrounding brackets
-			dependency = strings.Replace(dependency, "${", "", -1)
-			dependency = strings.Replace(dependency, ".id}", "", -1)
-			dependsOn[i] = dependency
+		dependsOn := []string{}
+		for resourceType, terraformDependencies := range tagSetDependencies {
+			for _, terraformDependency := range terraformDependencies {
+				dependency := dependencies.GetResource(resourceType, terraformDependency)
+				// This is a raw expression, so remove the surrounding brackets
+				dependency = strings.Replace(dependency, "${", "", -1)
+				dependency = strings.Replace(dependency, ".id}", "", -1)
+				dependsOn = append(dependsOn, dependency)
+			}
 		}
 
 		util.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
@@ -152,7 +154,7 @@ func (c TenantConverter) lookupEnvironments(envs []string, dependencies *Resourc
 
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
-func (c TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive bool, dependencies *ResourceDetailsCollection) ([]string, error) {
+func (c TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
 	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := c.Client.GetAllResources("TagSets", &collection)
 
@@ -160,15 +162,19 @@ func (c TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive 
 		return nil, err
 	}
 
-	terraformDependencies := []string{}
+	terraformDependencies := map[string][]string{}
 
 	for _, tagSet := range collection.Items {
 		for _, tag := range tagSet.Tags {
 			for _, tenantTag := range tenant.TenantTags {
 				if tag.CanonicalTagName == tenantTag {
 
-					if !slices.Contains(terraformDependencies, tagSet.Id) {
-						terraformDependencies = append(terraformDependencies, tagSet.Id)
+					if !slices.Contains(terraformDependencies["TagSets"], tagSet.Id) {
+						terraformDependencies["TagSets"] = append(terraformDependencies["TagSets"], tagSet.Id)
+					}
+
+					if !slices.Contains(terraformDependencies["Tags"], tag.Id) {
+						terraformDependencies["Tags"] = append(terraformDependencies["Tags"], tag.Id)
 					}
 
 					if recursive {

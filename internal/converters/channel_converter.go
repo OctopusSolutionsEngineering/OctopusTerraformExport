@@ -24,7 +24,7 @@ func (c ChannelConverter) ToHclByProjectId(projectId string, dependencies *Resou
 	}
 
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, false, dependencies)
+		err = c.toHcl(channel, true, dependencies)
 
 		if err != nil {
 			return err

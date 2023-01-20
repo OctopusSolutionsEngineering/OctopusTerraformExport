@@ -3260,6 +3260,37 @@ func TestSingleProjectGroupExport(t *testing.T) {
 			return err
 		}
 
+		// Verify that the library variable set was exported
+		err = func() error {
+			collection := octopus.GeneralCollection[octopus.Lifecycle]{}
+			err = octopusClient.GetAllResources("Lifecycles", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "Simple" {
+					found = true
+				}
+
+				if v.Name == "Simple2" {
+					t.Fatalf("The lifecycle called \"Simple2\" must not been exported")
+				}
+			}
+
+			if !found {
+				t.Fatalf("The space must have a lifecycle called \"Simple\"")
+			}
+
+			return nil
+		}()
+
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 }
