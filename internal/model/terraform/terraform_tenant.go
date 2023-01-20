@@ -9,6 +9,7 @@ type TerraformTenant struct {
 	Description        *string                       `hcl:"description"`
 	TenantTags         []string                      `hcl:"tenant_tags"`
 	ProjectEnvironment []TerraformProjectEnvironment `hcl:"project_environment,block"`
+	DependsOn          []string                      `hcl:"depends_on"`
 }
 
 type TerraformProjectEnvironment struct {

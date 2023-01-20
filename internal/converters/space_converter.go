@@ -130,6 +130,15 @@ func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 		return err
 	}
 
+	// Convert the tag sets
+	err = TagSetConverter{
+		Client: c.Client,
+	}.ToHcl(dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	// Convert the certificates
 	err = CertificateConverter{
 		Client: c.Client,

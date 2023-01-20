@@ -2961,7 +2961,9 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 	})
 }
 
-// TestSingleProjectGroupExport verifies that a single project can be reimported with the correct settings
+// TestSingleProjectGroupExport verifies that a single project can be reimported with the correct settings.
+// This is one of the larger tests, verifying that the graph of resources linked to a project have been exported,
+// and that unrelated resources were not exported.
 func TestSingleProjectGroupExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		terraformDir := "../test/terraform/38-multipleprojects"
@@ -3090,6 +3092,96 @@ func TestSingleProjectGroupExport(t *testing.T) {
 
 		if !foundTrigger {
 			t.Fatalf("The space must have a trigger called \"Test 1\"")
+		}
+
+		// Verify that the single tenant was exported
+
+		tenantsCollection := octopus.GeneralCollection[octopus.Tenant]{}
+		err = octopusClient.GetAllResources("Tenants", &tenantsCollection)
+
+		if err != nil {
+			return err
+		}
+
+		foundTenant := false
+		for _, v := range tenantsCollection.Items {
+			if v.Name == "Team A" {
+				foundTenant = true
+			}
+
+			if v.Name == "Team B" {
+				t.Fatalf("The second tenant must not have been exported")
+			}
+		}
+
+		if !foundTenant {
+			t.Fatalf("The space must have a tenant called \"Team A\"")
+		}
+
+		// Verify that the tenant tags were exported
+
+		tagsCollection := octopus.GeneralCollection[octopus.TagSet]{}
+		err = octopusClient.GetAllResources("TagSets", &tagsCollection)
+
+		if err != nil {
+			return err
+		}
+
+		foundTag := false
+		for _, v := range tagsCollection.Items {
+			if v.Name == "tag1" {
+				foundTag = true
+			}
+
+			if v.Name == "tag2" {
+				t.Fatalf("The space must not have a tagset called \"tag2\"")
+			}
+		}
+
+		if !foundTag {
+			t.Fatalf("The space must have a tagset called \"tag1\"")
+		}
+
+		// Verify that the environments were exported
+
+		environmentsCollection := octopus.GeneralCollection[octopus.Tenant]{}
+		err = octopusClient.GetAllResources("Environments", &environmentsCollection)
+
+		if err != nil {
+			return err
+		}
+
+		foundEnvironmentDev := false
+		foundEnvironmentTest := false
+		foundEnvironmentProduction := false
+		for _, v := range environmentsCollection.Items {
+			if v.Name == "Development" {
+				foundEnvironmentDev = true
+			}
+
+			if v.Name == "Test" {
+				foundEnvironmentTest = true
+			}
+
+			if v.Name == "Production" {
+				foundEnvironmentProduction = true
+			}
+
+			if v.Name == "Blah" {
+				t.Fatalf("The environment called \"Blah\" must not been exported")
+			}
+		}
+
+		if !foundEnvironmentDev {
+			t.Fatalf("The space must have a space called \"Deveopment\"")
+		}
+
+		if !foundEnvironmentTest {
+			t.Fatalf("The space must have a space called \"Test\"")
+		}
+
+		if !foundEnvironmentProduction {
+			t.Fatalf("The space must have a space called \"Production\"")
 		}
 
 		return nil

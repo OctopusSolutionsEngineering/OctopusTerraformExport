@@ -9,9 +9,10 @@ type TagSet struct {
 }
 
 type Tag struct {
-	Id          string
-	Name        string
-	Color       string
-	Description *string
-	SortOrder   int
+	Id               string
+	Name             string
+	CanonicalTagName string
+	Color            string
+	Description      *string
+	SortOrder        int
 }
