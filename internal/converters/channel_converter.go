@@ -15,7 +15,7 @@ type ChannelConverter struct {
 	DependsOn map[string]string
 }
 
-func (c ChannelConverter) ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHclByProjectId(projectId string, recursive bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -24,7 +24,7 @@ func (c ChannelConverter) ToHclByProjectId(projectId string, dependencies *Resou
 	}
 
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, true, dependencies)
+		err = c.toHcl(channel, recursive, dependencies)
 
 		if err != nil {
 			return err
