@@ -65,7 +65,7 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, 
 		}
 	}
 
-	thisResource.FileName = "space_population/library_variable_set_" + resourceName + ".tf"
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_library_variable_set." + resourceName + ".id}"
