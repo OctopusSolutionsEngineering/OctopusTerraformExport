@@ -13,11 +13,10 @@ import (
 
 type ChannelConverter struct {
 	Client             client.OctopusClient
-	DependsOn          map[string]string
 	LifecycleConverter ConverterById
 }
 
-func (c ChannelConverter) ToHclByProjectId(projectId string, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -26,7 +25,7 @@ func (c ChannelConverter) ToHclByProjectId(projectId string, recursive bool, dep
 	}
 
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, recursive, dependencies)
+		err = c.toHcl(channel, true, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -36,18 +35,7 @@ func (c ChannelConverter) ToHclByProjectId(projectId string, recursive bool, dep
 	return nil
 }
 
-func (c ChannelConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
-	channel := octopus.Channel{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &channel)
-
-	if err != nil {
-		return err
-	}
-
-	return c.toHcl(channel, true, dependencies)
-}
-
-func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
 	if channel.Name != "Default" {
 
 		if recursive {
@@ -86,7 +74,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, depende
 			we must make this dependency explicit. Otherwise, the channel may be created without the deployment
 			process, and Octopus will reject the channel rules.*/
 			manualDependencies := make([]string, 0)
-			for t, r := range c.DependsOn {
+			for t, r := range terraformDependencies {
 				if t != "" && r != "" {
 					dependency := dependencies.GetResource(t, r)
 					// This is a raw expression, so remove the surrounding brackets

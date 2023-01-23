@@ -77,6 +77,10 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 				Client: client,
 			},
 			VariableSetConverter: variableSetConverter,
+			ChannelConverter: converters.ChannelConverter{
+				Client:             client,
+				LifecycleConverter: lifecycleConverter,
+			},
 		},
 		TenantConverter:         tenantConverter,
 		CertificateConverter:    certificateConverter,
@@ -190,6 +194,10 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 			Client: client,
 		},
 		VariableSetConverter: variableSetConverter,
+		ChannelConverter: converters.ChannelConverter{
+			Client:             client,
+			LifecycleConverter: lifecycleConverter,
+		},
 	}.ToHclById(projectId, &dependencies)
 
 	if err != nil {

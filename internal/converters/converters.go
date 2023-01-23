@@ -25,6 +25,11 @@ type ConverterByProjectId interface {
 	ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error
 }
 
+// ConverterByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies
+type ConverterByProjectIdWithTerraDependencies interface {
+	ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error
+}
+
 // ConverterByTenantId converts objects based on the relationship to a tenant
 type ConverterByTenantId interface {
 	ToHclByTenantId(projectId string, dependencies *ResourceDetailsCollection) error

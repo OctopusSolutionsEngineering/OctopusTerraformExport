@@ -22,6 +22,7 @@ type ProjectConverter struct {
 	TenantConverter             ConverterByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterByIdWithNameAndParent
+	ChannelConverter            ConverterByProjectIdWithTerraDependencies
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -67,7 +68,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, depende
 		}
 	}
 
-	err := c.exportChildDependencies(project, recursive, projectName, dependencies)
+	err := c.exportChildDependencies(project, projectName, dependencies)
 
 	if err != nil {
 		return err
@@ -229,13 +230,10 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
-func (c ProjectConverter) exportChildDependencies(project octopus.Project, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
-	err := ChannelConverter{
-		Client: c.Client,
-		DependsOn: map[string]string{
-			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-		},
-	}.ToHclByProjectId(project.Id, recursive, dependencies)
+func (c ProjectConverter) exportChildDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+	err := c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
+		"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
+	}, dependencies)
 
 	if err != nil {
 		return err
