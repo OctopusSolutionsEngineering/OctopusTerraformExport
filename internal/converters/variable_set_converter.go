@@ -19,7 +19,7 @@ type VariableSetConverter struct {
 	Client client.OctopusClient
 }
 
-func (c VariableSetConverter) ToHclById(id string, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.VariableSet{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -27,7 +27,7 @@ func (c VariableSetConverter) ToHclById(id string, recursive bool, parentName st
 		return err
 	}
 
-	return c.toHcl(resource, recursive, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, true, parentName, parentLookup, dependencies)
 }
 
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {

@@ -11,7 +11,15 @@ import (
 )
 
 type ProjectConverter struct {
-	Client client.OctopusClient
+	Client                      client.OctopusClient
+	LifecycleConverter          ConverterById
+	GitCredentialsConverter     ConverterById
+	LibraryVariableSetConverter ConverterById
+	ProjectGroupConverter       ConverterById
+	DeploymentProcessConverter  ConverterByIdWithName
+	TenantConverter             ConverterByProjectId
+	ProjectTriggerConverter     ConverterByProjectIdWithName
+	VariableSetConverter        ConverterByIdWithNameAndParent
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -233,9 +241,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, recur
 
 	// Export the deployment process
 	if project.DeploymentProcessId != nil {
-		err = DeploymentProcessConverter{
-			Client: c.Client,
-		}.ToHclById(*project.DeploymentProcessId, true, projectName, dependencies)
+		err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
 
 		if err != nil {
 			return err
@@ -244,9 +250,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, recur
 
 	// Export the variable set
 	if project.VariableSetId != nil {
-		err = VariableSetConverter{
-			Client: c.Client,
-		}.ToHclById(*project.VariableSetId, true, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+		err = c.VariableSetConverter.ToHclByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
 
 		if err != nil {
 			return err
@@ -254,9 +258,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, recur
 	}
 
 	// Export the triggers
-	err = ProjectTriggerConverter{
-		Client: c.Client,
-	}.ToHclByProjectId(project.Id, project.Name, dependencies)
+	err = c.ProjectTriggerConverter.ToHclByProjectIdAndName(project.Id, project.Name, dependencies)
 
 	if err != nil {
 		return err
@@ -267,9 +269,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, recur
 
 func (c ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	// Export the project group
-	err := ProjectGroupConverter{
-		Client: c.Client,
-	}.ToHclById(project.ProjectGroupId, false, dependencies)
+	err := c.ProjectGroupConverter.ToHclById(project.ProjectGroupId, dependencies)
 
 	if err != nil {
 		return err
@@ -277,9 +277,7 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 
 	// Export the library sets
 	for _, v := range project.IncludedLibraryVariableSetIds {
-		err := LibraryVariableSetConverter{
-			Client: c.Client,
-		}.ToHclById(v, dependencies)
+		err := c.LibraryVariableSetConverter.ToHclById(v, dependencies)
 
 		if err != nil {
 			return err
@@ -287,18 +285,14 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 	}
 
 	// Export the lifecycles
-	err = LifecycleConverter{
-		Client: c.Client,
-	}.ToHclById(project.LifecycleId, dependencies)
+	err = c.LifecycleConverter.ToHclById(project.LifecycleId, dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Export the tenants
-	err = TenantConverter{
-		Client: c.Client,
-	}.ToHclByProjectId(project.Id, dependencies)
+	err = c.TenantConverter.ToHclByProjectId(project.Id, dependencies)
 
 	if err != nil {
 		return err
@@ -306,9 +300,7 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 
 	// Export the git credentials
 	if project.PersistenceSettings.Credentials.Type == "Reference" {
-		err = GitCredentialsConverter{
-			Client: c.Client,
-		}.ToHclById(project.PersistenceSettings.Credentials.Id, dependencies)
+		err = c.GitCredentialsConverter.ToHclById(project.PersistenceSettings.Credentials.Id, dependencies)
 
 		if err != nil {
 			return err

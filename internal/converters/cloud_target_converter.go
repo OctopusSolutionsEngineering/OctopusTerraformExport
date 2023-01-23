@@ -10,7 +10,9 @@ import (
 )
 
 type CloudRegionTargetConverter struct {
-	Client client.OctopusClient
+	Client                 client.OctopusClient
+	MachinePolicyConverter ConverterById
+	EnvironmentConverter   ConverterById
 }
 
 func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -122,9 +124,7 @@ func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencie
 func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
+	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 
 	if err != nil {
 		return err
@@ -132,9 +132,7 @@ func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegio
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+		err = c.EnvironmentConverter.ToHclById(e, dependencies)
 
 		if err != nil {
 			return err

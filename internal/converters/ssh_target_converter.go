@@ -10,7 +10,10 @@ import (
 )
 
 type SshTargetConverter struct {
-	Client client.OctopusClient
+	Client                 client.OctopusClient
+	MachinePolicyConverter ConverterById
+	AccountConverter       ConverterById
+	EnvironmentConverter   ConverterById
 }
 
 func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -119,18 +122,14 @@ func (c SshTargetConverter) getAccount(account string, dependencies *ResourceDet
 func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
+	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Export the accounts
-	err = AccountConverter{
-		Client: c.Client,
-	}.ToHclById(target.Endpoint.AccountId, dependencies)
+	err = c.AccountConverter.ToHclById(target.Endpoint.AccountId, dependencies)
 
 	if err != nil {
 		return err
@@ -138,9 +137,7 @@ func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResourc
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+		err = c.EnvironmentConverter.ToHclById(e, dependencies)
 
 		if err != nil {
 			return err

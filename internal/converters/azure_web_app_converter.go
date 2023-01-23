@@ -10,7 +10,10 @@ import (
 )
 
 type AzureWebAppTargetConverter struct {
-	Client client.OctopusClient
+	Client                 client.OctopusClient
+	MachinePolicyConverter ConverterById
+	AccountConverter       ConverterById
+	EnvironmentConverter   ConverterById
 }
 
 func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -147,18 +150,14 @@ func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *Res
 func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAppResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
+	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Export the accounts
-	err = AccountConverter{
-		Client: c.Client,
-	}.ToHclById(target.Endpoint.AccountId, dependencies)
+	err = c.AccountConverter.ToHclById(target.Endpoint.AccountId, dependencies)
 
 	if err != nil {
 		return err
@@ -166,9 +165,7 @@ func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAp
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+		err = c.EnvironmentConverter.ToHclById(e, dependencies)
 
 		if err != nil {
 			return err

@@ -35,8 +35,103 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		ApiKey: apiKey,
 	}
 
+	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
+	accountConverter := converters.AccountConverter{Client: client}
+	environmentConverter := converters.EnvironmentConverter{Client: client}
+	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
+	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
+	variableSetConverter := converters.VariableSetConverter{Client: client}
+	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
+	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
+	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tenantConverter := converters.TenantConverter{
+		Client:                  client,
+		TenantVariableConverter: tenantVariableConverter,
+		EnvironmentConverter:    environmentConverter,
+	}
+	certificateConverter := converters.CertificateConverter{Client: client}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+	tagsetConverter := converters.TagSetConverter{Client: client}
+
 	spaceConverter := converters.SpaceConverter{
-		Client: client,
+		Client:                      client,
+		AccountConverter:            accountConverter,
+		EnvironmentConverter:        environmentConverter,
+		LibraryVariableSetConverter: libraryVariableSetConverter,
+		LifecycleConverter:          lifecycleConverter,
+		WorkerPoolConverter:         workerPoolConverter,
+		TagSetConverter:             tagsetConverter,
+		GitCredentialsConverter:     gitCredentialsConverter,
+		ProjectGroupConverter:       projectGroupConverter,
+		ProjectConverter: converters.ProjectConverter{
+			Client:                      client,
+			LifecycleConverter:          lifecycleConverter,
+			GitCredentialsConverter:     gitCredentialsConverter,
+			LibraryVariableSetConverter: libraryVariableSetConverter,
+			ProjectGroupConverter:       projectGroupConverter,
+			DeploymentProcessConverter: converters.DeploymentProcessConverter{
+				Client: client,
+			},
+			TenantConverter: tenantConverter,
+			ProjectTriggerConverter: converters.ProjectTriggerConverter{
+				Client: client,
+			},
+			VariableSetConverter: variableSetConverter,
+		},
+		TenantConverter:         tenantConverter,
+		CertificateConverter:    certificateConverter,
+		TenantVariableConverter: tenantVariableConverter,
+		MachinePolicyConverter:  machinePolicyConverter,
+		KubernetesTargetConverter: converters.KubernetesTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			AccountConverter:       accountConverter,
+			CertificateConverter:   certificateConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		SshTargetConverter: converters.SshTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			AccountConverter:       accountConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		ListeningTargetConverter: converters.ListeningTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		PollingTargetConverter: converters.PollingTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		CloudRegionTargetConverter: converters.CloudRegionTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		OfflineDropTargetConverter: converters.OfflineDropTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		AzureCloudServiceTargetConverter: converters.AzureCloudServiceTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			AccountConverter:       accountConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		AzureServiceFabricTargetConverter: converters.AzureServiceFabricTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
+		AzureWebAppTargetConverter: converters.AzureWebAppTargetConverter{
+			Client:                 client,
+			MachinePolicyConverter: machinePolicyConverter,
+			AccountConverter:       accountConverter,
+			EnvironmentConverter:   environmentConverter,
+		},
 	}
 
 	dependencies := converters.ResourceDetailsCollection{}

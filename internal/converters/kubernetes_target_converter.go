@@ -10,7 +10,11 @@ import (
 )
 
 type KubernetesTargetConverter struct {
-	Client client.OctopusClient
+	Client                 client.OctopusClient
+	MachinePolicyConverter ConverterById
+	AccountConverter       ConverterById
+	CertificateConverter   ConverterById
+	EnvironmentConverter   ConverterById
 }
 
 func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -231,9 +235,7 @@ func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *Res
 
 func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
 	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
+	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 
 	if err != nil {
 		return err
@@ -241,9 +243,7 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 
 	// Export the accounts
 	if target.Endpoint.Authentication.AccountId != nil {
-		err = AccountConverter{
-			Client: c.Client,
-		}.ToHclById(*target.Endpoint.Authentication.AccountId, dependencies)
+		err = c.AccountConverter.ToHclById(*target.Endpoint.Authentication.AccountId, dependencies)
 
 		if err != nil {
 			return err
@@ -252,9 +252,7 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 
 	// Export the certificate
 	if target.Endpoint.Authentication.ClientCertificate != nil {
-		err = CertificateConverter{
-			Client: c.Client,
-		}.ToHclById(*target.Endpoint.Authentication.ClientCertificate, dependencies)
+		err = c.CertificateConverter.ToHclById(*target.Endpoint.Authentication.ClientCertificate, dependencies)
 
 		if err != nil {
 			return err
@@ -262,9 +260,7 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 	}
 
 	if target.Endpoint.ClusterCertificate != nil {
-		err = CertificateConverter{
-			Client: c.Client,
-		}.ToHclById(*target.Endpoint.ClusterCertificate, dependencies)
+		err = c.CertificateConverter.ToHclById(*target.Endpoint.ClusterCertificate, dependencies)
 
 		if err != nil {
 			return err
@@ -273,9 +269,7 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+		err = c.EnvironmentConverter.ToHclById(e, dependencies)
 
 		if err != nil {
 			return err

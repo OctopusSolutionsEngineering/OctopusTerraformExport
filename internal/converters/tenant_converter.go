@@ -12,7 +12,9 @@ import (
 )
 
 type TenantConverter struct {
-	Client client.OctopusClient
+	Client                  client.OctopusClient
+	TenantVariableConverter ConverterByTenantId
+	EnvironmentConverter    ConverterById
 }
 
 func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -55,9 +57,7 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependenci
 
 	if recursive {
 		// Export the tenant variables
-		err := TenantVariableConverter{
-			Client: c.Client,
-		}.ToHclByTenantId(tenant.Id, dependencies)
+		err := c.TenantVariableConverter.ToHclByTenantId(tenant.Id, dependencies)
 
 		if err != nil {
 			return err
@@ -66,9 +66,7 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependenci
 		// Export the tenant environments
 		for _, environments := range tenant.ProjectEnvironments {
 			for _, environment := range environments {
-				err = EnvironmentConverter{
-					Client: c.Client,
-				}.ToHclById(environment, dependencies)
+				err = c.EnvironmentConverter.ToHclById(environment, dependencies)
 			}
 		}
 

@@ -12,7 +12,8 @@ import (
 )
 
 type LibraryVariableSetConverter struct {
-	Client client.OctopusClient
+	Client               client.OctopusClient
+	VariableSetConverter ConverterByIdWithNameAndParent
 }
 
 func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -56,9 +57,7 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, 
 
 	// The project group is a dependency that we need to lookup regardless of whether recursive is set
 	if util.EmptyIfNil(resource.ContentType) == "Variables" {
-		err := VariableSetConverter{
-			Client: c.Client,
-		}.ToHclById(resource.VariableSetId, true, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
+		err := c.VariableSetConverter.ToHclByIdAndName(resource.VariableSetId, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
 
 		if err != nil {
 			return err

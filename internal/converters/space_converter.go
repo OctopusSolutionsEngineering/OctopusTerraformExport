@@ -13,7 +13,29 @@ import (
 // terraform project, as you first need to a create a space, and then configure a second provider
 // to use that space.
 type SpaceConverter struct {
-	Client client.OctopusClient
+	Client                            client.OctopusClient
+	AccountConverter                  Converter
+	EnvironmentConverter              Converter
+	LibraryVariableSetConverter       Converter
+	LifecycleConverter                Converter
+	WorkerPoolConverter               Converter
+	TagSetConverter                   Converter
+	GitCredentialsConverter           Converter
+	ProjectGroupConverter             Converter
+	ProjectConverter                  Converter
+	TenantConverter                   Converter
+	CertificateConverter              Converter
+	TenantVariableConverter           Converter
+	MachinePolicyConverter            Converter
+	KubernetesTargetConverter         Converter
+	SshTargetConverter                Converter
+	ListeningTargetConverter          Converter
+	PollingTargetConverter            Converter
+	CloudRegionTargetConverter        Converter
+	OfflineDropTargetConverter        Converter
+	AzureCloudServiceTargetConverter  Converter
+	AzureServiceFabricTargetConverter Converter
+	AzureWebAppTargetConverter        Converter
 }
 
 // ToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
@@ -41,207 +63,154 @@ func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	// Convert the accounts
-	err = AccountConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.AccountConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the environments
-	err = EnvironmentConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.EnvironmentConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the library variables
-	err = LibraryVariableSetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.LibraryVariableSetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the lifecycles
-	err = LifecycleConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.LifecycleConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the worker pools
-	err = WorkerPoolConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.WorkerPoolConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the tag sets
-	err = TagSetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.TagSetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the git credentials
-	err = GitCredentialsConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.GitCredentialsConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the projects groups
-	err = ProjectGroupConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.ProjectGroupConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the projects
-	err = ProjectConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.ProjectConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the tenants
-	err = TenantConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Convert the tag sets
-	err = TagSetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.TenantConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the certificates
-	err = CertificateConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.CertificateConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the tenant variables
-	err = TenantVariableConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.TenantVariableConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the machine policies
-	err = MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.MachinePolicyConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the k8s targets
-	err = KubernetesTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.KubernetesTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the ssh targets
-	err = SshTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.SshTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the ssh targets
-	err = ListeningTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.ListeningTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the polling targets
-	err = PollingTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.PollingTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the cloud region targets
-	err = CloudRegionTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.CloudRegionTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the cloud region targets
-	err = OfflineDropTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.OfflineDropTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the azure cloud service targets
-	err = AzureCloudServiceTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.AzureCloudServiceTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the azure cloud service targets
-	err = AzureServiceFabricTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.AzureServiceFabricTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Convert the azure web app targets
-	err = AzureWebAppTargetConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.AzureWebAppTargetConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err

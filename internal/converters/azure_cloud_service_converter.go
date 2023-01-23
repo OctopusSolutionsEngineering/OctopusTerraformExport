@@ -10,7 +10,10 @@ import (
 )
 
 type AzureCloudServiceTargetConverter struct {
-	Client client.OctopusClient
+	Client                 client.OctopusClient
+	MachinePolicyConverter ConverterById
+	AccountConverter       ConverterById
+	EnvironmentConverter   ConverterById
 }
 
 func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -114,18 +117,14 @@ func (c AzureCloudServiceTargetConverter) GetResourceType() string {
 func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.AzureCloudServiceResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
-	err := MachinePolicyConverter{
-		Client: c.Client,
-	}.ToHclById(target.MachinePolicyId, dependencies)
+	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 
 	if err != nil {
 		return err
 	}
 
 	// Export the accounts
-	err = AccountConverter{
-		Client: c.Client,
-	}.ToHclById(target.Endpoint.AccountId, dependencies)
+	err = c.AccountConverter.ToHclById(target.Endpoint.AccountId, dependencies)
 
 	if err != nil {
 		return err
@@ -133,9 +132,7 @@ func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.Azur
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = EnvironmentConverter{
-			Client: c.Client,
-		}.ToHclById(e, dependencies)
+		err = c.EnvironmentConverter.ToHclById(e, dependencies)
 
 		if err != nil {
 			return err

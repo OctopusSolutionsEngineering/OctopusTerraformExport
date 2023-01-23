@@ -11,8 +11,9 @@ import (
 )
 
 type ChannelConverter struct {
-	Client    client.OctopusClient
-	DependsOn map[string]string
+	Client             client.OctopusClient
+	DependsOn          map[string]string
+	LifecycleConverter ConverterById
 }
 
 func (c ChannelConverter) ToHclByProjectId(projectId string, recursive bool, dependencies *ResourceDetailsCollection) error {
@@ -50,9 +51,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, depende
 
 		if recursive {
 			// The lifecycle is a dependency that we need to lookup
-			err := LifecycleConverter{
-				Client: c.Client,
-			}.ToHclById(channel.LifecycleId, dependencies)
+			err := c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
 
 			if err != nil {
 				return err

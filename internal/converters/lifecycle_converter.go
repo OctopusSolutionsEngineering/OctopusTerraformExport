@@ -10,7 +10,8 @@ import (
 )
 
 type LifecycleConverter struct {
-	Client client.OctopusClient
+	Client               client.OctopusClient
+	EnvironmentConverter ConverterById
 }
 
 func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -50,18 +51,14 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, d
 		// The environments are a dependency that we need to lookup
 		for _, phase := range lifecycle.Phases {
 			for _, auto := range phase.AutomaticDeploymentTargets {
-				err := EnvironmentConverter{
-					Client: c.Client,
-				}.ToHclById(auto, dependencies)
+				err := c.EnvironmentConverter.ToHclById(auto, dependencies)
 
 				if err != nil {
 					return err
 				}
 			}
 			for _, optional := range phase.OptionalDeploymentTargets {
-				err := EnvironmentConverter{
-					Client: c.Client,
-				}.ToHclById(optional, dependencies)
+				err := c.EnvironmentConverter.ToHclById(optional, dependencies)
 
 				if err != nil {
 					return err

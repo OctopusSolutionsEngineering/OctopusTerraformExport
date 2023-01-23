@@ -13,7 +13,7 @@ type ProjectTriggerConverter struct {
 	Client client.OctopusClient
 }
 
-func (c ProjectTriggerConverter) ToHclByProjectId(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetResourceType(projectId), &collection)
 

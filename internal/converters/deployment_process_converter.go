@@ -16,7 +16,7 @@ type DeploymentProcessConverter struct {
 	Client client.OctopusClient
 }
 
-func (c DeploymentProcessConverter) ToHclById(id string, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.DeploymentProcess{}
 	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -30,7 +30,7 @@ func (c DeploymentProcessConverter) ToHclById(id string, recursive bool, project
 		return nil
 	}
 
-	return c.toHcl(resource, recursive, projectName, dependencies)
+	return c.toHcl(resource, true, projectName, dependencies)
 }
 
 func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
