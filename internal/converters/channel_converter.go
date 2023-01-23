@@ -4,9 +4,10 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 	"strings"
 )
 
@@ -58,7 +59,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, depende
 			}
 		}
 
-		resourceName := "channel_" + util.SanitizeNamePointer(&channel.Name)
+		resourceName := "channel_" + sanitizer.SanitizeNamePointer(&channel.Name)
 
 		thisResource := ResourceDetails{}
 		thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -94,7 +95,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, depende
 					manualDependencies = append(manualDependencies, dependency)
 				}
 			}
-			util.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(manualDependencies[:], ",")+"]")
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(manualDependencies[:], ",")+"]")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil

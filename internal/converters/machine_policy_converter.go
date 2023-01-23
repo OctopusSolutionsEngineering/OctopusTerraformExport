@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 	"strconv"
 	"strings"
 	"time"
@@ -48,7 +48,7 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetai
 
 func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-	policyName := "machinepolicy_" + util.SanitizeName(machinePolicy.Name)
+	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + policyName + ".tf"

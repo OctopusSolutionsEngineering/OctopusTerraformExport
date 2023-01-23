@@ -4,9 +4,11 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"k8s.io/utils/strings/slices"
 	"strings"
 )
@@ -81,7 +83,7 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependenci
 		return err
 	}
 
-	tenantName := "tenant_" + util.SanitizeName(tenant.Name)
+	tenantName := "tenant_" + sanitizer.SanitizeName(tenant.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + tenantName + ".tf"
@@ -95,7 +97,7 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependenci
 			ResourceName:       tenant.Name,
 			Id:                 nil,
 			ClonedFromTenantId: nil,
-			Description:        util.NilIfEmptyPointer(tenant.Description),
+			Description:        strutil.NilIfEmptyPointer(tenant.Description),
 			TenantTags:         tenant.TenantTags,
 			ProjectEnvironment: c.getProjects(tenant.ProjectEnvironments, dependencies),
 		}
@@ -114,7 +116,7 @@ func (c TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, dependenci
 			}
 		}
 
-		util.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil

@@ -7,7 +7,8 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"strings"
 )
 
@@ -49,14 +50,14 @@ func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *Resource
 func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
-	resourceName := "library_variable_set_" + util.SanitizeName(resource.Name)
+	resourceName := "library_variable_set_" + sanitizer.SanitizeName(resource.Name)
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName)
 	dependencies.AddResource(projectTemplateMap...)
 
 	// The project group is a dependency that we need to lookup regardless of whether recursive is set
-	if util.EmptyIfNil(resource.ContentType) == "Variables" {
+	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
 		err := c.VariableSetConverter.ToHclByIdAndName(resource.VariableSetId, resourceName, "${octopusdeploy_library_variable_set."+resourceName+".id}", dependencies)
 
 		if err != nil {
@@ -72,7 +73,7 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, 
 
 		file := hclwrite.NewEmptyFile()
 
-		if util.EmptyIfNil(resource.ContentType) == "Variables" {
+		if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
 			terraformResource := terraform.TerraformLibraryVariableSet{
 				Type:         "octopusdeploy_library_variable_set",
 				Name:         resourceName,
@@ -84,7 +85,7 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			return string(file.Bytes()), nil
-		} else if util.EmptyIfNil(resource.ContentType) == "ScriptModule" {
+		} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
 			variable := octopus.VariableSet{}
 			_, err := c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
 

@@ -4,9 +4,10 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 	"regexp"
 	"strings"
 )
@@ -36,7 +37,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	for _, v := range resource.Variables {
 		thisResource := ResourceDetails{}
 
-		resourceName := parentName + "_" + util.SanitizeName(v.Name)
+		resourceName := parentName + "_" + sanitizer.SanitizeName(v.Name)
 
 		if recursive {
 			// Export linked accounts
@@ -99,7 +100,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 				}
 
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-				util.WriteUnquotedAttribute(block, "type", "string")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
 

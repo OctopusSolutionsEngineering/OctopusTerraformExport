@@ -6,7 +6,8 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 )
 
 type TagSetConverter struct {
@@ -44,7 +45,7 @@ func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsColle
 }
 
 func (c TagSetConverter) ToHclByResource(tagSet octopus.TagSet, recursive bool, dependencies *ResourceDetailsCollection) error {
-	tagSetName := "tagset_" + util.SanitizeName(tagSet.Name)
+	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + tagSetName + ".tf"
@@ -56,7 +57,7 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus.TagSet, recursive bool, 
 			Type:         "octopusdeploy_tag_set",
 			Name:         tagSetName,
 			ResourceName: tagSet.Name,
-			Description:  util.NilIfEmptyPointer(tagSet.Description),
+			Description:  strutil.NilIfEmptyPointer(tagSet.Description),
 			SortOrder:    tagSet.SortOrder,
 		}
 		file := hclwrite.NewEmptyFile()
@@ -71,7 +72,7 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus.TagSet, recursive bool, 
 		// https://go.dev/doc/faq#closures_and_goroutines
 		tag := tag
 
-		tagName := "tag_" + util.SanitizeName(tag.Name)
+		tagName := "tag_" + sanitizer.SanitizeName(tag.Name)
 
 		tagResource := ResourceDetails{}
 		tagResource.FileName = "space_population/" + tagName + ".tf"
@@ -109,7 +110,7 @@ func (c TagSetConverter) getTagSetTags(tags []octopus.Tag) []terraform.Terraform
 		terraformTags[i] = terraform.TerraformTag{
 			ResourceName: v.Name,
 			Color:        v.Color,
-			Description:  util.NilIfEmptyPointer(v.Description),
+			Description:  strutil.NilIfEmptyPointer(v.Description),
 			SortOrder:    v.SortOrder,
 		}
 	}

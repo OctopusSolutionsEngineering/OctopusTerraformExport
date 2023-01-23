@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type ProjectGroupConverter struct {
@@ -46,7 +46,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
-	projectName := "project_group_" + util.SanitizeNamePointer(resource.Name)
+	projectName := "project_group_" + sanitizer.SanitizeNamePointer(resource.Name)
 
 	thisResource.FileName = "space_population/projectgroup_" + projectName + ".tf"
 	thisResource.Id = resource.Id

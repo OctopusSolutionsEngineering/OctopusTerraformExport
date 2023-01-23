@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type LifecycleConverter struct {
@@ -67,7 +67,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, d
 		}
 	}
 
-	resourceName := "lifecycle_" + util.SanitizeName(lifecycle.Name)
+	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

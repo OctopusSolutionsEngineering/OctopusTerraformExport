@@ -1,4 +1,4 @@
-package util
+package hcl
 
 import (
 	"github.com/hashicorp/hcl2/hcl"

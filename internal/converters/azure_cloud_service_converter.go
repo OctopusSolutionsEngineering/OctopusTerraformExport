@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type AzureCloudServiceTargetConverter struct {
@@ -57,7 +57,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 			}
 		}
 
-		targetName := "target_" + util.SanitizeName(target.Name)
+		targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
 		thisResource := ResourceDetails{}
 		thisResource.FileName = "space_population/" + targetName + ".tf"

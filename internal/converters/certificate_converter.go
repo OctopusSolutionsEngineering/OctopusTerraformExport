@@ -4,9 +4,10 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type CertificateConverter struct {
@@ -50,7 +51,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 		will link itself to any available environments or tenants.
 	*/
 
-	certificateName := "certificate_" + util.SanitizeName(certificate.Name)
+	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
@@ -104,7 +105,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 		}
 
 		block := gohcl.EncodeAsBlock(certificatePassword, "variable")
-		util.WriteUnquotedAttribute(block, "type", "string")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
 		certificateData := terraform.TerraformVariable{
@@ -116,7 +117,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 		}
 
 		block = gohcl.EncodeAsBlock(certificateData, "variable")
-		util.WriteUnquotedAttribute(block, "type", "string")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil

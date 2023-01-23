@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type WorkerPoolConverter struct {
@@ -44,7 +44,7 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsC
 }
 
 func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, recursive bool, dependencies *ResourceDetailsCollection) error {
-	resourceName := "workerpool_" + util.SanitizeNamePointer(&pool.Name)
+	resourceName := "workerpool_" + sanitizer.SanitizeNamePointer(&pool.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

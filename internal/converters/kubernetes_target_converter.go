@@ -6,7 +6,8 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 )
 
 type KubernetesTargetConverter struct {
@@ -58,7 +59,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			}
 		}
 
-		targetName := "target_" + util.SanitizeName(target.Name)
+		targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
 		thisResource := ResourceDetails{}
 		thisResource.FileName = "space_population/" + targetName + ".tf"
@@ -70,7 +71,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
 				Type:                            "octopusdeploy_kubernetes_cluster_deployment_target",
 				Name:                            targetName,
-				ClusterUrl:                      util.EmptyIfNil(target.Endpoint.ClusterUrl),
+				ClusterUrl:                      strutil.EmptyIfNil(target.Endpoint.ClusterUrl),
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
@@ -78,15 +79,15 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 				HealthStatus:                    nil,
 				Id:                              nil,
-				IsDisabled:                      util.NilIfFalse(target.IsDisabled),
+				IsDisabled:                      strutil.NilIfFalse(target.IsDisabled),
 				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				Namespace:                       util.NilIfEmptyPointer(target.Endpoint.Namespace),
+				Namespace:                       strutil.NilIfEmptyPointer(target.Endpoint.Namespace),
 				OperatingSystem:                 nil,
 				ProxyId:                         nil,
 				RunningInContainer:              nil,
 				ShellName:                       nil,
 				ShellVersion:                    nil,
-				SkipTlsVerification:             util.ParseBoolPointer(target.Endpoint.SkipTlsVerification),
+				SkipTlsVerification:             strutil.ParseBoolPointer(target.Endpoint.SkipTlsVerification),
 				SpaceId:                         nil,
 				Status:                          nil,
 				StatusSummary:                   nil,
@@ -128,7 +129,7 @@ func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpoint
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAws" {
 		return &terraform.TerraformAwsAccountAuthentication{
 			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
-			ClusterName:               util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
+			ClusterName:               strutil.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			AssumeRole:                target.Endpoint.Authentication.AssumeRole,
 			AssumeRoleExternalId:      target.Endpoint.Authentication.AssumeRoleExternalId,
 			AssumeRoleSessionDuration: target.Endpoint.Authentication.AssumeRoleSessionDurationSeconds,
@@ -155,8 +156,8 @@ func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpo
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesGoogleCloud" {
 		return &terraform.TerraformGcpAccountAuthentication{
 			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
-			ClusterName:               util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
-			Project:                   util.EmptyIfNil(target.Endpoint.Authentication.Project),
+			ClusterName:               strutil.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
+			Project:                   strutil.EmptyIfNil(target.Endpoint.Authentication.Project),
 			ImpersonateServiceAccount: target.Endpoint.Authentication.ImpersonateServiceAccount,
 			Region:                    target.Endpoint.Authentication.Region,
 			ServiceAccountEmails:      target.Endpoint.Authentication.ServiceAccountEmails,
@@ -182,8 +183,8 @@ func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpoi
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAzure" {
 		return &terraform.TerraformAzureServicePrincipalAuthentication{
 			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
-			ClusterName:          util.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
-			ClusterResourceGroup: util.EmptyIfNil(target.Endpoint.Authentication.ClusterResourceGroup),
+			ClusterName:          strutil.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
+			ClusterResourceGroup: strutil.EmptyIfNil(target.Endpoint.Authentication.ClusterResourceGroup),
 		}
 	}
 

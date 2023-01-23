@@ -4,9 +4,10 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 // SpaceConverter creates the files required to create a new space. These files are used in a separate
@@ -231,7 +232,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 		return err
 	}
 
-	spaceResourceName := "octopus_space_" + util.SanitizeNamePointer(space.Name)
+	spaceResourceName := "octopus_space_" + sanitizer.SanitizeNamePointer(space.Name)
 	spaceName := "${var.octopus_space_name}"
 
 	thisResource := ResourceDetails{}
@@ -273,7 +274,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
 
 		block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
-		util.WriteUnquotedAttribute(block, "type", "string")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"k8s.io/utils/strings/slices"
@@ -1143,15 +1143,15 @@ func TestEcrFeedExport(t *testing.T) {
 				found = true
 
 				if *v.FeedType != "AwsElasticContainerRegistry" {
-					t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + util.EmptyIfNil(v.FeedType) + "\"")
+					t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
 				}
 
 				if *v.AccessKey != os.Getenv("ECR_ACCESS_KEY") {
-					t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + util.EmptyIfNil(v.AccessKey) + "\"")
+					t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
 				}
 
 				if *v.Region != "us-east-1" {
-					t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + util.EmptyIfNil(v.Region) + "\"")
+					t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
 				}
 
 				foundExecutionTarget := false
@@ -1384,7 +1384,7 @@ func TestWorkerPoolExport(t *testing.T) {
 				}
 
 				if *v.Description != "A test worker pool" {
-					t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + util.EmptyIfNil(v.Description) + "\"")
+					t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
 				}
 
 				if v.SortOrder != 3 {
@@ -1438,8 +1438,8 @@ func TestEnvironmentExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "A test environment" {
-					t.Fatal("The environment must be have a description of \"A test environment\" (was \"" + util.EmptyIfNil(v.Description) + "\"")
+				if strutil.EmptyIfNil(v.Description) != "A test environment" {
+					t.Fatal("The environment must be have a description of \"A test environment\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
 				}
 
 				if !v.AllowDynamicInfrastructure {
@@ -1493,8 +1493,8 @@ func TestLifecycleExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "A test lifecycle" {
-					t.Fatal("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "A test lifecycle" {
+					t.Fatal("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
@@ -1564,8 +1564,8 @@ func TestVariableSetExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "Test variable set" {
-					t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "Test variable set" {
+					t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				resource := octopus.VariableSet{}
@@ -1583,11 +1583,11 @@ func TestVariableSetExport(t *testing.T) {
 					t.Fatal("The library variable set variable must have a type of \"String\"")
 				}
 
-				if util.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
+				if strutil.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
 					t.Fatal("The library variable set variable must have a description of \"Test variable\"")
 				}
 
-				if util.EmptyIfNil(resource.Variables[0].Value) != "test" {
+				if strutil.EmptyIfNil(resource.Variables[0].Value) != "test" {
 					t.Fatal("The library variable set variable must have a value of \"test\"")
 				}
 
@@ -1642,16 +1642,16 @@ func TestProjectExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "Test project" {
-					t.Fatal("The project must be have a description of \"Test project\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "Test project" {
+					t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				if v.AutoCreateRelease {
 					t.Fatal("The project must not have auto release create enabled")
 				}
 
-				if util.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
-					t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + util.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+				if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
+					t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
 				}
 
 				if v.DefaultToSkipIfAlreadyInstalled {
@@ -1670,8 +1670,8 @@ func TestProjectExport(t *testing.T) {
 					t.Fatal("The project must not have IsVersionControlled enabled")
 				}
 
-				if util.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
-					t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + util.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
+				if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
+					t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
 				}
 
 				if len(v.IncludedLibraryVariableSetIds) != 0 {
@@ -1743,8 +1743,8 @@ func TestProjectChannelExport(t *testing.T) {
 					if c.Name == channelName {
 						foundChannel = true
 
-						if util.EmptyIfNil(c.Description) != "Test channel" {
-							t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + util.EmptyIfNil(c.Description) + "\")")
+						if strutil.EmptyIfNil(c.Description) != "Test channel" {
+							t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
 						}
 
 						if !c.IsDefault {
@@ -1755,16 +1755,16 @@ func TestProjectChannelExport(t *testing.T) {
 							t.Fatal("The channel must have one rule")
 						}
 
-						if util.EmptyIfNil(c.Rules[0].Tag) != "^$" {
-							t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + util.EmptyIfNil(c.Rules[0].Tag) + "\")")
+						if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
+							t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
 						}
 
-						if util.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
-							t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + util.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
+						if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
+							t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
 						}
 
-						if util.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
-							t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + util.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+						if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
+							t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
 						}
 					}
 				}
@@ -1816,8 +1816,8 @@ func TestTagSetExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "Test tagset" {
-					t.Fatal("The tag set must be have a description of \"Test tagset\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "Test tagset" {
+					t.Fatal("The tag set must be have a description of \"Test tagset\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				if v.SortOrder != 0 {
@@ -1829,8 +1829,8 @@ func TestTagSetExport(t *testing.T) {
 					if u.Name == "a" {
 						tagAFound = true
 
-						if util.EmptyIfNil(u.Description) != "tag a" {
-							t.Fatal("The tag a must be have a description of \"tag a\" (was \"" + util.EmptyIfNil(u.Description) + "\")")
+						if strutil.EmptyIfNil(u.Description) != "tag a" {
+							t.Fatal("The tag a must be have a description of \"tag a\" (was \"" + strutil.EmptyIfNil(u.Description) + "\")")
 						}
 
 						if u.Color != "#333333" {
@@ -1892,8 +1892,8 @@ func TestGitCredentialsExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "test git credential" {
-					t.Fatal("The git credential must be have a description of \"test git credential\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "test git credential" {
+					t.Fatal("The git credential must be have a description of \"test git credential\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				if v.Details.Username != "admin" {
@@ -1947,8 +1947,8 @@ func TestScriptModuleExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "Test script module" {
-					t.Fatal("The library variable set must be have a description of \"Test script module\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "Test script module" {
+					t.Fatal("The library variable set must be have a description of \"Test script module\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				resource := octopus.VariableSet{}
@@ -1968,7 +1968,7 @@ func TestScriptModuleExport(t *testing.T) {
 							t.Fatal("The library variable set variable must have a type of \"String\"")
 						}
 
-						if util.EmptyIfNil(u.Value) != "echo \"hi\"" {
+						if strutil.EmptyIfNil(u.Value) != "echo \"hi\"" {
 							t.Fatal("The library variable set variable must have a value of \"\"echo \\\"hi\\\"\"\"")
 						}
 
@@ -1988,7 +1988,7 @@ func TestScriptModuleExport(t *testing.T) {
 							t.Fatal("The library variable set variable must have a type of \"String\"")
 						}
 
-						if util.EmptyIfNil(u.Value) != "PowerShell" {
+						if strutil.EmptyIfNil(u.Value) != "PowerShell" {
 							t.Fatal("The library variable set variable must have a value of \"PowerShell\"")
 						}
 
@@ -2050,8 +2050,8 @@ func TestTenantsExport(t *testing.T) {
 			if v.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(v.Description) != "Test tenant" {
-					t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + util.EmptyIfNil(v.Description) + "\")")
+				if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+					t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 				}
 
 				if len(v.TenantTags) != 2 {
@@ -2234,8 +2234,8 @@ func TestMachinePolicyExport(t *testing.T) {
 			if machinePolicy.Name == resourceName {
 				found = true
 
-				if util.EmptyIfNil(machinePolicy.Description) != "test machine policy" {
-					t.Fatal("The machine policy must have a description of \"test machine policy\" (was \"" + util.EmptyIfNil(machinePolicy.Description) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.Description) != "test machine policy" {
+					t.Fatal("The machine policy must have a description of \"test machine policy\" (was \"" + strutil.EmptyIfNil(machinePolicy.Description) + "\")")
 				}
 
 				if machinePolicy.ConnectionConnectTimeout != "00:01:00" {
@@ -2286,28 +2286,28 @@ func TestMachinePolicyExport(t *testing.T) {
 					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody to start with \"$freeDiskSpaceThreshold\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody + "\")")
 				}
 
-				if util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) != "UTC" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCronTimezone of \"UTC\" (was \"" + util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) != "UTC" {
+					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCronTimezone of \"UTC\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) + "\")")
 				}
 
-				if util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) != "" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCron of \"\" (was \"" + util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) != "" {
+					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCron of \"\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) + "\")")
 				}
 
-				if util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) != "RunScript" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckType of \"RunScript\" (was \"" + util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) != "RunScript" {
+					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckType of \"RunScript\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) + "\")")
 				}
 
-				if util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) != "00:10:00" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckInterval of \"00:10:00\" (was \"" + util.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) != "00:10:00" {
+					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckInterval of \"00:10:00\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) + "\")")
 				}
 
-				if util.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) != "UpdateOnDeployment" {
-					t.Fatal("The machine policy must have a MachineUpdatePolicy.CalamariUpdateBehavior of \"UpdateOnDeployment\" (was \"" + util.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) != "UpdateOnDeployment" {
+					t.Fatal("The machine policy must have a MachineUpdatePolicy.CalamariUpdateBehavior of \"UpdateOnDeployment\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
 				}
 
-				if util.EmptyIfNil(machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior) != "NeverUpdate" {
-					t.Fatal("The machine policy must have a MachineUpdatePolicy.TentacleUpdateBehavior of \"NeverUpdate\" (was \"" + util.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+				if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior) != "NeverUpdate" {
+					t.Fatal("The machine policy must have a MachineUpdatePolicy.TentacleUpdateBehavior of \"NeverUpdate\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
 				}
 			}
 		}
@@ -2423,8 +2423,8 @@ func TestK8sTargetExport(t *testing.T) {
 			if machine.Name == resourceName {
 				foundResource = true
 
-				if util.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-					t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + util.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+				if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
+					t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 				}
 			}
 		}

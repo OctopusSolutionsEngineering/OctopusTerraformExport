@@ -5,9 +5,11 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 )
 
 type ProjectConverter struct {
@@ -55,7 +57,7 @@ func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
-	projectName := "project_" + util.SanitizeName(project.Name)
+	projectName := "project_" + sanitizer.SanitizeName(project.Name)
 
 	if recursive {
 		err := c.exportDependencies(project, projectName, dependencies)
@@ -119,7 +121,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, depende
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 		}
 
@@ -136,7 +138,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, depende
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 		}
 
@@ -231,7 +233,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus.Project, recur
 	err := ChannelConverter{
 		Client: c.Client,
 		DependsOn: map[string]string{
-			"DeploymentProcesses": util.EmptyIfNil(project.DeploymentProcessId),
+			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
 		},
 	}.ToHclByProjectId(project.Id, recursive, dependencies)
 

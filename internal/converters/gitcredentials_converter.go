@@ -4,9 +4,11 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 )
 
 type GitCredentialsConverter struct {
@@ -46,7 +48,7 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDeta
 
 func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, recursive bool, dependencies *ResourceDetailsCollection) error {
 
-	gitCredentialsName := "gitcredential_" + util.SanitizeName(gitCredentials.Name)
+	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + gitCredentialsName + ".tf"
@@ -58,7 +60,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, re
 		terraformResource := terraform.TerraformGitCredentials{
 			Type:         "octopusdeploy_git_credential",
 			Name:         gitCredentialsName,
-			Description:  util.NilIfEmptyPointer(gitCredentials.Description),
+			Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
 			ResourceName: gitCredentials.Name,
 			ResourceType: gitCredentials.Details.Type,
 			Username:     gitCredentials.Details.Username,
@@ -76,7 +78,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, re
 		}
 
 		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		util.WriteUnquotedAttribute(block, "type", "string")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil

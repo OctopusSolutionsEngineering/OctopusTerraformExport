@@ -4,8 +4,8 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
 )
 
 // TerraformProviderGenerator creates the common terraform files required to populate a space
@@ -90,15 +90,15 @@ func (c TerraformProviderGenerator) createVariables(directory string, dependenci
 		file := hclwrite.NewEmptyFile()
 
 		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "variable")
-		util.WriteUnquotedAttribute(octopusServerBlock, "type", "string")
+		hcl.WriteUnquotedAttribute(octopusServerBlock, "type", "string")
 		file.Body().AppendBlock(octopusServerBlock)
 
 		octopusApiKeyBlock := gohcl.EncodeAsBlock(octopusApiKey, "variable")
-		util.WriteUnquotedAttribute(octopusApiKeyBlock, "type", "string")
+		hcl.WriteUnquotedAttribute(octopusApiKeyBlock, "type", "string")
 		file.Body().AppendBlock(octopusApiKeyBlock)
 
 		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
-		util.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
+		hcl.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
 		file.Body().AppendBlock(octopusSpaceIdBlock)
 
 		return string(file.Bytes()), nil

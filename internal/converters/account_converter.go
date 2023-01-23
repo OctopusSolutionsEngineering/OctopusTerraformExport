@@ -5,9 +5,11 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 )
 
 type AccountConverter struct {
@@ -47,7 +49,7 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
 	// TODO: export environments
 
-	resourceName := "account_" + util.SanitizeName(resource.Name)
+	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)
 
 	thisResource := ResourceDetails{}
 
@@ -99,7 +101,7 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -120,8 +122,8 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 				Password:                        &secretVariable,
 				SubscriptionId:                  resource.SubscriptionNumber,
 				TenantId:                        resource.TenantId,
-				AzureEnvironment:                util.NilIfEmptyPointer(resource.AzureEnvironment),
-				ResourceManagerEndpoint:         util.NilIfEmptyPointer(resource.ResourceManagementEndpointBaseUri),
+				AzureEnvironment:                strutil.NilIfEmptyPointer(resource.AzureEnvironment),
+				ResourceManagerEndpoint:         strutil.NilIfEmptyPointer(resource.ResourceManagementEndpointBaseUri),
 			}
 
 			secretVariableResource := terraform.TerraformVariable{
@@ -136,7 +138,7 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -153,10 +155,10 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-				ManagementEndpoint:              util.EmptyIfNil(resource.ResourceManagementEndpointBaseUri),
-				StorageEndpointSuffix:           util.EmptyIfNil(resource.ServiceManagementEndpointSuffix),
+				ManagementEndpoint:              strutil.EmptyIfNil(resource.ResourceManagementEndpointBaseUri),
+				StorageEndpointSuffix:           strutil.EmptyIfNil(resource.ServiceManagementEndpointSuffix),
 				SubscriptionId:                  resource.SubscriptionNumber,
-				AzureEnvironment:                util.NilIfEmptyPointer(resource.AzureEnvironment),
+				AzureEnvironment:                strutil.NilIfEmptyPointer(resource.AzureEnvironment),
 				Certificate:                     &certVariable,
 			}
 
@@ -172,7 +174,7 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -204,7 +206,7 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -236,7 +238,7 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -269,7 +271,7 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -312,11 +314,11 @@ func (c AccountConverter) toHcl(resource octopus.Account, recursive bool, depend
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			certFileVariableResourceBlock := gohcl.EncodeAsBlock(certFileVariableResource, "variable")
-			util.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
+			hcl.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
 			file.Body().AppendBlock(certFileVariableResourceBlock)
 
 			return string(file.Bytes()), nil

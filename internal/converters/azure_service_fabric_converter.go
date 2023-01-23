@@ -4,9 +4,10 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type AzureServiceFabricTargetConverter struct {
@@ -57,7 +58,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			}
 		}
 
-		targetName := "target_" + util.SanitizeName(target.Name)
+		targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
 		thisResource := ResourceDetails{}
 		thisResource.FileName = "space_population/" + targetName + ".tf"
@@ -112,7 +113,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			util.WriteUnquotedAttribute(block, "type", "string")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil

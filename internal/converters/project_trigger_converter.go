@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type ProjectTriggerConverter struct {
@@ -32,7 +32,7 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 }
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, recursive bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
-	projectTriggerName := "projecttrigger_" + util.SanitizeName(projectName) + "_" + util.SanitizeName(projectTrigger.Name)
+	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
 	"strings"
@@ -148,7 +148,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		return err
 	}
 
-	err = writeFiles(util.UnEscapeDollar(hcl), dest, console)
+	err = writeFiles(strutil.UnEscapeDollar(hcl), dest, console)
 
 	return err
 }
@@ -178,7 +178,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		return err
 	}
 
-	err = writeFiles(util.UnEscapeDollar(hcl), dest, console)
+	err = writeFiles(strutil.UnEscapeDollar(hcl), dest, console)
 
 	return err
 }

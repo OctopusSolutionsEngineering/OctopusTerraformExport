@@ -6,7 +6,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type EnvironmentConverter struct {
@@ -44,7 +44,7 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 }
 
 func (c EnvironmentConverter) toHcl(environment octopus.Environment, recursive bool, dependencies *ResourceDetailsCollection) error {
-	resourceName := "environment_" + util.SanitizeName(environment.Name)
+	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

@@ -7,7 +7,8 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"regexp"
 	"strings"
 )
@@ -34,7 +35,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 }
 
 func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
-	resourceName := "deployment_process_" + util.SanitizeName(projectName)
+	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
 
@@ -100,7 +101,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 					Condition:                     a.Condition,
 					RunOnServer:                   c.getRunOnServer(a.Properties),
-					Properties:                    c.removeUnnecessaryFields(c.replaceIds(util.SanitizeMap(a.Properties), dependencies)),
+					Properties:                    c.removeUnnecessaryFields(c.replaceIds(sanitizer.SanitizeMap(a.Properties), dependencies)),
 				}
 
 				for k, p := range a.Packages {
@@ -139,7 +140,7 @@ func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProce
 				if pack.FeedId != nil {
 					err := FeedConverter{
 						Client: c.Client,
-					}.ToHclById(util.EmptyIfNil(pack.FeedId), dependencies)
+					}.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
 
 					if err != nil {
 						return err

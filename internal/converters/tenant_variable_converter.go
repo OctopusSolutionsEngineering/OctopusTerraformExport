@@ -7,7 +7,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
 )
 
 type TenantVariableConverter struct {
@@ -55,7 +55,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 				value := value
 
 				projectVariableIndex++
-				variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
+				variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
 
 				thisResource := ResourceDetails{}
 				thisResource.FileName = "space_population/" + variableName + ".tf"
@@ -88,7 +88,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 
 		for id, value := range l.Variables {
 			commonVariableIndex++
-			variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + util.SanitizeName(tenant.TenantName)
+			variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
 
 			thisResource := ResourceDetails{}
 			thisResource.FileName = "space_population/" + variableName + ".tf"

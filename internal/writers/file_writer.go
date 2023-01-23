@@ -2,7 +2,7 @@ package writers
 
 import (
 	"github.com/google/uuid"
-	"github.com/mcasperson/OctopusTerraformExport/internal/util"
+	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"os"
 	"path/filepath"
 )
@@ -19,7 +19,7 @@ func NewFileWriterToTempDir() *FileWriter {
 
 func NewFileWriter(dest string) *FileWriter {
 	return &FileWriter{
-		dest: util.EnsureSuffix(dest, string(os.PathSeparator)),
+		dest: strutil.EnsureSuffix(dest, string(os.PathSeparator)),
 	}
 }
 
