@@ -34,6 +34,11 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 }
 
 func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	// Channels can have empty strings for the lifecycle ID
+	if id == "" {
+		return nil
+	}
+
 	lifecycle := octopus.Lifecycle{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
 

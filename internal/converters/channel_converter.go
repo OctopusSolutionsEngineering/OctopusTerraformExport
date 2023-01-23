@@ -38,7 +38,7 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
 	if channel.Name != "Default" {
 
-		if recursive {
+		if recursive && channel.LifecycleId != "" {
 			// The lifecycle is a dependency that we need to lookup
 			err := c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
 

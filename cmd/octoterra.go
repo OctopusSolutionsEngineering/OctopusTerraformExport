@@ -52,6 +52,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	certificateConverter := converters.CertificateConverter{Client: client}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 	tagsetConverter := converters.TagSetConverter{Client: client}
+	feedConverter := converters.FeedConverter{Client: client}
 
 	spaceConverter := converters.SpaceConverter{
 		Client:                      client,
@@ -136,6 +137,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			AccountConverter:       accountConverter,
 			EnvironmentConverter:   environmentConverter,
 		},
+		FeedConverter: feedConverter,
 	}
 
 	dependencies := converters.ResourceDetailsCollection{}

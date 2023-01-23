@@ -16,6 +16,7 @@ import (
 type SpaceConverter struct {
 	Client                            client.OctopusClient
 	AccountConverter                  Converter
+	FeedConverter                     Converter
 	EnvironmentConverter              Converter
 	LibraryVariableSetConverter       Converter
 	LifecycleConverter                Converter
@@ -55,9 +56,7 @@ func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	pacePopulateCommonGenerator.ToHcl("space_creation", dependencies)
 
 	// Convert the feeds
-	err = FeedConverter{
-		Client: c.Client,
-	}.ToHcl(dependencies)
+	err = c.FeedConverter.ToHcl(dependencies)
 
 	if err != nil {
 		return err
