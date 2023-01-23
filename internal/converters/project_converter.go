@@ -208,9 +208,9 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 
 	return &terraform.TerraformGitUsernamePasswordPersistenceSettings{
 		Url:               project.PersistenceSettings.Url,
-		Username:          "${var." + projectName + "_git_base_path}",
+		Username:          project.PersistenceSettings.Credentials.Username,
 		Password:          "${var." + projectName + "_git_password}",
-		BasePath:          project.PersistenceSettings.BasePath,
+		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
 		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
 	}

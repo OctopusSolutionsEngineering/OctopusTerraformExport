@@ -3326,3 +3326,59 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestProjectWithGitUsernameExport verifies that a project can be reimported with the correct git settings
+func TestProjectWithGitUsernameExport(t *testing.T) {
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrange(t, container, "../test/terraform/39-projectgitusername", []string{
+			"-var=project_git_password=" + os.Getenv("GIT_CREDENTIAL"),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := act(t, container, newSpaceId, []string{
+			"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=project_test_git_base_path=.octopus/projectgitusername",
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Project]{}
+		err = octopusClient.GetAllResources("Projects", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+
+				if v.PersistenceSettings.Credentials.Type != "UsernamePassword" {
+					t.Fatal("The project must be have a git credential type of \"UsernamePassword\" (was \"" + v.PersistenceSettings.Credentials.Type + "\")")
+				}
+
+				if v.PersistenceSettings.Credentials.Username != "mcasperson" {
+					t.Fatal("The project must be have a git username of \"mcasperson\" (was \"" + v.PersistenceSettings.Credentials.Username + "\")")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
