@@ -34,7 +34,7 @@ func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 
 func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	certificate := octopus.Certificate{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
 
 	if err != nil {
 		return err

@@ -36,7 +36,7 @@ func (c ChannelConverter) ToHclByProjectId(projectId string, recursive bool, dep
 
 func (c ChannelConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	channel := octopus.Channel{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &channel)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &channel)
 
 	if err != nil {
 		return err

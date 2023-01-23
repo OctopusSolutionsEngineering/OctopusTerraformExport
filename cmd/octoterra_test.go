@@ -1569,7 +1569,7 @@ func TestVariableSetExport(t *testing.T) {
 				}
 
 				resource := octopus.VariableSet{}
-				err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+				_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
 
 				if len(resource.Variables) != 1 {
 					t.Fatal("The library variable set must have one associated variable")
@@ -1952,7 +1952,7 @@ func TestScriptModuleExport(t *testing.T) {
 				}
 
 				resource := octopus.VariableSet{}
-				err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+				_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
 
 				if len(resource.Variables) != 2 {
 					t.Fatal("The library variable set must have two associated variables")
@@ -2965,18 +2965,27 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been exported,
 // and that unrelated resources were not exported.
 func TestSingleProjectGroupExport(t *testing.T) {
+	if os.Getenv("GIT_CREDENTIAL") == "" {
+		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
+	}
+
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		terraformDir := "../test/terraform/38-multipleprojects"
 
 		// Arrange
-		newSpaceId, err := arrange(t, container, terraformDir, []string{})
+		newSpaceId, err := arrange(t, container, terraformDir, []string{
+			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
+		})
 
 		if err != nil {
 			return err
 		}
 
 		// Act
-		recreatedSpaceId, err := actProjectExport(t, container, terraformDir, newSpaceId, []string{}, "octopus_project_1")
+		recreatedSpaceId, err := actProjectExport(t, container, terraformDir, newSpaceId, []string{
+			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=project_test_git_base_path=.octopus/integrationtestimport",
+		}, "octopus_project_1")
 
 		if err != nil {
 			return err
@@ -3038,7 +3047,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 			}
 
 			variableSet := octopus.VariableSet{}
-			err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+			_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 			if err != nil {
 				return err
@@ -3282,6 +3291,29 @@ func TestSingleProjectGroupExport(t *testing.T) {
 
 			if !found {
 				t.Fatalf("The space must have a lifecycle called \"Simple\"")
+			}
+
+			return nil
+		}()
+
+		// Verify that the git credential was exported
+		err = func() error {
+			collection := octopus.GeneralCollection[octopus.GitCredentials]{}
+			err = octopusClient.GetAllResources("Git-Credentials", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "matt" {
+					found = true
+				}
+			}
+
+			if !found {
+				t.Fatalf("The space must have a git credential called \"matt\"")
 			}
 
 			return nil

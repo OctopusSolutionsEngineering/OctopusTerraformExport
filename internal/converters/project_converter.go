@@ -35,7 +35,7 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	project := octopus.Project{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
 		return err
@@ -86,17 +86,52 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, depende
 			IsVersionControlled:             project.IsVersionControlled,
 			LifecycleId:                     dependencies.GetResource("Lifecycles", project.LifecycleId),
 			ProjectGroupId:                  dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
+			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
 			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
 			Template:                        projectTemplates,
-			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
 			ConnectivityPolicy: terraform.TerraformConnectivityPolicy{
 				AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
 				ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
 				SkipMachineBehavior:         project.ProjectConnectivityPolicy.SkipMachineBehavior,
 			},
+			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
+			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
+			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		if terraformResource.GitUsernamePasswordPersistenceSettings != nil {
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        projectName + "_git_password",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The git password for the project \"" + project.Name + "\"",
+			}
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
+		}
+
+		if terraformResource.GitUsernamePasswordPersistenceSettings != nil ||
+			terraformResource.GitAnonymousPersistenceSettings != nil ||
+			terraformResource.GitLibraryPersistenceSettings != nil {
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        projectName + "_git_base_path",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   false,
+				Description: "The git base path for \"" + project.Name + "\"",
+				Default:     &project.PersistenceSettings.BasePath,
+			}
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			util.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
+		}
+
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
@@ -137,6 +172,48 @@ func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependenci
 		collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
 	}
 	return collection
+}
+
+func (c ProjectConverter) convertLibraryGitPersistence(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) *terraform.TerraformGitLibraryPersistenceSettings {
+	if project.PersistenceSettings.Credentials.Type != "Reference" {
+		return nil
+	}
+
+	return &terraform.TerraformGitLibraryPersistenceSettings{
+		GitCredentialId:   dependencies.GetResource("Git-Credentials", project.PersistenceSettings.Credentials.Id),
+		Url:               project.PersistenceSettings.Url,
+		BasePath:          "${var." + projectName + "_git_base_path}",
+		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
+		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
+	}
+}
+
+func (c ProjectConverter) convertAnonymousGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitAnonymousPersistenceSettings {
+	if project.PersistenceSettings.Credentials.Type != "Anonymous" {
+		return nil
+	}
+
+	return &terraform.TerraformGitAnonymousPersistenceSettings{
+		Url:               project.PersistenceSettings.Url,
+		BasePath:          "${var." + projectName + "_git_base_path}",
+		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
+		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
+	}
+}
+
+func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitUsernamePasswordPersistenceSettings {
+	if project.PersistenceSettings.Credentials.Type != "UsernamePassword" {
+		return nil
+	}
+
+	return &terraform.TerraformGitUsernamePasswordPersistenceSettings{
+		Url:               project.PersistenceSettings.Url,
+		Username:          "${var." + projectName + "_git_base_path}",
+		Password:          "${var." + projectName + "_git_password}",
+		BasePath:          project.PersistenceSettings.BasePath,
+		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
+		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
+	}
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
@@ -227,7 +304,16 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 		return err
 	}
 
-	// TODO: Need to export git credentials
+	// Export the git credentials
+	if project.PersistenceSettings.Credentials.Type == "Reference" {
+		err = GitCredentialsConverter{
+			Client: c.Client,
+		}.ToHclById(project.PersistenceSettings.Credentials.Id, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

@@ -34,7 +34,7 @@ func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 
 func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.PollingEndpointResource{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

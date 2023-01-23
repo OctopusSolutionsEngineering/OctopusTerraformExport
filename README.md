@@ -23,10 +23,6 @@ To export a single project and it's associated dependencies, use the following c
 
 ## To Do
 
-The following resources are not completely exported:
-* octopusdeploy_project
-  * git config is not exported
-
 The following resources have yet to be exported:
 * octopusdeploy_scoped_user_role
 * octopusdeploy_team

@@ -21,7 +21,7 @@ type VariableSetConverter struct {
 
 func (c VariableSetConverter) ToHclById(id string, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.VariableSet{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

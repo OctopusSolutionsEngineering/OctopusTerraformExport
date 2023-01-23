@@ -34,7 +34,7 @@ func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 
 func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	environment := octopus.Environment{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
 
 	if err != nil {
 		return err

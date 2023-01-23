@@ -34,7 +34,7 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 
 func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	lifecycle := octopus.Lifecycle{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
 
 	if err != nil {
 		return err

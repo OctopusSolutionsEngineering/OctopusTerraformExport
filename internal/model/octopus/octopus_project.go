@@ -34,5 +34,27 @@ type Project struct {
 	Templates                       []Template
 	VariableSetId                   *string
 	IncludedLibraryVariableSetIds   []string
+	PersistenceSettings             PersistenceSettings
 	// Todo: add service now and jira settings
+}
+
+type PersistenceSettings struct {
+	Type                        string
+	Url                         string
+	Credentials                 Credentials
+	DefaultBranch               string
+	BasePath                    string
+	ProtectedDefaultBranch      bool
+	ProtectedBranchNamePatterns []string
+	ConversionState             ConversionState
+}
+
+type Credentials struct {
+	Type     string
+	Id       string
+	Username string
+}
+
+type ConversionState struct {
+	VariablesAreInGit bool
 }

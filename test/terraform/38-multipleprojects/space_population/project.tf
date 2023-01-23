@@ -30,6 +30,14 @@ resource "octopusdeploy_project" "project_1" {
     exclude_unhealthy_targets       = false
     skip_machine_behavior           = "SkipUnavailableMachines"
   }
+
+  git_library_persistence_settings {
+    git_credential_id  = "${octopusdeploy_git_credential.gitcredential_matt.id}"
+    url                = "https://github.com/mcasperson/octogittest.git"
+    base_path          = ".octopus/integrationtest"
+    default_branch     = "main"
+    protected_branches = []
+  }
 }
 
 resource "octopusdeploy_variable" "string_variable" {

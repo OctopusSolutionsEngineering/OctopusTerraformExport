@@ -34,7 +34,7 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 
 func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	pool := octopus.WorkerPool{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &pool)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &pool)
 
 	if err != nil {
 		return err

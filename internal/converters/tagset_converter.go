@@ -34,7 +34,7 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	tagSet := octopus.TagSet{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &tagSet)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &tagSet)
 
 	if err != nil {
 		return err

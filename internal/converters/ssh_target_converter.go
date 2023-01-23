@@ -34,7 +34,7 @@ func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 
 func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.SshEndpointResource{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

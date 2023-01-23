@@ -18,10 +18,16 @@ type DeploymentProcessConverter struct {
 
 func (c DeploymentProcessConverter) ToHclById(id string, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus.DeploymentProcess{}
-	err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	// Projects with no deployment process will not have a deployment process resources.
+	// This is expected, so just return.
+	if !found {
+		return nil
 	}
 
 	return c.toHcl(resource, recursive, projectName, dependencies)
