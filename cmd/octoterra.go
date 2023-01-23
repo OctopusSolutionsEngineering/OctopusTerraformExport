@@ -164,8 +164,32 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 
 	converters.TerraformProviderGenerator{}.ToHcl("space_population", &dependencies)
 
+	environmentConverter := converters.EnvironmentConverter{Client: client}
+	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
+	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
+	variableSetConverter := converters.VariableSetConverter{Client: client}
+	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
+	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
+	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tenantConverter := converters.TenantConverter{
+		Client:                  client,
+		TenantVariableConverter: tenantVariableConverter,
+		EnvironmentConverter:    environmentConverter,
+	}
 	err := converters.ProjectConverter{
-		Client: client,
+		Client:                      client,
+		LifecycleConverter:          lifecycleConverter,
+		GitCredentialsConverter:     gitCredentialsConverter,
+		LibraryVariableSetConverter: libraryVariableSetConverter,
+		ProjectGroupConverter:       projectGroupConverter,
+		DeploymentProcessConverter: converters.DeploymentProcessConverter{
+			Client: client,
+		},
+		TenantConverter: tenantConverter,
+		ProjectTriggerConverter: converters.ProjectTriggerConverter{
+			Client: client,
+		},
+		VariableSetConverter: variableSetConverter,
 	}.ToHclById(projectId, &dependencies)
 
 	if err != nil {
