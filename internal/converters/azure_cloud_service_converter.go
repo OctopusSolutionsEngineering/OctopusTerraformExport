@@ -71,7 +71,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_project." + targetName + ".id}"
+		thisResource.Lookup = "${octopusdeploy_azure_cloud_service_deployment_target." + targetName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformAzureCloudServiceDeploymentTarget{

@@ -238,7 +238,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 	thisResource.FileName = "space_creation/" + spaceResourceName + ".tf"
 	thisResource.Id = space.Id
 	thisResource.ResourceType = "Spaces"
-	thisResource.Lookup = "${octopusdeploy_project." + spaceResourceName + ".id}"
+	thisResource.Lookup = "${octopusdeploy_space." + spaceResourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformSpace{

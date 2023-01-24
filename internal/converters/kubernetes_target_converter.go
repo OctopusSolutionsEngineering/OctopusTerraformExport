@@ -73,7 +73,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_project." + targetName + ".id}"
+		thisResource.Lookup = "${octopusdeploy_kubernetes_cluster_deployment_target." + targetName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
