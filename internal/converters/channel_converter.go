@@ -36,23 +36,38 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 }
 
 func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
-	if channel.Name != "Default" {
+	if recursive && channel.LifecycleId != "" {
+		// The lifecycle is a dependency that we need to lookup
+		err := c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
 
-		if recursive && channel.LifecycleId != "" {
-			// The lifecycle is a dependency that we need to lookup
-			err := c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
-
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
+	}
 
-		resourceName := "channel_" + sanitizer.SanitizeNamePointer(&channel.Name)
+	thisResource := ResourceDetails{}
+	resourceName := "channel_" + sanitizer.SanitizeNamePointer(&channel.Name)
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = channel.Id
+	thisResource.ResourceType = c.GetResourceType()
 
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + resourceName + ".tf"
-		thisResource.Id = channel.Id
-		thisResource.ResourceType = c.GetResourceType()
+	if channel.Name == "Default" {
+		thisResource.Lookup = "${data.octopusdeploy_channels." + resourceName + ".channels[0].id}"
+		thisResource.ToHcl = func() (string, error) {
+			data := terraform.TerraformChannelData{
+				Name:        resourceName,
+				Type:        "octopusdeploy_channels",
+				Ids:         nil,
+				PartialName: channel.Name,
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
+
+			return string(file.Bytes()), nil
+		}
+	} else {
 		thisResource.Lookup = "${octopusdeploy_channel." + resourceName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformChannel{
@@ -88,10 +103,8 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, terrafo
 
 			return string(file.Bytes()), nil
 		}
-
-		dependencies.AddResource(thisResource)
 	}
-
+	dependencies.AddResource(thisResource)
 	return nil
 }
 
