@@ -81,14 +81,22 @@ jobs:
           path: results.xml
           reporter: java-junit
           fail-on-error: 'false'
-      - run: go build cmd/octoterra.go
+      - run: go build -o octoterra_linux_amd64 cmd/octoterra.go
         env:
           GOOS: linux
           GOARCH: amd64
-      - run: go build cmd/octoterra.go
+      - run: go build -o octoterra_windows_amd64.exe cmd/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
+      - run: go build -o octoterra_macos_amd64 cmd/octoterra.go
+        env:
+          GOOS: darwin
+          GOARCH: amd64
+      - run: go build -o octoterra_macos_arm64 cmd/octoterra.go
+        env:
+          GOOS: darwin
+          GOARCH: arm64
       - name: Tag Release
         uses: mathieudutour/github-tag-action@v6.1
         with:
@@ -110,8 +118,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: octoterra
-          asset_name: octoterra
+          asset_path: octoterra_linux_amd64
+          asset_name: octoterra_linux_amd64
           asset_content_type: application/octet-stream
       - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
@@ -119,6 +127,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: octoterra.exe
-          asset_name: octoterra.exe
+          asset_path: octoterra_windows_amd64.exe
+          asset_name: octoterra_windows_amd64.exe
+          asset_content_type: application/octet-stream
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: octoterra_macos_amd64
+          asset_name: octoterra_macos_amd64
+          asset_content_type: application/octet-stream
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: octoterra_macos_arm64
+          asset_name: octoterra_macos_arm64
           asset_content_type: application/octet-stream
