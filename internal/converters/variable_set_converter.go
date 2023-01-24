@@ -41,7 +41,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	for _, v := range resource.Variables {
 		thisResource := ResourceDetails{}
 
-		resourceName := parentName + "_" + sanitizer.SanitizeName(v.Name)
+		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name)
 
 		if recursive {
 			// Export linked accounts

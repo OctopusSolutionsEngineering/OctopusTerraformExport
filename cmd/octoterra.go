@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/internal/converters"
+	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
 	"github.com/mcasperson/OctopusTerraformExport/internal/writers"
 	"os"
@@ -12,11 +14,20 @@ import (
 )
 
 func main() {
-	url, space, apiKey, dest, console, projectId := parseUrl()
+	url, space, apiKey, dest, console, projectId, projectName := parseUrl()
 
 	var err error = nil
 
-	if projectId != "" {
+	if projectName != "" {
+		projectId, err := convertProjectNameToId(url, space, apiKey, projectName)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId)
+	} else if projectId != "" {
 		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId)
 	} else {
 		err = ConvertSpaceToTerraform(url, space, apiKey, dest, console)
@@ -26,6 +37,25 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+}
+
+func convertProjectNameToId(url string, space string, apiKey string, name string) (string, error) {
+	client := client.OctopusClient{
+		Url:    url,
+		Space:  space,
+		ApiKey: apiKey,
+	}
+
+	collection := octopus.GeneralCollection[octopus.Project]{}
+	client.GetAllResources("Projects", &collection, []string{"name", name})
+
+	for _, p := range collection.Items {
+		if p.Name == name {
+			return p.Id, nil
+		}
+	}
+
+	return "", errors.New("did not find project with name " + name)
 }
 
 func ConvertSpaceToTerraform(url string, space string, apiKey string, dest string, console bool) error {
@@ -242,7 +272,7 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 	return fileMap, nil
 }
 
-func parseUrl() (string, string, string, string, bool, string) {
+func parseUrl() (string, string, string, string, bool, string, string) {
 	var url string
 	flag.StringVar(&url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 
@@ -261,9 +291,12 @@ func parseUrl() (string, string, string, string, bool, string) {
 	var projectId string
 	flag.StringVar(&projectId, "projectId", "", "Limit the export to a single project")
 
+	var projectName string
+	flag.StringVar(&projectName, "projectName", "", "Limit the export to a single project")
+
 	flag.Parse()
 
-	return url, space, apiKey, dest, console, projectId
+	return url, space, apiKey, dest, console, projectId, projectName
 }
 
 func writeFiles(files map[string]string, dest string, console bool) error {
