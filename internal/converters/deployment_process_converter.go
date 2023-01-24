@@ -88,6 +88,13 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 
 			for j, a := range s.Actions {
 
+				actionResource := ResourceDetails{}
+				actionResource.FileName = ""
+				actionResource.Id = a.Id
+				actionResource.ResourceType = "Actions"
+				actionResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".step[" + fmt.Sprint(i) + "].action[" + fmt.Sprint(j) + "].id}"
+				dependencies.AddResource(actionResource)
+
 				terraformResource.Step[i].Action[j] = terraform.TerraformAction{
 					Name:                          a.Name,
 					ActionType:                    a.ActionType,

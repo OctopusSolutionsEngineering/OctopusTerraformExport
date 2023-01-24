@@ -17,7 +17,7 @@ type Step struct {
 }
 
 type Action struct {
-	Id                            *string
+	Id                            string
 	Name                          *string
 	ActionType                    *string
 	Notes                         *string
