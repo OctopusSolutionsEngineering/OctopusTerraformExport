@@ -36,6 +36,10 @@ func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 }
 
 func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	machinePolicy := octopus.MachinePolicy{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &machinePolicy)
 

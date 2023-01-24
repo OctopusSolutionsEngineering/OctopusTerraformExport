@@ -36,6 +36,10 @@ func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 }
 
 func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.AzureWebAppResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 

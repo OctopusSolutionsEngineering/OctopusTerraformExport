@@ -35,6 +35,10 @@ func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 }
 
 func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.PollingEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 

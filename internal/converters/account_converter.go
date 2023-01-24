@@ -36,6 +36,10 @@ func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 }
 
 func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.Account{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 

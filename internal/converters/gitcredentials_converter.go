@@ -36,6 +36,10 @@ func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 }
 
 func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	gitCredentials := octopus.GitCredentials{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &gitCredentials)
 

@@ -18,6 +18,10 @@ type DeploymentProcessConverter struct {
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.DeploymentProcess{}
 	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 

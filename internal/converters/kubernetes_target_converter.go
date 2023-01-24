@@ -38,6 +38,10 @@ func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection
 }
 
 func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.KubernetesEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 

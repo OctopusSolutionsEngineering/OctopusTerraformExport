@@ -33,6 +33,10 @@ func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) er
 }
 
 func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.ProjectGroup{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 

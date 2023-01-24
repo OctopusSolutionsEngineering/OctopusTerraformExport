@@ -39,6 +39,10 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return nil
 	}
 
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	lifecycle := octopus.Lifecycle{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
 

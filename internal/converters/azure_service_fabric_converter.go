@@ -36,6 +36,10 @@ func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCo
 }
 
 func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if dependencies.HasResource(c.GetResourceType(), id) {
+		return nil
+	}
+
 	resource := octopus.AzureServiceFabricResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
