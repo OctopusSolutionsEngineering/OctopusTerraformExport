@@ -9,6 +9,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/internal/sanitizer"
+	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
 )
@@ -75,6 +76,12 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 			}
 		}
 
+		tagSetDependencies, err := c.addTagSetDependencies(v, recursive, dependencies)
+
+		if err != nil {
+			return err
+		}
+
 		thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
 		thisResource.Id = v.Id
 		thisResource.ResourceType = c.GetResourceType()
@@ -115,7 +122,22 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 				file.Body().AppendBlock(block)
 			}
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// Explicitly describe the dependency between a target and a tag set
+			dependsOn := []string{}
+			for resourceType, terraformDependencies := range tagSetDependencies {
+				for _, terraformDependency := range terraformDependencies {
+					dependency := dependencies.GetResource(resourceType, terraformDependency)
+					// This is a raw expression, so remove the surrounding brackets
+					dependency = strings.Replace(dependency, "${", "", -1)
+					dependency = strings.Replace(dependency, ".id}", "", -1)
+					dependsOn = append(dependsOn, dependency)
+				}
+			}
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -152,7 +174,6 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 
 func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
 	return &terraform.TerraformProjectVariableScope{
-		// TODO: Capture actions as dependencies
 		Actions:      dependencies.GetResources("Actions", prompt.Action...),
 		Channels:     dependencies.GetResources("Channels", prompt.Channel...),
 		Environments: dependencies.GetResources("Environments", prompt.Environment...),
@@ -306,4 +327,46 @@ func (c VariableSetConverter) exportChildDependencies(variableSet octopus.Variab
 	}
 
 	return nil
+}
+
+// addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
+// captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
+func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
+	collection := octopus.GeneralCollection[octopus.TagSet]{}
+	err := c.Client.GetAllResources("TagSets", &collection)
+
+	if err != nil {
+		return nil, err
+	}
+
+	terraformDependencies := map[string][]string{}
+
+	for _, tagSet := range collection.Items {
+		for _, tag := range tagSet.Tags {
+			for _, tenantTag := range variable.Scope.TenantTag {
+				if tag.CanonicalTagName == tenantTag {
+
+					if !slices.Contains(terraformDependencies["TagSets"], tagSet.Id) {
+						terraformDependencies["TagSets"] = append(terraformDependencies["TagSets"], tagSet.Id)
+					}
+
+					if !slices.Contains(terraformDependencies["Tags"], tag.Id) {
+						terraformDependencies["Tags"] = append(terraformDependencies["Tags"], tag.Id)
+					}
+
+					if recursive {
+						err = TagSetConverter{
+							Client: c.Client,
+						}.ToHclByResource(tagSet, recursive, dependencies)
+
+						if err != nil {
+							return nil, err
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return terraformDependencies, nil
 }
