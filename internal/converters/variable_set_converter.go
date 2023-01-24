@@ -152,7 +152,8 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 
 func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
 	return &terraform.TerraformProjectVariableScope{
-		Actions:      prompt.Action,
+		// TODO: Capture actions as dependencies
+		Actions:      dependencies.GetResources("Actions", prompt.Action...),
 		Channels:     dependencies.GetResources("Channels", prompt.Channel...),
 		Environments: dependencies.GetResources("Environments", prompt.Environment...),
 		Machines:     dependencies.GetResources("Machines", prompt.Machine...),
