@@ -37,6 +37,10 @@ func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollecti
 }
 
 func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

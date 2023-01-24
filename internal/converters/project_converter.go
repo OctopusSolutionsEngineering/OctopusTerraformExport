@@ -45,6 +45,10 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 }
 
 func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

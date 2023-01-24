@@ -36,6 +36,10 @@ func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 }
 
 func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

@@ -33,6 +33,10 @@ func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 }
 
 func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

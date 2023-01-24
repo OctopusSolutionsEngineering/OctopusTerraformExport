@@ -33,6 +33,10 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 }
 
 func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

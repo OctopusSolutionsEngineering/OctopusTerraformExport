@@ -35,6 +35,10 @@ func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 }
 
 func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

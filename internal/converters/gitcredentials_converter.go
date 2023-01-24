@@ -36,6 +36,10 @@ func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 }
 
 func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

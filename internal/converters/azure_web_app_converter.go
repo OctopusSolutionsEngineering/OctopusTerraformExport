@@ -36,6 +36,10 @@ func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 }
 
 func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

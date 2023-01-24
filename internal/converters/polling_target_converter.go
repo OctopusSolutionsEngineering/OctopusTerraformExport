@@ -35,6 +35,10 @@ func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 }
 
 func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

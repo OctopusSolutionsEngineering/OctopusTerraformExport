@@ -35,6 +35,10 @@ func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 }
 
 func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

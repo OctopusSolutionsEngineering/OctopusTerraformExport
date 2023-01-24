@@ -36,6 +36,10 @@ func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 }
 
 func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}

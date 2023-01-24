@@ -35,6 +35,10 @@ func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection)
 }
 
 func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
 	if dependencies.HasResource(c.GetResourceType(), id) {
 		return nil
 	}
