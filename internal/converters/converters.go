@@ -10,7 +10,7 @@ type ConverterByIdWithName interface {
 	ToHclByIdAndName(id string, name string, dependencies *ResourceDetailsCollection) error
 }
 
-// ConverterByIdWithNameAndParent converst a resource by its ID, uses the supplied name, and has a reference to its parent
+// ConverterByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent
 type ConverterByIdWithNameAndParent interface {
 	ToHclByIdAndName(id string, name string, parentLookup string, dependencies *ResourceDetailsCollection) error
 }
