@@ -45,6 +45,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	}
 
 	for i, v := range resource.Variables {
+		v := v
 		file := hclwrite.NewEmptyFile()
 		thisResource := ResourceDetails{}
 
