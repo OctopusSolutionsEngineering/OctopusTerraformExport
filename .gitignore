@@ -16,6 +16,7 @@
 
 octoterra
 octoterra.exe
+**/*.wasm
 
 **/.terraform.lock.hcl
 **/.terraform.tfstate.lock.info

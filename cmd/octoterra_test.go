@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/avast/retry-go/v4"
 	"github.com/google/uuid"
-	"github.com/mcasperson/OctopusTerraformExport/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/internal/model/octopus"
-	"github.com/mcasperson/OctopusTerraformExport/internal/strutil"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"k8s.io/utils/strings/slices"
@@ -512,7 +512,7 @@ func TestProjectGroupExport(t *testing.T) {
 
 		found := false
 		for _, v := range collection.Items {
-			if *v.Name == "Test" {
+			if v.Name == "Test" {
 				found = true
 				if *v.Description != "Test Description" {
 					t.Fatalf("The project group must be have a description of \"Test Description\"")
@@ -3005,7 +3005,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 
 			found := false
 			for _, v := range collection.Items {
-				if *v.Name == "Test" {
+				if v.Name == "Test" {
 					found = true
 					if *v.Description != "Test Description" {
 						t.Fatalf("The project group must be have a description of \"Test Description\"")
