@@ -203,7 +203,15 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
 	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
-	variableSetConverter := converters.VariableSetConverter{Client: client}
+	channelConverter := converters.ChannelConverter{
+		Client:             client,
+		LifecycleConverter: lifecycleConverter,
+	}
+	variableSetConverter := converters.VariableSetConverter{
+		Client:               client,
+		ChannelConverter:     channelConverter,
+		EnvironmentConverter: environmentConverter,
+	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
 	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
@@ -226,10 +234,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 			Client: client,
 		},
 		VariableSetConverter: variableSetConverter,
-		ChannelConverter: converters.ChannelConverter{
-			Client:             client,
-			LifecycleConverter: lifecycleConverter,
-		},
+		ChannelConverter:     channelConverter,
 	}.ToHclById(projectId, &dependencies)
 
 	if err != nil {

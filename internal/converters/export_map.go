@@ -60,6 +60,19 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 	return ""
 }
 
+func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...string) []string {
+	lookups := []string{}
+	for _, r := range c.Resources {
+		for _, i := range ids {
+			if r.Id == i && r.ResourceType == resourceType {
+				lookups = append(lookups, r.Lookup)
+			}
+		}
+	}
+
+	return lookups
+}
+
 func (c *ResourceDetailsCollection) GetResourcePointer(resourceType string, id *string) *string {
 	if id != nil {
 		for _, r := range c.Resources {

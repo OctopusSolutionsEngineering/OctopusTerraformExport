@@ -18,7 +18,9 @@ import (
 // library variable sets. There is no global collection or all endpoint that we can use to dump variables
 // in bulk.
 type VariableSetConverter struct {
-	Client client.OctopusClient
+	Client               client.OctopusClient
+	ChannelConverter     ConverterByProjectIdWithTerraDependencies
+	EnvironmentConverter ConverterById
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -37,6 +39,10 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 }
 
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+	if recursive {
+		c.exportChildDependencies(resource, dependencies)
+	}
+
 	for i, v := range resource.Variables {
 		file := hclwrite.NewEmptyFile()
 		thisResource := ResourceDetails{}
@@ -92,7 +98,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 				SensitiveValue: c.convertSecretValue(v, parentName),
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
-				Scope:          c.convertScope(v.Scope),
+				Scope:          c.convertScope(v.Scope, dependencies),
 			}
 
 			if v.IsSensitive {
@@ -144,12 +150,12 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 	return nil
 }
 
-func (c VariableSetConverter) convertScope(prompt octopus.Scope) *terraform.TerraformProjectVariableScope {
+func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
 	return &terraform.TerraformProjectVariableScope{
 		Actions:      prompt.Action,
-		Channels:     prompt.Channel,
-		Environments: prompt.Environment,
-		Machines:     prompt.Machine,
+		Channels:     dependencies.GetResources("Channels", prompt.Channel...),
+		Environments: dependencies.GetResources("Environments", prompt.Environment...),
+		Machines:     dependencies.GetResources("Machines", prompt.Machine...),
 		Roles:        prompt.Role,
 		TenantTags:   prompt.TenantTag,
 	}
@@ -286,4 +292,17 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 	}
 
 	return &retValue
+}
+
+func (c VariableSetConverter) exportChildDependencies(variableSet octopus.VariableSet, dependencies *ResourceDetailsCollection) error {
+	for _, v := range variableSet.Variables {
+		for _, e := range v.Scope.Environment {
+			err := c.EnvironmentConverter.ToHclById(e, dependencies)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
