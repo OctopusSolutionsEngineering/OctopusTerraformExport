@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/internal/client"
@@ -36,12 +37,11 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 }
 
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
-	file := hclwrite.NewEmptyFile()
-
-	for _, v := range resource.Variables {
+	for i, v := range resource.Variables {
+		file := hclwrite.NewEmptyFile()
 		thisResource := ResourceDetails{}
 
-		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name)
+		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(i)
 
 		if recursive {
 			// Export linked accounts
@@ -92,6 +92,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 				SensitiveValue: c.convertSecretValue(v, parentName),
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
+				Scope:          c.convertScope(v.Scope),
 			}
 
 			if v.IsSensitive {
@@ -141,6 +142,18 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 	}
 
 	return nil
+}
+
+func (c VariableSetConverter) convertScope(prompt octopus.Scope) *terraform.TerraformProjectVariableScope {
+	return &terraform.TerraformProjectVariableScope{
+		Actions:      prompt.Action,
+		Channels:     prompt.Channel,
+		Environments: prompt.Environment,
+		Machines:     prompt.Machine,
+		Roles:        prompt.Role,
+		TenantTags:   prompt.TenantTag,
+	}
+
 }
 
 func (c VariableSetConverter) exportAccounts(value *string, dependencies *ResourceDetailsCollection) error {
