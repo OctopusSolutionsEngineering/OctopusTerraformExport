@@ -19,9 +19,19 @@ import (
 // library variable sets. There is no global collection or all endpoint that we can use to dump variables
 // in bulk.
 type VariableSetConverter struct {
-	Client               client.OctopusClient
-	ChannelConverter     ConverterByProjectIdWithTerraDependencies
-	EnvironmentConverter ConverterById
+	Client                            client.OctopusClient
+	ChannelConverter                  ConverterByProjectIdWithTerraDependencies
+	EnvironmentConverter              ConverterById
+	TagSetConverter                   TagSetConverter
+	AzureCloudServiceTargetConverter  ConverterById
+	AzureServiceFabricTargetConverter ConverterById
+	AzureWebAppTargetConverter        ConverterById
+	CloudRegionTargetConverter        ConverterById
+	KubernetesTargetConverter         ConverterById
+	ListeningTargetConverter          ConverterById
+	OfflineDropTargetConverter        ConverterById
+	PollingTargetConverter            ConverterById
+	SshTargetConverter                ConverterById
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -74,6 +84,62 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 			err = c.exportWorkerPools(v.Value, dependencies)
 			if err != nil {
 				return err
+			}
+
+			// Export linked environments
+			for _, e := range v.Scope.Environment {
+				err = c.EnvironmentConverter.ToHclById(e, dependencies)
+				if err != nil {
+					return err
+				}
+			}
+
+			// Export linked targets
+			for _, m := range v.Scope.Machine {
+				err = c.AzureCloudServiceTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.AzureServiceFabricTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.AzureWebAppTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.CloudRegionTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.KubernetesTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.ListeningTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.OfflineDropTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.PollingTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
+
+				err = c.SshTargetConverter.ToHclById(m, dependencies)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -356,9 +422,7 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, r
 					}
 
 					if recursive {
-						err = TagSetConverter{
-							Client: c.Client,
-						}.ToHclByResource(tagSet, recursive, dependencies)
+						err = c.TagSetConverter.ToHclByResource(tagSet, recursive, dependencies)
 
 						if err != nil {
 							return nil, err
