@@ -50,17 +50,31 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
-	projectName := "project_group_" + sanitizer.SanitizeNamePointer(resource.Name)
+	projectName := "project_group_" + sanitizer.SanitizeName(resource.Name)
 
 	thisResource.FileName = "space_population/projectgroup_" + projectName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
+	if resource.Name == "Default Project Group" {
+		thisResource.Lookup = "${data.octopusdeploy_project_groups." + projectName + ".project_groups[0].id}"
+	} else {
+		thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
+	}
 	thisResource.ToHcl = func() (string, error) {
 
-		if *resource.Name == "Default Project Group" {
-			// todo - create lookup for existing project group
-			return "", nil
+		if resource.Name == "Default Project Group" {
+			terraformResource := terraform.TerraformProjectGroupData{
+				Type:        "octopusdeploy_project_groups",
+				Name:        projectName,
+				Ids:         nil,
+				PartialName: resource.Name,
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
 		} else {
 			terraformResource := terraform.TerraformProjectGroup{
 				Type:         "octopusdeploy_project_group",
