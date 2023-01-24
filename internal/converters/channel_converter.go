@@ -52,6 +52,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, recursive bool, terrafo
 	thisResource.ResourceType = c.GetResourceType()
 
 	if channel.Name == "Default" {
+		// TODO: Many channels are called default! But there is no way to look up a channel based on its project.
 		thisResource.Lookup = "${data.octopusdeploy_channels." + resourceName + ".channels[0].id}"
 		thisResource.ToHcl = func() (string, error) {
 			data := terraform.TerraformChannelData{
