@@ -30,4 +30,4 @@ The following resources have yet to be exported:
 * octopusdeploy_user_role
 
 ## Report Card
-![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)]
+![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)
