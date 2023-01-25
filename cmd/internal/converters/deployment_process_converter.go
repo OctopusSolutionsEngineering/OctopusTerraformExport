@@ -117,6 +117,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					Condition:                     a.Condition,
 					RunOnServer:                   c.getRunOnServer(a.Properties),
 					Properties:                    c.removeUnnecessaryFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
+					Features:                      c.getFeatures(a.Properties),
 				}
 
 				for k, p := range a.Packages {
@@ -246,7 +247,7 @@ func (c DeploymentProcessConverter) escapeDollars(properties map[string]string) 
 func (c DeploymentProcessConverter) removeUnnecessaryFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if k != "Octopus.Action.RunOnServer" {
+		if k != "Octopus.Action.RunOnServer" && k != "Octopus.Action.EnabledFeatures" {
 			sanitisedProperties[k] = v
 		}
 	}
@@ -288,4 +289,13 @@ func (c DeploymentProcessConverter) replaceAccountIds(properties map[string]stri
 	}
 
 	return properties
+}
+
+func (c DeploymentProcessConverter) getFeatures(properties map[string]any) []string {
+	f, ok := properties["Octopus.Action.EnabledFeatures"]
+	if ok {
+		return strings.Split(fmt.Sprint(f), ",")
+	}
+
+	return []string{}
 }
