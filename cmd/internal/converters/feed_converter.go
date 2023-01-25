@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
@@ -287,7 +288,9 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			return "", nil
 		}
 
-		return "", errors.New("found unexpected feed type: " + strutil.EmptyIfNil(resource.FeedType))
+		fmt.Println(errors.New("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\"."))
+
+		return "", nil
 	}
 
 	dependencies.AddResource(thisResource)
