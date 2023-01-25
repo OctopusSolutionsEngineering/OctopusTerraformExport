@@ -5,6 +5,7 @@
 // @grant       none
 // @version     1.0
 // @author      -
+// @grant        GM_xmlhttpRequest
 // @inject-into content
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require  https://gist.github.com/raw/2625891/waitForKeyElements.js
@@ -591,13 +592,14 @@ function dumpToHcl() {
             nav.append(hclOutput);
 
             // Download the WASM file
-            fetch("https://github.com/mcasperson/OctopusTerraformExport/raw/main/wasm/convert_project.wasm")
-                .then(function(response) {
-                    return response.arrayBuffer();
-                })
-                .then(function(buffer) {
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: "https://github.com/mcasperson/OctopusTerraformExport/raw/main/wasm/convert_project.wasm",
+                responseType: "arraybuffer",
+                onload: function(e) {
+                    console.log(e)
                     const go = new Go();
-                    WebAssembly.instantiate(buffer, go.importObject)
+                    WebAssembly.instantiate(e.response, go.importObject)
                         .then((result) => {
                             go.run(result.instance)
 
@@ -641,7 +643,8 @@ function dumpToHcl() {
                         .catch(function(err) {
                             console.log(err);
                         })
-                });
+                }
+            });
         }
     } catch (err) {
         console.log(err);
