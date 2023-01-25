@@ -609,7 +609,7 @@ function dumpToHcl() {
                                     });
 
                                     hclOutput.addEventListener('mouseout', function handleMouseOut() {
-                                        hclOutput.style.color = '#191919';
+                                        hclOutput.style.color = 'inherit';
                                     });
 
                                     hclOutput.onclick = function() {
