@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"strings"
 	"syscall/js"
 )
@@ -33,7 +34,7 @@ func convertProject() js.Func {
 
 				hclBlob := ""
 
-				for _, h := range files {
+				for _, h := range strutil.UnEscapeDollar(files) {
 					hclBlob += h + "\n"
 				}
 
