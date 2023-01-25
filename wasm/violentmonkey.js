@@ -581,7 +581,7 @@ function dumpToHcl() {
             }
 
             // Add a nav menu item
-            let nav = getElementByXpath("//main/div[2]/div/div/div[1]/nav")
+            let nav = getElementByXpath("//main//nav")
 
             if (nav == null) {
                 return
