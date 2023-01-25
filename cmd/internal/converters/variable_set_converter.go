@@ -224,7 +224,7 @@ func (c VariableSetConverter) GetResourceType() string {
 
 func (c VariableSetConverter) convertSecretValue(variable octopus2.Variable, parentName string) *string {
 	if variable.IsSensitive {
-		value := "${var." + parentName + "}"
+		value := "${var." + sanitizer.SanitizeName(parentName) + "}"
 		return &value
 	}
 
