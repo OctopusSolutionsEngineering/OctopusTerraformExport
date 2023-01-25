@@ -580,7 +580,7 @@ function dumpToHcl() {
             hclOutput.style.paddingLeft = '16px';
             hclOutput.style.paddingRight = '16px';
             hclOutput.style.cursor = 'wait';
-            let hclContent = document.createTextNode("Hcl Export");
+            let hclContent = document.createTextNode("HCL Export");
             hclOutput.appendChild(hclContent);
             nav.append(hclOutput);
 
