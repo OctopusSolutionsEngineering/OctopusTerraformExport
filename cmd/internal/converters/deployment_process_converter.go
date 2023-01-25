@@ -118,6 +118,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					RunOnServer:                   c.getRunOnServer(a.Properties),
 					Properties:                    c.removeUnnecessaryFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
 					Features:                      c.getFeatures(a.Properties),
+					TargetRoles:                   c.getRoles(a.Properties),
 				}
 
 				for k, p := range a.Packages {
@@ -247,7 +248,7 @@ func (c DeploymentProcessConverter) escapeDollars(properties map[string]string) 
 func (c DeploymentProcessConverter) removeUnnecessaryFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if k != "Octopus.Action.RunOnServer" && k != "Octopus.Action.EnabledFeatures" {
+		if k != "Octopus.Action.RunOnServer" && k != "Octopus.Action.EnabledFeatures" && k != "Octopus.Action.TargetRoles" {
 			sanitisedProperties[k] = v
 		}
 	}
@@ -293,6 +294,15 @@ func (c DeploymentProcessConverter) replaceAccountIds(properties map[string]stri
 
 func (c DeploymentProcessConverter) getFeatures(properties map[string]any) []string {
 	f, ok := properties["Octopus.Action.EnabledFeatures"]
+	if ok {
+		return strings.Split(fmt.Sprint(f), ",")
+	}
+
+	return []string{}
+}
+
+func (c DeploymentProcessConverter) getRoles(properties map[string]any) []string {
+	f, ok := properties["Octopus.Action.TargetRoles"]
 	if ok {
 		return strings.Split(fmt.Sprint(f), ",")
 	}

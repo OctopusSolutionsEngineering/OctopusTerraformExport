@@ -35,6 +35,7 @@ type TerraformAction struct {
 	TenantTags                    []string            `hcl:"tenant_tags"`
 	Package                       []TerraformPackage  `hcl:"package,block"`
 	Features                      []string            `hcl:"features"`
+	TargetRoles                   []string            `hcl:"target_roles"`
 }
 
 type TerraformContainer struct {
