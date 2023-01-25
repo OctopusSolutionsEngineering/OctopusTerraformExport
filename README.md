@@ -29,6 +29,8 @@ script [violentmonkey.js](wasm/violentmonkey.js).
 This script adds a `Export HCL` link to the project page. Once the link is ready to be clicked (it takes a minute or
 so to build the HCL), the link displays the project's HCL representation in a popup window.
 
+![HCL Export link](hcl_export.png)
+
 ## To Do
 
 The following resources have yet to be exported:
