@@ -21,6 +21,14 @@ To export a single project and it's associated dependencies, use the following c
 ./octoterra -url https://yourinstance.octopus.app -space Spaces-## -apiKey API-APIKEYGOESHERE -projectId Projects-1234
 ```
 
+## Browser usage
+
+Exporting projects to HCL can be embedded in the browser by using the [Violentmonkey](https://violentmonkey.github.io/)
+script [violentmonkey.js](wasm/violentmonkey.js).
+
+This script adds a `Export HCL` link to the project page. Once the link is ready to be clicked (it takes a minute or
+so to build the HCL), the link displays the project's HCL representation in a popup window.
+
 ## To Do
 
 The following resources have yet to be exported:
