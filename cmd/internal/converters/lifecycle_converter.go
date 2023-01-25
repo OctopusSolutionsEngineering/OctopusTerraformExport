@@ -104,21 +104,13 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			return string(file.Bytes()), nil
 		} else {
 			terraformResource := terraform2.TerraformLifecycle{
-				Type:         "octopusdeploy_lifecycle",
-				Name:         resourceName,
-				ResourceName: lifecycle.Name,
-				Description:  lifecycle.Description,
-				Phase:        c.convertPhases(lifecycle.Phases, dependencies),
-				ReleaseRetentionPolicy: terraform2.TerraformPolicy{
-					QuantityToKeep:    lifecycle.ReleaseRetentionPolicy.QuantityToKeep,
-					ShouldKeepForever: lifecycle.ReleaseRetentionPolicy.ShouldKeepForever,
-					Unit:              lifecycle.ReleaseRetentionPolicy.Unit,
-				},
-				TentacleRetentionPolicy: terraform2.TerraformPolicy{
-					QuantityToKeep:    lifecycle.TentacleRetentionPolicy.QuantityToKeep,
-					ShouldKeepForever: lifecycle.TentacleRetentionPolicy.ShouldKeepForever,
-					Unit:              lifecycle.TentacleRetentionPolicy.Unit,
-				},
+				Type:                    "octopusdeploy_lifecycle",
+				Name:                    resourceName,
+				ResourceName:            lifecycle.Name,
+				Description:             lifecycle.Description,
+				Phase:                   c.convertPhases(lifecycle.Phases, dependencies),
+				ReleaseRetentionPolicy:  c.convertPolicy(lifecycle.ReleaseRetentionPolicy),
+				TentacleRetentionPolicy: c.convertPolicy(lifecycle.TentacleRetentionPolicy),
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
@@ -135,6 +127,18 @@ func (c LifecycleConverter) GetResourceType() string {
 	return "Lifecycles"
 }
 
+func (c LifecycleConverter) convertPolicy(policy *octopus2.Policy) *terraform2.TerraformPolicy {
+	if policy != nil {
+		return nil
+	}
+
+	return &terraform2.TerraformPolicy{
+		QuantityToKeep:    policy.QuantityToKeep,
+		ShouldKeepForever: policy.ShouldKeepForever,
+		Unit:              policy.Unit,
+	}
+}
+
 func (c LifecycleConverter) convertPhases(phases []octopus2.Phase, dependencies *ResourceDetailsCollection) []terraform2.TerraformPhase {
 	terraformPhases := make([]terraform2.TerraformPhase, 0)
 	for _, v := range phases {
@@ -144,16 +148,8 @@ func (c LifecycleConverter) convertPhases(phases []octopus2.Phase, dependencies 
 			Name:                               v.Name,
 			IsOptionalPhase:                    v.IsOptionalPhase,
 			MinimumEnvironmentsBeforePromotion: v.MinimumEnvironmentsBeforePromotion,
-			ReleaseRetentionPolicy: terraform2.TerraformPolicy{
-				QuantityToKeep:    v.ReleaseRetentionPolicy.QuantityToKeep,
-				ShouldKeepForever: v.ReleaseRetentionPolicy.ShouldKeepForever,
-				Unit:              v.ReleaseRetentionPolicy.Unit,
-			},
-			TentacleRetentionPolicy: terraform2.TerraformPolicy{
-				QuantityToKeep:    v.TentacleRetentionPolicy.QuantityToKeep,
-				ShouldKeepForever: v.TentacleRetentionPolicy.ShouldKeepForever,
-				Unit:              v.TentacleRetentionPolicy.Unit,
-			},
+			ReleaseRetentionPolicy:             c.convertPolicy(v.ReleaseRetentionPolicy),
+			TentacleRetentionPolicy:            c.convertPolicy(v.TentacleRetentionPolicy),
 		})
 	}
 	return terraformPhases

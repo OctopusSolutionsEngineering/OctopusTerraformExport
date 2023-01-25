@@ -6,8 +6,8 @@ type Lifecycle struct {
 	Slug                    *string
 	Description             *string
 	Phases                  []Phase
-	ReleaseRetentionPolicy  Policy
-	TentacleRetentionPolicy Policy
+	ReleaseRetentionPolicy  *Policy
+	TentacleRetentionPolicy *Policy
 }
 
 type Phase struct {
@@ -17,8 +17,8 @@ type Phase struct {
 	OptionalDeploymentTargets          []string
 	MinimumEnvironmentsBeforePromotion int
 	IsOptionalPhase                    bool
-	ReleaseRetentionPolicy             Policy
-	TentacleRetentionPolicy            Policy
+	ReleaseRetentionPolicy             *Policy
+	TentacleRetentionPolicy            *Policy
 }
 
 type Policy struct {
