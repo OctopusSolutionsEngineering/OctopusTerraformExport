@@ -613,7 +613,19 @@ function dumpToHcl() {
                                     });
 
                                     hclOutput.onclick = function() {
-                                        alert(hcl);
+                                        let winHtml = `<!DOCTYPE html>
+                                            <html>
+                                                <head>
+                                                    <title>HCL Export</title>
+                                                </head>
+                                                <body>
+                                                    <pre>${hcl}</pre>
+                                                </body>
+                                            </html>`;
+                                        const winUrl = URL.createObjectURL(
+                                            new Blob([winHtml], { type: "text/html" })
+                                        );
+                                        let win = window.open(winUrl, "HCL Export", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=768,height=768");
                                     };
                                 })
                                 .catch(function(error) {
