@@ -573,6 +573,12 @@ function getElementByXpath(path) {
 function dumpToHcl() {
     try {
         if (window.location.href.split("/")[5] === "projects") {
+            // Remove an existing menu item
+            let existing = document.getElementById("hcl-export")
+            if (existing != null) {
+                existing.parentNode.removeChild(existing);
+            }
+
             // Add a nav menu item
             let nav = getElementByXpath("//main/div[2]/div/div/div[1]/nav")
             let hclOutput = document.createElement("div")
