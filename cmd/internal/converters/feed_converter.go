@@ -45,7 +45,7 @@ func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollect
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

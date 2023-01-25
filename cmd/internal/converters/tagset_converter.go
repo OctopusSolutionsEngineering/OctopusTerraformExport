@@ -38,7 +38,7 @@ func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsColle
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

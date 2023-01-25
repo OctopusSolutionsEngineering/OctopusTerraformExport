@@ -37,7 +37,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

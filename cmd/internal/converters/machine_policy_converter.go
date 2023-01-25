@@ -40,7 +40,7 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetai
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

@@ -40,7 +40,7 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

@@ -40,7 +40,7 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

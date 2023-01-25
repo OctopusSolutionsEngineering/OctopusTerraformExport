@@ -40,7 +40,7 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDeta
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

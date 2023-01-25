@@ -41,7 +41,7 @@ func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *Resource
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

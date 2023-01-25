@@ -22,7 +22,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

@@ -40,7 +40,7 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

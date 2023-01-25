@@ -39,7 +39,7 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

@@ -42,7 +42,7 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

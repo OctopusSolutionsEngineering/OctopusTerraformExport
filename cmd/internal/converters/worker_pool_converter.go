@@ -37,7 +37,7 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsC
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

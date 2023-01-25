@@ -37,7 +37,7 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

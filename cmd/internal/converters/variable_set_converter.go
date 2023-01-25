@@ -39,7 +39,7 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 		return nil
 	}
 
-	if dependencies.HasResource(c.GetResourceType(), id) {
+	if dependencies.HasResource(id, c.GetResourceType()) {
 		return nil
 	}
 

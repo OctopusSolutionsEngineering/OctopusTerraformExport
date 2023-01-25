@@ -582,6 +582,11 @@ function dumpToHcl() {
 
             // Add a nav menu item
             let nav = getElementByXpath("//main/div[2]/div/div/div[1]/nav")
+
+            if (nav == null) {
+                return
+            }
+
             let hclOutput = document.createElement("div")
             hclOutput.id = "hcl-export"
             hclOutput.style.paddingLeft = '16px';
