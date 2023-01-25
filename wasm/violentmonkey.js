@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        New script octopus.app
 // @namespace   Violentmonkey Scripts
-// @match       https://mattc.octopus.app/app
+// @match       https://*.octopus.app/app
 // @grant       none
 // @version     1.0
 // @author      -
