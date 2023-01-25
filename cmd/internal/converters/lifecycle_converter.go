@@ -128,7 +128,7 @@ func (c LifecycleConverter) GetResourceType() string {
 }
 
 func (c LifecycleConverter) convertPolicy(policy *octopus2.Policy) *terraform2.TerraformPolicy {
-	if policy != nil {
+	if policy == nil {
 		return nil
 	}
 
