@@ -116,7 +116,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 					Condition:                     a.Condition,
 					RunOnServer:                   c.getRunOnServer(a.Properties),
-					Properties:                    c.escapeDollars(c.removeUnnecessaryFields(c.replaceIds(sanitizer2.SanitizeMap(a.Properties), dependencies))),
+					Properties:                    c.removeUnnecessaryFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
 				}
 
 				for k, p := range a.Packages {
@@ -231,7 +231,7 @@ func (c DeploymentProcessConverter) convertContainer(container octopus.Container
 }
 
 func (c DeploymentProcessConverter) replaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
-	return c.replaceAccountIds(c.replaceAccountIds(properties, dependencies), dependencies)
+	return c.replaceFeedIds(c.replaceAccountIds(c.replaceAccountIds(properties, dependencies), dependencies), dependencies)
 }
 
 func (c DeploymentProcessConverter) escapeDollars(properties map[string]string) map[string]string {
