@@ -181,7 +181,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 
 			if v.IsSensitive {
 				secretVariableResource := terraform2.TerraformVariable{
-					Name:        parentName,
+					Name:        sanitizer.SanitizeName(parentName),
 					Type:        "string",
 					Nullable:    false,
 					Sensitive:   true,
