@@ -108,7 +108,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 					IsRequired:                    a.IsRequired,
 					WorkerPoolId:                  dependencies.GetResource("WorkerPools", a.WorkerPoolId),
-					Container:                     c.convertContainer(a.Container),
+					Container:                     c.convertContainer(a.Container, dependencies),
 					WorkerPoolVariable:            a.WorkerPoolVariable,
 					Environments:                  a.Environments,
 					ExcludedEnvironments:          a.ExcludedEnvironments,
@@ -221,10 +221,10 @@ func (c DeploymentProcessConverter) exportWorkerPools(resource octopus.Deploymen
 	return nil
 }
 
-func (c DeploymentProcessConverter) convertContainer(container octopus.Container) *terraform.TerraformContainer {
+func (c DeploymentProcessConverter) convertContainer(container octopus.Container, dependencies *ResourceDetailsCollection) *terraform.TerraformContainer {
 	if container.Image != nil || container.FeedId != nil {
 		return &terraform.TerraformContainer{
-			FeedId: container.FeedId,
+			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
 			Image:  container.Image,
 		}
 	}
