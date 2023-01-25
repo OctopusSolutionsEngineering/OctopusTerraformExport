@@ -88,6 +88,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 				Condition:          s.Condition,
 				StartTrigger:       s.StartTrigger,
 				Action:             make([]terraform.TerraformAction, len(s.Actions)),
+				TargetRoles:        c.getRoles(s.Properties),
 			}
 
 			for j, a := range s.Actions {
@@ -118,7 +119,6 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					RunOnServer:                   c.getRunOnServer(a.Properties),
 					Properties:                    c.removeUnnecessaryFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
 					Features:                      c.getFeatures(a.Properties),
-					TargetRoles:                   c.getRoles(a.Properties),
 				}
 
 				for k, p := range a.Packages {
@@ -301,7 +301,7 @@ func (c DeploymentProcessConverter) getFeatures(properties map[string]any) []str
 	return []string{}
 }
 
-func (c DeploymentProcessConverter) getRoles(properties map[string]any) []string {
+func (c DeploymentProcessConverter) getRoles(properties map[string]string) []string {
 	f, ok := properties["Octopus.Action.TargetRoles"]
 	if ok {
 		return strings.Split(fmt.Sprint(f), ",")
