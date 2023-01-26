@@ -5,6 +5,7 @@ type ProjectTrigger struct {
 	Name       string
 	SpaceId    *string
 	ProjectId  string
+	FilterType string
 	IsDisabled bool
 	Filter     ProjectTriggerFilter
 	Action     ProjectTriggerAction

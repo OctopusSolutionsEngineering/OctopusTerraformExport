@@ -591,6 +591,7 @@ function dumpToHcl() {
             hclOutput.id = "hcl-export"
             hclOutput.style.paddingLeft = '16px';
             hclOutput.style.paddingRight = '16px';
+            hclOutput.style.lineHeight = '40px';
             hclOutput.style.cursor = 'wait';
             let hclContent = document.createTextNode("HCL Export");
             hclOutput.appendChild(hclContent);

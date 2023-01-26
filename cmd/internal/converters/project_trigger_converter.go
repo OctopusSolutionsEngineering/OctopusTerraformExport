@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
@@ -32,6 +33,12 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 }
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, recursive bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+	// Scheduled triggers with types like "OnceDailySchedule" are not supported
+	if projectTrigger.FilterType != "MachineFilter" {
+		fmt.Println("Found an unsupported trigger type " + projectTrigger.FilterType)
+		return nil
+	}
+
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
 	thisResource := ResourceDetails{}
