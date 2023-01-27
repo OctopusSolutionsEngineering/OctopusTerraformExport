@@ -84,7 +84,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:               s.Name,
 				PackageRequirement: s.PackageRequirement,
-				Properties:         c.replaceFeedIds(s.Properties, dependencies),
+				Properties:         c.removeUnnecessaryStepFields(c.replaceFeedIds(s.Properties, dependencies)),
 				Condition:          s.Condition,
 				StartTrigger:       s.StartTrigger,
 				Action:             make([]terraform.TerraformAction, len(s.Actions)),
@@ -117,7 +117,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 					Condition:                     a.Condition,
 					RunOnServer:                   c.getRunOnServer(a.Properties),
-					Properties:                    c.removeUnnecessaryFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
+					Properties:                    c.removeUnnecessaryActionFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
 					Features:                      c.getFeatures(a.Properties),
 				}
 
@@ -244,11 +244,22 @@ func (c DeploymentProcessConverter) escapeDollars(properties map[string]string) 
 	return sanitisedProperties
 }
 
-// removeUnnecessaryFields removes generic property bag values that have more specific terraform properties
-func (c DeploymentProcessConverter) removeUnnecessaryFields(properties map[string]string) map[string]string {
+// removeUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
+func (c DeploymentProcessConverter) removeUnnecessaryActionFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if k != "Octopus.Action.RunOnServer" && k != "Octopus.Action.EnabledFeatures" && k != "Octopus.Action.TargetRoles" {
+		if k != "Octopus.Action.RunOnServer" && k != "Octopus.Action.EnabledFeatures" {
+			sanitisedProperties[k] = v
+		}
+	}
+	return sanitisedProperties
+}
+
+// removeUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
+func (c DeploymentProcessConverter) removeUnnecessaryStepFields(properties map[string]string) map[string]string {
+	sanitisedProperties := map[string]string{}
+	for k, v := range properties {
+		if k != "Octopus.Action.TargetRoles" {
 			sanitisedProperties[k] = v
 		}
 	}
