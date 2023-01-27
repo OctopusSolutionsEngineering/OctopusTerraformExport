@@ -34,8 +34,8 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, recursive bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	// Scheduled triggers with types like "OnceDailySchedule" are not supported
-	if projectTrigger.FilterType != "MachineFilter" {
-		fmt.Println("Found an unsupported trigger type " + projectTrigger.FilterType)
+	if projectTrigger.Filter.FilterType != "MachineFilter" {
+		fmt.Println("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
 		return nil
 	}
 
