@@ -17,6 +17,7 @@ type TenantConverter struct {
 	Client                  client.OctopusClient
 	TenantVariableConverter ConverterByTenantId
 	EnvironmentConverter    ConverterById
+	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
 }
 
 func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -178,9 +179,7 @@ func (c TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursive
 					}
 
 					if recursive {
-						err = TagSetConverter{
-							Client: c.Client,
-						}.ToHclByResource(tagSet, recursive, dependencies)
+						err = c.TagSetConverter.ToHclByResource(tagSet, dependencies)
 
 						if err != nil {
 							return nil, err

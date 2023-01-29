@@ -33,6 +33,9 @@ type VariableSetConverter struct {
 	PollingTargetConverter            ConverterById
 	SshTargetConverter                ConverterById
 	AccountConverter                  ConverterById
+	FeedConverter                     ConverterById
+	CertificateConverter              ConverterById
+	WorkerPoolConverter               ConverterById
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -294,9 +297,7 @@ func (c VariableSetConverter) exportFeeds(value *string, dependencies *ResourceD
 
 	feedRegex, _ := regexp.Compile("Feeds-\\d+")
 	for _, account := range feedRegex.FindAllString(*value, -1) {
-		err := FeedConverter{
-			Client: c.Client,
-		}.ToHclById(account, dependencies)
+		err := c.FeedConverter.ToHclById(account, dependencies)
 
 		if err != nil {
 			return err
@@ -327,9 +328,7 @@ func (c VariableSetConverter) exportCertificates(value *string, dependencies *Re
 
 	regex, _ := regexp.Compile("Certificates-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
-		err := CertificateConverter{
-			Client: c.Client,
-		}.ToHclById(cert, dependencies)
+		err := c.CertificateConverter.ToHclById(cert, dependencies)
 
 		if err != nil {
 			return err
@@ -360,9 +359,7 @@ func (c VariableSetConverter) exportWorkerPools(value *string, dependencies *Res
 
 	regex, _ := regexp.Compile("WorkerPools-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
-		err := WorkerPoolConverter{
-			Client: c.Client,
-		}.ToHclById(cert, dependencies)
+		err := c.WorkerPoolConverter.ToHclById(cert, dependencies)
 
 		if err != nil {
 			return err
@@ -425,7 +422,7 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus2.Variable, 
 					}
 
 					if recursive {
-						err = c.TagSetConverter.ToHclByResource(tagSet, recursive, dependencies)
+						err = c.TagSetConverter.ToHclByResource(tagSet, dependencies)
 
 						if err != nil {
 							return nil, err

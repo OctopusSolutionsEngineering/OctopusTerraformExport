@@ -75,12 +75,14 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	accountConverter := converters.AccountConverter{Client: client}
 	certificateConverter := converters.CertificateConverter{Client: client}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+	feedConverter := converters.FeedConverter{Client: client}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
 		Client:                 client,
@@ -156,9 +158,11 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
 		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
-	feedConverter := converters.FeedConverter{Client: client}
 
 	err := converters.ProjectConverter{
 		Client:                      client,

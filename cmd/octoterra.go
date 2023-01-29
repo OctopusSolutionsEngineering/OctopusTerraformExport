@@ -82,6 +82,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
 	}
 	certificateConverter := converters.CertificateConverter{Client: client}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
@@ -162,6 +163,9 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
 		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -255,6 +259,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
@@ -320,6 +325,9 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		EnvironmentConverter:   environmentConverter,
 	}
 
+	feedConverter := converters.FeedConverter{Client: client}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+
 	variableSetConverter := converters.VariableSetConverter{
 		Client:                            client,
 		ChannelConverter:                  channelConverter,
@@ -335,10 +343,11 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
 		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
-	feedConverter := converters.FeedConverter{Client: client}
-	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
 	err := converters.ProjectConverter{
 		Client:                      client,
