@@ -161,6 +161,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		OfflineDropTargetConverter:        offlineDropTargetConverter,
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -181,7 +182,10 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			LibraryVariableSetConverter: libraryVariableSetConverter,
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
-				Client: client,
+				Client:              client,
+				FeedConverter:       feedConverter,
+				AccountConverter:    accountConverter,
+				WorkerPoolConverter: workerPoolConverter,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -330,8 +334,11 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		OfflineDropTargetConverter:        offlineDropTargetConverter,
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
+	feedConverter := converters.FeedConverter{Client: client}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
 	err := converters.ProjectConverter{
 		Client:                      client,
@@ -340,7 +347,10 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client: client,
+			Client:              client,
+			FeedConverter:       feedConverter,
+			AccountConverter:    accountConverter,
+			WorkerPoolConverter: workerPoolConverter,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

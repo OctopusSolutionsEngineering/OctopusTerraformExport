@@ -32,6 +32,7 @@ type VariableSetConverter struct {
 	OfflineDropTargetConverter        ConverterById
 	PollingTargetConverter            ConverterById
 	SshTargetConverter                ConverterById
+	AccountConverter                  ConverterById
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -262,9 +263,7 @@ func (c VariableSetConverter) exportAccounts(value *string, dependencies *Resour
 
 	accountRegex, _ := regexp.Compile("Accounts-\\d+")
 	for _, account := range accountRegex.FindAllString(*value, -1) {
-		err := AccountConverter{
-			Client: c.Client,
-		}.ToHclById(account, dependencies)
+		err := c.AccountConverter.ToHclById(account, dependencies)
 
 		if err != nil {
 			return err
