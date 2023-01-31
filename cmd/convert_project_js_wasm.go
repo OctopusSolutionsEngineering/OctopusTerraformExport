@@ -5,6 +5,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"sort"
 	"strings"
 	"syscall/js"
 )
@@ -194,6 +195,11 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 // processResources creates a map of file names to file content
 func processJavaScriptResources(resources []converters.ResourceDetails) (map[string]string, error) {
 	fileMap := map[string]string{}
+
+	// Sort by resource type
+	sort.Slice(resources[:], func(i, j int) bool {
+		return resources[i].ResourceType < resources[j].ResourceType
+	})
 
 	for _, r := range resources {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
