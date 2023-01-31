@@ -14,7 +14,10 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client client.OctopusClient
+	Client              client.OctopusClient
+	FeedConverter       ConverterById
+	AccountConverter    ConverterById
+	WorkerPoolConverter ConverterById
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -155,9 +158,7 @@ func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProce
 
 			for _, pack := range action.Packages {
 				if pack.FeedId != nil {
-					err := FeedConverter{
-						Client: c.Client,
-					}.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+					err := c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
 
 					if err != nil {
 						return err
@@ -167,9 +168,7 @@ func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProce
 
 			for _, prop := range action.Properties {
 				for _, feed := range feedRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := FeedConverter{
-						Client: c.Client,
-					}.ToHclById(feed, dependencies)
+					err := c.FeedConverter.ToHclById(feed, dependencies)
 
 					if err != nil {
 						return err
@@ -188,9 +187,7 @@ func (c DeploymentProcessConverter) exportAccounts(resource octopus.DeploymentPr
 		for _, action := range step.Actions {
 			for _, prop := range action.Properties {
 				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := AccountConverter{
-						Client: c.Client,
-					}.ToHclById(account, dependencies)
+					err := c.AccountConverter.ToHclById(account, dependencies)
 
 					if err != nil {
 						return err
@@ -207,9 +204,7 @@ func (c DeploymentProcessConverter) exportWorkerPools(resource octopus.Deploymen
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 			if action.WorkerPoolId != "" {
-				err := WorkerPoolConverter{
-					Client: c.Client,
-				}.ToHclById(action.WorkerPoolId, dependencies)
+				err := c.WorkerPoolConverter.ToHclById(action.WorkerPoolId, dependencies)
 
 				if err != nil {
 					return err

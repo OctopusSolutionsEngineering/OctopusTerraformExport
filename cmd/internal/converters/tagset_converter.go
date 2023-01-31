@@ -23,7 +23,7 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, tagSet := range collection.Items {
-		err = c.ToHclByResource(tagSet, false, dependencies)
+		err = c.ToHclByResource(tagSet, dependencies)
 
 		if err != nil {
 			return err
@@ -49,10 +49,10 @@ func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsColle
 		return err
 	}
 
-	return c.ToHclByResource(tagSet, true, dependencies)
+	return c.ToHclByResource(tagSet, dependencies)
 }
 
-func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
 	thisResource := ResourceDetails{}

@@ -68,17 +68,19 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tagsetConverter := converters.TagSetConverter{Client: client}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:               client,
 		EnvironmentConverter: machinePolicyConverter,
 		TenantConverter:      tenantConverter}
 
-	tagsetConverter := converters.TagSetConverter{Client: client}
+
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
 	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
 	channelConverter := converters.ChannelConverter{
@@ -166,6 +168,10 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		OfflineDropTargetConverter:        offlineDropTargetConverter,
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -186,7 +192,10 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			LibraryVariableSetConverter: libraryVariableSetConverter,
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
-				Client: client,
+				Client:              client,
+				FeedConverter:       feedConverter,
+				AccountConverter:    accountConverter,
+				WorkerPoolConverter: workerPoolConverter,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -256,6 +265,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
@@ -325,6 +335,9 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		EnvironmentConverter:   environmentConverter,
 	}
 
+	feedConverter := converters.FeedConverter{Client: client}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+
 	variableSetConverter := converters.VariableSetConverter{
 		Client:                            client,
 		ChannelConverter:                  channelConverter,
@@ -339,6 +352,10 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		OfflineDropTargetConverter:        offlineDropTargetConverter,
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -349,7 +366,10 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client: client,
+			Client:              client,
+			FeedConverter:       feedConverter,
+			AccountConverter:    accountConverter,
+			WorkerPoolConverter: workerPoolConverter,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

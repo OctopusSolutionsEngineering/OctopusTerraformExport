@@ -35,6 +35,11 @@ type ConverterByTenantId interface {
 	ToHclByTenantId(projectId string, dependencies *ResourceDetailsCollection) error
 }
 
+// ConvertToHclByResource converts objects directly
+type ConvertToHclByResource[C any] interface {
+	ToHclByResource(resource C, dependencies *ResourceDetailsCollection) error
+}
+
 // Converter converts all objects in bulk
 type Converter interface {
 	ToHcl(dependencies *ResourceDetailsCollection) error

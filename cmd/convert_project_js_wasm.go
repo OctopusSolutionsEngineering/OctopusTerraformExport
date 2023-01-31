@@ -75,11 +75,14 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	accountConverter := converters.AccountConverter{Client: client, EnvironmentConverter: lifecycleConverter, TenantConverter: tenantConverter}
 	certificateConverter := converters.CertificateConverter{Client: client}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+	feedConverter := converters.FeedConverter{Client: client}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
 		Client:                 client,
@@ -154,6 +157,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		OfflineDropTargetConverter:        offlineDropTargetConverter,
 		PollingTargetConverter:            pollingTargetConverter,
 		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -164,7 +171,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client: client,
+			Client:              client,
+			FeedConverter:       feedConverter,
+			AccountConverter:    accountConverter,
+			WorkerPoolConverter: workerPoolConverter,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
