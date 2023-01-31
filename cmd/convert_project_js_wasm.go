@@ -78,7 +78,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
-	accountConverter := converters.AccountConverter{Client: client}
+	accountConverter := converters.AccountConverter{Client: client, EnvironmentConverter: lifecycleConverter, TenantConverter: tenantConverter}
 	certificateConverter := converters.CertificateConverter{Client: client}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{

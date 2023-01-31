@@ -55,6 +55,21 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 	return nil
 }
 
+func (c TenantConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	tenant := octopus2.Tenant{}
+	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &tenant)
+
+	if err != nil {
+		return nil
+	}
+
+	if found {
+		return c.toHcl(tenant, true, dependencies)
+	}
+
+	return nil
+}
+
 func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if recursive {

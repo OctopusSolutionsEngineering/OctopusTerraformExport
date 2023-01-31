@@ -66,8 +66,18 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
-	accountConverter := converters.AccountConverter{Client: client}
 	environmentConverter := converters.EnvironmentConverter{Client: client}
+	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tenantConverter := converters.TenantConverter{
+		Client:                  client,
+		TenantVariableConverter: tenantVariableConverter,
+		EnvironmentConverter:    environmentConverter,
+	}
+	accountConverter := converters.AccountConverter{
+		Client:               client,
+		EnvironmentConverter: machinePolicyConverter,
+		TenantConverter:      tenantConverter}
+
 	tagsetConverter := converters.TagSetConverter{Client: client}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
 	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
@@ -77,12 +87,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
-	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
-	tenantConverter := converters.TenantConverter{
-		Client:                  client,
-		TenantVariableConverter: tenantVariableConverter,
-		EnvironmentConverter:    environmentConverter,
-	}
+
 	certificateConverter := converters.CertificateConverter{Client: client}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
@@ -254,7 +259,11 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
-	accountConverter := converters.AccountConverter{Client: client}
+	accountConverter := converters.AccountConverter{
+		Client:               client,
+		EnvironmentConverter: environmentConverter,
+		TenantConverter:      tenantConverter,
+	}
 	certificateConverter := converters.CertificateConverter{Client: client}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{

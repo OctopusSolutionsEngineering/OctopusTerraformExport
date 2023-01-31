@@ -13,7 +13,9 @@ import (
 )
 
 type AccountConverter struct {
-	Client client.OctopusClient
+	Client               client.OctopusClient
+	EnvironmentConverter ConverterById
+	TenantConverter      ConverterById
 }
 
 func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -55,7 +57,9 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 }
 
 func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
-	// TODO: export environments
+	if recursive {
+		c.exportDependencies(resource, dependencies)
+	}
 
 	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)
 
@@ -89,7 +93,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
@@ -122,7 +126,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
 				Tenants:                         nil,
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
@@ -159,9 +163,9 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
-				Tenants:                         nil,
+				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				ManagementEndpoint:              strutil.EmptyIfNil(resource.ResourceManagementEndpointBaseUri),
 				StorageEndpointSuffix:           strutil.EmptyIfNil(resource.ServiceManagementEndpointSuffix),
@@ -195,9 +199,9 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
-				Tenants:                         nil,
+				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				JsonKey:                         &secretVariable,
 			}
@@ -227,9 +231,9 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
-				Tenants:                         nil,
+				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				Token:                           &secretVariable,
 			}
@@ -259,9 +263,9 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
-				Tenants:                         nil,
+				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				Username:                        resource.Username,
 				Password:                        &secretVariable,
@@ -293,9 +297,9 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Name:                            resourceName,
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
-				Environments:                    nil,
+				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
 				TenantTags:                      resource.TenantTags,
-				Tenants:                         nil,
+				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				PrivateKeyFile:                  &certFileVariable,
 				Username:                        resource.Username,
@@ -341,4 +345,27 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 
 func (c AccountConverter) GetResourceType() string {
 	return "Accounts"
+}
+
+func (c AccountConverter) exportDependencies(target octopus2.Account, dependencies *ResourceDetailsCollection) error {
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err := c.EnvironmentConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the tenants
+	for _, e := range target.TenantIds {
+		err := c.TenantConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
