@@ -197,11 +197,12 @@ func processJavaScriptResources(resources []converters.ResourceDetails) (map[str
 	fileMap := map[string]string{}
 
 	// Sort by resource type
-	sort.Slice(&resources, func(i, j int) bool {
-		return resources[i].ResourceType < resources[j].ResourceType
+	resourcesSlice := resources[:]
+	sort.Slice(resourcesSlice, func(i, j int) bool {
+		return resourcesSlice[i].ResourceType < resourcesSlice[j].ResourceType
 	})
 
-	for _, r := range resources {
+	for _, r := range resourcesSlice {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
 		// In these cases, ToHclByProjectId is nil.
 		if r.ToHcl == nil {
