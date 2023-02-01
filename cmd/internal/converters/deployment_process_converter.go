@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	sanitizer2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -139,7 +140,15 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 		}
 
 		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		for i, s := range resource.Steps {
+			for j, a := range s.Actions {
+				hcl.WriteActionProperties(block, i, j, a.Properties)
+			}
+		}
+
+		file.Body().AppendBlock(block)
 		return string(file.Bytes()), nil
 	}
 
