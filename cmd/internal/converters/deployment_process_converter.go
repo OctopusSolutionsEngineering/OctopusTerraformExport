@@ -114,7 +114,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					WorkerPoolId:                  dependencies.GetResource("WorkerPools", a.WorkerPoolId),
 					Container:                     c.convertContainer(a.Container, dependencies),
 					WorkerPoolVariable:            a.WorkerPoolVariable,
-					Environments:                  a.Environments,
+					Environments:                  dependencies.GetResources("Environments", a.Environments...),
 					ExcludedEnvironments:          a.ExcludedEnvironments,
 					Channels:                      a.Channels,
 					TenantTags:                    a.TenantTags,
