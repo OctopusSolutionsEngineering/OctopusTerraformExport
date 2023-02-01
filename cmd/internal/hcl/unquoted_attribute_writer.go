@@ -66,7 +66,10 @@ func mapToHclMap(jsonMap map[string]any) string {
 	for k, v := range jsonMap {
 		output += "\n        \"" + k + "\" = " + anyToHcl(v)
 	}
-	output += "\n        }"
+	if len(jsonMap) != 0 {
+		output += "\n"
+	}
+	output += "        }"
 	return output
 }
 
@@ -75,7 +78,10 @@ func arrayToHclMap(jsonArray []any) string {
 	for _, v := range jsonArray {
 		output += "\n        " + anyToHcl(v) + ","
 	}
-	output += "\n        ]"
+	if len(jsonArray) != 0 {
+		output += "\n"
+	}
+	output += "        ]"
 	return output
 }
 
