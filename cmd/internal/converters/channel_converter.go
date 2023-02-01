@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
@@ -83,6 +84,17 @@ func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, terraf
 				TenantTags:   channel.TenantTags,
 			}
 			file := hclwrite.NewEmptyFile()
+
+			// Add a comment with the import command
+			baseUrl, _ := c.Client.GetSpaceBaseUrl()
+			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+				Type: hclsyntax.TokenComment,
+				Bytes: []byte("# Import existing resources with the following commands:\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + channel.Name + "\") | .Id')\n" +
+					"# terraform import octopusdeploy_channel." + resourceName + " ${RESOURCE_ID}\n"),
+				SpacesBefore: 0,
+			}})
+
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			/* Channels reference steps and packages by text without terraform understanding
