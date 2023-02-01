@@ -27,21 +27,55 @@ func extractJsonAsMap(properties map[string]any) string {
 	output := "{"
 
 	for key, value := range properties {
-		resource := map[string]any{}
-		err := json.Unmarshal([]byte(fmt.Sprint(value)), &resource)
-		if err == nil {
-			output += "jsonencode({\n"
-			for nestedKey, nestedValue := range resource {
-				output += "\n        \"" + nestedKey + "\" = " + "\"" + encodeString(fmt.Sprint(nestedValue)) + "\""
-			}
-			output += "\n})"
-		} else {
-			output += "\n        \"" + key + "\" = " + "\"" + encodeString(fmt.Sprint(value)) + "\""
-		}
+		output += "\n        \"" + key + "\" = " + jsonStringToHcl(fmt.Sprint(value))
 	}
 
 	output += "\n      }"
 
+	return output
+}
+
+func jsonStringToHcl(value string) string {
+	jsonMap := map[string]any{}
+	jsonMapError := json.Unmarshal([]byte(value), &jsonMap)
+
+	jsonArray := []any{}
+	jsonArrayError := json.Unmarshal([]byte(value), &jsonArray)
+
+	if jsonMapError == nil {
+		return "jsonencode(" + mapToHclMap(jsonMap) + ")"
+	} else if jsonArrayError == nil {
+		return "jsonencode(" + arrayToHclMap(jsonArray) + ")"
+	} else {
+		return "\"" + encodeString(value) + "\""
+	}
+}
+
+func anyToHcl(value any) string {
+	if mapItem, ok := value.(map[string]any); ok {
+		return mapToHclMap(mapItem)
+	} else if arrayItem, ok := value.([]any); ok {
+		return arrayToHclMap(arrayItem)
+	} else {
+		return "\"" + encodeString(fmt.Sprint(value)) + "\""
+	}
+}
+
+func mapToHclMap(jsonMap map[string]any) string {
+	output := "{"
+	for k, v := range jsonMap {
+		output += "\n        \"" + k + "\" = " + anyToHcl(v)
+	}
+	output += "\n        }"
+	return output
+}
+
+func arrayToHclMap(jsonArray []any) string {
+	output := "["
+	for _, v := range jsonArray {
+		output += "\n        " + anyToHcl(v) + ","
+	}
+	output += "\n        ]"
 	return output
 }
 

@@ -118,7 +118,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 			"OCTOPUS_SERVER_BASE64_LICENSE": os.Getenv("LICENSE"),
 		},
 		Privileged: false,
-		WaitingFor: wait.ForLog("Listening for HTTP requests on").WithStartupTimeout(10 * time.Minute),
+		WaitingFor: wait.ForLog("Listening for HTTP requests on").WithStartupTimeout(30 * time.Minute),
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
