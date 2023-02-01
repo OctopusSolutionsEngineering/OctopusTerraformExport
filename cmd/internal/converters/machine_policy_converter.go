@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -124,6 +125,17 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, recu
 				},
 			}
 			file := hclwrite.NewEmptyFile()
+
+			// Add a comment with the import command
+			baseUrl, _ := c.Client.GetSpaceBaseUrl()
+			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+				Type: hclsyntax.TokenComment,
+				Bytes: []byte("# Import existing resources with the following commands:\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + machinePolicy.Name + "\") | .Id')\n" +
+					"# terraform import octopusdeploy_machine_policy." + policyName + " ${RESOURCE_ID}\n"),
+				SpacesBefore: 0,
+			}})
+
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			return string(file.Bytes()), nil

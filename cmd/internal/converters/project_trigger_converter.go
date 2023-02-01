@@ -3,6 +3,7 @@ package converters
 import (
 	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -16,7 +17,7 @@ type ProjectTriggerConverter struct {
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.ProjectTrigger]{}
-	err := c.Client.GetAllResources(c.GetResourceType(projectId), &collection)
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
 		return err
@@ -44,7 +45,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, r
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
 	thisResource.Id = projectTrigger.Id
-	thisResource.ResourceType = c.GetResourceType(projectId)
+	thisResource.ResourceType = c.GetGroupResourceType(projectId)
 	thisResource.Lookup = "${octopusdeploy_project_deployment_target_trigger." + projectTriggerName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
@@ -61,6 +62,17 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, r
 			Id:              nil,
 		}
 		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + projectTrigger.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_project_deployment_target_trigger." + projectTriggerName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 		return string(file.Bytes()), nil
@@ -70,6 +82,10 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, r
 	return nil
 }
 
-func (c ProjectTriggerConverter) GetResourceType(projectId string) string {
+func (c ProjectTriggerConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/Triggers"
+}
+
+func (c ProjectTriggerConverter) GetResourceType() string {
+	return "ProjectTriggers"
 }

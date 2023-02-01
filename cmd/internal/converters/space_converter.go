@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/hashicorp/hcl2/gohcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
@@ -231,7 +232,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 		return err
 	}
 
-	spaceResourceName := "octopus_space_" + sanitizer.SanitizeNamePointer(space.Name)
+	spaceResourceName := "octopus_space_" + sanitizer.SanitizeName(space.Name)
 	spaceName := "${var.octopus_space_name}"
 
 	thisResource := ResourceDetails{}
@@ -264,11 +265,22 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 			Type:        "string",
 			Nullable:    false,
 			Sensitive:   false,
-			Description: "The name of the new space (the exported space was called " + *space.Name + ")",
-			Default:     space.Name,
+			Description: "The name of the new space (the exported space was called " + space.Name + ")",
+			Default:     &space.Name,
 		}
 
 		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/Spaces | jq -r '.Items[] | select(.name=\"" + space.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_space." + spaceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
 
