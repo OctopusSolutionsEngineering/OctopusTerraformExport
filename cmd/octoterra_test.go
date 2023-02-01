@@ -459,7 +459,7 @@ func TestSpaceExport(t *testing.T) {
 			return err
 		}
 
-		if *space.Name != "Test3" {
+		if space.Name != "Test3" {
 			t.Fatalf("New space must have the name \"Test3\"")
 		}
 
