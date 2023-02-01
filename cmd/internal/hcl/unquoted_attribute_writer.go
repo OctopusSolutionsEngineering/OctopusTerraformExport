@@ -17,13 +17,13 @@ func WriteUnquotedAttribute(block *hclwrite.Block, attrName string, attrValue st
 
 // WriteActionProperties is used to pretty print the properties of an action, writing a multiline map for the properties,
 // and extracting JSON blobs as maps for easy reading.
-func WriteActionProperties(block *hclwrite.Block, step int, action int, properties map[string]any) {
+func WriteActionProperties(block *hclwrite.Block, step int, action int, properties map[string]string) {
 	block.Body().Blocks()[step].Body().Blocks()[action].Body().SetAttributeTraversal("properties", hcl.Traversal{
 		hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
 	})
 }
 
-func extractJsonAsMap(properties map[string]any) string {
+func extractJsonAsMap(properties map[string]string) string {
 	output := "{"
 
 	for key, value := range properties {

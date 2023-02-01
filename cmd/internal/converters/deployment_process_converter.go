@@ -121,7 +121,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
 					Condition:                     a.Condition,
 					RunOnServer:                   c.getRunOnServer(a.Properties),
-					Properties:                    c.removeUnnecessaryActionFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)),
+					Properties:                    nil,
 					Features:                      c.getFeatures(a.Properties),
 				}
 
@@ -144,7 +144,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 
 		for i, s := range resource.Steps {
 			for j, a := range s.Actions {
-				hcl.WriteActionProperties(block, i, j, a.Properties)
+				hcl.WriteActionProperties(block, i, j, c.removeUnnecessaryActionFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)))
 			}
 		}
 
