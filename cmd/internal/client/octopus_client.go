@@ -105,7 +105,7 @@ func (o OctopusClient) getSpaceUrl() (string, error) {
 	return "", errors.New("did not find space with name or id '" + o.Space + "'")
 }
 
-func (o OctopusClient) getSpaceBaseUrl() (string, error) {
+func (o OctopusClient) GetSpaceBaseUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("space can not be empty")
 	}
@@ -144,7 +144,7 @@ func (o OctopusClient) getSpaceRequest() (*http.Request, error) {
 }
 
 func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request, error) {
-	spaceUrl, err := o.getSpaceBaseUrl()
+	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request
 }
 
 func (o OctopusClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
-	spaceUrl, err := o.getSpaceBaseUrl()
+	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
 		return nil, err
