@@ -197,7 +197,7 @@ func processJavaScriptResources(resources []converters.ResourceDetails) (map[str
 	fileMap := map[string]string{}
 
 	// Sort by resource type
-	sort.Slice(resources, func(i, j int) bool {
+	sort.Slice(&resources, func(i, j int) bool {
 		return resources[i].ResourceType < resources[j].ResourceType
 	})
 
