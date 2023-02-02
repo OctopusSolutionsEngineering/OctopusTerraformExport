@@ -105,9 +105,7 @@ func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, terraf
 			for t, r := range terraformDependencies {
 				if t != "" && r != "" {
 					dependency := dependencies.GetResource(t, r)
-					// This is a raw expression, so remove the surrounding brackets
-					dependency = strings.Replace(dependency, "${", "", -1)
-					dependency = strings.Replace(dependency, ".id}", "", -1)
+					dependency = hcl.RemoveInterpolation(dependency)
 					manualDependencies = append(manualDependencies, dependency)
 				}
 			}
