@@ -276,7 +276,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 			Type: hclsyntax.TokenComment,
 			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/Spaces | jq -r '.Items[] | select(.name=\"" + space.Name + "\") | .Id')\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/Spaces | jq -r '.Items[] | select(.name=\"" + space.Name + "\") | .Id')\n" +
 				"# terraform import octopusdeploy_space." + spaceName + " ${RESOURCE_ID}\n"),
 			SpacesBefore: 0,
 		}})

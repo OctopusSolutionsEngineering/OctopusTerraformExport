@@ -111,7 +111,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, dep
 				file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 					Type: hclsyntax.TokenComment,
 					Bytes: []byte("# Import existing resources with the following commands:\n" +
-						"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + pool.Name + "\") | .Id')\n" +
+						"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + pool.Name + "\") | .Id')\n" +
 						"# terraform import octopusdeploy_dynamic_worker_pool." + resourceName + " ${RESOURCE_ID}\n"),
 					SpacesBefore: 0,
 				}})
@@ -157,7 +157,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, dep
 				file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 					Type: hclsyntax.TokenComment,
 					Bytes: []byte("# Import existing resources with the following commands:\n" +
-						"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + pool.Name + "\") | .Id')\n" +
+						"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + pool.Name + "\") | .Id')\n" +
 						"# terraform import octopusdeploy_static_worker_pool." + resourceName + " ${RESOURCE_ID}\n"),
 					SpacesBefore: 0,
 				}})

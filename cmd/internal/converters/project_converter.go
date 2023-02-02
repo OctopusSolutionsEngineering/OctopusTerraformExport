@@ -125,7 +125,7 @@ func (c ProjectConverter) toHcl(project octopus2.Project, recursive bool, depend
 		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 			Type: hclsyntax.TokenComment,
 			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + project.Name + "\") | .Id')\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + project.Name + "\") | .Id')\n" +
 				"# terraform import octopusdeploy_project." + projectName + " ${RESOURCE_ID}\n"),
 			SpacesBefore: 0,
 		}})

@@ -129,7 +129,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_docker_container_registry." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -169,7 +169,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_aws_elastic_container_registry." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -211,7 +211,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_maven_feed." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -253,7 +253,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_github_repository_feed." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -293,7 +293,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_helm_feed." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -336,7 +336,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, dependencie
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: API-REPLACEME\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_nuget_feed." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
