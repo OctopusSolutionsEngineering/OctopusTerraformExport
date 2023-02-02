@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"strings"
 )
 
 // WriteUnquotedAttribute uses the example from https://github.com/hashicorp/hcl/issues/442
@@ -93,4 +94,10 @@ func encodeString(value string) string {
 	}
 	// Trim the beginning and trailing " character
 	return string(b[1 : len(b)-1])
+}
+
+func RemoveInterpolation(value string) string {
+	value = strings.Replace(value, "${", "", -1)
+	value = strings.Replace(value, ".id}", "", -1)
+	return value
 }
