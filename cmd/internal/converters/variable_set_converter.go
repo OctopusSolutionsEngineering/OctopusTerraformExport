@@ -208,7 +208,10 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 
 				block := gohcl.EncodeAsBlock(regularVariable, "variable")
 				hcl.WriteUnquotedAttribute(block, "type", "string")
-				hcl.WriteUnquotedAttribute(block, "default", strutil.EmptyIfNil(value))
+				// variable lookups need to be raw expressions
+				if hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
+					hcl.WriteUnquotedAttribute(block, "default", strutil.EmptyIfNil(value))
+				}
 				file.Body().AppendBlock(block)
 			}
 

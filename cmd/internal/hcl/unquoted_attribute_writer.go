@@ -96,6 +96,10 @@ func encodeString(value string) string {
 	return string(b[1 : len(b)-1])
 }
 
+func IsInterpolation(value string) bool {
+	return strings.HasPrefix(value, "${")
+}
+
 func RemoveInterpolation(value string) string {
 	value = strings.Replace(value, "${", "", -1)
 	value = strings.Replace(value, ".id}", "", -1)
