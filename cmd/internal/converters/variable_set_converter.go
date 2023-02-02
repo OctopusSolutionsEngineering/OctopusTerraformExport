@@ -9,6 +9,7 @@ import (
 	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
@@ -207,6 +208,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 
 				block := gohcl.EncodeAsBlock(regularVariable, "variable")
 				hcl.WriteUnquotedAttribute(block, "type", "string")
+				hcl.WriteUnquotedAttribute(block, "default", strutil.EmptyIfNil(value))
 				file.Body().AppendBlock(block)
 			}
 
