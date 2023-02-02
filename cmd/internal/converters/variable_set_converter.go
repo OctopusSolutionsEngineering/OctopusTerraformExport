@@ -202,7 +202,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 					Nullable:    false,
 					Sensitive:   false,
 					Description: "The value associated with the variable " + v.Name,
-					Default:     v.Value,
+					Default:     value,
 				}
 
 				block := gohcl.EncodeAsBlock(regularVariable, "variable")
