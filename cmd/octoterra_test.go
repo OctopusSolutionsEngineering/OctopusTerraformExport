@@ -22,6 +22,8 @@ import (
 	"time"
 )
 
+const NetworkName = "terraform-export-test"
+
 const ApiKey = "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345"
 
 // DisableTerraformInit can be set to true to disable Terraform downloads.
@@ -58,6 +60,29 @@ func enableContainerLogging(container testcontainers.Container, ctx context.Cont
 	return nil
 }
 
+// getReaperSkipped will return true if running in a podman environment
+func getReaperSkipped() bool {
+	if strings.Contains(os.Getenv("DOCKER_HOST"), "podman") {
+		return true
+	}
+
+	return false
+}
+
+// getHostIp returns the host IP for windows, docker in linux, and postman
+func getHostIp() string {
+	if runtime.GOOS == "windows" {
+		return "host.docker.internal"
+	}
+
+	if strings.Contains(os.Getenv("DOCKER_HOST"), "podman") {
+		return "10.88.0.1"
+	}
+
+	return "172.17.0.1"
+
+}
+
 // setupDatabase creates a MSSQL container
 func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 	req := testcontainers.ContainerRequest{
@@ -71,6 +96,7 @@ func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 			func(exitCode int) bool {
 				return exitCode == 0
 			}),
+		SkipReaper: getReaperSkipped(),
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -119,6 +145,7 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 		},
 		Privileged: false,
 		WaitingFor: wait.ForLog("Listening for HTTP requests on").WithStartupTimeout(30 * time.Minute),
+		SkipReaper: getReaperSkipped(),
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -162,13 +189,7 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 				return err
 			}
 
-			// Different OSs have different ways of connecting to the host
-			sqlHostName := "172.17.0.1"
-			if runtime.GOOS == "windows" {
-				sqlHostName = "host.docker.internal"
-			}
-
-			octopusContainer, err := setupOctopus(ctx, "Server="+sqlHostName+","+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
+			octopusContainer, err := setupOctopus(ctx, "Server="+getHostIp()+","+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
 			if err != nil {
 				return err
 			}
