@@ -90,7 +90,7 @@ func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, terraf
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + channel.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + channel.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_channel." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})

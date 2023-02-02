@@ -117,7 +117,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_aws_account." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -164,7 +164,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_azure_service_principal." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -210,7 +210,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_azure_subscription_account." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -252,7 +252,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_gcp_account." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -294,7 +294,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_token_account." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -337,7 +337,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_username_password_account." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
@@ -390,7 +390,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_ssh_key_account." + resourceName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})

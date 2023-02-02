@@ -76,7 +76,7 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 			Type: hclsyntax.TokenComment,
 			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + tagSet.Name + "\") | .Id')\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + tagSet.Name + "\") | .Id')\n" +
 				"# terraform import octopusdeploy_tag_set." + tagSetName + " ${RESOURCE_ID}\n"),
 			SpacesBefore: 0,
 		}})

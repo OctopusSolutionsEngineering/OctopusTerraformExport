@@ -94,7 +94,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive b
 			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 				Type: hclsyntax.TokenComment,
 				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.name=\"" + resource.Name + "\") | .Id')\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
 					"# terraform import octopusdeploy_project_group." + projectName + " ${RESOURCE_ID}\n"),
 				SpacesBefore: 0,
 			}})
