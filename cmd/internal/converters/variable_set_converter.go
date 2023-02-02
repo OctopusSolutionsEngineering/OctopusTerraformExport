@@ -173,11 +173,11 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 				Name:           resourceName,
 				Type:           "octopusdeploy_variable",
 				OwnerId:        parentLookup,
-				Value:          value,
+				Value:          c.convertValue(v, resourceName),
 				ResourceName:   v.Name,
 				ResourceType:   v.Type,
 				Description:    v.Description,
-				SensitiveValue: c.convertSecretValue(v, parentName),
+				SensitiveValue: c.convertSecretValue(v, resourceName),
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
 				Scope:          c.convertScope(v.Scope, dependencies),
@@ -185,7 +185,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 
 			if v.IsSensitive {
 				secretVariableResource := terraform2.TerraformVariable{
-					Name:        sanitizer.SanitizeName(parentName),
+					Name:        resourceName,
 					Type:        "string",
 					Nullable:    false,
 					Sensitive:   true,
@@ -193,6 +193,19 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 				}
 
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			} else {
+				regularVariable := terraform2.TerraformVariable{
+					Name:        resourceName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   false,
+					Description: "The value associated with the variable " + v.Name,
+					Default:     value,
+				}
+
+				block := gohcl.EncodeAsBlock(regularVariable, "variable")
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
@@ -226,9 +239,18 @@ func (c VariableSetConverter) GetResourceType() string {
 	return "Variables"
 }
 
-func (c VariableSetConverter) convertSecretValue(variable octopus2.Variable, parentName string) *string {
+func (c VariableSetConverter) convertSecretValue(variable octopus2.Variable, resourceName string) *string {
 	if variable.IsSensitive {
-		value := "${var." + sanitizer.SanitizeName(parentName) + "}"
+		value := "${var." + resourceName + "}"
+		return &value
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) convertValue(variable octopus2.Variable, resourceName string) *string {
+	if !variable.IsSensitive {
+		value := "${var." + resourceName + "}"
 		return &value
 	}
 
