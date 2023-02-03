@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"regexp"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ func extractJsonAsMap(properties map[string]string) string {
 	output := "{"
 
 	for key, value := range properties {
-		output += "\n        \"" + key + "\" = " + jsonStringToHcl(fmt.Sprint(value))
+		output += "\n        \"" + key + "\" = " + jsonStringToHcl(value)
 	}
 
 	output += "\n      }"
@@ -103,5 +104,11 @@ func IsInterpolation(value string) bool {
 func RemoveInterpolation(value string) string {
 	value = strings.Replace(value, "${", "", -1)
 	value = strings.Replace(value, "}", "", -1)
+	return value
+}
+
+func RemoveId(value string) string {
+	regex := regexp.MustCompile(`\.id$`)
+	value = regex.ReplaceAllString(value, "")
 	return value
 }

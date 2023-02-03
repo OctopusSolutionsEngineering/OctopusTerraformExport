@@ -137,7 +137,7 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, dependenc
 		for resourceType, terraformDependencies := range tagSetDependencies {
 			for _, terraformDependency := range terraformDependencies {
 				dependency := dependencies.GetResource(resourceType, terraformDependency)
-				dependency = hcl.RemoveInterpolation(dependency)
+				dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
 				dependsOn = append(dependsOn, dependency)
 			}
 		}
