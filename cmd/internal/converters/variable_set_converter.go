@@ -174,7 +174,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 				Name:           resourceName,
 				Type:           "octopusdeploy_variable",
 				OwnerId:        parentLookup,
-				Value:          c.convertValue(v, resourceName),
+				Value:          value,
 				ResourceName:   v.Name,
 				ResourceType:   v.Type,
 				Description:    v.Description,
@@ -196,7 +196,12 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
-			} else {
+			} else if v.Type == "String" {
+				// Use a second terraform variable to allow the octopus variable to be defined at apply time.
+				// Note this only applies to string variables, as other types likely reference resources
+				// that are being created by terraform, and these dynamic values can not be used as default
+				// variable values.
+				terraformResource.Value = c.convertValue(v, resourceName)
 				regularVariable := terraform2.TerraformVariable{
 					Name:        resourceName,
 					Type:        "string",
