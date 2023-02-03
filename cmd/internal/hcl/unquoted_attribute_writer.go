@@ -97,11 +97,11 @@ func encodeString(value string) string {
 }
 
 func IsInterpolation(value string) bool {
-	return strings.HasPrefix(value, "${")
+	return strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}")
 }
 
 func RemoveInterpolation(value string) string {
 	value = strings.Replace(value, "${", "", -1)
-	value = strings.Replace(value, ".id}", "", -1)
+	value = strings.Replace(value, "}", "", -1)
 	return value
 }
