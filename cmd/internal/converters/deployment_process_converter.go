@@ -144,7 +144,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 
 		for i, s := range resource.Steps {
 			for j, a := range s.Actions {
-				hcl.WriteActionProperties(block, i, j, c.removeUnnecessaryActionFields(c.replaceIds(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties)), dependencies)))
+				hcl.WriteActionProperties(block, i, j, c.removeUnnecessaryActionFields(c.replaceIds(c.escapePercents(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties))), dependencies)))
 			}
 		}
 
@@ -244,6 +244,14 @@ func (c DeploymentProcessConverter) escapeDollars(properties map[string]string) 
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
 		sanitisedProperties[k] = strings.ReplaceAll(v, "$", "$$")
+	}
+	return sanitisedProperties
+}
+
+func (c DeploymentProcessConverter) escapePercents(properties map[string]string) map[string]string {
+	sanitisedProperties := map[string]string{}
+	for k, v := range properties {
+		sanitisedProperties[k] = strings.ReplaceAll(v, "%{", "%%{")
 	}
 	return sanitisedProperties
 }
