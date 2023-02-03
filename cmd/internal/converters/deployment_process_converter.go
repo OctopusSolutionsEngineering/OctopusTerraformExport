@@ -240,14 +240,16 @@ func (c DeploymentProcessConverter) replaceIds(properties map[string]string, dep
 	return c.replaceFeedIds(c.replaceAccountIds(c.replaceAccountIds(properties, dependencies), dependencies), dependencies)
 }
 
+// https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
 func (c DeploymentProcessConverter) escapeDollars(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		sanitisedProperties[k] = strings.ReplaceAll(v, "$", "$$")
+		sanitisedProperties[k] = strings.ReplaceAll(v, "${", "$${")
 	}
 	return sanitisedProperties
 }
 
+// https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
 func (c DeploymentProcessConverter) escapePercents(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
