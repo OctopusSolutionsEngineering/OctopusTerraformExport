@@ -103,6 +103,23 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet,
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
+			// Add a data lookup to allow projects to quickly switch to using existing environments
+			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+				Type: hclsyntax.TokenComment,
+				Bytes: []byte("# To use an existing environment, delete the resource above and use the following lookup instead:\n" +
+					"# data.octopusdeploy_library_variable_sets." + resourceName + ".library_variable_sets[0].id\n"),
+				SpacesBefore: 0,
+			}})
+			terraformDataResource := terraform2.TerraformLibraryVariableSetData{
+				Type:        "octopusdeploy_library_variable_sets",
+				Name:        resourceName,
+				Ids:         nil,
+				PartialName: resource.Name,
+				Skip:        0,
+				Take:        1,
+			}
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformDataResource, "data"))
+
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
 			variable := octopus2.VariableSet{}
