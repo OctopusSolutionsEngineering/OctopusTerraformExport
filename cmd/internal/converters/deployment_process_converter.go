@@ -144,7 +144,8 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 
 		for i, s := range resource.Steps {
 			for j, a := range s.Actions {
-				hcl.WriteActionProperties(block, i, j, c.removeUnnecessaryActionFields(c.replaceIds(c.escapePercents(c.escapeDollars(sanitizer2.SanitizeMap(a.Properties))), dependencies)))
+				properties := a.Properties
+				hcl.WriteActionProperties(block, i, j, c.removeUnnecessaryActionFields(c.replaceIds(c.escapePercents(c.escapeDollars(sanitizer2.SanitizeMap(properties))), dependencies)))
 			}
 		}
 
