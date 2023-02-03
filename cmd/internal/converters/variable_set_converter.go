@@ -315,7 +315,6 @@ func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDe
 	accountRegex, _ := regexp.Compile("Accounts-\\d+")
 	for _, account := range accountRegex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Accounts", account))
-		retValue = hcl.RemoveInterpolation(retValue)
 	}
 
 	return &retValue
@@ -347,7 +346,6 @@ func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDeta
 	regex, _ := regexp.Compile("Feeds-\\d+")
 	for _, account := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Feeds", account))
-		retValue = hcl.RemoveInterpolation(retValue)
 	}
 
 	return &retValue
@@ -379,7 +377,6 @@ func (c VariableSetConverter) getCertificates(value *string, dependencies *Resou
 	regex, _ := regexp.Compile("Certificates-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("Certificates", cert))
-		retValue = hcl.RemoveInterpolation(retValue)
 	}
 
 	return &retValue
@@ -411,7 +408,6 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 	regex, _ := regexp.Compile("WorkerPools-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("WorkerPools", cert))
-		retValue = hcl.RemoveInterpolation(retValue)
 	}
 
 	return &retValue
