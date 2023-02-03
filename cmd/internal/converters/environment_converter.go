@@ -99,7 +99,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, recursive 
 		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 			Type: hclsyntax.TokenComment,
 			Bytes: []byte("# To use an existing environment, delete the resource above and use the following lookup instead:\n" +
-				"data.octopusdeploy_environments." + resourceName + ".environments[0].id\n"),
+				"# data.octopusdeploy_environments." + resourceName + ".environments[0].id\n"),
 			SpacesBefore: 0,
 		}})
 		terraformDataResource := terraform.TerraformEnvironmentData{
