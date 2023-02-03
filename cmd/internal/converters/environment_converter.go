@@ -62,6 +62,18 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, recursive 
 	thisResource.Lookup = "${octopusdeploy_environment." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + environment.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_environment." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
 		terraformResource := terraform.TerraformEnvironment{
 			Type:                       "octopusdeploy_environment",
 			Name:                       resourceName,
@@ -81,19 +93,24 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, recursive 
 				IsEnabled: c.getServiceNowChangeControlled(environment),
 			},
 		}
-		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		// Add a data lookup to allow projects to quickly switch to using existing environments
 		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + environment.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_environment." + resourceName + " ${RESOURCE_ID}\n"),
+			Bytes: []byte("# To use an existing environment, delete the resource above and use the following lookup instead:\n" +
+				"data.octopusdeploy_environments." + resourceName + ".environments[0].id\n"),
 			SpacesBefore: 0,
 		}})
-
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		terraformDataResource := terraform.TerraformEnvironmentData{
+			Type:        "octopusdeploy_environments",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: environment.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformDataResource, "data"))
 
 		return string(file.Bytes()), nil
 	}
