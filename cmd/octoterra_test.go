@@ -16,7 +16,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -69,18 +68,24 @@ func getReaperSkipped() bool {
 	return false
 }
 
-// getHostIp returns the host IP for windows, docker in linux, and postman
-func getHostIp() string {
-	if runtime.GOOS == "windows" {
-		return "host.docker.internal"
-	}
-
+// getProvider returns the test containers provider
+func getProvider() testcontainers.ProviderType {
 	if strings.Contains(os.Getenv("DOCKER_HOST"), "podman") {
-		return "10.88.0.1"
+		return testcontainers.ProviderPodman
 	}
 
-	return "172.17.0.1"
+	return testcontainers.ProviderDocker
+}
 
+func setupNetwork(ctx context.Context) (testcontainers.Network, error) {
+	return testcontainers.GenericNetwork(ctx, testcontainers.GenericNetworkRequest{
+		NetworkRequest: testcontainers.NetworkRequest{
+			Name:           "octoterra",
+			CheckDuplicate: true,
+			SkipReaper:     getReaperSkipped(),
+		},
+		ProviderType: getProvider(),
+	})
 }
 
 // setupDatabase creates a MSSQL container
@@ -97,6 +102,9 @@ func setupDatabase(ctx context.Context) (*mysqlContainer, error) {
 				return exitCode == 0
 			}),
 		SkipReaper: getReaperSkipped(),
+		Networks: []string{
+			"octoterra",
+		},
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -146,6 +154,9 @@ func setupOctopus(ctx context.Context, connString string) (*octopusContainer, er
 		Privileged: false,
 		WaitingFor: wait.ForLog("Listening for HTTP requests on").WithStartupTimeout(30 * time.Minute),
 		SkipReaper: getReaperSkipped(),
+		Networks: []string{
+			"octoterra",
+		},
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -184,12 +195,20 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 
 			ctx := context.Background()
 
+			network, err := setupNetwork(ctx)
+			if err != nil {
+				return err
+			}
+
 			sqlServer, err := setupDatabase(ctx)
 			if err != nil {
 				return err
 			}
 
-			octopusContainer, err := setupOctopus(ctx, "Server="+getHostIp()+","+sqlServer.port+";Database=OctopusDeploy;User=sa;Password=Password01!")
+			sqlIp, err := sqlServer.Container.ContainerIP(ctx)
+			t.Log("SQL Server IP: " + sqlIp)
+
+			octopusContainer, err := setupOctopus(ctx, "Server="+sqlIp+",1433;Database=OctopusDeploy;User=sa;Password=Password01!")
 			if err != nil {
 				return err
 			}
@@ -203,7 +222,9 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 				octoTerminateErr := octopusContainer.Terminate(ctx)
 				sqlTerminateErr := sqlServer.Terminate(ctx)
 
-				if octoTerminateErr != nil || sqlTerminateErr != nil {
+				networkErr := network.Remove(ctx)
+
+				if octoTerminateErr != nil || sqlTerminateErr != nil || networkErr != nil {
 					t.Fatalf("failed to terminate container: %v %v", octoTerminateErr, sqlTerminateErr)
 				}
 			}()
