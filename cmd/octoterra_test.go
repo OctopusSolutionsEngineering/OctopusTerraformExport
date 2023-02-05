@@ -206,6 +206,10 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 			}
 
 			sqlIp, err := sqlServer.Container.ContainerIP(ctx)
+			if err != nil {
+				return err
+			}
+
 			t.Log("SQL Server IP: " + sqlIp)
 
 			octopusContainer, err := setupOctopus(ctx, "Server="+sqlIp+",1433;Database=OctopusDeploy;User=sa;Password=Password01!")
