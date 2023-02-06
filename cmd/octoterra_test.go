@@ -21,8 +21,6 @@ import (
 	"time"
 )
 
-const NetworkName = "terraform-export-test"
-
 const ApiKey = "API-ABCDEFGHIJKLMNOPQURTUVWXYZ12345"
 
 // DisableTerraformInit can be set to true to disable Terraform downloads.
@@ -612,7 +610,7 @@ func TestAwsAccountExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatalf("Space must have aan AWS account called \"AWS Account\"")
+			t.Fatalf("Space must have an account called \"AWS Account\"")
 		}
 
 		return nil
@@ -3429,11 +3427,57 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 	})
 }
 
-// TestProjectWithDollarSignsExport verifies that a project can be reimported with the correct git settings
+// TestProjectWithDollarSignsExport verifies that a project can be reimported with terraform string interpolation
 func TestProjectWithDollarSignsExport(t *testing.T) {
 	performTest(t, func(t *testing.T, container *octopusContainer) error {
 		// Arrange
 		newSpaceId, err := arrange(t, container, "../test/terraform/40-escapedollar", []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Act
+		recreatedSpaceId, err := act(t, container, newSpaceId, []string{})
+
+		if err != nil {
+			return err
+		}
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Project]{}
+		err = octopusClient.GetAllResources("Projects", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		resourceName := "Test"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == resourceName {
+				found = true
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+		}
+
+		return nil
+	})
+}
+
+// TestProjectTerraformInlineScriptExport verifies that a project can be reimported with a terraform inline template step
+func TestProjectTerraformInlineScriptExport(t *testing.T) {
+	// This test will pass when https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/478 is addressed
+	return
+
+	performTest(t, func(t *testing.T, container *octopusContainer) error {
+		// Arrange
+		newSpaceId, err := arrange(t, container, "../test/terraform/41-terraforminlinescript", []string{})
 
 		if err != nil {
 			return err
