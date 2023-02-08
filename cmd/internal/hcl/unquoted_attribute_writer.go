@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/hcl2/hcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"regexp"
 	"strings"
@@ -19,10 +20,32 @@ func WriteUnquotedAttribute(block *hclwrite.Block, attrName string, attrValue st
 
 // WriteActionProperties is used to pretty print the properties of an action, writing a multiline map for the properties,
 // and extracting JSON blobs as maps for easy reading.
-func WriteActionProperties(block *hclwrite.Block, step int, action int, properties map[string]string) {
-	block.Body().Blocks()[step].Body().Blocks()[action].Body().SetAttributeTraversal("properties", hcl.Traversal{
-		hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
-	})
+func WriteActionProperties(block *hclwrite.Block, stepName string, actionName string, properties map[string]string) {
+	for _, stepBlock := range block.Body().Blocks() {
+		stepNameTokens := hclwrite.Tokens{}
+		blockStepName := getAttributeValue(stepBlock.Body().GetAttribute("name").BuildTokens(stepNameTokens))
+		if blockStepName == stepName {
+			for _, actionBlock := range stepBlock.Body().Blocks() {
+				actionNameTokens := hclwrite.Tokens{}
+				blockActionName := getAttributeValue(actionBlock.Body().GetAttribute("name").BuildTokens(actionNameTokens))
+				if blockActionName == actionName {
+					actionBlock.Body().SetAttributeTraversal("properties", hcl.Traversal{
+						hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
+					})
+				}
+			}
+		}
+	}
+}
+
+func getAttributeValue(tokens hclwrite.Tokens) string {
+	for _, token := range tokens {
+		if token.Type == hclsyntax.TokenQuotedLit {
+			return string(token.Bytes)
+		}
+	}
+
+	return ""
 }
 
 func extractJsonAsMap(properties map[string]string) string {

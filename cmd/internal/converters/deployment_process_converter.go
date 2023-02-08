@@ -142,15 +142,15 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		for i, s := range resource.Steps {
-			for j, a := range s.Actions {
+		for _, s := range resource.Steps {
+			for _, a := range s.Actions {
 				properties := a.Properties
 				sanitizedProperties := sanitizer2.SanitizeMap(properties)
 				sanitizedProperties = c.escapeDollars(sanitizedProperties)
 				sanitizedProperties = c.escapePercents(sanitizedProperties)
 				sanitizedProperties = c.replaceIds(sanitizedProperties, dependencies)
 				sanitizedProperties = c.removeUnnecessaryActionFields(sanitizedProperties)
-				hcl.WriteActionProperties(block, i, j, sanitizedProperties)
+				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 			}
 		}
 
