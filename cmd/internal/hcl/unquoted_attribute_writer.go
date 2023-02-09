@@ -33,7 +33,9 @@ func WriteActionProperties(block *hclwrite.Block, stepName string, actionName st
 						hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
 					})
 				}
+				break
 			}
+			break
 		}
 	}
 }
