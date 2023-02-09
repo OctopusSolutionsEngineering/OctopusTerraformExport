@@ -126,14 +126,26 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 				}
 
 				for k, p := range a.Packages {
-					terraformResource.Step[i].Action[j].Package[k] = terraform.TerraformPackage{
-						Name:                    p.Name,
-						PackageID:               p.PackageId,
-						AcquisitionLocation:     p.AcquisitionLocation,
-						ExtractDuringDeployment: p.ExtractDuringDeployment,
-						FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
-						Id:                      p.Id,
-						Properties:              c.replaceIds(p.Properties, dependencies),
+					if strutil.EmptyIfNil(p.Name) != "" {
+						terraformResource.Step[i].Action[j].Package[k] = terraform.TerraformPackage{
+							Name:                    p.Name,
+							PackageID:               p.PackageId,
+							AcquisitionLocation:     p.AcquisitionLocation,
+							ExtractDuringDeployment: p.ExtractDuringDeployment,
+							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
+							Id:                      p.Id,
+							Properties:              c.replaceIds(p.Properties, dependencies),
+						}
+					} else {
+						terraformResource.Step[i].Action[j].PrimaryPackage = &terraform.TerraformPackage{
+							Name:                    nil,
+							PackageID:               p.PackageId,
+							AcquisitionLocation:     p.AcquisitionLocation,
+							ExtractDuringDeployment: p.ExtractDuringDeployment,
+							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
+							Id:                      p.Id,
+							Properties:              c.replaceIds(p.Properties, dependencies),
+						}
 					}
 				}
 			}

@@ -35,6 +35,7 @@ type TerraformAction struct {
 	Channels                      []string            `hcl:"channels"`
 	TenantTags                    []string            `hcl:"tenant_tags"`
 	Package                       []TerraformPackage  `hcl:"package,block"`
+	PrimaryPackage                *TerraformPackage   `hcl:"primary_package,block"`
 	Features                      []string            `hcl:"features"`
 }
 
