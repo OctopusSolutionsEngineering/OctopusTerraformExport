@@ -118,30 +118,32 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 					ExcludedEnvironments:          a.ExcludedEnvironments,
 					Channels:                      a.Channels,
 					TenantTags:                    a.TenantTags,
-					Package:                       make([]terraform.TerraformPackage, len(a.Packages)),
+					Package:                       []terraform.TerraformPackage{},
 					Condition:                     a.Condition,
 					RunOnServer:                   c.getRunOnServer(a.Properties),
 					Properties:                    nil,
 					Features:                      c.getFeatures(a.Properties),
 				}
 
-				for k, p := range a.Packages {
-					if strutil.EmptyIfNil(p.Name) != "" {
-						terraformResource.Step[i].Action[j].Package[k] = terraform.TerraformPackage{
-							Name:                    p.Name,
-							PackageID:               p.PackageId,
-							AcquisitionLocation:     p.AcquisitionLocation,
-							ExtractDuringDeployment: p.ExtractDuringDeployment,
-							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
-							Id:                      p.Id,
-							Properties:              c.replaceIds(p.Properties, dependencies),
-						}
+				for _, p := range a.Packages {
+					if strutil.NilIfEmptyPointer(p.Name) != nil {
+						terraformResource.Step[i].Action[j].Package = append(
+							terraformResource.Step[i].Action[j].Package,
+							terraform.TerraformPackage{
+								Name:                    p.Name,
+								PackageID:               p.PackageId,
+								AcquisitionLocation:     p.AcquisitionLocation,
+								ExtractDuringDeployment: &p.ExtractDuringDeployment,
+								FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
+								Id:                      p.Id,
+								Properties:              c.replaceIds(p.Properties, dependencies),
+							})
 					} else {
 						terraformResource.Step[i].Action[j].PrimaryPackage = &terraform.TerraformPackage{
 							Name:                    nil,
 							PackageID:               p.PackageId,
 							AcquisitionLocation:     p.AcquisitionLocation,
-							ExtractDuringDeployment: p.ExtractDuringDeployment,
+							ExtractDuringDeployment: nil,
 							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
 							Id:                      p.Id,
 							Properties:              c.replaceIds(p.Properties, dependencies),

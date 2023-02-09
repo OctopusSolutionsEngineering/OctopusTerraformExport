@@ -48,7 +48,7 @@ type TerraformPackage struct {
 	Name                    *string           `hcl:"name"`
 	PackageID               *string           `hcl:"package_id"`
 	AcquisitionLocation     *string           `hcl:"acquisition_location"`
-	ExtractDuringDeployment bool              `hcl:"extract_during_deployment"`
+	ExtractDuringDeployment *bool             `hcl:"extract_during_deployment"`
 	FeedId                  *string           `hcl:"feed_id"`
 	Id                      *string           `hcl:"id"`
 	Properties              map[string]string `hcl:"properties"`
