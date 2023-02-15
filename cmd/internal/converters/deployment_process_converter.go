@@ -9,6 +9,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	sanitizer2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"regexp"
 	"strings"
@@ -280,9 +281,14 @@ func (c DeploymentProcessConverter) escapePercents(properties map[string]string)
 
 // removeUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
 func (c DeploymentProcessConverter) removeUnnecessaryActionFields(properties map[string]string) map[string]string {
+	unnecessaryFields := []string{"Octopus.Action.Package.PackageId",
+		"Octopus.Action.RunOnServer",
+		"Octopus.Action.EnabledFeatures",
+		"Octopus.Action.Aws.CloudFormationTemplateParametersRaw",
+		"Octopus.Action.Package.FeedId"}
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if k != "Octopus.Action.RunOnServer" && k != "Octopus.Action.EnabledFeatures" {
+		if !sliceutil.Contains(unnecessaryFields, k) {
 			sanitisedProperties[k] = v
 		}
 	}
