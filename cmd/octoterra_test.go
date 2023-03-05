@@ -249,7 +249,7 @@ func performTest(t *testing.T, testFunc func(t *testing.T, container *octopusCon
 			}
 
 			if !success {
-				t.Fatalf("Failed to access the Octopus API")
+				return errors.New("failed to access the Octopus API")
 			}
 
 			return testFunc(t, octopusContainer)
