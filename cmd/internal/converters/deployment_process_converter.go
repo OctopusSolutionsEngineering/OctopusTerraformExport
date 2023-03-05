@@ -186,6 +186,10 @@ func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProce
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 
+			if strutil.NilIfEmptyPointer(action.Container.FeedId) != nil {
+				c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies)
+			}
+
 			for _, pack := range action.Packages {
 				if pack.FeedId != nil {
 					err := c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
