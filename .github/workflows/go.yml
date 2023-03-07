@@ -24,6 +24,8 @@ jobs:
           fetch-depth: '0'
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
