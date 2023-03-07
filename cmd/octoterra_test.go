@@ -2562,9 +2562,6 @@ func TestProjectWithDollarSignsExport(t *testing.T) {
 
 // TestProjectTerraformInlineScriptExport verifies that a project can be reimported with a terraform inline template step
 func TestProjectTerraformInlineScriptExport(t *testing.T) {
-	// This test will pass when https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/478 is addressed
-	return
-
 	exportSpaceImportAndTest(t, "../test/terraform/41-terraforminlinescript/space_creation", "../test/terraform/41-terraforminlinescript/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
