@@ -19,7 +19,7 @@ func main() {
 	var err error = nil
 
 	if projectName != "" {
-		projectId, err := convertProjectNameToId(url, space, apiKey, projectName)
+		projectId, err := ConvertProjectNameToId(url, space, apiKey, projectName)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -39,7 +39,7 @@ func main() {
 	}
 }
 
-func convertProjectNameToId(url string, space string, apiKey string, name string) (string, error) {
+func ConvertProjectNameToId(url string, space string, apiKey string, name string) (string, error) {
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -79,7 +79,6 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		Client:               client,
 		EnvironmentConverter: machinePolicyConverter,
 		TenantConverter:      tenantConverter}
-
 
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
 	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}

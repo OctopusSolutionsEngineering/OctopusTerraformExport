@@ -29,9 +29,29 @@ func createClient(container *test.OctopusContainer, space string) *client.Octopu
 	}
 }
 
-// exportImportAndTest imports the sample space, exports the space as Terraform, reimports it as a new space, and executes a callback
+func exportSpaceImportAndTest(t *testing.T, initialiseModuleDir string, terraformModuleDir string, initialiseVars []string, populateVars []string, testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+	exportImportAndTest(t, initialiseModuleDir, terraformModuleDir, initialiseVars, populateVars, func(url string, space string, apiKey string, dest string) error {
+		return ConvertSpaceToTerraform(url, space, test.ApiKey, dest, true)
+	}, testFunc)
+}
+
+func exportProjectImportAndTest(t *testing.T, projectName string, initialiseModuleDir string, terraformModuleDir string, initialiseVars []string, populateVars []string, testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+	exportImportAndTest(t, initialiseModuleDir, terraformModuleDir, initialiseVars, populateVars, func(url string, space string, apiKey string, dest string) error {
+		projectId, err := ConvertProjectNameToId(url, space, test.ApiKey, projectName)
+
+		if err != nil {
+			return err
+		}
+
+		return ConvertProjectToTerraform(url, space, test.ApiKey, dest, true, projectId)
+	}, testFunc)
+}
+
+// exportSpaceImportAndTest imports the sample space, exports the space as Terraform, reimports it as a new space, and executes a callback
 // to verify the results.
-func exportImportAndTest(t *testing.T, initialiseModuleDir string, terraformModuleDir string, initialiseVars []string, populateVars []string, testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+func exportImportAndTest(t *testing.T, initialiseModuleDir string, terraformModuleDir string, initialiseVars []string, populateVars []string,
+	exportFunc func(url string, space string, apiKey string, dest string) error,
+	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 	testFramework := test.OctopusContainerTest{}
 	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) error {
 		// Act
@@ -42,7 +62,7 @@ func exportImportAndTest(t *testing.T, initialiseModuleDir string, terraformModu
 		tempDir := getTempDir()
 		defer os.Remove(tempDir)
 
-		err = ConvertSpaceToTerraform(container.URI, newSpaceId, test.ApiKey, tempDir, true)
+		err = exportFunc(container.URI, newSpaceId, test.ApiKey, tempDir)
 
 		if err != nil {
 			return err
@@ -50,13 +70,13 @@ func exportImportAndTest(t *testing.T, initialiseModuleDir string, terraformModu
 
 		t.Log("REIMPORTING TEST SPACE")
 
-		err = testFramework.InitialiseOctopus(t, container, filepath.Join(tempDir, "space_creation"), filepath.Join(tempDir, "space_population"), "Test3", []string{}, populateVars)
+		err = testFramework.InitialiseOctopus(t, container, "../test/terraform/z-createspace", filepath.Join(tempDir, "space_population"), "Test3", []string{}, populateVars)
 
 		if err != nil {
 			return err
 		}
 
-		recreatedSpaceId, err := testFramework.GetOutputVariable(t, filepath.Join(tempDir, "space_creation"), "octopus_space_id")
+		recreatedSpaceId, err := testFramework.GetOutputVariable(t, "../test/terraform/z-createspace", "octopus_space_id")
 
 		if err != nil {
 			return err
@@ -70,7 +90,7 @@ func exportImportAndTest(t *testing.T, initialiseModuleDir string, terraformModu
 
 // TestSpaceExport verifies that a space can be reimported with the correct settings
 func TestSpaceExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/1-singlespace/space_creation", "../test/terraform/1-singlespace/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/1-singlespace/space_creation", "../test/terraform/1-singlespace/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
@@ -107,7 +127,7 @@ func TestSpaceExport(t *testing.T) {
 
 // TestProjectGroupExport verifies that a project group can be reimported with the correct settings
 func TestProjectGroupExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/2-projectgroup/space_creation", "../test/terraform/2-projectgroup/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/2-projectgroup/space_creation", "../test/terraform/2-projectgroup/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
@@ -138,7 +158,7 @@ func TestProjectGroupExport(t *testing.T) {
 
 // TestAwsAccountExport verifies that an AWS account can be reimported with the correct settings
 func TestAwsAccountExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/3-awsaccount/space_creation", "../test/terraform/3-awsaccount/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/3-awsaccount/space_creation", "../test/terraform/3-awsaccount/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
@@ -169,7 +189,7 @@ func TestAwsAccountExport(t *testing.T) {
 
 // TestAzureAccountExport verifies that an Azure account can be reimported with the correct settings
 func TestAzureAccountExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/4-azureaccount/space_creation", "../test/terraform/4-azureaccount/space_population", []string{}, []string{"-var=account_azure=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/4-azureaccount/space_creation", "../test/terraform/4-azureaccount/space_population", []string{}, []string{"-var=account_azure=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
@@ -216,7 +236,7 @@ func TestAzureAccountExport(t *testing.T) {
 
 // TestUsernamePasswordAccountExport verifies that a username/password account can be reimported with the correct settings
 func TestUsernamePasswordAccountExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/5-userpassaccount/space_creation", "../test/terraform/5-userpassaccount/space_population", []string{}, []string{"-var=account_gke=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/5-userpassaccount/space_creation", "../test/terraform/5-userpassaccount/space_population", []string{}, []string{"-var=account_gke=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
@@ -263,7 +283,7 @@ func TestUsernamePasswordAccountExport(t *testing.T) {
 
 // TestGcpAccountExport verifies that a GCP account can be reimported with the correct settings
 func TestGcpAccountExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/6-gcpaccount/space_creation", "../test/terraform/6-gcpaccount/space_population", []string{}, []string{"-var=account_google=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/6-gcpaccount/space_creation", "../test/terraform/6-gcpaccount/space_population", []string{}, []string{"-var=account_google=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
 
@@ -307,7 +327,7 @@ func TestGcpAccountExport(t *testing.T) {
 // TestSshAccountExport verifies that a SSH account can be reimported with the correct settings
 func TestSshAccountExport(t *testing.T) {
 	// We set the passphrase because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
-	exportImportAndTest(t, "../test/terraform/7-sshaccount/space_creation", "../test/terraform/7-sshaccount/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/7-sshaccount/space_creation", "../test/terraform/7-sshaccount/space_population", []string{}, []string{
 		"-var=account_ssh_cert=whatever",
 		"-var=account_ssh=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
@@ -363,7 +383,7 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 	// I could not figure out a combination of properties that made this resource work
 	return
 
-	exportImportAndTest(t, "../test/terraform/8-azuresubscriptionaccount/space_creation", "../test/terraform/8-azuresubscriptionaccount/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/8-azuresubscriptionaccount/space_creation", "../test/terraform/8-azuresubscriptionaccount/space_population", []string{}, []string{
 		"-var=account_subscription_cert=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -410,7 +430,7 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 
 // TestTokenAccountExport verifies that a token account can be reimported with the correct settings
 func TestTokenAccountExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/9-tokenaccount/space_creation", "../test/terraform/9-tokenaccount/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/9-tokenaccount/space_creation", "../test/terraform/9-tokenaccount/space_population", []string{}, []string{
 		"-var=account_token=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -461,7 +481,7 @@ func TestTokenAccountExport(t *testing.T) {
 
 // TestHelmFeedExport verifies that a helm feed can be reimported with the correct settings
 func TestHelmFeedExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/10-helmfeed/space_creation", "../test/terraform/10-helmfeed/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/10-helmfeed/space_creation", "../test/terraform/10-helmfeed/space_population", []string{}, []string{
 		"-var=feed_helm_password=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -521,7 +541,7 @@ func TestHelmFeedExport(t *testing.T) {
 
 // TestDockerFeedExport verifies that a docker feed can be reimported with the correct settings
 func TestDockerFeedExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/11-dockerfeed/space_creation", "../test/terraform/11-dockerfeed/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/11-dockerfeed/space_creation", "../test/terraform/11-dockerfeed/space_population", []string{}, []string{
 		"-var=feed_docker_password=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -594,7 +614,7 @@ func TestEcrFeedExport(t *testing.T) {
 		t.Fatal("the ECR_SECRET_KEY environment variable must be set a valid AWS secret key")
 	}
 
-	exportImportAndTest(t, "../test/terraform/12-ecrfeed/space_creation", "../test/terraform/12-ecrfeed/space_population", []string{
+	exportSpaceImportAndTest(t, "../test/terraform/12-ecrfeed/space_creation", "../test/terraform/12-ecrfeed/space_population", []string{
 		"-var=feed_ecr_access_key=" + os.Getenv("ECR_ACCESS_KEY"),
 		"-var=feed_ecr_secret_key=" + os.Getenv("ECR_SECRET_KEY"),
 	}, []string{
@@ -657,7 +677,7 @@ func TestEcrFeedExport(t *testing.T) {
 
 // TestMavenFeedExport verifies that a maven feed can be reimported with the correct settings
 func TestMavenFeedExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/13-mavenfeed/space_creation", "../test/terraform/13-mavenfeed/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/13-mavenfeed/space_creation", "../test/terraform/13-mavenfeed/space_population", []string{}, []string{
 		"-var=feed_maven_password=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -725,7 +745,7 @@ func TestMavenFeedExport(t *testing.T) {
 
 // TestNugetFeedExport verifies that a nuget feed can be reimported with the correct settings
 func TestNugetFeedExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/14-nugetfeed/space_creation", "../test/terraform/14-nugetfeed/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/14-nugetfeed/space_creation", "../test/terraform/14-nugetfeed/space_population", []string{}, []string{
 		"-var=feed_nuget_password=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -797,7 +817,7 @@ func TestNugetFeedExport(t *testing.T) {
 
 // TestWorkerPoolExport verifies that a static worker pool can be reimported with the correct settings
 func TestWorkerPoolExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/15-workerpool/space_creation", "../test/terraform/15-workerpool/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/15-workerpool/space_creation", "../test/terraform/15-workerpool/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -843,7 +863,7 @@ func TestWorkerPoolExport(t *testing.T) {
 
 // TestEnvironmentExport verifies that an environment can be reimported with the correct settings
 func TestEnvironmentExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/16-environment/space_creation", "../test/terraform/16-environment/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/16-environment/space_creation", "../test/terraform/16-environment/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -885,7 +905,7 @@ func TestEnvironmentExport(t *testing.T) {
 
 // TestLifecycleExport verifies that a lifecycle can be reimported with the correct settings
 func TestLifecycleExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/17-lifecycle/space_creation", "../test/terraform/17-lifecycle/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/17-lifecycle/space_creation", "../test/terraform/17-lifecycle/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -943,7 +963,7 @@ func TestLifecycleExport(t *testing.T) {
 
 // TestVariableSetExport verifies that a variable set can be reimported with the correct settings
 func TestVariableSetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/18-variableset/space_creation", "../test/terraform/18-variableset/space-population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/18-variableset/space_creation", "../test/terraform/18-variableset/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1008,7 +1028,7 @@ func TestVariableSetExport(t *testing.T) {
 
 // TestProjectExport verifies that a project can be reimported with the correct settings
 func TestProjectExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/19-project/space_creation", "../test/terraform/19-project/space-population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/19-project/space_creation", "../test/terraform/19-project/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1086,7 +1106,7 @@ func TestProjectExport(t *testing.T) {
 
 // TestProjectChannelExport verifies that a project channel can be reimported with the correct settings
 func TestProjectChannelExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/20-channel/space_creation", "../test/terraform/20-channel/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/20-channel/space_creation", "../test/terraform/20-channel/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1156,7 +1176,7 @@ func TestProjectChannelExport(t *testing.T) {
 
 // TestTagSetExport verifies that a tag set can be reimported with the correct settings
 func TestTagSetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/21-tagset/space_creation", "../test/terraform/21-tagset/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/21-tagset/space_creation", "../test/terraform/21-tagset/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1217,7 +1237,7 @@ func TestTagSetExport(t *testing.T) {
 
 // TestGitCredentialsExport verifies that a git credential can be reimported with the correct settings
 func TestGitCredentialsExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/22-gitcredentialtest/space_creation", "../test/terraform/22-gitcredentialtest/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/22-gitcredentialtest/space_creation", "../test/terraform/22-gitcredentialtest/space_population", []string{}, []string{
 		"-var=gitcredential_test=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -1261,7 +1281,7 @@ func TestGitCredentialsExport(t *testing.T) {
 
 // TestScriptModuleExport verifies that a script module set can be reimported with the correct settings
 func TestScriptModuleExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/23-scriptmodule/space_creation", "../test/terraform/23-scriptmodule/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/23-scriptmodule/space_creation", "../test/terraform/23-scriptmodule/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1351,7 +1371,7 @@ func TestScriptModuleExport(t *testing.T) {
 
 // TestTenantsExport verifies that a git credential can be reimported with the correct settings
 func TestTenantsExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/24-tenants/space_creation", "../test/terraform/24-tenants/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/24-tenants/space_creation", "../test/terraform/24-tenants/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1399,7 +1419,7 @@ func TestTenantsExport(t *testing.T) {
 
 // TestCertificateExport verifies that a certificate can be reimported with the correct settings
 func TestCertificateExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/25-certificates/space_creation", "../test/terraform/25-certificates/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/25-certificates/space_creation", "../test/terraform/25-certificates/space_population", []string{}, []string{
 		"-var=certificate_test_data=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",
 		"-var=certificate_test_password=Password01!",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
@@ -1456,7 +1476,7 @@ func TestCertificateExport(t *testing.T) {
 
 // TestTenantVariablesExport verifies that a tenant variables can be reimported with the correct settings
 func TestTenantVariablesExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/26-tenant_variables/space_creation", "../test/terraform/26-tenant_variables/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/26-tenant_variables/space_creation", "../test/terraform/26-tenant_variables/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1496,7 +1516,7 @@ func TestTenantVariablesExport(t *testing.T) {
 
 // TestMachinePolicyExport verifies that a machine policies can be reimported with the correct settings
 func TestMachinePolicyExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/27-machinepolicy/space_creation", "../test/terraform/27-machinepolicy/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/27-machinepolicy/space_creation", "../test/terraform/27-machinepolicy/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1602,7 +1622,7 @@ func TestMachinePolicyExport(t *testing.T) {
 
 // TestProjectTriggerExport verifies that a project trigger can be reimported with the correct settings
 func TestProjectTriggerExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/28-projecttrigger/space_creation", "../test/terraform/28-projecttrigger/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/28-projecttrigger/space_creation", "../test/terraform/28-projecttrigger/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1656,7 +1676,7 @@ func TestProjectTriggerExport(t *testing.T) {
 
 // TestK8sTargetExport verifies that a k8s machine can be reimported with the correct settings
 func TestK8sTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/29-k8starget/space_creation", "../test/terraform/29-k8starget/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/29-k8starget/space_creation", "../test/terraform/29-k8starget/space_population", []string{}, []string{
 		"-var=account_aws_account=whatever",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -1694,7 +1714,7 @@ func TestK8sTargetExport(t *testing.T) {
 // TestSshTargetExport verifies that a ssh machine can be reimported with the correct settings
 func TestSshTargetExport(t *testing.T) {
 	// See https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/blob/main/octopusdeploy/schema_ssh_key_account.go#L16
-	exportImportAndTest(t, "../test/terraform/30-sshtarget/space_creation", "../test/terraform/30-sshtarget/space_population", []string{
+	exportSpaceImportAndTest(t, "../test/terraform/30-sshtarget/space_creation", "../test/terraform/30-sshtarget/space_population", []string{
 		"-var=account_ec2_sydney=LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlKbkRCT0Jna3Foa2lHOXcwQkJRMHdRVEFwQmdrcWhraUc5dzBCQlF3d0hBUUlwNEUxV1ZrejJEd0NBZ2dBCk1Bd0dDQ3FHU0liM0RRSUpCUUF3RkFZSUtvWklodmNOQXdjRUNIemFuVE1QbHA4ZkJJSUpTSncrdW5BL2ZaVFUKRGdrdWk2QnhOY0REUFg3UHZJZmNXU1dTc3V3YWRhYXdkVEdjY1JVd3pGNTNmRWJTUXJBYzJuWFkwUWVVcU1wcAo4QmdXUUthWlB3MEdqck5OQVJaTy9QYklxaU5ERFMybVRSekZidzREcFY5aDdlblZjL1ZPNlhJdzlxYVYzendlCnhEejdZSkJ2ckhmWHNmTmx1blErYTZGdlRUVkVyWkE1Ukp1dEZUVnhUWVR1Z3lvWWNXZzAzQWlsMDh3eDhyTHkKUkgvTjNjRlEzaEtLcVZuSHQvdnNZUUhTMnJJYkt0RTluelFPWDRxRDdVYXM3Z0c0L2ZkcmZQZjZFWTR1aGpBcApUeGZRTDUzcTBQZG85T09MZlRReFRxakVNaFpidjV1aEN5d0N2VHdWTmVLZ2MzN1pqdDNPSjI3NTB3U2t1TFZvCnllR0VaQmtML1VONjJjTUJuYlFsSTEzR2FXejBHZ0NJNGkwS3UvRmE4aHJZQTQwcHVFdkEwZFBYcVFGMDhYbFYKM1RJUEhGRWdBWlJpTmpJWmFyQW00THdnL1F4Z203OUR1SVM3VHh6RCtpN1pNSmsydjI1ck14Ly9MMXNNUFBtOQpWaXBwVnpLZmpqRmpwTDVjcVJucC9UdUZSVWpHaDZWMFBXVVk1eTVzYjJBWHpuSGZVd1lqeFNoUjBKWXpXejAwCjNHbklwNnlJa1UvL3dFVGJLcVliMjd0RjdETm1WMUxXQzl0ell1dm4yK2EwQkpnU0Jlc3c4WFJ1WWorQS92bVcKWk1YbkF2anZXR3RBUzA4d0ZOV3F3QUtMbzJYUHBXWGVMa3BZUHo1ZnY2QnJaNVNwYTg4UFhsa1VmOVF0VHRobwprZFlGOWVMdk5hTXpSSWJhbmRGWjdLcHUvN2I3L0tDWE9rMUhMOUxvdEpwY2tJdTAxWS81TnQwOHp5cEVQQ1RzClVGWG5DODNqK2tWMktndG5XcXlEL2k3Z1dwaHJSK0IrNE9tM3VZU1RuY042a2d6ZkV3WldpUVA3ZkpiNlYwTHoKc29yU09sK2g2WDRsMC9oRVdScktVQTBrOXpPZU9TQXhlbmpVUXFReWdUd0RqQTJWbTdSZXI2ZElDMVBwNmVETgpBVEJ0ME1NZjJJTytxbTJtK0VLd1FVSXY4ZXdpdEpab016MFBaOHB6WEM0ZFMyRTErZzZmbnE2UGJ5WWRISDJnCmVraXk4Y2duVVJmdHJFaVoyMUxpMWdpdTJaeVM5QUc0Z1ZuT0E1Y05oSzZtRDJUaGl5UUl2M09yUDA0aDFTNlEKQUdGeGJONEhZK0tCYnVITTYwRG1PQXR5c3o4QkJheHFwWjlXQkVhV01ubFB6eEI2SnFqTGJrZ1BkQ2wycytUWAphcWx0UDd6QkpaenVTeVNQc2tQR1NBREUvaEF4eDJFM1RQeWNhQlhQRVFUM2VkZmNsM09nYXRmeHBSYXJLV09PCnFHM2lteW42ZzJiNjhWTlBDSnBTYTNKZ1Axb0NNVlBpa2RCSEdSVUV3N2dXTlJVOFpXRVJuS292M2c0MnQ4dkEKU2Z0a3VMdkhoUnlPQW91SUVsNjJIems0WC9CeVVOQ2J3MW50RzFQeHpSaERaV2dPaVhPNi94WFByRlpKa3BtcQpZUUE5dW83OVdKZy9zSWxucFJCdFlUbUh4eU9mNk12R2svdXlkZExkcmZ6MHB6QUVmWm11YTVocWh5M2Y4YlNJCmpxMlJwUHE3eHJ1Y2djbFAwTWFjdHkrbm9wa0N4M0lNRUE4NE9MQ3dxZjVtemtwY0U1M3hGaU1hcXZTK0dHZmkKZlZnUGpXTXRzMFhjdEtCV2tUbVFFN3MxSE5EV0g1dlpJaDY2WTZncXR0cjU2VGdtcHRLWHBVdUJ1MEdERFBQbwp1aGI4TnVRRjZwNHNoM1dDbXlzTU9uSW5jaXRxZWE4NTFEMmloK2lIY3VqcnJidkVYZGtjMnlxUHBtK3Q3SXBvCm1zWkxVemdXRlZpNWY3KzZiZU56dGJ3T2tmYmdlQVAyaklHTzdtR1pKWWM0L1d1eXBqeVRKNlBQVC9IMUc3K3QKUTh5R3FDV3BzNFdQM2srR3hrbW90cnFROFcxa0J1RDJxTEdmSTdMMGZUVE9lWk0vQUZ1VDJVSkcxKzQ2czJVVwp2RlF2VUJmZ0dTWlh3c1VUeGJRTlZNaTJib1BCRkNxbUY2VmJTcmw2YVgrSm1NNVhySUlqUUhGUFZWVGxzeUtpClVDUC9PQTJOWlREdW9IcC9EM0s1Qjh5MlIyUTlqZlJ0RkcwL0dnMktCbCtObzdTbXlPcWlsUlNkZ1VJb0p5QkcKRGovZXJ4ZkZNMlc3WTVsNGZ2ZlNpdU1OZmlUTVdkY3cxSStnVkpGMC9mTHRpYkNoUlg0OTlIRWlXUHZkTGFKMwppcDJEYU9ReS9QZG5zK3hvaWlMNWtHV25BVUVwanNjWno0YU5DZFowOXRUb1FhK2RZd3g1R1ovNUtmbnVpTURnClBrWjNXalFpOVlZRWFXbVIvQ2JmMjAyRXdoNjdIZzVqWE5kb0RNendXT0V4RFNkVFFYZVdzUUI0LzNzcjE2S2MKeitGN2xhOXhHVEVhTDllQitwcjY5L2JjekJLMGVkNXUxYUgxcXR3cjcrMmliNmZDdlMyblRGQTM1ZG50YXZlUwp4VUJVZ0NzRzVhTTl4b2pIQ0o4RzRFMm9iRUEwUDg2SFlqZEJJSXF5U0txZWtQYmFybW4xR1JrdUVlbU5hTVdyCkM2bWZqUXR5V2ZMWnlSbUlhL1dkSVgzYXhqZHhYa3kydm4yNVV6MXZRNklrNnRJcktPYUJnRUY1cmYwY014dTUKN1BYeTk0dnc1QjE0Vlcra2JqQnkyY3hIajJhWnJEaE53UnVQNlpIckg5MHZuN2NmYjYwU0twRWxxdmZwdlN0VQpvQnVXQlFEUUE3bHpZajhhT3BHend3LzlYTjI5MGJrUnd4elVZRTBxOVl4bS9VSHJTNUlyRWtKSml2SUlEb3hICjF4VTVLd2ErbERvWDJNcERrZlBQVE9XSjVqZG8wbXNsN0dBTmc1WGhERnBpb2hFMEdSS2lGVytYcjBsYkJKU2oKUkxibytrbzhncXU2WHB0OWU4U0Y5OEJ4bFpEcFBVMG5PcGRrTmxwTVpKYVlpaUUzRjRFRG9DcE56bmxpY2JrcApjZ2FrcGVrbS9YS21RSlJxWElXci8wM29SdUVFTXBxZzlRbjdWRG8zR0FiUTlnNUR5U1Bid0xvT25xQ0V3WGFJCkF6alFzWU4rc3VRd2FqZHFUcEthZ1FCbWRaMmdNZDBTMTV1Ukt6c2wxOHgzK1JabmRiNWoxNjNuV0NkMlQ5VDgKald3NURISDgvVUFkSGZoOHh0RTJ6bWRHbEg5T3I5U2hIMzViMWgxVm8rU2pNMzRPeWpwVjB3TmNVL1psOTBUdAp1WnJwYnBwTXZCZUVmRzZTczVXVGhySm9LaGl0RkNwWlVqaDZvdnk3Mzd6ditKaUc4aDRBNG1GTmRPSUtBd0I0Cmp2Nms3V3poUVlEa2Q0ZXRoajNndVJCTGZQNThNVEJKaWhZemVINkUzclhjSGE5b0xnREgzczd4bU8yVEtUY24Kd3VIM3AvdC9WWFN3UGJ0QXBXUXdTRFNKSnA5WkF4S0Q1eVdmd3lTU2ZQVGtwM2c1b2NmKzBhSk1Kc2FkU3lwNQpNR1Vic1oxd1hTN2RXMDhOYXZ2WmpmbElNUm8wUFZDbkRVcFp1bjJuekhTRGJDSjB1M0ZYd1lFQzFFejlJUnN0ClJFbDdpdTZQRlVMSldSU0V0SzBKY1lLS0ltNXhQWHIvbTdPc2duMUNJL0F0cTkrWEFjODk1MGVxeTRwTFVQYkYKZkhFOFhVYWFzUU82MDJTeGpnOTZZaWJ3ZnFyTDF2Vjd1MitUYzJleUZ1N3oxUGRPZDQyWko5M2wvM3lOUW92egora0JuQVdObzZ3WnNKSitHNDZDODNYRVBLM0h1bGw1dFg2UDU4NUQ1b3o5U1oyZGlTd1FyVFN1THVSL0JCQUpVCmd1K2FITkJGRmVtUXNEL2QxMllud1h3d3FkZXVaMDVmQlFiWUREdldOM3daUjJJeHZpd1E0bjZjZWl3OUZ4QmcKbWlzMFBGY2NZOWl0SnJrYXlWQVVZUFZ3Sm5XSmZEK2pQNjJ3UWZJWmhhbFQrZDJpUzVQaDEwdWlMNHEvY1JuYgo1c1Mvc2o0Tm5QYmpxc1ZmZWlKTEh3PT0KLS0tLS1FTkQgRU5DUllQVEVEIFBSSVZBVEUgS0VZLS0tLS0K",
 		"-var=account_ec2_sydney_cert=whatever",
 	}, []string{
@@ -1739,7 +1759,7 @@ func TestSshTargetExport(t *testing.T) {
 
 // TestListeningTargetExport verifies that a listening machine can be reimported with the correct settings
 func TestListeningTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/31-listeningtarget/space_creation", "../test/terraform/31-listeningtarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/31-listeningtarget/space_creation", "../test/terraform/31-listeningtarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1790,7 +1810,7 @@ func TestListeningTargetExport(t *testing.T) {
 
 // TestPollingTargetExport verifies that a polling machine can be reimported with the correct settings
 func TestPollingTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/32-pollingtarget/space_creation", "../test/terraform/32-pollingtarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/32-pollingtarget/space_creation", "../test/terraform/32-pollingtarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1841,7 +1861,7 @@ func TestPollingTargetExport(t *testing.T) {
 
 // TestCloudRegionTargetExport verifies that a cloud region can be reimported with the correct settings
 func TestCloudRegionTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/33-cloudregiontarget/space_creation", "../test/terraform/33-cloudregiontarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/33-cloudregiontarget/space_creation", "../test/terraform/33-cloudregiontarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1884,7 +1904,7 @@ func TestCloudRegionTargetExport(t *testing.T) {
 
 // TestOfflineDropTargetExport verifies that an offline drop can be reimported with the correct settings
 func TestOfflineDropTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/34-offlinedroptarget/space_creation", "../test/terraform/34-offlinedroptarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/34-offlinedroptarget/space_creation", "../test/terraform/34-offlinedroptarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -1938,7 +1958,7 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 	// I could not figure out a combination of properties that made the octopusdeploy_azure_subscription_account resource work
 	return
 
-	exportImportAndTest(t, "../test/terraform/35-azurecloudservicetarget/space_creation", "../test/terraform/35-azurecloudservicetarget/space_population", []string{}, []string{
+	exportSpaceImportAndTest(t, "../test/terraform/35-azurecloudservicetarget/space_creation", "../test/terraform/35-azurecloudservicetarget/space_population", []string{}, []string{
 		"-var=account_subscription_cert=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
 	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -1995,7 +2015,7 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 
 // TestAzureServiceFabricTargetExport verifies that a service fabric target can be reimported with the correct settings
 func TestAzureServiceFabricTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/36-servicefabrictarget/space_creation", "../test/terraform/36-servicefabrictarget/space_population", []string{
+	exportSpaceImportAndTest(t, "../test/terraform/36-servicefabrictarget/space_creation", "../test/terraform/36-servicefabrictarget/space_population", []string{
 		"-var=target_service_fabric=whatever",
 	}, []string{
 		"-var=target_service_fabric=whatever",
@@ -2054,7 +2074,7 @@ func TestAzureServiceFabricTargetExport(t *testing.T) {
 
 // TestAzureWebAppTargetExport verifies that a web app target can be reimported with the correct settings
 func TestAzureWebAppTargetExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/37-webapptarget/space_creation", "../test/terraform/37-webapptarget/space_population", []string{
+	exportSpaceImportAndTest(t, "../test/terraform/37-webapptarget/space_creation", "../test/terraform/37-webapptarget/space_population", []string{
 		"-var=account_sales_account=whatever",
 	}, []string{
 		"-var=account_sales_account=whatever",
@@ -2119,7 +2139,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
 
-	exportImportAndTest(t, "../test/terraform/z-createspace", "../test/terraform/38-multipleprojects/space_population", []string{
+	exportProjectImportAndTest(t, "Test", "../test/terraform/z-createspace", "../test/terraform/38-multipleprojects/space_population", []string{
 		"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
 	}, []string{
 		"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
@@ -2464,7 +2484,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 
 // TestProjectWithGitUsernameExport verifies that a project can be reimported with the correct git settings
 func TestProjectWithGitUsernameExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/39-projectgitusername/space_creation", "../test/terraform/39-projectgitusername/space_population", []string{
+	exportSpaceImportAndTest(t, "../test/terraform/39-projectgitusername/space_creation", "../test/terraform/39-projectgitusername/space_population", []string{
 		"-var=project_git_password=" + os.Getenv("GIT_CREDENTIAL"),
 	}, []string{
 		"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
@@ -2507,7 +2527,7 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 
 // TestProjectWithDollarSignsExport verifies that a project can be reimported with terraform string interpolation
 func TestProjectWithDollarSignsExport(t *testing.T) {
-	exportImportAndTest(t, "../test/terraform/40-escapedollar/space_creation", "../test/terraform/40-escapedollar/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/40-escapedollar/space_creation", "../test/terraform/40-escapedollar/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
@@ -2540,7 +2560,7 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 	// This test will pass when https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/478 is addressed
 	return
 
-	exportImportAndTest(t, "../test/terraform/41-terraforminlinescript/space_creation", "../test/terraform/41-terraforminlinescript/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(t, "../test/terraform/41-terraforminlinescript/space_creation", "../test/terraform/41-terraforminlinescript/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 		// Assert
 		octopusClient := createClient(container, recreatedSpaceId)
