@@ -158,33 +158,38 @@ func TestProjectGroupExport(t *testing.T) {
 
 // TestAwsAccountExport verifies that an AWS account can be reimported with the correct settings
 func TestAwsAccountExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/3-awsaccount/space_creation", "../test/terraform/3-awsaccount/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+	exportSpaceImportAndTest(t,
+		"../test/terraform/3-awsaccount/space_creation",
+		"../test/terraform/3-awsaccount/space_population",
+		[]string{},
+		[]string{"-var=account_aws_account=secretgoeshere"},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Account]{}
-		err := octopusClient.GetAllResources("Accounts", &collection)
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == "AWS Account" {
-				found = true
-				if *v.AccessKey != "ABCDEFGHIJKLMNOPQRST" {
-					t.Fatalf("The account must be have an access key of \"ABCDEFGHIJKLMNOPQRST\"")
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "AWS Account" {
+					found = true
+					if *v.AccessKey != "ABCDEFGHIJKLMNOPQRST" {
+						t.Fatalf("The account must be have an access key of \"ABCDEFGHIJKLMNOPQRST\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatalf("Space must have an account called \"AWS Account\"")
-		}
+			if !found {
+				t.Fatalf("Space must have an account called \"AWS Account\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestAzureAccountExport verifies that an Azure account can be reimported with the correct settings
