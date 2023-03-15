@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go/v4 v4.3.3
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
-	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230306233326-1ac72537bf4a
+	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230315195304-bc8c89cbd07a
 	github.com/testcontainers/testcontainers-go v0.18.0
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 )
