@@ -202,7 +202,7 @@ func processJavaScriptResources(resources []converters.ResourceDetails) (map[str
 		return resourcesSlice[i].ResourceType < resourcesSlice[j].ResourceType
 	})
 
-	for _, r := range resourcesSlice {
+	for index, r := range resourcesSlice {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
 		// In these cases, ToHclByProjectId is nil.
 		if r.ToHcl == nil {
@@ -216,7 +216,7 @@ func processJavaScriptResources(resources []converters.ResourceDetails) (map[str
 		}
 
 		if len(strings.TrimSpace(hcl)) != 0 {
-			fileMap[r.FileName] = hcl
+			fileMap["tf"+fmt.Sprintln(index)+".tf"] = hcl
 		}
 	}
 
