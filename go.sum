@@ -108,6 +108,8 @@ github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230306221006-e8a253
 github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230306221006-e8a25397118f/go.mod h1:k6LkAcykjgqJYo9vVyfD7X96E85aAVrLlljtKMr27wU=
 github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230306233326-1ac72537bf4a h1:9Dg63hWx0xzBBdiE3AcPTIp6eKq0lzwAWfhKBzkv+/U=
 github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230306233326-1ac72537bf4a/go.mod h1:k6LkAcykjgqJYo9vVyfD7X96E85aAVrLlljtKMr27wU=
+github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230315195304-bc8c89cbd07a h1:j3Te4Pod7JKxbeSPHogeEsX5Apw13H7TOWTVQ+r7ZXI=
+github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230315195304-bc8c89cbd07a/go.mod h1:k6LkAcykjgqJYo9vVyfD7X96E85aAVrLlljtKMr27wU=
 github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 h1:DpOJ2HYzCv8LZP15IdmG+YdwD2luVPHITV96TkirNBM=
 github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7/go.mod h1:ZXFpozHsX6DPmq2I0TCekCxypsnAUbP2oI0UX1GXzOo=
 github.com/moby/patternmatcher v0.5.0 h1:YCZgJOeULcxLw1Q+sVR636pmS7sPEn1Qo2iAN6M7DBo=
