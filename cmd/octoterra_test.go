@@ -2589,3 +2589,71 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestGithubFeedExport verifies that a github feed can be reimported with the correct settings
+func TestGithubFeedExport(t *testing.T) {
+	exportSpaceImportAndTest(t, "../test/terraform/42-githubfeed/space_creation", "../test/terraform/42-githubfeed/space_population", []string{}, []string{
+		"-var=feed_github_password=whatever",
+	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+		// Assert
+		octopusClient := createClient(container, recreatedSpaceId)
+
+		collection := octopus.GeneralCollection[octopus.Feed]{}
+		err := octopusClient.GetAllResources("Feeds", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		feedName := "Github"
+		found := false
+		for _, v := range collection.Items {
+			if v.Name == feedName {
+				found = true
+
+				if strutil.EmptyIfNil(v.FeedType) != "GitHub" {
+					t.Fatal("The feed must have a type of \"GitHub\", was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
+				}
+
+				if strutil.EmptyIfNil(v.Username) != "test-username" {
+					t.Fatal("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
+				}
+
+				if *v.DownloadAttempts != 1 {
+					t.Fatal("The feed must be have a downloads attempts set to \"1\"")
+				}
+
+				if *v.DownloadRetryBackoffSeconds != 30 {
+					t.Fatal("The feed must be have a downloads retry backoff set to \"30\"")
+				}
+
+				if strutil.EmptyIfNil(v.FeedUri) != "https://api.github.com" {
+					t.Fatal("The feed must be have a feed uri of \"https://api.github.com\", was \"" + strutil.EmptyIfNil(v.FeedUri) + "\"")
+				}
+
+				foundExecutionTarget := false
+				foundServer := false
+				for _, o := range v.PackageAcquisitionLocationOptions {
+					if o == "ExecutionTarget" {
+						foundExecutionTarget = true
+					}
+
+					if o == "Server" {
+						foundServer = true
+					}
+				}
+
+				if !(foundExecutionTarget && foundServer) {
+					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+				}
+			}
+		}
+
+		if !found {
+			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+		}
+
+		return nil
+	})
+}
