@@ -136,7 +136,6 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 								AcquisitionLocation:     p.AcquisitionLocation,
 								ExtractDuringDeployment: &p.ExtractDuringDeployment,
 								FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
-								Id:                      p.Id,
 								Properties:              c.replaceIds(p.Properties, dependencies),
 							})
 					} else {
@@ -146,7 +145,6 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 							AcquisitionLocation:     p.AcquisitionLocation,
 							ExtractDuringDeployment: nil,
 							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
-							Id:                      p.Id,
 							Properties:              c.replaceIds(p.Properties, dependencies),
 						}
 					}
