@@ -35,6 +35,7 @@ type Project struct {
 	VariableSetId                   *string
 	IncludedLibraryVariableSetIds   []string
 	PersistenceSettings             PersistenceSettings
+	VersioningStrategy              VersioningStrategy
 	// Todo: add service now and jira settings
 }
 
@@ -57,4 +58,15 @@ type Credentials struct {
 
 type ConversionState struct {
 	VariablesAreInGit bool
+}
+
+type VersioningStrategy struct {
+	Template           string
+	DonorPackageStepId *string
+	DonorPackage       *DonorPackage
+}
+
+type DonorPackage struct {
+	DeploymentAction *string
+	PackageReference *string
 }

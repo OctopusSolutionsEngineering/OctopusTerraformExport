@@ -117,6 +117,7 @@ func (c ProjectConverter) toHcl(project octopus2.Project, recursive bool, depend
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
+			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -245,6 +246,23 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus2
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
 		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
 	}
+}
+
+func (c ProjectConverter) convertVersioningStrategy(project octopus2.Project) terraform2.TerraformVersioningStrategy {
+	versioningStrategy := terraform2.TerraformVersioningStrategy{
+		Template:           project.VersioningStrategy.Template,
+		DonorPackageStepId: project.VersioningStrategy.DonorPackageStepId,
+		DonorPackage:       nil,
+	}
+
+	if project.VersioningStrategy.DonorPackage != nil {
+		versioningStrategy.DonorPackage = &terraform2.TerraformDonorPackage{
+			DeploymentAction: project.VersioningStrategy.DonorPackage.DeploymentAction,
+			PackageReference: project.VersioningStrategy.DonorPackage.PackageReference,
+		}
+	}
+
+	return versioningStrategy
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
