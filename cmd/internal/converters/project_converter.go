@@ -248,10 +248,19 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus2
 	}
 }
 
-func (c ProjectConverter) convertVersioningStrategy(project octopus2.Project) terraform2.TerraformVersioningStrategy {
+func (c ProjectConverter) convertVersioningStrategy(project octopus2.Project) *terraform2.TerraformVersioningStrategy {
+	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
+	// needs to know the name of the step and package to base the versioning on, and the deployment process
+	// needs to know the project to attach itself to. If the versioning strategy is set to use packages,
+	// simply return nil.
+	if strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId) != "" ||
+		project.VersioningStrategy.DonorPackage != nil {
+		return nil
+	}
+
 	versioningStrategy := terraform2.TerraformVersioningStrategy{
 		Template:           project.VersioningStrategy.Template,
-		DonorPackageStepId: project.VersioningStrategy.DonorPackageStepId,
+		DonorPackageStepId: nil,
 		DonorPackage:       nil,
 	}
 
@@ -262,7 +271,7 @@ func (c ProjectConverter) convertVersioningStrategy(project octopus2.Project) te
 		}
 	}
 
-	return versioningStrategy
+	return &versioningStrategy
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
