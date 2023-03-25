@@ -12,7 +12,9 @@
 # Get a trial Octopus instance from https://octopus.com/start
 
 permissions:
+  id-token: write
   checks: write
+  contents: write
 
 name: Go Build
 'on':
