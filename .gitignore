@@ -22,3 +22,5 @@ octoterra.exe
 **/terraform.tfstate
 **/terraform.tfstate.backup
 **/.terraform/
+
+results.xml
