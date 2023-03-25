@@ -26,6 +26,8 @@ To export a single project and it's associated dependencies, use the following c
 Exporting projects to HCL can be embedded in the browser by using the [Violentmonkey](https://violentmonkey.github.io/)
 script [violentmonkey.js](wasm/violentmonkey.js).
 
+![image](https://user-images.githubusercontent.com/160104/227693138-3fd77272-d962-444b-a50f-735174629711.png)
+
 This script adds a `Export HCL` link to the project page. Once the link is ready to be clicked (it takes a minute or
 so to build the HCL), the link displays the project's HCL representation in a popup window.
 
