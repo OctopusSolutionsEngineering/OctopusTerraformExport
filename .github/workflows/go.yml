@@ -11,6 +11,9 @@
 #
 # Get a trial Octopus instance from https://octopus.com/start
 
+permissions:
+  checks: write
+
 name: Go Build
 'on':
   workflow_dispatch: {}
