@@ -3,21 +3,20 @@ module github.com/mcasperson/OctopusTerraformExport
 go 1.19
 
 require (
-	github.com/avast/retry-go/v4 v4.3.3
+	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.21.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
 	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230315195304-bc8c89cbd07a
-	github.com/testcontainers/testcontainers-go v0.19.0
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 )
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
-	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.21.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
+	github.com/avast/retry-go/v4 v4.3.3 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/containerd/containerd v1.7.0 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
@@ -50,6 +49,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
+	github.com/testcontainers/testcontainers-go v0.19.0 // indirect
 	github.com/zclconf/go-cty v1.12.1 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20230304125523-9ff063c70017 // indirect
