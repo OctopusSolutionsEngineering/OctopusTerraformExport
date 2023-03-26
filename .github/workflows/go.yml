@@ -138,39 +138,11 @@ jobs:
           release_name: Release ${{ steps.determine_version.outputs.semVer }} Run ${{ github.run_number }} Attempt ${{ github.run_attempt }}
           draft: 'false'
           prerelease: 'false'
-      - name: Upload Linux Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: octoterra_linux_amd64
-          asset_name: octoterra_linux_amd64
-          asset_content_type: application/octet-stream
-      - name: Upload Windows Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: octoterra_windows_amd64.exe
-          asset_name: octoterra_windows_amd64.exe
-          asset_content_type: application/octet-stream
-      - name: Upload Windows Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: octoterra_macos_amd64
-          asset_name: octoterra_macos_amd64
-          asset_content_type: application/octet-stream
-      - name: Upload Windows Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: octoterra_macos_arm64
-          asset_name: octoterra_macos_arm64
-          asset_content_type: application/octet-stream
+          files: |
+            octoterra_linux_amd64
+            octoterra_windows_amd64.exe
+            octoterra_macos_amd64
+            octoterra_macos_arm64
