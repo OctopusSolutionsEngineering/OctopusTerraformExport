@@ -128,16 +128,6 @@ jobs:
         with:
           custom_tag: ${{ steps.determine_version.outputs.semVer }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - id: create_release
-        name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.determine_version.outputs.semVer }}+run${{ github.run_number }}-attempt${{ github.run_attempt }}
-          release_name: Release ${{ steps.determine_version.outputs.semVer }} Run ${{ github.run_number }} Attempt ${{ github.run_attempt }}
-          draft: 'false'
-          prerelease: 'false'
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
