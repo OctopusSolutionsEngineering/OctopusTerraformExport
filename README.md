@@ -12,13 +12,22 @@ Get the compiled binaries from the [releases](https://github.com/mcasperson/Octo
 To export a complete space, use the following command:
 
 ```
-./octoterra -url https://yourinstance.octopus.app -space Spaces-## -apiKey API-APIKEYGOESHERE -dest /tmp/octoexport
+./octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -dest /tmp/octoexport
 ```
 
 To export a single project and it's associated dependencies, use the following command:
 
 ```
-./octoterra -url https://yourinstance.octopus.app -space Spaces-## -apiKey API-APIKEYGOESHERE -projectId Projects-1234 -dest /tmp/octoexport
+./octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -projectId Projects-1234 \
+    -dest /tmp/octoexport
 ```
 
 ## Browser usage
