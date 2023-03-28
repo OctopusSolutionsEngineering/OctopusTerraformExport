@@ -6,8 +6,8 @@ type Role struct {
 	Description                  string
 	SupportedRestrictions        *string
 	SpacePermissionDescriptions  map[int]string
-	SystemPermissionDescriptions []string
+	SystemPermissionDescriptions map[int]string
 	GrantedSpacePermissions      map[int]string
-	GrantedSystemPermissions     []string
+	GrantedSystemPermissions     map[int]string
 	CanBeDeleted                 bool
 }
