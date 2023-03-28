@@ -7,6 +7,12 @@ This app exports an Octopus space to the associated Terraform resources for use 
 
 Get the compiled binaries from the [releases](https://github.com/mcasperson/OctopusTerraformExport/releases).
 
+## Support
+
+Feel free to raise an [issue](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/issues) with any bugs of feature enhancements. 
+
+Note this open source project has no offical support.
+
 ## Usage
 
 To export a complete space, use the following command:
