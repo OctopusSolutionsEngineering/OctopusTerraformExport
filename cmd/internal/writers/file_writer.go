@@ -18,6 +18,10 @@ func NewFileWriterToTempDir() *FileWriter {
 }
 
 func NewFileWriter(dest string) *FileWriter {
+	if dest == "" {
+		return NewFileWriterToTempDir()
+	}
+
 	return &FileWriter{
 		dest: strutil.EnsureSuffix(dest, string(os.PathSeparator)),
 	}
