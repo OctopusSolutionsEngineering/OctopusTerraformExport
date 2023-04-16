@@ -23,7 +23,7 @@ func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) er
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -49,25 +49,42 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 		return err
 	}
 
-	return c.toHcl(resource, false, dependencies)
+	return c.toHcl(resource, false, false, dependencies)
 }
 
-func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus2.ProjectGroup{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, false, true, dependencies)
+}
+
+func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
+
+	forceLookup := lookup || resource.Name == "Default Project Group"
 
 	projectName := "project_group_" + sanitizer.SanitizeName(resource.Name)
 
 	thisResource.FileName = "space_population/projectgroup_" + projectName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	if resource.Name == "Default Project Group" {
-		thisResource.Lookup = "${data.octopusdeploy_project_groups." + projectName + ".project_groups[0].id}"
-	} else {
-		thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
-	}
-	thisResource.ToHcl = func() (string, error) {
 
-		if resource.Name == "Default Project Group" {
+	if forceLookup {
+		thisResource.Lookup = "${data.octopusdeploy_project_groups." + projectName + ".project_groups[0].id}"
+		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformProjectGroupData{
 				Type:        "octopusdeploy_project_groups",
 				Name:        projectName,
@@ -80,7 +97,10 @@ func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive b
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
 			return string(file.Bytes()), nil
-		} else {
+		}
+	} else {
+		thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformProjectGroup{
 				Type:         "octopusdeploy_project_group",
 				Name:         projectName,

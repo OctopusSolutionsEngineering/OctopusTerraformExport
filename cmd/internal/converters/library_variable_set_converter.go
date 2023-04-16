@@ -56,6 +56,48 @@ func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *Resource
 	return c.toHcl(resource, true, dependencies)
 }
 
+func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus2.LibraryVariableSet{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "library_variable_set_" + sanitizer.SanitizeName(resource.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_library_variable_sets." + resourceName + ".library_variable_sets[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform2.TerraformLibraryVariableSetData{
+			Type:        "octopusdeploy_library_variable_sets",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: resource.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	return nil
+}
+
 func (c LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 

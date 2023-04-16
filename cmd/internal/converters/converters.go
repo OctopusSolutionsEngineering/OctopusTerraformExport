@@ -5,6 +5,17 @@ type ConverterById interface {
 	ToHclById(id string, dependencies *ResourceDetailsCollection) error
 }
 
+// ConverterLookupById converts an individual resource by its ID to a data lookup
+type ConverterLookupById interface {
+	ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error
+}
+
+// ConverterAndLookupById converts an individual resource by ID to HCL and to a data lookup
+type ConverterAndLookupById interface {
+	ConverterById
+	ConverterLookupById
+}
+
 // ConverterByIdWithName converts an individual resource by its ID, and uses the supplied name for the Terraform resource
 type ConverterByIdWithName interface {
 	ToHclByIdAndName(id string, name string, dependencies *ResourceDetailsCollection) error
@@ -23,6 +34,17 @@ type ConverterByProjectIdWithName interface {
 // ConverterByProjectId converts objects based on their relationship to a project
 type ConverterByProjectId interface {
 	ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error
+}
+
+// ConverterLookupByProjectId converts objects to data lookups based on their relationship to a project
+type ConverterLookupByProjectId interface {
+	ToHclLookupByProjectId(projectId string, dependencies *ResourceDetailsCollection) error
+}
+
+// ConverterAndLookupByProjectId converts objects to HCL and data lookups based on their relationship to a project
+type ConverterAndLookupByProjectId interface {
+	ConverterByProjectId
+	ConverterLookupByProjectId
 }
 
 // ConverterByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies

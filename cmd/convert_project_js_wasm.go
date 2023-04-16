@@ -183,7 +183,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		},
 		VariableSetConverter: variableSetConverter,
 		ChannelConverter:     channelConverter,
-	}.ToHclById(projectId, &dependencies)
+	}.ToHclWithLookups(projectId, &dependencies)
 
 	if err != nil {
 		return nil, err
@@ -197,12 +197,11 @@ func processJavaScriptResources(resources []converters.ResourceDetails) (map[str
 	fileMap := map[string]string{}
 
 	// Sort by resource type
-	resourcesSlice := resources[:]
-	sort.Slice(resourcesSlice, func(i, j int) bool {
-		return resourcesSlice[i].ResourceType < resourcesSlice[j].ResourceType
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].ResourceType < resources[j].ResourceType
 	})
 
-	for index, r := range resourcesSlice {
+	for index, r := range resources {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
 		// In these cases, ToHclByProjectId is nil.
 		if r.ToHcl == nil {

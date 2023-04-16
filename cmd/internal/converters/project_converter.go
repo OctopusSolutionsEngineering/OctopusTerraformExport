@@ -15,12 +15,12 @@ import (
 
 type ProjectConverter struct {
 	Client                      client.OctopusClient
-	LifecycleConverter          ConverterById
-	GitCredentialsConverter     ConverterById
-	LibraryVariableSetConverter ConverterById
-	ProjectGroupConverter       ConverterById
+	LifecycleConverter          ConverterAndLookupById
+	GitCredentialsConverter     ConverterAndLookupById
+	LibraryVariableSetConverter ConverterAndLookupById
+	ProjectGroupConverter       ConverterAndLookupById
 	DeploymentProcessConverter  ConverterByIdWithName
-	TenantConverter             ConverterByProjectId
+	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterByIdWithNameAndParent
 	ChannelConverter            ConverterByProjectIdWithTerraDependencies
@@ -35,7 +35,7 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -43,6 +43,27 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	return nil
+}
+
+// ToHclWithLookups exports a self-contained representation of the project where external resources like
+// environments, lifecycles, feeds, accounts etc are resolved with data lookups.
+func (c ProjectConverter) ToHclWithLookups(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	project := octopus2.Project{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(project, false, true, dependencies)
 }
 
 func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -61,16 +82,22 @@ func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 		return err
 	}
 
-	return c.toHcl(project, true, dependencies)
+	return c.toHcl(project, true, false, dependencies)
 }
 
-func (c ProjectConverter) toHcl(project octopus2.Project, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectConverter) toHcl(project octopus2.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	projectName := "project_" + sanitizer.SanitizeName(project.Name)
 
 	if recursive {
 		err := c.exportDependencies(project, projectName, dependencies)
+
+		if err != nil {
+			return err
+		}
+	} else if lookups {
+		err := c.exportDependencyLookups(project, projectName, dependencies)
 
 		if err != nil {
 			return err
@@ -309,6 +336,49 @@ func (c ProjectConverter) exportChildDependencies(project octopus2.Project, proj
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c ProjectConverter) exportDependencyLookups(project octopus2.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+	// Export the project group
+	err := c.ProjectGroupConverter.ToHclLookupById(project.ProjectGroupId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the library sets
+	for _, v := range project.IncludedLibraryVariableSetIds {
+		err := c.LibraryVariableSetConverter.ToHclLookupById(v, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the lifecycles
+	err = c.LifecycleConverter.ToHclLookupById(project.LifecycleId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the tenants
+	err = c.TenantConverter.ToHclLookupByProjectId(project.Id, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the git credentials
+	if project.PersistenceSettings.Credentials.Type == "Reference" {
+		err = c.GitCredentialsConverter.ToHclLookupById(project.PersistenceSettings.Credentials.Id, dependencies)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

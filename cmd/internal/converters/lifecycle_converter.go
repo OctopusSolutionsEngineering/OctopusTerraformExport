@@ -24,7 +24,7 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -51,11 +51,32 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return err
 	}
 
-	return c.toHcl(lifecycle, true, dependencies)
+	return c.toHcl(lifecycle, true, false, dependencies)
 
 }
 
-func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	// Channels can have empty strings for the lifecycle ID
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	lifecycle := octopus2.Lifecycle{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(lifecycle, false, true, dependencies)
+
+}
+
+func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 
 	if recursive {
 		// The environments are a dependency that we need to lookup
@@ -77,20 +98,22 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 		}
 	}
 
+	forceLookup := lookup || lifecycle.Name == "Default Lifecycle"
+
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = lifecycle.Id
 	thisResource.ResourceType = c.GetResourceType()
-	if lifecycle.Name == "Default Lifecycle" {
+	if forceLookup {
 		thisResource.Lookup = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
 	} else {
 		thisResource.Lookup = "${octopusdeploy_lifecycle." + resourceName + ".id}"
 	}
 	thisResource.ToHcl = func() (string, error) {
 		// Assume the default lifecycle already exists
-		if lifecycle.Name == "Default Lifecycle" {
+		if forceLookup {
 			data := terraform2.TerraformLifecycleData{
 				Type:        "octopusdeploy_lifecycles",
 				Name:        resourceName,

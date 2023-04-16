@@ -14,7 +14,15 @@ import (
 )
 
 func main() {
-	url, space, apiKey, dest, console, projectId, projectName := parseUrl()
+	url, space, apiKey, dest, console, projectId, projectName, lookupProjectDependencies := parseArgs()
+
+	if url == "" {
+		errorExit("You must specify the URL with the -url argument")
+	}
+
+	if apiKey == "" {
+		errorExit("You must specify the API key with the -apiKey argument")
+	}
 
 	var err error = nil
 
@@ -22,21 +30,24 @@ func main() {
 		projectId, err := ConvertProjectNameToId(url, space, apiKey, projectName)
 
 		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
+			errorExit(err.Error())
 		}
 
-		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId)
+		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId, lookupProjectDependencies)
 	} else if projectId != "" {
-		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId)
+		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId, lookupProjectDependencies)
 	} else {
 		err = ConvertSpaceToTerraform(url, space, apiKey, dest, console)
 	}
 
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		errorExit(err.Error())
 	}
+}
+
+func errorExit(message string) {
+	fmt.Println(message)
+	os.Exit(1)
 }
 
 func ConvertProjectNameToId(url string, space string, apiKey string, name string) (string, error) {
@@ -238,7 +249,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	return err
 }
 
-func ConvertProjectToTerraform(url string, space string, apiKey string, dest string, console bool, projectId string) error {
+func ConvertProjectToTerraform(url string, space string, apiKey string, dest string, console bool, projectId string, lookupProjectDependencies bool) error {
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -358,7 +369,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
-	err := converters.ProjectConverter{
+	projectConverter := converters.ProjectConverter{
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
@@ -376,7 +387,14 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		},
 		VariableSetConverter: variableSetConverter,
 		ChannelConverter:     channelConverter,
-	}.ToHclById(projectId, &dependencies)
+	}
+
+	var err error
+	if lookupProjectDependencies {
+		err = projectConverter.ToHclWithLookups(projectId, &dependencies)
+	} else {
+		err = projectConverter.ToHclById(projectId, &dependencies)
+	}
 
 	if err != nil {
 		return err
@@ -418,7 +436,7 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 	return fileMap, nil
 }
 
-func parseUrl() (string, string, string, string, bool, string, string) {
+func parseArgs() (string, string, string, string, bool, string, string, bool) {
 	var url string
 	flag.StringVar(&url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 
@@ -440,9 +458,20 @@ func parseUrl() (string, string, string, string, bool, string, string) {
 	var projectName string
 	flag.StringVar(&projectName, "projectName", "", "Limit the export to a single project")
 
+	var lookupProjectDependencies bool
+	flag.BoolVar(&lookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
+
 	flag.Parse()
 
-	return url, space, apiKey, dest, console, projectId, projectName
+	if url == "" {
+		url = os.Getenv("OCTOPUS_CLI_SERVER")
+	}
+
+	if apiKey == "" {
+		apiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
+	}
+
+	return url, space, apiKey, dest, console, projectId, projectName, lookupProjectDependencies
 }
 
 func writeFiles(files map[string]string, dest string, console bool) error {

@@ -30,7 +30,7 @@ func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -49,7 +49,7 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 	}
 
 	for _, tenant := range collection.Items {
-		err = c.toHcl(tenant, true, dependencies)
+		err = c.toHcl(tenant, true, false, dependencies)
 		if err != nil {
 			return nil
 		}
@@ -66,13 +66,30 @@ func (c TenantConverter) ToHclById(id string, dependencies *ResourceDetailsColle
 	}
 
 	if found {
-		return c.toHcl(tenant, true, dependencies)
+		return c.toHcl(tenant, true, false, dependencies)
 	}
 
 	return nil
 }
 
-func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
+	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
+
+	if err != nil {
+		return nil
+	}
+
+	for _, tenant := range collection.Items {
+		err = c.toHcl(tenant, false, true, dependencies)
+		if err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 
 	if recursive {
 		// Export the tenant variables
@@ -106,46 +123,65 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, dependenc
 	thisResource.FileName = "space_population/" + tenantName + ".tf"
 	thisResource.Id = tenant.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_tenant." + tenantName + ".id}"
-	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformTenant{
-			Type:               "octopusdeploy_tenant",
-			Name:               tenantName,
-			ResourceName:       tenant.Name,
-			Id:                 nil,
-			ClonedFromTenantId: nil,
-			Description:        strutil.NilIfEmptyPointer(tenant.Description),
-			TenantTags:         tenant.TenantTags,
-			ProjectEnvironment: c.getProjects(tenant.ProjectEnvironments, dependencies),
-		}
-		file := hclwrite.NewEmptyFile()
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + tenant.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_tenant." + tenantName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
-
-		block := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-		// Explicitly describe the dependency between a target and a tag set
-		dependsOn := []string{}
-		for resourceType, terraformDependencies := range tagSetDependencies {
-			for _, terraformDependency := range terraformDependencies {
-				dependency := dependencies.GetResource(resourceType, terraformDependency)
-				dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
-				dependsOn = append(dependsOn, dependency)
+	if lookup {
+		thisResource.Lookup = "${data.octopusdeploy_project_groups." + tenantName + ".project_groups[0].id}"
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform.TerraformTenantData{
+				Type:        "octopusdeploy_project_groups",
+				Name:        tenantName,
+				Ids:         nil,
+				PartialName: tenant.Name,
+				Skip:        0,
+				Take:        1,
 			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
 		}
+	} else {
+		thisResource.Lookup = "${octopusdeploy_tenant." + tenantName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform.TerraformTenant{
+				Type:               "octopusdeploy_tenant",
+				Name:               tenantName,
+				ResourceName:       tenant.Name,
+				Id:                 nil,
+				ClonedFromTenantId: nil,
+				Description:        strutil.NilIfEmptyPointer(tenant.Description),
+				TenantTags:         tenant.TenantTags,
+				ProjectEnvironment: c.getProjects(tenant.ProjectEnvironments, dependencies),
+			}
+			file := hclwrite.NewEmptyFile()
 
-		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
-		file.Body().AppendBlock(block)
+			// Add a comment with the import command
+			baseUrl, _ := c.Client.GetSpaceBaseUrl()
+			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+				Type: hclsyntax.TokenComment,
+				Bytes: []byte("# Import existing resources with the following commands:\n" +
+					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + tenant.Name + "\") | .Id')\n" +
+					"# terraform import octopusdeploy_tenant." + tenantName + " ${RESOURCE_ID}\n"),
+				SpacesBefore: 0,
+			}})
 
-		return string(file.Bytes()), nil
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// Explicitly describe the dependency between a target and a tag set
+			dependsOn := []string{}
+			for resourceType, terraformDependencies := range tagSetDependencies {
+				for _, terraformDependency := range terraformDependencies {
+					dependency := dependencies.GetResource(resourceType, terraformDependency)
+					dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
+					dependsOn = append(dependsOn, dependency)
+				}
+			}
+
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
 	}
 
 	dependencies.AddResource(thisResource)
