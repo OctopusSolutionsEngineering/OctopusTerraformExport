@@ -17,9 +17,9 @@ import (
 
 type DeploymentProcessConverter struct {
 	Client              client.OctopusClient
-	FeedConverter       ConverterById
-	AccountConverter    ConverterById
-	WorkerPoolConverter ConverterById
+	FeedConverter       ConverterAndLookupById
+	AccountConverter    ConverterAndLookupById
+	WorkerPoolConverter ConverterAndLookupById
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -44,32 +44,43 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 		return nil
 	}
 
-	return c.toHcl(resource, true, projectName, dependencies)
+	return c.toHcl(resource, true, false, projectName, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.DeploymentProcess{}
+	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	// Projects with no deployment process will not have a deployment process resources.
+	// This is expected, so just return.
+	if !found {
+		return nil
+	}
+
+	return c.toHcl(resource, false, true, projectName, dependencies)
+}
+
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer2.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
 
-	if recursive {
-		// Export linked accounts
-		err := c.exportAccounts(resource, dependencies)
-		if err != nil {
-			return err
-		}
+	err := c.exportDependencies(recursive, lookup, resource, dependencies)
 
-		// Export linked feeds
-		err = c.exportFeeds(resource, dependencies)
-		if err != nil {
-			return err
-		}
-
-		// Export linked worker pools
-		err = c.exportWorkerPools(resource, dependencies)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -179,18 +190,49 @@ func (c DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+	// Export linked accounts
+	err := c.exportAccounts(recursive, lookup, resource, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export linked feeds
+	err = c.exportFeeds(recursive, lookup, resource, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export linked worker pools
+	err = c.exportWorkerPools(recursive, lookup, resource, dependencies)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c DeploymentProcessConverter) exportFeeds(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
 	feedRegex, _ := regexp.Compile("Feeds-\\d+")
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 
 			if strutil.NilIfEmptyPointer(action.Container.FeedId) != nil {
-				c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies)
+				if recursive {
+					c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies)
+				} else if lookup {
+					c.FeedConverter.ToHclLookupById(strutil.EmptyIfNil(action.Container.FeedId), dependencies)
+				}
 			}
 
 			for _, pack := range action.Packages {
 				if pack.FeedId != nil {
-					err := c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+					var err error
+					if recursive {
+						err = c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+					} else if lookup {
+						err = c.FeedConverter.ToHclLookupById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+					}
 
 					if err != nil {
 						return err
@@ -200,7 +242,12 @@ func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProce
 
 			for _, prop := range action.Properties {
 				for _, feed := range feedRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := c.FeedConverter.ToHclById(feed, dependencies)
+					var err error
+					if recursive {
+						err = c.FeedConverter.ToHclById(feed, dependencies)
+					} else if lookup {
+						err = c.FeedConverter.ToHclLookupById(feed, dependencies)
+					}
 
 					if err != nil {
 						return err
@@ -213,13 +260,18 @@ func (c DeploymentProcessConverter) exportFeeds(resource octopus.DeploymentProce
 	return nil
 }
 
-func (c DeploymentProcessConverter) exportAccounts(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportAccounts(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
 	accountRegex, _ := regexp.Compile("Accounts-\\d+")
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 			for _, prop := range action.Properties {
 				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
-					err := c.AccountConverter.ToHclById(account, dependencies)
+					var err error
+					if recursive {
+						err = c.AccountConverter.ToHclById(account, dependencies)
+					} else if lookup {
+						err = c.AccountConverter.ToHclLookupById(account, dependencies)
+					}
 
 					if err != nil {
 						return err
@@ -232,11 +284,16 @@ func (c DeploymentProcessConverter) exportAccounts(resource octopus.DeploymentPr
 	return nil
 }
 
-func (c DeploymentProcessConverter) exportWorkerPools(resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportWorkerPools(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
 	for _, step := range resource.Steps {
 		for _, action := range step.Actions {
 			if action.WorkerPoolId != "" {
-				err := c.WorkerPoolConverter.ToHclById(action.WorkerPoolId, dependencies)
+				var err error
+				if recursive {
+					err = c.WorkerPoolConverter.ToHclById(action.WorkerPoolId, dependencies)
+				} else if lookup {
+					err = c.WorkerPoolConverter.ToHclLookupById(action.WorkerPoolId, dependencies)
+				}
 
 				if err != nil {
 					return err

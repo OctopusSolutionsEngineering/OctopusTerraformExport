@@ -57,6 +57,50 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 	return c.toHcl(resource, true, dependencies)
 }
 
+func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus2.Account{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_accounts" + resourceName + ".accounts[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform2.TerraformAccountData{
+			Type:        "octopusdeploy_accounts",
+			Name:        resourceName,
+			AccountType: resource.AccountType,
+			Ids:         nil,
+			PartialName: resource.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
 func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if recursive {
 		c.exportDependencies(resource, dependencies)

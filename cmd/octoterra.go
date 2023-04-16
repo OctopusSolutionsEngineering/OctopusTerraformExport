@@ -391,7 +391,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 
 	var err error
 	if lookupProjectDependencies {
-		err = projectConverter.ToHclWithLookups(projectId, &dependencies)
+		err = projectConverter.ToHclLookupById(projectId, &dependencies)
 	} else {
 		err = projectConverter.ToHclById(projectId, &dependencies)
 	}

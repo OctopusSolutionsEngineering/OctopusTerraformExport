@@ -19,7 +19,7 @@ type ProjectConverter struct {
 	GitCredentialsConverter     ConverterAndLookupById
 	LibraryVariableSetConverter ConverterAndLookupById
 	ProjectGroupConverter       ConverterAndLookupById
-	DeploymentProcessConverter  ConverterByIdWithName
+	DeploymentProcessConverter  ConverterAndLookupByIdAndName
 	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterByIdWithNameAndParent
@@ -45,9 +45,9 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	return nil
 }
 
-// ToHclWithLookups exports a self-contained representation of the project where external resources like
+// ToHclLookupById exports a self-contained representation of the project where external resources like
 // environments, lifecycles, feeds, accounts etc are resolved with data lookups.
-func (c ProjectConverter) ToHclWithLookups(id string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -104,7 +104,7 @@ func (c ProjectConverter) toHcl(project octopus2.Project, recursive bool, lookup
 		}
 	}
 
-	err := c.exportChildDependencies(project, projectName, dependencies)
+	err := c.exportChildDependencies(lookups, project, projectName, dependencies)
 
 	if err != nil {
 		return err
@@ -304,7 +304,7 @@ func (c ProjectConverter) convertVersioningStrategy(project octopus2.Project) *t
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
-func (c ProjectConverter) exportChildDependencies(project octopus2.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectConverter) exportChildDependencies(lookup bool, project octopus2.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	err := c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
 		"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
 	}, dependencies)
@@ -315,7 +315,12 @@ func (c ProjectConverter) exportChildDependencies(project octopus2.Project, proj
 
 	// Export the deployment process
 	if project.DeploymentProcessId != nil {
-		err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+		var err error
+		if lookup {
+			err = c.DeploymentProcessConverter.ToHclLookupByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+		} else {
+			err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+		}
 
 		if err != nil {
 			return err
@@ -324,7 +329,7 @@ func (c ProjectConverter) exportChildDependencies(project octopus2.Project, proj
 
 	// Export the variable set
 	if project.VariableSetId != nil {
-		err = c.VariableSetConverter.ToHclByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+		err := c.VariableSetConverter.ToHclByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
 
 		if err != nil {
 			return err

@@ -23,7 +23,7 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 	}
 
 	for _, resource := range collection.Items {
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -49,10 +49,29 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsC
 		return err
 	}
 
-	return c.toHcl(pool, true, dependencies)
+	return c.toHcl(pool, true, false, dependencies)
 }
 
-func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	pool := octopus2.WorkerPool{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &pool)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(pool, false, true, dependencies)
+}
+
+func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "workerpool_" + sanitizer.SanitizeNamePointer(&pool.Name)
 
 	thisResource := ResourceDetails{}
@@ -61,26 +80,20 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, dep
 	thisResource.ResourceType = c.GetResourceType()
 
 	if pool.WorkerPoolType == "DynamicWorkerPool" {
-		if pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu" {
+		forceLookup := lookup || pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu"
+
+		if forceLookup {
 			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
 		} else {
 			thisResource.Lookup = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
 		}
-	} else if pool.WorkerPoolType == "StaticWorkerPool" {
-		if pool.Name == "Default Worker Pool" {
-			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
-		} else {
-			thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
-		}
-	}
 
-	thisResource.ToHcl = func() (string, error) {
-		if pool.WorkerPoolType == "DynamicWorkerPool" {
+		thisResource.ToHcl = func() (string, error) {
 			/*
 				These default pools are expected to be created in a new space, so
 				we use a data lookup to reference them rather than create them.
 			*/
-			if pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu" {
+			if forceLookup {
 				data := terraform2.TerraformWorkerPoolData{
 					Type:         "octopusdeploy_worker_pools",
 					Name:         resourceName,
@@ -122,11 +135,20 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, dep
 			}
 		}
 
-		if pool.WorkerPoolType == "StaticWorkerPool" {
+	} else if pool.WorkerPoolType == "StaticWorkerPool" {
+		forceLookup := lookup || pool.Name == "Default Worker Pool"
+
+		if forceLookup {
+			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
+		} else {
+			thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
+		}
+
+		thisResource.ToHcl = func() (string, error) {
 			/*
 				This is the default pool available in every space. Use a data lookup for this pool.
 			*/
-			if pool.Name == "Default Worker Pool" {
+			if forceLookup {
 				data := terraform2.TerraformWorkerPoolData{
 					Type:         "octopusdeploy_worker_pools",
 					Name:         resourceName,
@@ -167,8 +189,6 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, dep
 				return string(file.Bytes()), nil
 			}
 		}
-
-		return "", nil
 	}
 
 	dependencies.AddResource(thisResource)
