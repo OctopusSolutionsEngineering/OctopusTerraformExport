@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"k8s.io/utils/strings/slices"
@@ -22,21 +22,21 @@ import (
 type VariableSetConverter struct {
 	Client                            client.OctopusClient
 	ChannelConverter                  ConverterByProjectIdWithTerraDependencies
-	EnvironmentConverter              ConverterById
+	EnvironmentConverter              ConverterAndLookupById
 	TagSetConverter                   TagSetConverter
-	AzureCloudServiceTargetConverter  ConverterById
-	AzureServiceFabricTargetConverter ConverterById
-	AzureWebAppTargetConverter        ConverterById
-	CloudRegionTargetConverter        ConverterById
-	KubernetesTargetConverter         ConverterById
-	ListeningTargetConverter          ConverterById
-	OfflineDropTargetConverter        ConverterById
-	PollingTargetConverter            ConverterById
-	SshTargetConverter                ConverterById
-	AccountConverter                  ConverterById
-	FeedConverter                     ConverterById
-	CertificateConverter              ConverterById
-	WorkerPoolConverter               ConverterById
+	AzureCloudServiceTargetConverter  ConverterAndLookupById
+	AzureServiceFabricTargetConverter ConverterAndLookupById
+	AzureWebAppTargetConverter        ConverterAndLookupById
+	CloudRegionTargetConverter        ConverterAndLookupById
+	KubernetesTargetConverter         ConverterAndLookupById
+	ListeningTargetConverter          ConverterAndLookupById
+	OfflineDropTargetConverter        ConverterAndLookupById
+	PollingTargetConverter            ConverterAndLookupById
+	SshTargetConverter                ConverterAndLookupById
+	AccountConverter                  ConverterAndLookupById
+	FeedConverter                     ConverterAndLookupById
+	CertificateConverter              ConverterAndLookupById
+	WorkerPoolConverter               ConverterAndLookupById
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -48,17 +48,36 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 		return nil
 	}
 
-	resource := octopus2.VariableSet{}
+	resource := octopus.VariableSet{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(resource, true, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, true, false, parentName, parentLookup, dependencies)
 }
 
-func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.VariableSet{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, false, true, parentName, parentLookup, dependencies)
+}
+
+func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if recursive {
 		c.exportChildDependencies(resource, dependencies)
 	}
@@ -70,86 +89,88 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 
 		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(i)
 
-		if recursive {
-			// Export linked accounts
-			err := c.exportAccounts(v.Value, dependencies)
-			if err != nil {
-				return err
-			}
+		// Export linked accounts
+		err := c.exportAccounts(recursive, lookup, v.Value, dependencies)
+		if err != nil {
+			return err
+		}
 
-			// Export linked feeds
-			err = c.exportFeeds(v.Value, dependencies)
-			if err != nil {
-				return err
-			}
+		// Export linked feeds
+		err = c.exportFeeds(recursive, lookup, v.Value, dependencies)
+		if err != nil {
+			return err
+		}
 
-			// Export linked certificates
-			err = c.exportCertificates(v.Value, dependencies)
-			if err != nil {
-				return err
-			}
+		// Export linked worker pools
+		err = c.exportWorkerPools(recursive, lookup, v.Value, dependencies)
+		if err != nil {
+			return err
+		}
 
-			// Export linked worker pools
-			err = c.exportWorkerPools(v.Value, dependencies)
-			if err != nil {
-				return err
-			}
+		// Export linked certificates
+		err = c.exportCertificates(recursive, lookup, v.Value, dependencies)
+		if err != nil {
+			return err
+		}
 
-			// Export linked environments
-			for _, e := range v.Scope.Environment {
-				err = c.EnvironmentConverter.ToHclById(e, dependencies)
-				if err != nil {
-					return err
-				}
-			}
+		// Export linked environments
+		err = c.exportEnvironments(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-			// Export linked targets
-			for _, m := range v.Scope.Machine {
-				err = c.AzureCloudServiceTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export azure cloud service targets
+		err = c.exportAzureCloudServiceTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.AzureServiceFabricTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export azure service fabric targets
+		err = c.exportAzureServiceFabricTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.AzureWebAppTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export azure web app targets
+		err = c.exportAzureWebAppTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.CloudRegionTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export azure web app targets
+		err = c.exportCloudRegionTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.KubernetesTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export kubernetes targets
+		err = c.exportKubernetesTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.ListeningTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export listening targets
+		err = c.exportListeningTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.OfflineDropTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export listening targets
+		err = c.exportOfflineDropTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.PollingTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
+		// Export polling targets
+		err = c.exportPollingTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
+		}
 
-				err = c.SshTargetConverter.ToHclById(m, dependencies)
-				if err != nil {
-					return err
-				}
-			}
+		// Export polling targets
+		err = c.exportSshTargets(recursive, lookup, &v, dependencies)
+		if err != nil {
+			return err
 		}
 
 		tagSetDependencies, err := c.addTagSetDependencies(v, recursive, dependencies)
@@ -170,7 +191,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 			value = c.getCertificates(value, dependencies)
 			value = c.getWorkerPools(value, dependencies)
 
-			terraformResource := terraform2.TerraformProjectVariable{
+			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
 				Type:           "octopusdeploy_variable",
 				OwnerId:        parentLookup,
@@ -185,7 +206,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 			}
 
 			if v.IsSensitive {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        resourceName,
 					Type:        "string",
 					Nullable:    false,
@@ -202,7 +223,7 @@ func (c VariableSetConverter) toHcl(resource octopus2.VariableSet, recursive boo
 				// that are being created by terraform, and these dynamic values can not be used as default
 				// variable values.
 				terraformResource.Value = c.convertValue(v, resourceName)
-				regularVariable := terraform2.TerraformVariable{
+				regularVariable := terraform.TerraformVariable{
 					Name:        resourceName,
 					Type:        "string",
 					Nullable:    false,
@@ -247,7 +268,7 @@ func (c VariableSetConverter) GetResourceType() string {
 	return "Variables"
 }
 
-func (c VariableSetConverter) convertSecretValue(variable octopus2.Variable, resourceName string) *string {
+func (c VariableSetConverter) convertSecretValue(variable octopus.Variable, resourceName string) *string {
 	if variable.IsSensitive {
 		value := "${var." + resourceName + "}"
 		return &value
@@ -256,7 +277,7 @@ func (c VariableSetConverter) convertSecretValue(variable octopus2.Variable, res
 	return nil
 }
 
-func (c VariableSetConverter) convertValue(variable octopus2.Variable, resourceName string) *string {
+func (c VariableSetConverter) convertValue(variable octopus.Variable, resourceName string) *string {
 	if !variable.IsSensitive {
 		value := "${var." + resourceName + "}"
 		return &value
@@ -265,9 +286,9 @@ func (c VariableSetConverter) convertValue(variable octopus2.Variable, resourceN
 	return nil
 }
 
-func (c VariableSetConverter) convertPrompt(prompt octopus2.Prompt) *terraform2.TerraformProjectVariablePrompt {
+func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
 	if prompt.Label != nil || prompt.Description != nil {
-		return &terraform2.TerraformProjectVariablePrompt{
+		return &terraform.TerraformProjectVariablePrompt{
 			Description: prompt.Description,
 			Label:       prompt.Label,
 			IsRequired:  prompt.Required,
@@ -277,8 +298,8 @@ func (c VariableSetConverter) convertPrompt(prompt octopus2.Prompt) *terraform2.
 	return nil
 }
 
-func (c VariableSetConverter) convertScope(prompt octopus2.Scope, dependencies *ResourceDetailsCollection) *terraform2.TerraformProjectVariableScope {
-	return &terraform2.TerraformProjectVariableScope{
+func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
+	return &terraform.TerraformProjectVariableScope{
 		Actions:      dependencies.GetResources("Actions", prompt.Action...),
 		Channels:     dependencies.GetResources("Channels", prompt.Channel...),
 		Environments: dependencies.GetResources("Environments", prompt.Environment...),
@@ -289,14 +310,19 @@ func (c VariableSetConverter) convertScope(prompt octopus2.Scope, dependencies *
 
 }
 
-func (c VariableSetConverter) exportAccounts(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportAccounts(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
-	accountRegex, _ := regexp.Compile("Accounts-\\d+")
+	accountRegex := regexp.MustCompile("Accounts-\\d+")
 	for _, account := range accountRegex.FindAllString(*value, -1) {
-		err := c.AccountConverter.ToHclById(account, dependencies)
+		var err error
+		if recursive {
+			err = c.AccountConverter.ToHclById(account, dependencies)
+		} else if lookup {
+			err = c.AccountConverter.ToHclLookupById(account, dependencies)
+		}
 
 		if err != nil {
 			return err
@@ -312,7 +338,7 @@ func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDe
 	}
 
 	retValue := *value
-	accountRegex, _ := regexp.Compile("Accounts-\\d+")
+	accountRegex := regexp.MustCompile("Accounts-\\d+")
 	for _, account := range accountRegex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Accounts", account))
 	}
@@ -320,14 +346,19 @@ func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDe
 	return &retValue
 }
 
-func (c VariableSetConverter) exportFeeds(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportFeeds(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
-	feedRegex, _ := regexp.Compile("Feeds-\\d+")
-	for _, account := range feedRegex.FindAllString(*value, -1) {
-		err := c.FeedConverter.ToHclById(account, dependencies)
+	feedRegex := regexp.MustCompile("Feeds-\\d+")
+	for _, feed := range feedRegex.FindAllString(*value, -1) {
+		var err error
+		if recursive {
+			err = c.FeedConverter.ToHclById(feed, dependencies)
+		} else if lookup {
+			err = c.FeedConverter.ToHclLookupById(feed, dependencies)
+		}
 
 		if err != nil {
 			return err
@@ -343,7 +374,7 @@ func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDeta
 	}
 
 	retValue := *value
-	regex, _ := regexp.Compile("Feeds-\\d+")
+	regex := regexp.MustCompile("Feeds-\\d+")
 	for _, account := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Feeds", account))
 	}
@@ -351,14 +382,219 @@ func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDeta
 	return &retValue
 }
 
-func (c VariableSetConverter) exportCertificates(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportAzureCloudServiceTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.AzureCloudServiceTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.AzureCloudServiceTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportAzureServiceFabricTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.AzureServiceFabricTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.AzureServiceFabricTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportAzureWebAppTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.AzureWebAppTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.AzureWebAppTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportCloudRegionTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.CloudRegionTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.CloudRegionTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportKubernetesTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.KubernetesTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.KubernetesTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportListeningTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.ListeningTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.ListeningTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportOfflineDropTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.OfflineDropTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.OfflineDropTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportPollingTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.PollingTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.PollingTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportSshTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Machine {
+		var err error
+		if recursive {
+			err = c.SshTargetConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.SshTargetConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportEnvironments(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+	if variable == nil {
+		return nil
+	}
+
+	for _, e := range variable.Scope.Environment {
+		var err error
+		if recursive {
+			err = c.EnvironmentConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.EnvironmentConverter.ToHclLookupById(e, dependencies)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) exportCertificates(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
-	regex, _ := regexp.Compile("Certificates-\\d+")
+	regex := regexp.MustCompile("Certificates-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
-		err := c.CertificateConverter.ToHclById(cert, dependencies)
+		var err error
+		if recursive {
+			err = c.CertificateConverter.ToHclById(cert, dependencies)
+		} else if lookup {
+			err = c.CertificateConverter.ToHclLookupById(cert, dependencies)
+		}
 
 		if err != nil {
 			return err
@@ -374,7 +610,7 @@ func (c VariableSetConverter) getCertificates(value *string, dependencies *Resou
 	}
 
 	retValue := *value
-	regex, _ := regexp.Compile("Certificates-\\d+")
+	regex := regexp.MustCompile("Certificates-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("Certificates", cert))
 	}
@@ -382,14 +618,19 @@ func (c VariableSetConverter) getCertificates(value *string, dependencies *Resou
 	return &retValue
 }
 
-func (c VariableSetConverter) exportWorkerPools(value *string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportWorkerPools(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
 
-	regex, _ := regexp.Compile("WorkerPools-\\d+")
-	for _, cert := range regex.FindAllString(*value, -1) {
-		err := c.WorkerPoolConverter.ToHclById(cert, dependencies)
+	regex := regexp.MustCompile("WorkerPools-\\d+")
+	for _, pool := range regex.FindAllString(*value, -1) {
+		var err error
+		if recursive {
+			err = c.WorkerPoolConverter.ToHclById(pool, dependencies)
+		} else if lookup {
+			err = c.WorkerPoolConverter.ToHclLookupById(pool, dependencies)
+		}
 
 		if err != nil {
 			return err
@@ -405,7 +646,7 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 	}
 
 	retValue := *value
-	regex, _ := regexp.Compile("WorkerPools-\\d+")
+	regex := regexp.MustCompile("WorkerPools-\\d+")
 	for _, cert := range regex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("WorkerPools", cert))
 	}
@@ -413,7 +654,7 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 	return &retValue
 }
 
-func (c VariableSetConverter) exportChildDependencies(variableSet octopus2.VariableSet, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) exportChildDependencies(variableSet octopus.VariableSet, dependencies *ResourceDetailsCollection) error {
 	for _, v := range variableSet.Variables {
 		for _, e := range v.Scope.Environment {
 			err := c.EnvironmentConverter.ToHclById(e, dependencies)
@@ -428,8 +669,8 @@ func (c VariableSetConverter) exportChildDependencies(variableSet octopus2.Varia
 
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
-func (c VariableSetConverter) addTagSetDependencies(variable octopus2.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
-	collection := octopus2.GeneralCollection[octopus2.TagSet]{}
+func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
+	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := c.Client.GetAllResources("TagSets", &collection)
 
 	if err != nil {

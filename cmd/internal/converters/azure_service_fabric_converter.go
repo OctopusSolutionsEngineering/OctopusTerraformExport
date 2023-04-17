@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 )
 
@@ -18,7 +18,7 @@ type AzureServiceFabricTargetConverter struct {
 }
 
 func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.AzureServiceFabricResource]{}
+	collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 		return nil
 	}
 
-	resource := octopus2.AzureServiceFabricResource{}
+	resource := octopus.AzureServiceFabricResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -55,7 +55,50 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 	return c.toHcl(resource, true, dependencies)
 }
 
-func (c AzureServiceFabricTargetConverter) toHcl(target octopus2.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.AzureServiceFabricResource{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_deployment_targets" + resourceName + ".deployment_targets[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformDeploymentTargetsData{
+			Type:        "octopusdeploy_deployment_targets",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: &resource.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
+func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "AzureServiceFabricCluster" {
 
@@ -78,7 +121,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus2.AzureServiceFab
 
 			passwordLookup := "${var." + targetName + "}"
 
-			terraformResource := terraform2.TerraformAzureServiceFabricClusterDeploymentTarget{
+			terraformResource := terraform.TerraformAzureServiceFabricClusterDeploymentTarget{
 				Type:                            "octopusdeploy_azure_service_fabric_cluster_deployment_target",
 				Name:                            targetName,
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
@@ -124,7 +167,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus2.AzureServiceFab
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			secretVariableResource := terraform2.TerraformVariable{
+			secretVariableResource := terraform.TerraformVariable{
 				Name:        targetName,
 				Type:        "string",
 				Nullable:    true,
@@ -175,7 +218,7 @@ func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependenci
 	return &machineLookup
 }
 
-func (c AzureServiceFabricTargetConverter) exportDependencies(target octopus2.AzureServiceFabricResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) exportDependencies(target octopus.AzureServiceFabricResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

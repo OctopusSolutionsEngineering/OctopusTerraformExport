@@ -52,6 +52,49 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 	return c.toHcl(environment, true, dependencies)
 }
 
+func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	environment := octopus2.Environment{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = environment.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_environments" + resourceName + ".environments[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformEnvironmentData{
+			Type:        "octopusdeploy_certificates",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: environment.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
 func (c EnvironmentConverter) toHcl(environment octopus2.Environment, recursive bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 

@@ -22,7 +22,7 @@ type ProjectConverter struct {
 	DeploymentProcessConverter  ConverterAndLookupByIdAndName
 	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
-	VariableSetConverter        ConverterByIdWithNameAndParent
+	VariableSetConverter        ConverterAndLookupByIdWithNameAndParent
 	ChannelConverter            ConverterByProjectIdWithTerraDependencies
 }
 
@@ -329,7 +329,12 @@ func (c ProjectConverter) exportChildDependencies(lookup bool, project octopus2.
 
 	// Export the variable set
 	if project.VariableSetId != nil {
-		err := c.VariableSetConverter.ToHclByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+		var err error
+		if lookup {
+			err = c.VariableSetConverter.ToHclLookupByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+		} else {
+			err = c.VariableSetConverter.ToHclByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+		}
 
 		if err != nil {
 			return err

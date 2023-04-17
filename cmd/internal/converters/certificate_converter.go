@@ -53,6 +53,49 @@ func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetails
 	return c.toHcl(certificate, true, dependencies)
 }
 
+func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	certificate := octopus2.Certificate{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
+
+	thisResource.FileName = "space_population/" + certificateName + ".tf"
+	thisResource.Id = certificate.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_certificates" + certificateName + ".certificates[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform2.TerraformCertificateData{
+			Type:        "octopusdeploy_certificates",
+			Name:        certificateName,
+			Ids:         nil,
+			PartialName: &certificate.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
 func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.

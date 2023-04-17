@@ -38,6 +38,19 @@ type ConverterByIdWithNameAndParent interface {
 	ToHclByIdAndName(id string, name string, parentLookup string, dependencies *ResourceDetailsCollection) error
 }
 
+// ConverterLookupByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent, and
+// references external resources via data source lookups
+type ConverterLookupByIdWithNameAndParent interface {
+	ToHclLookupByIdAndName(id string, name string, parentLookup string, dependencies *ResourceDetailsCollection) error
+}
+
+// ConverterAndLookupByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent, and
+// can also reference external resources via data source lookups
+type ConverterAndLookupByIdWithNameAndParent interface {
+	ConverterByIdWithNameAndParent
+	ConverterLookupByIdWithNameAndParent
+}
+
 // ConverterByProjectIdWithName converts objects based on their relationship to a project, and uses the supplied name for the Terraform resource
 type ConverterByProjectIdWithName interface {
 	ToHclByProjectIdAndName(id string, name string, dependencies *ResourceDetailsCollection) error

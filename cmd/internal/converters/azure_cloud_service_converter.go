@@ -55,6 +55,49 @@ func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *Res
 	return c.toHcl(resource, true, dependencies)
 }
 
+func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus2.AzureCloudServiceResource{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_deployment_targets" + resourceName + ".deployment_targets[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformDeploymentTargetsData{
+			Type:        "octopusdeploy_deployment_targets",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: &resource.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
 func (c AzureCloudServiceTargetConverter) toHcl(target octopus2.AzureCloudServiceResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "AzureCloudService" {

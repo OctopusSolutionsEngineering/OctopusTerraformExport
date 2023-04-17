@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 )
 
@@ -17,7 +17,7 @@ type PollingTargetConverter struct {
 }
 
 func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.PollingEndpointResource]{}
+	collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 		return nil
 	}
 
-	resource := octopus2.PollingEndpointResource{}
+	resource := octopus.PollingEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -54,7 +54,50 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 	return c.toHcl(resource, true, dependencies)
 }
 
-func (c PollingTargetConverter) toHcl(target octopus2.PollingEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.PollingEndpointResource{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_deployment_targets" + resourceName + ".deployment_targets[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformDeploymentTargetsData{
+			Type:        "octopusdeploy_deployment_targets",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: &resource.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
+func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if target.Endpoint.CommunicationStyle == "TentacleActive" {
 		if recursive {
 			err := c.exportDependencies(target, dependencies)
@@ -73,7 +116,7 @@ func (c PollingTargetConverter) toHcl(target octopus2.PollingEndpointResource, r
 		thisResource.Lookup = "${octopusdeploy_polling_tentacle_deployment_target." + targetName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 
-			terraformResource := terraform2.TerraformPollingTentacleDeploymentTarget{
+			terraformResource := terraform.TerraformPollingTentacleDeploymentTarget{
 				Type:                            "octopusdeploy_polling_tentacle_deployment_target",
 				Name:                            targetName,
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
@@ -93,7 +136,7 @@ func (c PollingTargetConverter) toHcl(target octopus2.PollingEndpointResource, r
 				TenantTags:                      target.TenantTags,
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
-				TentacleVersionDetails:          terraform2.TerraformTentacleVersionDetails{},
+				TentacleVersionDetails:          terraform.TerraformTentacleVersionDetails{},
 				Uri:                             nil,
 				Thumbprint:                      target.Thumbprint,
 			}
@@ -141,7 +184,7 @@ func (c PollingTargetConverter) getMachinePolicy(machine string, dependencies *R
 	return &machineLookup
 }
 
-func (c PollingTargetConverter) exportDependencies(target octopus2.PollingEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) exportDependencies(target octopus.PollingEndpointResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
