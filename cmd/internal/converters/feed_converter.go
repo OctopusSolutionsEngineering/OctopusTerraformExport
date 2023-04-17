@@ -370,111 +370,107 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) {
 	thisResource.Lookup = "${data.octopusdeploy_feeds." + resourceName + ".feeds[0].id}"
 
-	thisResource.ToHcl = func() (string, error) {
-		if strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resourceName,
-					FeedType: "BuiltIn",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-				return string(file.Bytes()), nil
+	if strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resourceName,
+				FeedType: "BuiltIn",
+				Skip:     0,
+				Take:     1,
 			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resource.Name,
-					FeedType: "Docker",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
-				return string(file.Bytes()), nil
-			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resource.Name,
-					FeedType: "AwsElasticContainerRegistry",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-				return string(file.Bytes()), nil
-			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resource.Name,
-					FeedType: "Maven",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-				return string(file.Bytes()), nil
-			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resource.Name,
-					FeedType: "GitHub",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-				return string(file.Bytes()), nil
-			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resource.Name,
-					FeedType: "Helm",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-				return string(file.Bytes()), nil
-			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformFeedData{
-					Type:     "octopusdeploy_feeds",
-					Name:     resource.Name,
-					FeedType: "NuGet",
-					Skip:     0,
-					Take:     1,
-				}
-				file := hclwrite.NewEmptyFile()
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-				return string(file.Bytes()), nil
-			}
-		} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
-			// We don't do anything with this feed
-		} else {
-			fmt.Println(errors.New("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\"."))
+			return string(file.Bytes()), nil
 		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resource.Name,
+				FeedType: "Docker",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
-		return "", nil
+			return string(file.Bytes()), nil
+		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resource.Name,
+				FeedType: "AwsElasticContainerRegistry",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
+		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resource.Name,
+				FeedType: "Maven",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
+		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resource.Name,
+				FeedType: "GitHub",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
+		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resource.Name,
+				FeedType: "Helm",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
+		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resource.Name,
+				FeedType: "NuGet",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+			return string(file.Bytes()), nil
+		}
+	} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
+		// We don't do anything with this feed
+	} else {
+		fmt.Println(errors.New("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\"."))
 	}
 }

@@ -80,7 +80,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_accounts" + resourceName + ".accounts[0].id}"
+	thisResource.Lookup = "${data.octopusdeploy_accounts." + resourceName + ".accounts[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform2.TerraformAccountData{
 			Type:        "octopusdeploy_accounts",
