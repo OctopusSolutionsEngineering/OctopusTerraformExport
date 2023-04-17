@@ -84,16 +84,8 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, loo
 
 		if forceLookup {
 			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
-		} else {
-			thisResource.Lookup = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
-		}
 
-		thisResource.ToHcl = func() (string, error) {
-			/*
-				These default pools are expected to be created in a new space, so
-				we use a data lookup to reference them rather than create them.
-			*/
-			if forceLookup {
+			thisResource.ToHcl = func() (string, error) {
 				data := terraform2.TerraformWorkerPoolData{
 					Type:         "octopusdeploy_worker_pools",
 					Name:         resourceName,
@@ -107,7 +99,11 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, loo
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
 				return string(file.Bytes()), nil
-			} else {
+			}
+		} else {
+			thisResource.Lookup = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
+
+			thisResource.ToHcl = func() (string, error) {
 				terraformResource := terraform2.TerraformWorkerPool{
 					Type:         "octopusdeploy_dynamic_worker_pool",
 					Name:         resourceName,
@@ -134,21 +130,13 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, loo
 				return string(file.Bytes()), nil
 			}
 		}
-
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
 
 		if forceLookup {
 			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
-		} else {
-			thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
-		}
 
-		thisResource.ToHcl = func() (string, error) {
-			/*
-				This is the default pool available in every space. Use a data lookup for this pool.
-			*/
-			if forceLookup {
+			thisResource.ToHcl = func() (string, error) {
 				data := terraform2.TerraformWorkerPoolData{
 					Type:         "octopusdeploy_worker_pools",
 					Name:         resourceName,
@@ -162,7 +150,13 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, loo
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
 				return string(file.Bytes()), nil
-			} else {
+
+			}
+		} else {
+			thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
+
+			thisResource.ToHcl = func() (string, error) {
+
 				terraformResource := terraform2.TerraformWorkerPool{
 					Type:         "octopusdeploy_static_worker_pool",
 					Name:         resourceName,

@@ -108,12 +108,8 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 	thisResource.ResourceType = c.GetResourceType()
 	if forceLookup {
 		thisResource.Lookup = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
-	} else {
-		thisResource.Lookup = "${octopusdeploy_lifecycle." + resourceName + ".id}"
-	}
-	thisResource.ToHcl = func() (string, error) {
-		// Assume the default lifecycle already exists
-		if forceLookup {
+
+		thisResource.ToHcl = func() (string, error) {
 			data := terraform2.TerraformLifecycleData{
 				Type:        "octopusdeploy_lifecycles",
 				Name:        resourceName,
@@ -126,7 +122,12 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(data, "data"))
 
 			return string(file.Bytes()), nil
-		} else {
+		}
+	} else {
+		thisResource.Lookup = "${octopusdeploy_lifecycle." + resourceName + ".id}"
+
+		thisResource.ToHcl = func() (string, error) {
+
 			terraformResource := terraform2.TerraformLifecycle{
 				Type:                    "octopusdeploy_lifecycle",
 				Name:                    resourceName,
