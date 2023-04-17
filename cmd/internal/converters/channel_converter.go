@@ -36,6 +36,8 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 	return nil
 }
 
+// ToHclLookupByProjectIdWithTerraDependencies exports the channel set as a complete resource, but will reference external resources like
+// lifecycles as data source lookups.
 func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)

@@ -58,6 +58,8 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 	return c.toHcl(resource, true, false, parentName, parentLookup, dependencies)
 }
 
+// ToHclLookupByIdAndName exports the variable set as a complete resource, but will reference external resources like accounts,
+// feeds, worker pools, certificates, environments, and targets as data source lookups.
 func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
