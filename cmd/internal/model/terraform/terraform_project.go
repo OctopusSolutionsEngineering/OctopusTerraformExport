@@ -16,7 +16,7 @@ type TerraformProject struct {
 	IncludedLibraryVariableSets            []string                                         `hcl:"included_library_variable_sets"`
 	TenantedDeploymentParticipation        *string                                          `hcl:"tenanted_deployment_participation"`
 	Template                               []TerraformTemplate                              `hcl:"template,block"`
-	ConnectivityPolicy                     TerraformConnectivityPolicy                      `hcl:"connectivity_policy,block"`
+	ConnectivityPolicy                     *TerraformConnectivityPolicy                     `hcl:"connectivity_policy,block"`
 	GitLibraryPersistenceSettings          *TerraformGitLibraryPersistenceSettings          `hcl:"git_library_persistence_settings,block"`
 	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings        `hcl:"git_anonymous_persistence_settings,block"`
 	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings `hcl:"git_username_password_persistence_settings,block"`

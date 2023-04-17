@@ -3,7 +3,6 @@ package converters
 import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 )
@@ -11,7 +10,7 @@ import (
 // TerraformProviderGenerator creates the common terraform files required to populate a space
 // including the provider, terraform config, and common vars
 type TerraformProviderGenerator struct {
-	Client client.OctopusClient
+	TerraformBackend string
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
@@ -48,7 +47,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig()
+		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(c.TerraformBackend)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 		return string(file.Bytes()), nil

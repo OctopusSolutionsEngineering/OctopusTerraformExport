@@ -24,6 +24,7 @@ type ProjectConverter struct {
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterAndLookupByIdWithNameAndParent
 	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
+	IgnoreCacManagedValues      bool
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -121,26 +122,22 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformProject{
-			Type:                            "octopusdeploy_project",
-			Name:                            projectName,
-			ResourceName:                    "${var." + projectName + "_name}",
-			AutoCreateRelease:               project.AutoCreateRelease,
-			DefaultGuidedFailureMode:        project.DefaultGuidedFailureMode,
-			DefaultToSkipIfAlreadyInstalled: project.DefaultToSkipIfAlreadyInstalled,
-			Description:                     project.Description,
-			DiscreteChannelRelease:          project.DiscreteChannelRelease,
-			IsDisabled:                      project.IsDisabled,
-			IsVersionControlled:             project.IsVersionControlled,
-			LifecycleId:                     dependencies.GetResource("Lifecycles", project.LifecycleId),
-			ProjectGroupId:                  dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
-			IncludedLibraryVariableSets:     c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
-			TenantedDeploymentParticipation: project.TenantedDeploymentMode,
-			Template:                        projectTemplates,
-			ConnectivityPolicy: terraform.TerraformConnectivityPolicy{
-				AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
-				ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
-				SkipMachineBehavior:         project.ProjectConnectivityPolicy.SkipMachineBehavior,
-			},
+			Type:                                   "octopusdeploy_project",
+			Name:                                   projectName,
+			ResourceName:                           "${var." + projectName + "_name}",
+			AutoCreateRelease:                      project.AutoCreateRelease,
+			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
+			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
+			Description:                            project.Description,
+			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
+			IsDisabled:                             project.IsDisabled,
+			IsVersionControlled:                    project.IsVersionControlled,
+			LifecycleId:                            dependencies.GetResource("Lifecycles", project.LifecycleId),
+			ProjectGroupId:                         dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
+			IncludedLibraryVariableSets:            c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
+			TenantedDeploymentParticipation:        project.TenantedDeploymentMode,
+			Template:                               projectTemplates,
+			ConnectivityPolicy:                     c.convertConnectivityPolicy(project),
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
@@ -242,6 +239,18 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 	return collection, templateMap
 }
 
+func (c ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
+	if c.IgnoreCacManagedValues {
+		return nil
+	}
+
+	return &terraform.TerraformConnectivityPolicy{
+		AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
+		ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
+		SkipMachineBehavior:         project.ProjectConnectivityPolicy.SkipMachineBehavior,
+	}
+}
+
 func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *ResourceDetailsCollection) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
@@ -293,6 +302,10 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 }
 
 func (c ProjectConverter) convertVersioningStrategy(project octopus.Project) *terraform.TerraformVersioningStrategy {
+	if c.IgnoreCacManagedValues {
+		return nil
+	}
+
 	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
 	// needs to know the name of the step and package to base the versioning on, and the deployment process
 	// needs to know the project to attach itself to. If the versioning strategy is set to use packages,
@@ -338,7 +351,7 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 	}
 
 	// Export the deployment process
-	if project.DeploymentProcessId != nil {
+	if project.DeploymentProcessId != nil && !c.IgnoreCacManagedValues {
 		var err error
 		if lookup {
 			err = c.DeploymentProcessConverter.ToHclLookupByIdAndName(*project.DeploymentProcessId, projectName, dependencies)

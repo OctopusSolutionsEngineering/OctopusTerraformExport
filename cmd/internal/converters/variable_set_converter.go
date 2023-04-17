@@ -37,6 +37,7 @@ type VariableSetConverter struct {
 	FeedConverter                     ConverterAndLookupById
 	CertificateConverter              ConverterAndLookupById
 	WorkerPoolConverter               ConverterAndLookupById
+	IgnoreCacManagedValues            bool
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -79,12 +80,21 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 	return c.toHcl(resource, false, true, parentName, parentLookup, dependencies)
 }
 
+func (c VariableSetConverter) ignoreVariable(variable *octopus.Variable) bool {
+	return !variable.IsSensitive && c.IgnoreCacManagedValues
+}
+
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if recursive {
 		c.exportChildDependencies(resource, dependencies)
 	}
 
 	for i, v := range resource.Variables {
+		// Do not export regular variables if ignoring cac managed values
+		if c.ignoreVariable(&v) {
+			continue
+		}
+
 		v := v
 		file := hclwrite.NewEmptyFile()
 		thisResource := ResourceDetails{}

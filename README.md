@@ -48,7 +48,7 @@ To do so, use the following command:
     -space Spaces-## \
     -apiKey API-APIKEYGOESHERE \
     -projectId Projects-1234 \
-    -lookupProjectDependencies true \
+    -lookupProjectDependencies \
     -dest /tmp/octoexport
 ```
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -14,30 +15,30 @@ import (
 )
 
 func main() {
-	url, space, apiKey, dest, console, projectId, projectName, lookupProjectDependencies := parseArgs()
+	args := parseArgs()
 
-	if url == "" {
+	if args.Url == "" {
 		errorExit("You must specify the URL with the -url argument")
 	}
 
-	if apiKey == "" {
+	if args.ApiKey == "" {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
 	var err error = nil
 
-	if projectName != "" {
-		projectId, err := ConvertProjectNameToId(url, space, apiKey, projectName)
+	if args.ProjectName != "" {
+		projectId, err := ConvertProjectNameToId(args.Url, args.Space, args.ApiKey, args.ProjectName)
 
 		if err != nil {
 			errorExit(err.Error())
 		}
 
-		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId, lookupProjectDependencies)
-	} else if projectId != "" {
-		err = ConvertProjectToTerraform(url, space, apiKey, dest, console, projectId, lookupProjectDependencies)
+		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, projectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock)
+	} else if args.ProjectId != "" {
+		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.ProjectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock)
 	} else {
-		err = ConvertSpaceToTerraform(url, space, apiKey, dest, console)
+		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console)
 	}
 
 	if err != nil {
@@ -249,7 +250,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	return err
 }
 
-func ConvertProjectToTerraform(url string, space string, apiKey string, dest string, console bool, projectId string, lookupProjectDependencies bool) error {
+func ConvertProjectToTerraform(url string, space string, apiKey string, dest string, console bool, projectId string, lookupProjectDependencies bool, ignoreCacManagedSettings bool, terraformBackend string) error {
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -258,7 +259,9 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 
 	dependencies := converters.ResourceDetailsCollection{}
 
-	converters.TerraformProviderGenerator{}.ToHcl("space_population", &dependencies)
+	converters.TerraformProviderGenerator{
+		TerraformBackend: terraformBackend,
+	}.ToHcl("space_population", &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
@@ -366,6 +369,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		FeedConverter:                     feedConverter,
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
+		IgnoreCacManagedValues:            ignoreCacManagedSettings,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -385,8 +389,9 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
-		VariableSetConverter: variableSetConverter,
-		ChannelConverter:     channelConverter,
+		VariableSetConverter:   variableSetConverter,
+		ChannelConverter:       channelConverter,
+		IgnoreCacManagedValues: ignoreCacManagedSettings,
 	}
 
 	var err error
@@ -436,42 +441,30 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 	return fileMap, nil
 }
 
-func parseArgs() (string, string, string, string, bool, string, string, bool) {
-	var url string
-	flag.StringVar(&url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
+func parseArgs() args.Arguments {
+	arguments := args.Arguments{}
 
-	var space string
-	flag.StringVar(&space, "space", "", "The Octopus space name or ID")
-
-	var apiKey string
-	flag.StringVar(&apiKey, "apiKey", "", "The Octopus api key")
-
-	var dest string
-	flag.StringVar(&dest, "dest", "", "The directory to place the Terraform files in")
-
-	var console bool
-	flag.BoolVar(&console, "console", false, "Dump Terraform files to the console")
-
-	var projectId string
-	flag.StringVar(&projectId, "projectId", "", "Limit the export to a single project")
-
-	var projectName string
-	flag.StringVar(&projectName, "projectName", "", "Limit the export to a single project")
-
-	var lookupProjectDependencies bool
-	flag.BoolVar(&lookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
-
+	flag.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
+	flag.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
+	flag.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
+	flag.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
+	flag.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
+	flag.StringVar(&arguments.ProjectId, "projectId", "", "Limit the export to a single project")
+	flag.StringVar(&arguments.ProjectName, "projectName", "", "Limit the export to a single project")
+	flag.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
+	flag.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", false, "Set this to true to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings.")
+	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Used to specify the backend type to be added to the exported Terraform configuration.")
 	flag.Parse()
 
-	if url == "" {
-		url = os.Getenv("OCTOPUS_CLI_SERVER")
+	if arguments.Url == "" {
+		arguments.Url = os.Getenv("OCTOPUS_CLI_SERVER")
 	}
 
-	if apiKey == "" {
-		apiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
+	if arguments.ApiKey == "" {
+		arguments.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
 	}
 
-	return url, space, apiKey, dest, console, projectId, projectName, lookupProjectDependencies
+	return arguments
 }
 
 func writeFiles(files map[string]string, dest string, console bool) error {

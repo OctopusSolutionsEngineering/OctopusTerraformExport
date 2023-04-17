@@ -2,6 +2,11 @@ package terraform
 
 type TerraformConfig struct {
 	RequiredProviders RequiredProviders `hcl:"required_providers,block"`
+	Backend           Backend           `hcl:"backend,block"`
+}
+
+type Backend struct {
+	Type string `hcl:"type,label"`
 }
 
 type RequiredProviders struct {
@@ -20,8 +25,8 @@ type TerraformProvider struct {
 	SpaceId *string `hcl:"space_id"`
 }
 
-func (c TerraformConfig) CreateTerraformConfig() TerraformConfig {
-	return TerraformConfig{
+func (c TerraformConfig) CreateTerraformConfig(backend string) TerraformConfig {
+	config := TerraformConfig{
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: OctopusProvider{
 				Source:  "OctopusDeployLabs/octopusdeploy",
@@ -29,4 +34,10 @@ func (c TerraformConfig) CreateTerraformConfig() TerraformConfig {
 			},
 		},
 	}
+
+	if backend != "" {
+		config.Backend = Backend{Type: backend}
+	}
+
+	return config
 }
