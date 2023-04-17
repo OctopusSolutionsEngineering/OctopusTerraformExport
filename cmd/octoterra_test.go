@@ -2799,32 +2799,38 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 
 // TestProjectWithDollarSignsExport verifies that a project can be reimported with terraform string interpolation
 func TestProjectWithDollarSignsExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/40-escapedollar/space_creation", "../test/terraform/40-escapedollar/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/40-escapedollar/space_creation",
+		"../test/terraform/40-escapedollar/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
-
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			if err != nil {
+				return err
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\"")
-		}
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+				}
+			}
 
-		return nil
-	})
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\"")
+			}
+
+			return nil
+		})
 }
 
 // TestProjectTerraformInlineScriptExport verifies that a project can be reimported with a terraform inline template step
