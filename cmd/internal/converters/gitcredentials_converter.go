@@ -84,65 +84,73 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, r
 	thisResource.ResourceType = c.GetResourceType()
 
 	if lookup {
-		thisResource.Lookup = "${data.octopusdeploy_git_credentials." + gitCredentialsName + ".project_groups[0].id}"
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformGitCredentialData{
-				Type:         "octopusdeploy_project_groups",
-				Name:         gitCredentialsName,
-				ResourceName: gitCredentials.Name,
-				Skip:         0,
-				Take:         1,
-			}
-			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
-
-			return string(file.Bytes()), nil
-		}
+		c.toHclLookup(gitCredentials, &thisResource, gitCredentialsName)
 	} else {
-		thisResource.Lookup = "${octopusdeploy_git_credential." + gitCredentialsName + ".id}"
-		thisResource.ToHcl = func() (string, error) {
-
-			terraformResource := terraform2.TerraformGitCredentials{
-				Type:         "octopusdeploy_git_credential",
-				Name:         gitCredentialsName,
-				Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
-				ResourceName: gitCredentials.Name,
-				ResourceType: gitCredentials.Details.Type,
-				Username:     gitCredentials.Details.Username,
-				Password:     "${var." + gitCredentialsName + "}",
-			}
-			file := hclwrite.NewEmptyFile()
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + gitCredentials.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_git_credential." + gitCredentialsName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
-
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        gitCredentialsName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The secret variable value associated with the git credential \"" + gitCredentials.Name + "\"",
-			}
-
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
-
-			return string(file.Bytes()), nil
-		}
+		c.toHclResource(gitCredentials, &thisResource, gitCredentialsName)
 	}
 
 	dependencies.AddResource(thisResource)
 	return nil
+}
+
+func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
+	thisResource.Lookup = "${data.octopusdeploy_git_credentials." + gitCredentialsName + ".git_credentials[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform2.TerraformGitCredentialData{
+			Type:         "octopusdeploy_git_credentials",
+			Name:         gitCredentialsName,
+			ResourceName: gitCredentials.Name,
+			Skip:         0,
+			Take:         1,
+		}
+		file := hclwrite.NewEmptyFile()
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+
+		return string(file.Bytes()), nil
+	}
+}
+
+func (c GitCredentialsConverter) toHclResource(gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
+	thisResource.Lookup = "${octopusdeploy_git_credential." + gitCredentialsName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform2.TerraformGitCredentials{
+			Type:         "octopusdeploy_git_credential",
+			Name:         gitCredentialsName,
+			Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
+			ResourceName: gitCredentials.Name,
+			ResourceType: gitCredentials.Details.Type,
+			Username:     gitCredentials.Details.Username,
+			Password:     "${var." + gitCredentialsName + "}",
+		}
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + gitCredentials.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_git_credential." + gitCredentialsName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		secretVariableResource := terraform2.TerraformVariable{
+			Name:        gitCredentialsName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The secret variable value associated with the git credential \"" + gitCredentials.Name + "\"",
+		}
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
 }
 
 func (c GitCredentialsConverter) GetResourceType() string {

@@ -2640,7 +2640,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
 		},
 		[]string{
-			//"-var=project_test_git_base_path=.octopus/integrationtestimport",
+			"-var=project_test_git_base_path=.octopus/integrationtestimport",
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 

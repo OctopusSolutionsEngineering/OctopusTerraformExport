@@ -48,13 +48,13 @@ resource "octopusdeploy_project" "project_1" {
     skip_machine_behavior           = "SkipUnavailableMachines"
   }
 
-#  git_library_persistence_settings {
-#    git_credential_id  = data.octopusdeploy_git_credentials.git.git_credentials[0].id
-#    url                = "https://github.com/mcasperson/octogittest.git"
-#    base_path          = ".octopus/integrationtest"
-#    default_branch     = "main"
-#    protected_branches = []
-#  }
+  git_library_persistence_settings {
+    git_credential_id  = data.octopusdeploy_git_credentials.git.git_credentials[0].id
+    url                = "https://github.com/mcasperson/octogittest.git"
+    base_path          = ".octopus/integrationtest"
+    default_branch     = "main"
+    protected_branches = []
+  }
 }
 
 resource "octopusdeploy_variable" "string_variable" {
