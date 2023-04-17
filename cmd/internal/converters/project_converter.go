@@ -323,12 +323,12 @@ func (c ProjectConverter) convertVersioningStrategy(project octopus.Project) *te
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
 func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	var err error
-	if recursive {
-		err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
+	if lookup {
+		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
 			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
 		}, dependencies)
-	} else if lookup {
-		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
+	} else {
+		err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
 			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
 		}, dependencies)
 	}
