@@ -43,7 +43,7 @@ func exportProjectImportAndTest(t *testing.T, projectName string, initialiseModu
 			return err
 		}
 
-		return ConvertProjectToTerraform(url, space, test.ApiKey, dest, true, projectId)
+		return ConvertProjectToTerraform(url, space, test.ApiKey, dest, true, projectId, false)
 	}, testFunc)
 }
 
