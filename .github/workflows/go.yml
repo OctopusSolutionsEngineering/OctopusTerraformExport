@@ -96,6 +96,8 @@ jobs:
           GIT_CREDENTIAL: ${{ secrets.GIT_CREDENTIAL }}
           OCTOTESTSKIPINIT: true
           OCTODISABLEOCTOCONTAINERLOGGING: true
+          OCTOTESTDUMPSTATE: true
+          OCTOTESTDEFAULTSPACEID: Spaces-2
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
         with:
