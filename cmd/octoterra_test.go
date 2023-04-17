@@ -670,66 +670,71 @@ func TestHelmFeedExport(t *testing.T) {
 
 // TestDockerFeedExport verifies that a docker feed can be reimported with the correct settings
 func TestDockerFeedExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/11-dockerfeed/space_creation", "../test/terraform/11-dockerfeed/space_population", []string{}, []string{
-		"-var=feed_docker_password=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/11-dockerfeed/space_creation",
+		"../test/terraform/11-dockerfeed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Feed]{}
-		err := octopusClient.GetAllResources("Feeds", &collection)
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		feedName := "Docker"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == feedName {
-				found = true
+			feedName := "Docker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
 
-				if *v.FeedType != "Docker" {
-					t.Fatal("The feed must have a type of \"Docker\"")
-				}
-
-				if *v.Username != "username" {
-					t.Fatal("The feed must have a username of \"username\"")
-				}
-
-				if *v.ApiVersion != "v1" {
-					t.Fatal("The feed must be have a API version of \"v1\"")
-				}
-
-				if *v.FeedUri != "https://index.docker.io" {
-					t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
-				}
-
-				foundExecutionTarget := false
-				foundNotAcquired := false
-				for _, o := range v.PackageAcquisitionLocationOptions {
-					if o == "ExecutionTarget" {
-						foundExecutionTarget = true
+					if *v.FeedType != "Docker" {
+						t.Fatal("The feed must have a type of \"Docker\"")
 					}
 
-					if o == "NotAcquired" {
-						foundNotAcquired = true
+					if *v.Username != "username" {
+						t.Fatal("The feed must have a username of \"username\"")
 					}
-				}
 
-				if !(foundExecutionTarget && foundNotAcquired) {
-					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					if *v.ApiVersion != "v1" {
+						t.Fatal("The feed must be have a API version of \"v1\"")
+					}
+
+					if *v.FeedUri != "https://index.docker.io" {
+						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+					}
+
+					foundExecutionTarget := false
+					foundNotAcquired := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "NotAcquired" {
+							foundNotAcquired = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundNotAcquired) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\"")
-		}
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestEcrFeedExport verifies that a ecr feed can be reimported with the correct settings
