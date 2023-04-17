@@ -500,7 +500,7 @@ func TestSshAccountExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an account called \"" + accountName + "\"")
+			t.Fatal("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -661,7 +661,7 @@ func TestHelmFeedExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -730,7 +730,7 @@ func TestDockerFeedExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\"")
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -802,7 +802,7 @@ func TestEcrFeedExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -870,7 +870,7 @@ func TestMavenFeedExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -942,7 +942,7 @@ func TestNugetFeedExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -988,7 +988,7 @@ func TestWorkerPoolExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an worker pool called \"" + workerPoolName + "\"")
+			t.Fatal("Space must have an worker pool called \"" + workerPoolName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1030,7 +1030,7 @@ func TestEnvironmentExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an environment called \"" + resourceName + "\"")
+			t.Fatal("Space must have an environment called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1088,7 +1088,7 @@ func TestLifecycleExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an lifecycle called \"" + resourceName + "\"")
+			t.Fatal("Space must have an lifecycle called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1153,7 +1153,7 @@ func TestVariableSetExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an library variable set called \"" + resourceName + "\"")
+			t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1231,7 +1231,7 @@ func TestProjectExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1301,7 +1301,7 @@ func TestProjectChannelExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1362,7 +1362,7 @@ func TestTagSetExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an tag set called \"" + resourceName + "\"")
+			t.Fatal("Space must have an tag set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1406,7 +1406,7 @@ func TestGitCredentialsExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an git credential called \"" + resourceName + "\"")
+			t.Fatal("Space must have an git credential called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1496,7 +1496,7 @@ func TestScriptModuleExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an library variable set called \"" + resourceName + "\"")
+			t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1544,7 +1544,7 @@ func TestTenantsExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an tenant called \"" + resourceName + "\"")
+			t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1601,7 +1601,7 @@ func TestCertificateExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an tenant called \"" + resourceName + "\"")
+			t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1641,7 +1641,7 @@ func TestTenantVariablesExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an tenant project variable for the project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an tenant project variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1747,7 +1747,7 @@ func TestMachinePolicyExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an machine policy for the project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an machine policy for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1797,7 +1797,7 @@ func TestProjectTriggerExport(t *testing.T) {
 		}
 
 		if !foundProject {
-			t.Fatal("Space must have an project \"" + resourceName + "\"")
+			t.Fatal("Space must have an project \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		if !foundTrigger {
@@ -1838,7 +1838,7 @@ func TestK8sTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1884,7 +1884,7 @@ func TestSshTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1935,7 +1935,7 @@ func TestListeningTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -1986,7 +1986,7 @@ func TestPollingTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2029,7 +2029,7 @@ func TestCloudRegionTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2080,7 +2080,7 @@ func TestOfflineDropTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2140,7 +2140,7 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2199,7 +2199,7 @@ func TestAzureServiceFabricTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2258,7 +2258,7 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 		}
 
 		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\"")
+			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2790,7 +2790,7 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2826,7 +2826,7 @@ func TestProjectWithDollarSignsExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\"")
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2856,7 +2856,7 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\"")
+			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
@@ -2924,7 +2924,7 @@ func TestGithubFeedExport(t *testing.T) {
 		}
 
 		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\"")
+			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 		}
 
 		return nil
