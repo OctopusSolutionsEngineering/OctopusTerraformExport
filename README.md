@@ -17,7 +17,7 @@ Note this open source project has no offical support.
 
 To export a complete space, use the following command:
 
-```
+```bash
 ./octoterra \
     -url https://yourinstance.octopus.app \
     -space Spaces-## \
@@ -27,12 +27,28 @@ To export a complete space, use the following command:
 
 To export a single project and it's associated dependencies, use the following command:
 
-```
+```bash
 ./octoterra \
     -url https://yourinstance.octopus.app \
     -space Spaces-## \
     -apiKey API-APIKEYGOESHERE \
     -projectId Projects-1234 \
+    -dest /tmp/octoexport
+```
+
+Projects can also be exported using data source lookups to reference existing external resources rather than creating them. 
+This is useful when exporting a project to be reimported into a space where all the existing resources like environments, accounts,
+feeds, git credentials, targets, and worker pools already exist.
+
+To do so, use the following command:
+
+```bash
+./octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -projectId Projects-1234 \
+    -lookupProjectDependencies true \
     -dest /tmp/octoexport
 ```
 
