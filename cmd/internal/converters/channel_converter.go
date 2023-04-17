@@ -14,7 +14,7 @@ import (
 
 type ChannelConverter struct {
 	Client             client.OctopusClient
-	LifecycleConverter ConverterById
+	LifecycleConverter ConverterAndLookupById
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
@@ -26,7 +26,7 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 	}
 
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, true, terraformDependencies, dependencies)
+		err = c.toHcl(channel, true, false, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -36,10 +36,34 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 	return nil
 }
 
-func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
-	if recursive && channel.LifecycleId != "" {
-		// The lifecycle is a dependency that we need to lookup
-		err := c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
+func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+	collection := octopus2.GeneralCollection[octopus2.Channel]{}
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, channel := range collection.Items {
+		err = c.toHcl(channel, false, true, terraformDependencies, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, lookup bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+	if channel.LifecycleId != "" {
+		var err error
+		if recursive {
+			// The lifecycle is a dependency that we need to lookup
+			err = c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
+		} else if lookup {
+			err = c.LifecycleConverter.ToHclLookupById(channel.LifecycleId, dependencies)
+		}
 
 		if err != nil {
 			return err

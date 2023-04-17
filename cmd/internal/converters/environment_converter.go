@@ -78,7 +78,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceD
 	thisResource.Lookup = "${data.octopusdeploy_environments" + resourceName + ".environments[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform.TerraformEnvironmentData{
-			Type:        "octopusdeploy_certificates",
+			Type:        "octopusdeploy_environments",
 			Name:        resourceName,
 			Ids:         nil,
 			PartialName: environment.Name,

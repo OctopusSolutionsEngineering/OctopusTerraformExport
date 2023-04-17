@@ -23,7 +23,7 @@ type ProjectConverter struct {
 	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterAndLookupByIdWithNameAndParent
-	ChannelConverter            ConverterByProjectIdWithTerraDependencies
+	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -104,7 +104,7 @@ func (c ProjectConverter) toHcl(project octopus2.Project, recursive bool, lookup
 		}
 	}
 
-	err := c.exportChildDependencies(lookups, project, projectName, dependencies)
+	err := c.exportChildDependencies(recursive, lookups, project, projectName, dependencies)
 
 	if err != nil {
 		return err
@@ -304,10 +304,17 @@ func (c ProjectConverter) convertVersioningStrategy(project octopus2.Project) *t
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
-func (c ProjectConverter) exportChildDependencies(lookup bool, project octopus2.Project, projectName string, dependencies *ResourceDetailsCollection) error {
-	err := c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
-		"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-	}, dependencies)
+func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, project octopus2.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+	var err error
+	if recursive {
+		err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
+			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
+		}, dependencies)
+	} else if lookup {
+		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
+			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
+		}, dependencies)
+	}
 
 	if err != nil {
 		return err

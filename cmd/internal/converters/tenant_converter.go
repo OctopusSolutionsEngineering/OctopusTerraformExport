@@ -125,10 +125,10 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bo
 	thisResource.ResourceType = c.GetResourceType()
 
 	if lookup {
-		thisResource.Lookup = "${data.octopusdeploy_project_groups." + tenantName + ".project_groups[0].id}"
+		thisResource.Lookup = "${data.octopusdeploy_tenants." + tenantName + ".tenants[0].id}"
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTenantData{
-				Type:        "octopusdeploy_project_groups",
+				Type:        "octopusdeploy_tenants",
 				Name:        tenantName,
 				Ids:         nil,
 				PartialName: tenant.Name,

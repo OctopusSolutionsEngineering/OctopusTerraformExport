@@ -100,7 +100,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, lookup bool
 				thisResource.ToHcl = func() (string, error) {
 					terraformResource := terraform2.TerraformFeedData{
 						Type:     "octopusdeploy_feeds",
-						Name:     "built_in_feed",
+						Name:     resourceName,
 						FeedType: "BuiltIn",
 						Skip:     0,
 						Take:     1,

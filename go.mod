@@ -6,7 +6,7 @@ require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.21.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
-	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230315195304-bc8c89cbd07a
+	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230417022624-cc611c5fbe00
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 )
 

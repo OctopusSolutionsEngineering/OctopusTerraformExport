@@ -95,6 +95,7 @@ func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *Re
 		return string(file.Bytes()), nil
 	}
 
+	dependencies.AddResource(thisResource)
 	return nil
 }
 
