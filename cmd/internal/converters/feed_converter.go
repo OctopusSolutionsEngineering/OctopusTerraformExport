@@ -387,11 +387,12 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resource.Name,
-				FeedType: "Docker",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "Docker",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
@@ -401,11 +402,12 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resource.Name,
-				FeedType: "AwsElasticContainerRegistry",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "AwsElasticContainerRegistry",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
@@ -415,11 +417,12 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resource.Name,
-				FeedType: "Maven",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "Maven",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
@@ -429,11 +432,12 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resource.Name,
-				FeedType: "GitHub",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "GitHub",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
@@ -443,11 +447,12 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resource.Name,
-				FeedType: "Helm",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "Helm",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
@@ -457,11 +462,12 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resource.Name,
-				FeedType: "NuGet",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "NuGet",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
