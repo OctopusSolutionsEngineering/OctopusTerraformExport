@@ -38,6 +38,7 @@ type VariableSetConverter struct {
 	CertificateConverter              ConverterAndLookupById
 	WorkerPoolConverter               ConverterAndLookupById
 	IgnoreCacManagedValues            bool
+	DefaultSecretVariableValues       bool
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -199,7 +200,13 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 			return err
 		}
 
-		thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
+		// Placing sensitive variables in uniquely prefixed files allows us to target them for variable substitution
+		if v.IsSensitive {
+			thisResource.FileName = "space_population/project_variable_sensitive_" + resourceName + ".tf"
+		} else {
+			thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
+		}
+
 		thisResource.Id = v.Id
 		thisResource.ResourceType = c.GetResourceType()
 		thisResource.Lookup = "${octopusdeploy_variable." + resourceName + ".id}"
@@ -226,16 +233,25 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 			}
 
 			if v.IsSensitive {
+				var defaultValue *string = nil
+
+				if c.DefaultSecretVariableValues {
+					defaultValueLookup := "#{" + v.Name + "}"
+					defaultValue = &defaultValueLookup
+				}
+
 				secretVariableResource := terraform.TerraformVariable{
 					Name:        resourceName,
 					Type:        "string",
 					Nullable:    false,
 					Sensitive:   true,
 					Description: "The secret variable value associated with the variable " + v.Name,
+					Default:     defaultValue,
 				}
 
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 				hcl.WriteUnquotedAttribute(block, "type", "string")
+
 				file.Body().AppendBlock(block)
 			} else if v.Type == "String" {
 				// Use a second terraform variable to allow the octopus variable to be defined at apply time.

@@ -34,9 +34,9 @@ func main() {
 			errorExit(err.Error())
 		}
 
-		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, projectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock)
+		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, projectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock, args.DefaultSecretVariableValues)
 	} else if args.ProjectId != "" {
-		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.ProjectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock)
+		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.ProjectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock, args.DefaultSecretVariableValues)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console)
 	}
@@ -250,7 +250,18 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	return err
 }
 
-func ConvertProjectToTerraform(url string, space string, apiKey string, dest string, console bool, projectId string, lookupProjectDependencies bool, ignoreCacManagedSettings bool, terraformBackend string) error {
+func ConvertProjectToTerraform(
+	url string,
+	space string,
+	apiKey string,
+	dest string,
+	console bool,
+	projectId string,
+	lookupProjectDependencies bool,
+	ignoreCacManagedSettings bool,
+	terraformBackend string,
+	defaultSecretVariableValues bool) error {
+
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -370,6 +381,7 @@ func ConvertProjectToTerraform(url string, space string, apiKey string, dest str
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 		IgnoreCacManagedValues:            ignoreCacManagedSettings,
+		DefaultSecretVariableValues:       defaultSecretVariableValues,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
@@ -452,7 +464,8 @@ func parseArgs() args.Arguments {
 	flag.StringVar(&arguments.ProjectId, "projectId", "", "Limit the export to a single project")
 	flag.StringVar(&arguments.ProjectName, "projectName", "", "Limit the export to a single project")
 	flag.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
-	flag.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", false, "Set this to true to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings.")
+	flag.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", false, "Pass this to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings.")
+	flag.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
 	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Used to specify the backend type to be added to the exported Terraform configuration.")
 	flag.Parse()
 
