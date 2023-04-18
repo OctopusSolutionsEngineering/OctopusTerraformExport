@@ -2,7 +2,7 @@ package terraform
 
 type TerraformConfig struct {
 	RequiredProviders RequiredProviders `hcl:"required_providers,block"`
-	Backend           Backend           `hcl:"backend,block"`
+	Backend           *Backend          `hcl:"backend,block"`
 }
 
 type Backend struct {
@@ -36,7 +36,7 @@ func (c TerraformConfig) CreateTerraformConfig(backend string) TerraformConfig {
 	}
 
 	if backend != "" {
-		config.Backend = Backend{Type: backend}
+		config.Backend = &Backend{Type: backend}
 	}
 
 	return config
