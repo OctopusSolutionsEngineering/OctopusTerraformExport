@@ -89,17 +89,25 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 		c.exportChildDependencies(resource, dependencies)
 	}
 
-	for i, v := range resource.Variables {
+	nameCount := map[string]int{}
+	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
 		if c.ignoreVariable(&v) {
 			continue
+		}
+
+		// Generate a unique suffix for each variable name
+		if count, ok := nameCount[v.Name]; ok {
+			nameCount[v.Name] = count + 1
+		} else {
+			nameCount[v.Name] = 1
 		}
 
 		v := v
 		file := hclwrite.NewEmptyFile()
 		thisResource := ResourceDetails{}
 
-		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(i)
+		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(nameCount[v.Name])
 
 		// Export linked accounts
 		err := c.exportAccounts(recursive, lookup, v.Value, dependencies)

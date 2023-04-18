@@ -24,3 +24,4 @@ octoterra.exe
 **/.terraform/
 
 results.xml
+*.zip
