@@ -83,7 +83,17 @@ func exportProjectImportAndTest(
 				return err
 			}
 
-			return ConvertProjectToTerraform(url, space, test.ApiKey, dest, true, projectId, false, false, "")
+			return ConvertProjectToTerraform(
+				url,
+				space,
+				test.ApiKey,
+				dest,
+				true,
+				projectId,
+				false,
+				false,
+				"",
+				false)
 		},
 		testFunc)
 }
@@ -120,7 +130,17 @@ func exportProjectLookupImportAndTest(
 				return err
 			}
 
-			return ConvertProjectToTerraform(url, space, test.ApiKey, dest, true, projectId, true, false, "")
+			return ConvertProjectToTerraform(
+				url,
+				space,
+				test.ApiKey,
+				dest,
+				true,
+				projectId,
+				true,
+				false,
+				"",
+				false)
 		},
 		testFunc)
 }

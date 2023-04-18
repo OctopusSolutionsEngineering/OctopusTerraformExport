@@ -30,7 +30,7 @@ func (c TerraformConfig) CreateTerraformConfig(backend string) TerraformConfig {
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: OctopusProvider{
 				Source:  "OctopusDeployLabs/octopusdeploy",
-				Version: "0.11.2",
+				Version: "0.11.3",
 			},
 		},
 	}
