@@ -5,7 +5,7 @@ type Runbook struct {
 	Name                       string
 	Slug                       *string
 	Description                *string
-	RunbookProcessId           string
+	RunbookProcessId           *string
 	PublishedRunbookSnapshotId *string
 	ProjectId                  string
 	MultiTenancyMode           *string

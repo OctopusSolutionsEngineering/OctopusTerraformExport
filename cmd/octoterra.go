@@ -208,7 +208,15 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
-	runbookConverter := converters.RunbookConverter{Client: client}
+	runbookConverter := converters.RunbookConverter{
+		Client: client,
+		RunbookProcessConverter: converters.RunbookProcessConverter{
+			Client:              client,
+			FeedConverter:       feedConverter,
+			AccountConverter:    accountConverter,
+			WorkerPoolConverter: workerPoolConverter,
+		},
+	}
 
 	spaceConverter := converters.SpaceConverter{
 		Client:                      client,
@@ -412,7 +420,15 @@ func ConvertProjectToTerraform(
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
-	runbookConverter := converters.RunbookConverter{Client: client}
+	runbookConverter := converters.RunbookConverter{
+		Client: client,
+		RunbookProcessConverter: converters.RunbookProcessConverter{
+			Client:              client,
+			FeedConverter:       feedConverter,
+			AccountConverter:    accountConverter,
+			WorkerPoolConverter: workerPoolConverter,
+		},
+	}
 
 	projectConverter := converters.ProjectConverter{
 		Client:                      client,

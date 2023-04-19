@@ -13,10 +13,30 @@ import (
 )
 
 type RunbookConverter struct {
-	Client client.OctopusClient
+	Client                  client.OctopusClient
+	RunbookProcessConverter ConverterAndLookupByIdAndName
 }
 
-func (c RunbookConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+	collection := octopus.GeneralCollection[octopus.Runbook]{}
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, runbook := range collection.Items {
+		err = c.toHcl(runbook, projectName, true, false, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -38,7 +58,14 @@ func (c RunbookConverter) ToHclByProjectIdAndName(projectId string, projectName 
 func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
-	runbookName := "runbook_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
+	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
+	runbookName := "runbook_" + resourceNameSuffix
+
+	err := c.exportChildDependencies(recursive, lookups, runbook, resourceNameSuffix, dependencies)
+
+	if err != nil {
+		return err
+	}
 
 	thisResource.FileName = "space_population/" + runbookName + ".tf"
 	thisResource.Id = runbook.Id
@@ -142,4 +169,22 @@ func (c RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terra
 		QuantityToKeep:    runbook.RunRetentionPolicy.QuantityToKeep,
 		ShouldKeepForever: runbook.RunRetentionPolicy.ShouldKeepForever,
 	}
+}
+
+func (c RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *ResourceDetailsCollection) error {
+	// Export the deployment process
+	if runbook.RunbookProcessId != nil {
+		var err error
+		if lookup {
+			err = c.RunbookProcessConverter.ToHclLookupByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+		} else {
+			err = c.RunbookProcessConverter.ToHclByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
