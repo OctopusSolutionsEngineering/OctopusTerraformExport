@@ -24,6 +24,7 @@ type ProjectConverter struct {
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterAndLookupByIdWithNameAndParent
 	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
+	RunbookConverter            ConverterByProjectIdWithName
 	IgnoreCacManagedValues      bool
 }
 
@@ -380,6 +381,13 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 
 	// Export the triggers
 	err = c.ProjectTriggerConverter.ToHclByProjectIdAndName(project.Id, project.Name, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the runbooks
+	err = c.RunbookConverter.ToHclByProjectIdAndName(project.Id, project.Name, dependencies)
 
 	if err != nil {
 		return err

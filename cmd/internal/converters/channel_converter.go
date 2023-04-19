@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"strings"
 )
@@ -18,15 +18,23 @@ type ChannelConverter struct {
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.Channel]{}
+	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
 		return err
 	}
 
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById(c.GetResourceType(), projectId, &project)
+
+	if err != nil {
+		return err
+	}
+
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, true, false, terraformDependencies, dependencies)
+		project := octopus.Project{}
+		err = c.toHcl(channel, project, true, false, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -39,15 +47,22 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 // ToHclLookupByProjectIdWithTerraDependencies exports the channel set as a complete resource, but will reference external resources like
 // lifecycles as data source lookups.
 func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.Channel]{}
+	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
 		return err
 	}
 
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById(c.GetResourceType(), projectId, &project)
+
+	if err != nil {
+		return err
+	}
+
 	for _, channel := range collection.Items {
-		err = c.toHcl(channel, false, true, terraformDependencies, dependencies)
+		err = c.toHcl(channel, project, false, true, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -57,7 +72,7 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 	return nil
 }
 
-func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, lookup bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
 	if channel.LifecycleId != "" {
 		var err error
 		if recursive {
@@ -73,7 +88,7 @@ func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, lookup
 	}
 
 	thisResource := ResourceDetails{}
-	resourceName := "channel_" + sanitizer.SanitizeNamePointer(&channel.Name)
+	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = channel.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -82,7 +97,7 @@ func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, lookup
 		// TODO: Many channels are called default! But there is no way to look up a channel based on its project.
 		thisResource.Lookup = "${data.octopusdeploy_channels." + resourceName + ".channels[0].id}"
 		thisResource.ToHcl = func() (string, error) {
-			data := terraform2.TerraformChannelData{
+			data := terraform.TerraformChannelData{
 				Name:        resourceName,
 				Type:        "octopusdeploy_channels",
 				Ids:         nil,
@@ -98,7 +113,7 @@ func (c ChannelConverter) toHcl(channel octopus2.Channel, recursive bool, lookup
 	} else {
 		thisResource.Lookup = "${octopusdeploy_channel." + resourceName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformChannel{
+			terraformResource := terraform.TerraformChannel{
 				Type:         "octopusdeploy_channel",
 				Name:         resourceName,
 				ResourceName: channel.Name,
@@ -162,10 +177,10 @@ func (c ChannelConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/channels"
 }
 
-func (c ChannelConverter) convertRules(rules []octopus2.Rule) []terraform2.TerraformRule {
-	terraformRules := make([]terraform2.TerraformRule, 0)
+func (c ChannelConverter) convertRules(rules []octopus.Rule) []terraform.TerraformRule {
+	terraformRules := make([]terraform.TerraformRule, 0)
 	for _, v := range rules {
-		terraformRules = append(terraformRules, terraform2.TerraformRule{
+		terraformRules = append(terraformRules, terraform.TerraformRule{
 			ActionPackage: c.convertActionPackages(v.ActionPackages),
 			Tag:           v.Tag,
 			VersionRange:  v.VersionRange,
@@ -174,10 +189,10 @@ func (c ChannelConverter) convertRules(rules []octopus2.Rule) []terraform2.Terra
 	return terraformRules
 }
 
-func (c ChannelConverter) convertActionPackages(actionPackages []octopus2.ActionPackage) []terraform2.TerraformActionPackage {
-	collection := make([]terraform2.TerraformActionPackage, 0)
+func (c ChannelConverter) convertActionPackages(actionPackages []octopus.ActionPackage) []terraform.TerraformActionPackage {
+	collection := make([]terraform.TerraformActionPackage, 0)
 	for _, v := range actionPackages {
-		collection = append(collection, terraform2.TerraformActionPackage{
+		collection = append(collection, terraform.TerraformActionPackage{
 			DeploymentAction: v.DeploymentAction,
 			PackageReference: v.PackageReference,
 		})

@@ -208,6 +208,8 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
+	runbookConverter := converters.RunbookConverter{Client: client}
+
 	spaceConverter := converters.SpaceConverter{
 		Client:                      client,
 		AccountConverter:            accountConverter,
@@ -236,6 +238,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			},
 			VariableSetConverter: variableSetConverter,
 			ChannelConverter:     channelConverter,
+			RunbookConverter:     runbookConverter,
 		},
 		TenantConverter:                   tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -409,6 +412,8 @@ func ConvertProjectToTerraform(
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
+	runbookConverter := converters.RunbookConverter{Client: client}
+
 	projectConverter := converters.ProjectConverter{
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
@@ -428,6 +433,7 @@ func ConvertProjectToTerraform(
 		VariableSetConverter:   variableSetConverter,
 		ChannelConverter:       channelConverter,
 		IgnoreCacManagedValues: ignoreCacManagedSettings,
+		RunbookConverter:       runbookConverter,
 	}
 
 	var err error
