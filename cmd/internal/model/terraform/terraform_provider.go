@@ -1,5 +1,7 @@
 package terraform
 
+import "github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+
 type TerraformConfig struct {
 	RequiredProviders RequiredProviders `hcl:"required_providers,block"`
 	Backend           *Backend          `hcl:"backend,block"`
@@ -25,12 +27,12 @@ type TerraformProvider struct {
 	SpaceId *string `hcl:"space_id"`
 }
 
-func (c TerraformConfig) CreateTerraformConfig(backend string) TerraformConfig {
+func (c TerraformConfig) CreateTerraformConfig(backend string, version string) TerraformConfig {
 	config := TerraformConfig{
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: OctopusProvider{
 				Source:  "OctopusDeployLabs/octopusdeploy",
-				Version: "0.11.3",
+				Version: strutil.DefaultIfEmpty(version, "0.11.3"),
 			},
 		},
 	}

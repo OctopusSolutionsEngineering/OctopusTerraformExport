@@ -50,6 +50,14 @@ func NilIfFalse(input bool) *bool {
 	return &input
 }
 
+func DefaultIfEmpty(input string, defaultValue string) string {
+	if input == "" {
+		return defaultValue
+	}
+
+	return input
+}
+
 func DefaultIfEmptyOrNil(input *string, defaultValue string) string {
 	if input == nil || *input == "" {
 		return defaultValue

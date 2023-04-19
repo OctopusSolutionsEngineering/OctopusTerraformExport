@@ -13,4 +13,5 @@ type Arguments struct {
 	BackendBlock                string
 	FlattenProjectTemplates     bool
 	DefaultSecretVariableValues bool
+	ProviderVersion             string
 }

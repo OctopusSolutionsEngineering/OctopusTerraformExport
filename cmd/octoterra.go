@@ -34,9 +34,31 @@ func main() {
 			errorExit(err.Error())
 		}
 
-		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, projectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock, args.DefaultSecretVariableValues)
+		err = ConvertProjectToTerraform(
+			args.Url,
+			args.Space,
+			args.ApiKey,
+			args.Destination,
+			args.Console,
+			projectId,
+			args.LookupProjectDependencies,
+			args.IgnoreCacManagedValues,
+			args.BackendBlock,
+			args.DefaultSecretVariableValues,
+			args.ProviderVersion)
 	} else if args.ProjectId != "" {
-		err = ConvertProjectToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.ProjectId, args.LookupProjectDependencies, args.IgnoreCacManagedValues, args.BackendBlock, args.DefaultSecretVariableValues)
+		err = ConvertProjectToTerraform(
+			args.Url,
+			args.Space,
+			args.ApiKey,
+			args.Destination,
+			args.Console,
+			args.ProjectId,
+			args.LookupProjectDependencies,
+			args.IgnoreCacManagedValues,
+			args.BackendBlock,
+			args.DefaultSecretVariableValues,
+			args.ProviderVersion)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console)
 	}
@@ -260,7 +282,8 @@ func ConvertProjectToTerraform(
 	lookupProjectDependencies bool,
 	ignoreCacManagedSettings bool,
 	terraformBackend string,
-	defaultSecretVariableValues bool) error {
+	defaultSecretVariableValues bool,
+	providerVersion string) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -272,6 +295,7 @@ func ConvertProjectToTerraform(
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend: terraformBackend,
+		ProviderVersion:  providerVersion,
 	}.ToHcl("space_population", &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}
@@ -466,7 +490,8 @@ func parseArgs() args.Arguments {
 	flag.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
 	flag.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", false, "Pass this to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings.")
 	flag.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
-	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Used to specify the backend type to be added to the exported Terraform configuration.")
+	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
+	flag.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
 	flag.Parse()
 
 	if arguments.Url == "" {

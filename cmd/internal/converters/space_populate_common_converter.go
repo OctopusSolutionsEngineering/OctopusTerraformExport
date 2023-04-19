@@ -11,6 +11,7 @@ import (
 // including the provider, terraform config, and common vars
 type TerraformProviderGenerator struct {
 	TerraformBackend string
+	ProviderVersion  string
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
@@ -47,7 +48,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(c.TerraformBackend)
+		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(c.TerraformBackend, c.ProviderVersion)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 		return string(file.Bytes()), nil
