@@ -2952,3 +2952,90 @@ func TestGithubFeedExport(t *testing.T) {
 		return nil
 	})
 }
+
+// TestRunbookFeedExport verifies that a github feed can be reimported with the correct settings
+func TestRunbookFeedExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/44-runbooks/space_creation",
+		"../test/terraform/44-runbooks/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Runbook]{}
+			err := octopusClient.GetAllResources("Runbooks", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Runbook"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test Runbook" {
+						t.Fatal("The runbook must have a description of \"GitHub\", was \"" + strutil.EmptyIfNil(v.Description) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.MultiTenancyMode) != "Untenanted" {
+						t.Fatal("The runbook must have a MultiTenancyMode of \"Untenanted\", was \"" + strutil.EmptyIfNil(v.MultiTenancyMode) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.EnvironmentScope) != "Specified" {
+						t.Fatal("The runbook must have a EnvironmentScope of \"Specified\", was \"" + strutil.EmptyIfNil(v.EnvironmentScope) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
+						t.Fatal("The runbook must have a DefaultGuidedFailureMode of \"EnvironmentDefault\", was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\"")
+					}
+
+					if !v.ForcePackageDownload {
+						t.Log("BUG: The runbook must have a ForcePackageDownload of \"true\", was \"" + fmt.Sprint(v.ForcePackageDownload) + "\"")
+					}
+
+					if len(v.Environments) != 1 {
+						t.Fatal("The runbook must have a 1 Environments, was \"" + fmt.Sprint(len(v.Environments)) + "\"")
+					}
+
+					if v.ConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
+						t.Fatal("The runbook must have a ConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\", was \"" + v.ConnectivityPolicy.SkipMachineBehavior + "\"")
+					}
+
+					if v.ConnectivityPolicy.AllowDeploymentsToNoTargets {
+						t.Fatal("The runbook must have a ConnectivityPolicy.AllowDeploymentsToNoTargets of \"false\", was \"" + fmt.Sprint(v.ConnectivityPolicy.AllowDeploymentsToNoTargets) + "\"")
+					}
+
+					if v.ConnectivityPolicy.ExcludeUnhealthyTargets {
+						t.Fatal("The runbook must have a ConnectivityPolicy.ExcludeUnhealthyTargets of \"false\", was \"" + fmt.Sprint(v.ConnectivityPolicy.ExcludeUnhealthyTargets) + "\"")
+					}
+
+					process := octopus.RunbookProcess{}
+					_, err := octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(v.RunbookProcessId), &process)
+
+					if err != nil {
+						t.Fatal("Failed to retrieve the runbook process")
+					}
+
+					if len(process.Steps) != 1 {
+						t.Fatal("The runbook must have a 1 step, was \"" + fmt.Sprint(len(process.Steps)) + "\"")
+					}
+
+					if strutil.EmptyIfNil(process.Steps[0].Name) != "Hello world (using PowerShell)" {
+						t.Fatal("The runbook step must have a name of \"Hello world (using PowerShell)\", was \"" + strutil.EmptyIfNil(process.Steps[0].Name) + "\"")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an runbook called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
