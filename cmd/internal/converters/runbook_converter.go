@@ -79,7 +79,7 @@ func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, rec
 			ResourceName:             "${var." + runbookName + "_name}",
 			ProjectId:                dependencies.GetResource("Projects", runbook.ProjectId),
 			EnvironmentScope:         runbook.EnvironmentScope,
-			Environments:             runbook.Environments,
+			Environments:             dependencies.GetResources("Environments", runbook.Environments...),
 			ForcePackageDownload:     runbook.ForcePackageDownload,
 			DefaultGuidedFailureMode: runbook.DefaultGuidedFailureMode,
 			Description:              runbook.Description,
