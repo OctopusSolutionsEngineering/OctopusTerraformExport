@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
@@ -15,7 +14,7 @@ import (
 )
 
 func main() {
-	args := parseArgs()
+	args := args.ParseArgs()
 
 	if args.Url == "" {
 		errorExit("You must specify the URL with the -url argument")
@@ -50,6 +49,7 @@ func main() {
 			args.DefaultSecretVariableValues,
 			args.ProviderVersion,
 			args.DetachProjectTemplates,
+			args.ExcludeAllRunbooks,
 			args.ExcludeRunbooks)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
@@ -213,6 +213,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			},
 		},
 		EnvironmentConverter: environmentConverter,
+		ExcludedRunbooks:     nil,
 	}
 
 	spaceConverter := converters.SpaceConverter{
@@ -249,7 +250,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			ChannelConverter:       channelConverter,
 			RunbookConverter:       runbookConverter,
 			IgnoreCacManagedValues: false,
-			ExcludeRunbooks:        false,
+			ExcludeAllRunbooks:     false,
 		},
 		TenantConverter:                   tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -299,7 +300,8 @@ func ConvertProjectToTerraform(
 	defaultSecretVariableValues bool,
 	providerVersion string,
 	detachProjectTemplates bool,
-	excludeRunbooks bool) error {
+	excludeRunbooks bool,
+	excludedRunbooks args.ExcludeRunbooks) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -438,10 +440,11 @@ func ConvertProjectToTerraform(
 			},
 		},
 		EnvironmentConverter: environmentConverter,
+		ExcludedRunbooks:     excludedRunbooks,
 	}
 
 	projectConverter := converters.ProjectConverter{
-		ExcludeRunbooks:             excludeRunbooks,
+		ExcludeAllRunbooks:          excludeRunbooks,
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
@@ -512,36 +515,6 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 	}
 
 	return fileMap, nil
-}
-
-func parseArgs() args.Arguments {
-	arguments := args.Arguments{}
-
-	flag.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
-	flag.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
-	flag.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
-	flag.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
-	flag.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
-	flag.StringVar(&arguments.ProjectId, "projectId", "", "Limit the export to a single project")
-	flag.StringVar(&arguments.ProjectName, "projectName", "", "Limit the export to a single project")
-	flag.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
-	flag.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", false, "Pass this to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings.")
-	flag.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
-	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
-	flag.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
-	flag.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
-	flag.BoolVar(&arguments.ExcludeRunbooks, "excludeRunbooks", false, "Exclude runbooks when exporting a project. This only takes effect when exporting a single project.")
-	flag.Parse()
-
-	if arguments.Url == "" {
-		arguments.Url = os.Getenv("OCTOPUS_CLI_SERVER")
-	}
-
-	if arguments.ApiKey == "" {
-		arguments.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
-	}
-
-	return arguments
 }
 
 func writeFiles(files map[string]string, dest string, console bool) error {

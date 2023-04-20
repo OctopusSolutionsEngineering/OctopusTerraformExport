@@ -5,17 +5,20 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
+	"k8s.io/utils/strings/slices"
 )
 
 type RunbookConverter struct {
 	Client                  client.OctopusClient
 	RunbookProcessConverter ConverterAndLookupByIdAndName
 	EnvironmentConverter    ConverterAndLookupById
+	ExcludedRunbooks        args.ExcludeRunbooks
 }
 
 func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -57,6 +60,10 @@ func (c RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName s
 }
 
 func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludedRunbooks != nil && slices.Index(c.ExcludedRunbooks, runbook.Name) != -1 {
+		return nil
+	}
+
 	thisResource := ResourceDetails{}
 
 	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
