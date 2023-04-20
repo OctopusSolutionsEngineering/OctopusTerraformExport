@@ -1,8 +1,7 @@
-package projectutil
+package converters
 
 import (
 	"fmt"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sliceutil"
@@ -12,14 +11,14 @@ import (
 )
 
 type OctopusActionProcessor struct {
-	FeedConverter          converters.ConverterAndLookupById
-	AccountConverter       converters.ConverterAndLookupById
-	WorkerPoolConverter    converters.ConverterAndLookupById
-	EnvironmentConverter   converters.ConverterAndLookupById
+	FeedConverter          ConverterAndLookupById
+	AccountConverter       ConverterAndLookupById
+	WorkerPoolConverter    ConverterAndLookupById
+	EnvironmentConverter   ConverterAndLookupById
 	DetachProjectTemplates bool
 }
 
-func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *converters.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	feedRegex, _ := regexp.Compile("Feeds-\\d+")
 	for _, step := range steps {
 		for _, action := range step.Actions {
@@ -67,7 +66,7 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, steps []octopus.Step, dependencies *converters.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	accountRegex, _ := regexp.Compile("Accounts-\\d+")
 	for _, step := range steps {
 		for _, action := range step.Actions {
@@ -91,7 +90,7 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *converters.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			if action.WorkerPoolId != "" {
@@ -112,7 +111,7 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 	return nil
 }
 
-func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *converters.ResourceDetailsCollection) *terraform.TerraformContainer {
+func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *ResourceDetailsCollection) *terraform.TerraformContainer {
 	if container.Image != nil || container.FeedId != nil {
 		return &terraform.TerraformContainer{
 			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
@@ -123,7 +122,7 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 	return nil
 }
 
-func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *converters.ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	return c.ReplaceFeedIds(c.replaceAccountIds(c.replaceAccountIds(properties, dependencies), dependencies), dependencies)
 }
 
@@ -199,7 +198,7 @@ func (c OctopusActionProcessor) GetRunOnServer(properties map[string]any) bool {
 
 // ReplaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) ReplaceFeedIds(properties map[string]string, dependencies *converters.ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) ReplaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Feeds") {
 			if strings.Contains(v, v2.Id) {
@@ -213,7 +212,7 @@ func (c OctopusActionProcessor) ReplaceFeedIds(properties map[string]string, dep
 
 // replaceAccountIds looks for any property value that is a valid account ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, dependencies *converters.ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Accounts") {
 			if strings.Contains(v, v2.Id) {
@@ -243,7 +242,7 @@ func (c OctopusActionProcessor) GetRoles(properties map[string]string) []string 
 	return []string{}
 }
 
-func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, steps []octopus.Step, dependencies *converters.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			for _, environment := range action.Environments {

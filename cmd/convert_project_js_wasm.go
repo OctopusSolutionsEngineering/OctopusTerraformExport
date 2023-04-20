@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/projectutil"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"sort"
 	"strings"
@@ -186,7 +185,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
 			Client: client,
-			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,

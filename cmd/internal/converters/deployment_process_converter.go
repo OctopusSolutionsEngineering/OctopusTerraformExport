@@ -8,14 +8,13 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/projectutil"
 	sanitizer2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 )
 
 type DeploymentProcessConverter struct {
 	Client                 client.OctopusClient
-	OctopusActionProcessor projectutil.OctopusActionProcessor
+	OctopusActionProcessor OctopusActionProcessor
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {

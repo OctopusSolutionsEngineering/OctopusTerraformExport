@@ -8,7 +8,6 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/projectutil"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/writers"
 	"os"
@@ -204,7 +203,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
 			Client: client,
-			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
@@ -233,7 +232,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
 				Client: client,
-				OctopusActionProcessor: projectutil.OctopusActionProcessor{
+				OctopusActionProcessor: converters.OctopusActionProcessor{
 					FeedConverter:          feedConverter,
 					AccountConverter:       accountConverter,
 					WorkerPoolConverter:    workerPoolConverter,
@@ -426,7 +425,7 @@ func ConvertProjectToTerraform(
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
 			Client: client,
-			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
@@ -445,7 +444,7 @@ func ConvertProjectToTerraform(
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
 			Client: client,
-			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
