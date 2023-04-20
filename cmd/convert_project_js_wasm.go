@@ -168,10 +168,11 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client:              client,
-			FeedConverter:       feedConverter,
-			AccountConverter:    accountConverter,
-			WorkerPoolConverter: workerPoolConverter,
+			Client:               client,
+			FeedConverter:        feedConverter,
+			AccountConverter:     accountConverter,
+			WorkerPoolConverter:  workerPoolConverter,
+			EnvironmentConverter: accountConverter,
 		},
 		EnvironmentConverter: environmentConverter,
 	}

@@ -16,10 +16,11 @@ import (
 )
 
 type RunbookProcessConverter struct {
-	Client              client.OctopusClient
-	FeedConverter       ConverterAndLookupById
-	AccountConverter    ConverterAndLookupById
-	WorkerPoolConverter ConverterAndLookupById
+	Client               client.OctopusClient
+	FeedConverter        ConverterAndLookupById
+	AccountConverter     ConverterAndLookupById
+	WorkerPoolConverter  ConverterAndLookupById
+	EnvironmentConverter ConverterAndLookupById
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
@@ -205,6 +206,12 @@ func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool,
 
 	// Export linked worker pools
 	err = c.exportWorkerPools(recursive, lookup, resource, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export linked environments
+	err = c.exportEnvironments(recursive, lookup, resource, dependencies)
 	if err != nil {
 		return err
 	}
@@ -418,4 +425,25 @@ func (c RunbookProcessConverter) getRoles(properties map[string]string) []string
 	}
 
 	return []string{}
+}
+
+func (c RunbookProcessConverter) exportEnvironments(recursive bool, lookup bool, resource octopus.RunbookProcess, dependencies *ResourceDetailsCollection) error {
+	for _, step := range resource.Steps {
+		for _, action := range step.Actions {
+			for _, environment := range action.Environments {
+				var err error
+				if recursive {
+					err = c.EnvironmentConverter.ToHclById(environment, dependencies)
+				} else if lookup {
+					err = c.EnvironmentConverter.ToHclLookupById(environment, dependencies)
+				}
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
