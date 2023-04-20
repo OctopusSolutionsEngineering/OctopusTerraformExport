@@ -451,7 +451,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			return string(file.Bytes()), nil
 		}
 
-		return "", errors.New("found unsupported account type")
+		return "", errors.New("found unsupported account type: " + resource.AccountType)
 	}
 
 	dependencies.AddResource(thisResource)
