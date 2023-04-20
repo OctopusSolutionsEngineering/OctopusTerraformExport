@@ -8,7 +8,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
-	sanitizer2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 )
 
@@ -68,7 +68,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectNam
 }
 
 func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
-	resourceName := "deployment_process_" + sanitizer2.SanitizeName(projectName)
+	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
 
@@ -95,7 +95,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:               s.Name,
 				PackageRequirement: s.PackageRequirement,
-				Properties:         c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceFeedIds(s.Properties, dependencies)),
+				Properties:         c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
 				Condition:          s.Condition,
 				StartTrigger:       s.StartTrigger,
 				Action:             make([]terraform.TerraformAction, len(s.Actions)),
@@ -164,7 +164,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 		for _, s := range resource.Steps {
 			for _, a := range s.Actions {
 				properties := a.Properties
-				sanitizedProperties := sanitizer2.SanitizeMap(properties)
+				sanitizedProperties := sanitizer.SanitizeMap(properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)

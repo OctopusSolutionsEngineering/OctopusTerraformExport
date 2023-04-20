@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// OctopusActionProcessor exposes a bunch of common functions for exporting the processes associated with
+// projects and runbooks.
 type OctopusActionProcessor struct {
 	FeedConverter          ConverterAndLookupById
 	AccountConverter       ConverterAndLookupById
@@ -123,7 +125,7 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 }
 
 func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
-	return c.ReplaceFeedIds(c.replaceAccountIds(c.replaceAccountIds(properties, dependencies), dependencies), dependencies)
+	return c.replaceFeedIds(c.replaceAccountIds(properties, dependencies), dependencies)
 }
 
 // https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
@@ -198,7 +200,7 @@ func (c OctopusActionProcessor) GetRunOnServer(properties map[string]any) bool {
 
 // ReplaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) ReplaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Feeds") {
 			if strings.Contains(v, v2.Id) {
