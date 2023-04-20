@@ -49,7 +49,8 @@ func main() {
 			args.BackendBlock,
 			args.DefaultSecretVariableValues,
 			args.ProviderVersion,
-			args.DetachProjectTemplates)
+			args.DetachProjectTemplates,
+			args.ExcludeRunbooks)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -244,9 +245,11 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
 				Client: client,
 			},
-			VariableSetConverter: variableSetConverter,
-			ChannelConverter:     channelConverter,
-			RunbookConverter:     runbookConverter,
+			VariableSetConverter:   variableSetConverter,
+			ChannelConverter:       channelConverter,
+			RunbookConverter:       runbookConverter,
+			IgnoreCacManagedValues: false,
+			ExcludeRunbooks:        false,
 		},
 		TenantConverter:                   tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -295,7 +298,8 @@ func ConvertProjectToTerraform(
 	terraformBackend string,
 	defaultSecretVariableValues bool,
 	providerVersion string,
-	detachProjectTemplates bool) error {
+	detachProjectTemplates bool,
+	excludeRunbooks bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -430,13 +434,14 @@ func ConvertProjectToTerraform(
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: false,
+				DetachProjectTemplates: detachProjectTemplates,
 			},
 		},
 		EnvironmentConverter: environmentConverter,
 	}
 
 	projectConverter := converters.ProjectConverter{
+		ExcludeRunbooks:             excludeRunbooks,
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
@@ -449,7 +454,7 @@ func ConvertProjectToTerraform(
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: false,
+				DetachProjectTemplates: detachProjectTemplates,
 			},
 		},
 		TenantConverter: tenantConverter,
@@ -525,6 +530,7 @@ func parseArgs() args.Arguments {
 	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flag.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
 	flag.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
+	flag.BoolVar(&arguments.ExcludeRunbooks, "excludeRunbooks", false, "Exclude runbooks when exporting a project. This only takes effect when exporting a single project.")
 	flag.Parse()
 
 	if arguments.Url == "" {

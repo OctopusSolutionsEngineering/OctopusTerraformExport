@@ -178,6 +178,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	err := converters.ProjectConverter{
+		ExcludeRunbooks:             false,
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,

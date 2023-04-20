@@ -26,6 +26,7 @@ type ProjectConverter struct {
 	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
 	RunbookConverter            ConverterAndLookupByIdAndName
 	IgnoreCacManagedValues      bool
+	ExcludeRunbooks             bool
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -386,8 +387,8 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 		return err
 	}
 
-	// Export the deployment process
-	if project.DeploymentProcessId != nil && !c.IgnoreCacManagedValues {
+	// Export the runbooks process
+	if project.DeploymentProcessId != nil && !c.ExcludeRunbooks {
 		var err error
 		if lookup {
 			err = c.RunbookConverter.ToHclLookupByIdAndName(project.Id, project.Name, dependencies)

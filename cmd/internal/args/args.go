@@ -14,4 +14,5 @@ type Arguments struct {
 	DetachProjectTemplates      bool
 	DefaultSecretVariableValues bool
 	ProviderVersion             string
+	ExcludeRunbooks             bool
 }
