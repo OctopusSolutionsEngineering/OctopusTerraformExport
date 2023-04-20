@@ -49,7 +49,7 @@ func exportSpaceImportAndTest(
 		[]string{},
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			return ConvertSpaceToTerraform(url, space, test.ApiKey, dest, true)
+			return ConvertSpaceToTerraform(url, space, test.ApiKey, dest, true, false)
 		},
 		testFunc)
 }
@@ -94,7 +94,8 @@ func exportProjectImportAndTest(
 				false,
 				"",
 				false,
-				"")
+				"",
+				false)
 		},
 		testFunc)
 }
@@ -142,7 +143,8 @@ func exportProjectLookupImportAndTest(
 				false,
 				"",
 				false,
-				"")
+				"",
+				false)
 		},
 		testFunc)
 }
@@ -2953,8 +2955,8 @@ func TestGithubFeedExport(t *testing.T) {
 	})
 }
 
-// TestRunbookFeedExport verifies that a github feed can be reimported with the correct settings
-func TestRunbookFeedExport(t *testing.T) {
+// TestRunbookExport verifies that a github feed can be reimported with the correct settings
+func TestRunbookExport(t *testing.T) {
 	exportSpaceImportAndTest(
 		t,
 		"../test/terraform/44-runbooks/space_creation",
