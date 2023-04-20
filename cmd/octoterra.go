@@ -36,7 +36,7 @@ func main() {
 		}
 	}
 
-	if args.ProjectId != "" {
+	if projectId != "" {
 		err = ConvertProjectToTerraform(
 			args.Url,
 			args.Space,
