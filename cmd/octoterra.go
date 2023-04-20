@@ -8,6 +8,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/projectutil"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/writers"
 	"os"
@@ -202,11 +203,14 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client:               client,
-			FeedConverter:        feedConverter,
-			AccountConverter:     accountConverter,
-			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: environmentConverter,
+			Client: client,
+			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+				FeedConverter:          feedConverter,
+				AccountConverter:       accountConverter,
+				WorkerPoolConverter:    workerPoolConverter,
+				EnvironmentConverter:   environmentConverter,
+				DetachProjectTemplates: false,
+			},
 		},
 		EnvironmentConverter: environmentConverter,
 	}
@@ -228,12 +232,14 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			LibraryVariableSetConverter: libraryVariableSetConverter,
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
-				Client:                 client,
-				FeedConverter:          feedConverter,
-				AccountConverter:       accountConverter,
-				WorkerPoolConverter:    workerPoolConverter,
-				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: detachProjectTemplates,
+				Client: client,
+				OctopusActionProcessor: projectutil.OctopusActionProcessor{
+					FeedConverter:          feedConverter,
+					AccountConverter:       accountConverter,
+					WorkerPoolConverter:    workerPoolConverter,
+					EnvironmentConverter:   environmentConverter,
+					DetachProjectTemplates: false,
+				},
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -419,11 +425,14 @@ func ConvertProjectToTerraform(
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client:               client,
-			FeedConverter:        feedConverter,
-			AccountConverter:     accountConverter,
-			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: environmentConverter,
+			Client: client,
+			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+				FeedConverter:          feedConverter,
+				AccountConverter:       accountConverter,
+				WorkerPoolConverter:    workerPoolConverter,
+				EnvironmentConverter:   environmentConverter,
+				DetachProjectTemplates: false,
+			},
 		},
 		EnvironmentConverter: environmentConverter,
 	}
@@ -435,12 +444,14 @@ func ConvertProjectToTerraform(
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client:                 client,
-			FeedConverter:          feedConverter,
-			AccountConverter:       accountConverter,
-			WorkerPoolConverter:    workerPoolConverter,
-			EnvironmentConverter:   environmentConverter,
-			DetachProjectTemplates: detachProjectTemplates,
+			Client: client,
+			OctopusActionProcessor: projectutil.OctopusActionProcessor{
+				FeedConverter:          feedConverter,
+				AccountConverter:       accountConverter,
+				WorkerPoolConverter:    workerPoolConverter,
+				EnvironmentConverter:   environmentConverter,
+				DetachProjectTemplates: false,
+			},
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
