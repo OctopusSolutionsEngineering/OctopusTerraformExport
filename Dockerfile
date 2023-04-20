@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.20
+FROM golang:1.20 as build
 
 # Set destination for COPY
 WORKDIR /app
@@ -15,6 +15,11 @@ COPY . /app
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux go build -o /octoterra cmd/octoterra.go
+
+# Create the execution image
+FROM alpine:latest
+
+COPY --from=build /octoterra /octoterra
 
 # Run
 CMD ["/octoterra"]
