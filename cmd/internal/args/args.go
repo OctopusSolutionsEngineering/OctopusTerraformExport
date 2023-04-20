@@ -11,7 +11,7 @@ type Arguments struct {
 	LookupProjectDependencies   bool
 	IgnoreCacManagedValues      bool
 	BackendBlock                string
-	FlattenProjectTemplates     bool
+	DetachProjectTemplates      bool
 	DefaultSecretVariableValues bool
 	ProviderVersion             string
 }

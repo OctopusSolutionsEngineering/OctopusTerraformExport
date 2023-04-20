@@ -27,13 +27,16 @@ func main() {
 
 	var err error = nil
 
+	projectId := args.ProjectId
 	if args.ProjectName != "" {
-		projectId, err := ConvertProjectNameToId(args.Url, args.Space, args.ApiKey, args.ProjectName)
+		projectId, err = ConvertProjectNameToId(args.Url, args.Space, args.ApiKey, args.ProjectName)
 
 		if err != nil {
 			errorExit(err.Error())
 		}
+	}
 
+	if args.ProjectId != "" {
 		err = ConvertProjectToTerraform(
 			args.Url,
 			args.Space,
@@ -45,22 +48,10 @@ func main() {
 			args.IgnoreCacManagedValues,
 			args.BackendBlock,
 			args.DefaultSecretVariableValues,
-			args.ProviderVersion)
-	} else if args.ProjectId != "" {
-		err = ConvertProjectToTerraform(
-			args.Url,
-			args.Space,
-			args.ApiKey,
-			args.Destination,
-			args.Console,
-			args.ProjectId,
-			args.LookupProjectDependencies,
-			args.IgnoreCacManagedValues,
-			args.BackendBlock,
-			args.DefaultSecretVariableValues,
-			args.ProviderVersion)
+			args.ProviderVersion,
+			args.DetachProjectTemplates)
 	} else {
-		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console)
+		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
 
 	if err != nil {
@@ -92,7 +83,7 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	return "", errors.New("did not find project with name " + name)
 }
 
-func ConvertSpaceToTerraform(url string, space string, apiKey string, dest string, console bool) error {
+func ConvertSpaceToTerraform(url string, space string, apiKey string, dest string, console bool, detachProjectTemplates bool) error {
 	client := client.OctopusClient{
 		Url:    url,
 		Space:  space,
@@ -237,11 +228,12 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			LibraryVariableSetConverter: libraryVariableSetConverter,
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
-				Client:               client,
-				FeedConverter:        feedConverter,
-				AccountConverter:     accountConverter,
-				WorkerPoolConverter:  workerPoolConverter,
-				EnvironmentConverter: environmentConverter,
+				Client:                 client,
+				FeedConverter:          feedConverter,
+				AccountConverter:       accountConverter,
+				WorkerPoolConverter:    workerPoolConverter,
+				EnvironmentConverter:   environmentConverter,
+				DetachProjectTemplates: detachProjectTemplates,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -297,7 +289,8 @@ func ConvertProjectToTerraform(
 	ignoreCacManagedSettings bool,
 	terraformBackend string,
 	defaultSecretVariableValues bool,
-	providerVersion string) error {
+	providerVersion string,
+	detachProjectTemplates bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -442,11 +435,12 @@ func ConvertProjectToTerraform(
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client:               client,
-			FeedConverter:        feedConverter,
-			AccountConverter:     accountConverter,
-			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: environmentConverter,
+			Client:                 client,
+			FeedConverter:          feedConverter,
+			AccountConverter:       accountConverter,
+			WorkerPoolConverter:    workerPoolConverter,
+			EnvironmentConverter:   environmentConverter,
+			DetachProjectTemplates: detachProjectTemplates,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -520,6 +514,7 @@ func parseArgs() args.Arguments {
 	flag.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
 	flag.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flag.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
+	flag.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
 	flag.Parse()
 
 	if arguments.Url == "" {

@@ -184,11 +184,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client:               client,
-			FeedConverter:        feedConverter,
-			AccountConverter:     accountConverter,
-			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: environmentConverter,
+			Client:                 client,
+			FeedConverter:          feedConverter,
+			AccountConverter:       accountConverter,
+			WorkerPoolConverter:    workerPoolConverter,
+			EnvironmentConverter:   environmentConverter,
+			DetachProjectTemplates: false,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

@@ -16,11 +16,12 @@ import (
 )
 
 type RunbookProcessConverter struct {
-	Client               client.OctopusClient
-	FeedConverter        ConverterAndLookupById
-	AccountConverter     ConverterAndLookupById
-	WorkerPoolConverter  ConverterAndLookupById
-	EnvironmentConverter ConverterAndLookupById
+	Client                 client.OctopusClient
+	FeedConverter          ConverterAndLookupById
+	AccountConverter       ConverterAndLookupById
+	WorkerPoolConverter    ConverterAndLookupById
+	EnvironmentConverter   ConverterAndLookupById
+	DetachProjectTemplates bool
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
@@ -175,6 +176,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 				sanitizedProperties = c.escapePercents(sanitizedProperties)
 				sanitizedProperties = c.replaceIds(sanitizedProperties, dependencies)
 				sanitizedProperties = c.removeUnnecessaryActionFields(sanitizedProperties)
+				sanitizedProperties = c.detachStepTemplates(sanitizedProperties)
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 			}
 		}
@@ -352,6 +354,22 @@ func (c RunbookProcessConverter) removeUnnecessaryActionFields(properties map[st
 		"Octopus.Action.EnabledFeatures",
 		"Octopus.Action.Aws.CloudFormationTemplateParametersRaw",
 		"Octopus.Action.Package.FeedId"}
+	sanitisedProperties := map[string]string{}
+	for k, v := range properties {
+		if !sliceutil.Contains(unnecessaryFields, k) {
+			sanitisedProperties[k] = v
+		}
+	}
+	return sanitisedProperties
+}
+
+// detachStepTemplates detaches step templates, which is achieved by removing the template properties
+func (c RunbookProcessConverter) detachStepTemplates(properties map[string]string) map[string]string {
+	if !c.DetachProjectTemplates {
+		return properties
+	}
+
+	unnecessaryFields := []string{"Octopus.Action.Template.Id", "Octopus.Action.Template.Version"}
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
 		if !sliceutil.Contains(unnecessaryFields, k) {
