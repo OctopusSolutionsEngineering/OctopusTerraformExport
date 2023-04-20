@@ -206,7 +206,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			FeedConverter:        feedConverter,
 			AccountConverter:     accountConverter,
 			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: accountConverter,
+			EnvironmentConverter: environmentConverter,
 		},
 		EnvironmentConverter: environmentConverter,
 	}
@@ -423,7 +423,7 @@ func ConvertProjectToTerraform(
 			FeedConverter:        feedConverter,
 			AccountConverter:     accountConverter,
 			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: accountConverter,
+			EnvironmentConverter: environmentConverter,
 		},
 		EnvironmentConverter: environmentConverter,
 	}

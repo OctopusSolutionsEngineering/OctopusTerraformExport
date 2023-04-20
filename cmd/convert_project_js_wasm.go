@@ -172,7 +172,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			FeedConverter:        feedConverter,
 			AccountConverter:     accountConverter,
 			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: accountConverter,
+			EnvironmentConverter: environmentConverter,
 		},
 		EnvironmentConverter: environmentConverter,
 	}
