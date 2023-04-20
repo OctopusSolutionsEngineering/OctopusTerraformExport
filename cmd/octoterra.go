@@ -216,6 +216,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			AccountConverter:    accountConverter,
 			WorkerPoolConverter: workerPoolConverter,
 		},
+		EnvironmentConverter: environmentConverter,
 	}
 
 	spaceConverter := converters.SpaceConverter{
@@ -235,10 +236,11 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			LibraryVariableSetConverter: libraryVariableSetConverter,
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
-				Client:              client,
-				FeedConverter:       feedConverter,
-				AccountConverter:    accountConverter,
-				WorkerPoolConverter: workerPoolConverter,
+				Client:               client,
+				FeedConverter:        feedConverter,
+				AccountConverter:     accountConverter,
+				WorkerPoolConverter:  workerPoolConverter,
+				EnvironmentConverter: environmentConverter,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -428,6 +430,7 @@ func ConvertProjectToTerraform(
 			AccountConverter:    accountConverter,
 			WorkerPoolConverter: workerPoolConverter,
 		},
+		EnvironmentConverter: environmentConverter,
 	}
 
 	projectConverter := converters.ProjectConverter{
@@ -437,10 +440,11 @@ func ConvertProjectToTerraform(
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client:              client,
-			FeedConverter:       feedConverter,
-			AccountConverter:    accountConverter,
-			WorkerPoolConverter: workerPoolConverter,
+			Client:               client,
+			FeedConverter:        feedConverter,
+			AccountConverter:     accountConverter,
+			WorkerPoolConverter:  workerPoolConverter,
+			EnvironmentConverter: environmentConverter,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

@@ -16,10 +16,11 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client              client.OctopusClient
-	FeedConverter       ConverterAndLookupById
-	AccountConverter    ConverterAndLookupById
-	WorkerPoolConverter ConverterAndLookupById
+	Client               client.OctopusClient
+	FeedConverter        ConverterAndLookupById
+	AccountConverter     ConverterAndLookupById
+	WorkerPoolConverter  ConverterAndLookupById
+	EnvironmentConverter ConverterAndLookupById
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -205,6 +206,12 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 
 	// Export linked worker pools
 	err = c.exportWorkerPools(recursive, lookup, resource, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export linked environments
+	err = c.exportEnvironments(recursive, lookup, resource, dependencies)
 	if err != nil {
 		return err
 	}
@@ -418,4 +425,25 @@ func (c DeploymentProcessConverter) getRoles(properties map[string]string) []str
 	}
 
 	return []string{}
+}
+
+func (c DeploymentProcessConverter) exportEnvironments(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+	for _, step := range resource.Steps {
+		for _, action := range step.Actions {
+			for _, environment := range action.Environments {
+				var err error
+				if recursive {
+					err = c.EnvironmentConverter.ToHclById(environment, dependencies)
+				} else if lookup {
+					err = c.EnvironmentConverter.ToHclLookupById(environment, dependencies)
+				}
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

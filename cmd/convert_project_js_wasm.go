@@ -165,6 +165,17 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
+	runbookConverter := converters.RunbookConverter{
+		Client: client,
+		RunbookProcessConverter: converters.RunbookProcessConverter{
+			Client:              client,
+			FeedConverter:       feedConverter,
+			AccountConverter:    accountConverter,
+			WorkerPoolConverter: workerPoolConverter,
+		},
+		EnvironmentConverter: environmentConverter,
+	}
+
 	err := converters.ProjectConverter{
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
@@ -172,17 +183,20 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		LibraryVariableSetConverter: libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client:              client,
-			FeedConverter:       feedConverter,
-			AccountConverter:    accountConverter,
-			WorkerPoolConverter: workerPoolConverter,
+			Client:               client,
+			FeedConverter:        feedConverter,
+			AccountConverter:     accountConverter,
+			WorkerPoolConverter:  workerPoolConverter,
+			EnvironmentConverter: environmentConverter,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
-		VariableSetConverter: variableSetConverter,
-		ChannelConverter:     channelConverter,
+		VariableSetConverter:   variableSetConverter,
+		ChannelConverter:       channelConverter,
+		RunbookConverter:       runbookConverter,
+		IgnoreCacManagedValues: false,
 	}.ToHclLookupById(projectId, &dependencies)
 
 	if err != nil {

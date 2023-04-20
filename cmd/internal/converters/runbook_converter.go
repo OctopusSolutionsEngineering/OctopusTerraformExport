@@ -15,6 +15,7 @@ import (
 type RunbookConverter struct {
 	Client                  client.OctopusClient
 	RunbookProcessConverter ConverterAndLookupByIdAndName
+	EnvironmentConverter    ConverterAndLookupById
 }
 
 func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -181,6 +182,18 @@ func (c RunbookConverter) exportChildDependencies(recursive bool, lookup bool, r
 			err = c.RunbookProcessConverter.ToHclByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
 		}
 
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, e := range runbook.Environments {
+		var err error
+		if recursive {
+			err = c.EnvironmentConverter.ToHclById(e, dependencies)
+		} else if lookup {
+			err = c.EnvironmentConverter.ToHclLookupById(e, dependencies)
+		}
 		if err != nil {
 			return err
 		}
