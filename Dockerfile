@@ -22,4 +22,4 @@ FROM alpine:latest
 COPY --from=build /octoterra /octoterra
 
 # Run
-CMD ["/octoterra"]
+ENTRYPOINT ["/octoterra"]
