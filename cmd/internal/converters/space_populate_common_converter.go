@@ -12,6 +12,7 @@ import (
 type TerraformProviderGenerator struct {
 	TerraformBackend string
 	ProviderVersion  string
+	ExcludeProvider  bool
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
@@ -21,6 +22,10 @@ func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *Resour
 }
 
 func (c TerraformProviderGenerator) createProvider(directory string, dependencies *ResourceDetailsCollection) {
+	if c.ExcludeProvider {
+		return
+	}
+
 	thisResource := ResourceDetails{}
 	thisResource.FileName = directory + "/provider.tf"
 	thisResource.Id = ""
@@ -57,6 +62,10 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 }
 
 func (c TerraformProviderGenerator) createVariables(directory string, dependencies *ResourceDetailsCollection) {
+	if c.ExcludeProvider {
+		return
+	}
+
 	thisResource := ResourceDetails{}
 	thisResource.FileName = directory + "/provider_vars.tf"
 	thisResource.Id = ""
