@@ -22,6 +22,7 @@ type Arguments struct {
 	ExcludeAllRunbooks          bool
 	ExcludeRunbooks             ExcludeRunbooks
 	ExcludeProvider             bool
+	ExcludeLibraryVariableSets  ExcludeLibraryVariableSets
 }
 
 type ExcludeRunbooks []string
@@ -30,7 +31,18 @@ func (i *ExcludeRunbooks) String() string {
 	return "excluded runbooks"
 }
 
+type ExcludeLibraryVariableSets []string
+
 func (i *ExcludeRunbooks) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+func (i *ExcludeLibraryVariableSets) String() string {
+	return "excluded library variable sets"
+}
+
+func (i *ExcludeLibraryVariableSets) Set(value string) error {
 	*i = append(*i, value)
 	return nil
 }
@@ -53,6 +65,7 @@ func ParseArgs() Arguments {
 	flag.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
 	flag.BoolVar(&arguments.ExcludeAllRunbooks, "excludeAllRunbooks", false, "Exclude all runbooks when exporting a project. This only takes effect when exporting a single project.")
 	flag.Var(&arguments.ExcludeRunbooks, "excludeRunbook", "A runbook to be excluded when exporting a single project.")
+	flag.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project.")
 	flag.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flag.Parse()
 

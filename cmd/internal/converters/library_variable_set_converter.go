@@ -5,17 +5,20 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"golang.org/x/exp/slices"
 	"strings"
 )
 
 type LibraryVariableSetConverter struct {
 	Client               client.OctopusClient
 	VariableSetConverter ConverterByIdWithNameAndParent
+	Excluded             args.ExcludeLibraryVariableSets
 }
 
 func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -72,6 +75,10 @@ func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *Re
 		return err
 	}
 
+	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
+		return nil
+	}
+
 	thisResource := ResourceDetails{}
 
 	resourceName := "library_variable_set_" + sanitizer.SanitizeName(resource.Name)
@@ -100,6 +107,10 @@ func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *Re
 }
 
 func (c LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
+		return nil
+	}
+
 	thisResource := ResourceDetails{}
 
 	resourceName := "library_variable_set_" + sanitizer.SanitizeName(resource.Name)
