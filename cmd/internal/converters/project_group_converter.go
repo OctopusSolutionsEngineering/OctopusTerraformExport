@@ -95,9 +95,10 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
 			c.writeProjectNameVariable(file, projectName, resource.Name)
+
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
 			return string(file.Bytes()), nil
 		}
@@ -111,6 +112,8 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 				Description:  resource.Description,
 			}
 			file := hclwrite.NewEmptyFile()
+
+			c.writeProjectNameVariable(file, projectName, resource.Name)
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
