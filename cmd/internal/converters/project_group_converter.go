@@ -106,8 +106,8 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformProjectGroup{
 				Type:         "octopusdeploy_project_group",
-				Name:         "${var." + projectName + "_name}",
-				ResourceName: resource.Name,
+				Name:         projectName,
+				ResourceName: "${var." + projectName + "_name}",
 				Description:  resource.Description,
 			}
 			file := hclwrite.NewEmptyFile()
