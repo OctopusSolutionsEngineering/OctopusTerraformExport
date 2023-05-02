@@ -23,6 +23,7 @@ type Arguments struct {
 	ExcludeRunbooks             ExcludeRunbooks
 	ExcludeProvider             bool
 	ExcludeLibraryVariableSets  ExcludeLibraryVariableSets
+	IgnoreProjectChanges        bool
 }
 
 type ExcludeRunbooks []string
@@ -67,6 +68,7 @@ func ParseArgs() Arguments {
 	flag.Var(&arguments.ExcludeRunbooks, "excludeRunbook", "A runbook to be excluded when exporting a single project.")
 	flag.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project.")
 	flag.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
+	flag.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project when exporting a single project.")
 	flag.Parse()
 
 	if arguments.Url == "" {

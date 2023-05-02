@@ -19,6 +19,7 @@ type RunbookConverter struct {
 	RunbookProcessConverter ConverterAndLookupByIdAndName
 	EnvironmentConverter    ConverterAndLookupById
 	ExcludedRunbooks        args.ExcludeRunbooks
+	IgnoreProjectChanges    bool
 }
 
 func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -95,6 +96,14 @@ func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, rec
 			RetentionPolicy:          c.convertRetentionPolicy(runbook),
 			ConnectivityPolicy:       c.convertConnectivityPolicy(runbook),
 		}
+
+		if c.IgnoreProjectChanges {
+			all := "all"
+			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
+				IgnoreAllChanges: &all,
+			}
+		}
+
 		file := hclwrite.NewEmptyFile()
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)

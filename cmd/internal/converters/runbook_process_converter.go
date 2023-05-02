@@ -15,6 +15,7 @@ import (
 type RunbookProcessConverter struct {
 	Client                 client.OctopusClient
 	OctopusActionProcessor OctopusActionProcessor
+	IgnoreProjectChanges   bool
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
@@ -155,6 +156,13 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 						}
 					}
 				}
+			}
+		}
+
+		if c.IgnoreProjectChanges {
+			all := "all"
+			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
+				IgnoreAllChanges: &all,
 			}
 		}
 

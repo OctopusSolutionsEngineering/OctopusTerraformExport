@@ -176,9 +176,11 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: true,
 			},
+			IgnoreProjectChanges: false,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
+		IgnoreProjectChanges: false,
 	}
 
 	err := converters.ProjectConverter{
@@ -195,8 +197,9 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: false,
+				DetachProjectTemplates: true,
 			},
+			IgnoreProjectChanges: false,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

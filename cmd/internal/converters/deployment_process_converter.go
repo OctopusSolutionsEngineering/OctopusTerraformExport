@@ -15,6 +15,7 @@ import (
 type DeploymentProcessConverter struct {
 	Client                 client.OctopusClient
 	OctopusActionProcessor OctopusActionProcessor
+	IgnoreProjectChanges   bool
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -155,6 +156,13 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 						}
 					}
 				}
+			}
+		}
+
+		if c.IgnoreProjectChanges {
+			all := "all"
+			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
+				IgnoreAllChanges: &all,
 			}
 		}
 

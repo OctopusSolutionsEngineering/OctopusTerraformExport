@@ -27,6 +27,7 @@ type ProjectConverter struct {
 	RunbookConverter            ConverterAndLookupByIdAndName
 	IgnoreCacManagedValues      bool
 	ExcludeAllRunbooks          bool
+	IgnoreProjectChanges        bool
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -145,6 +146,14 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
 			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
+
+		if c.IgnoreProjectChanges {
+			all := "all"
+			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
+				IgnoreAllChanges: &all,
+			}
+		}
+
 		file := hclwrite.NewEmptyFile()
 
 		c.writeProjectNameVariable(file, projectName, project.Name)

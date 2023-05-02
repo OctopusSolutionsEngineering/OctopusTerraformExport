@@ -52,7 +52,8 @@ func main() {
 			args.ExcludeAllRunbooks,
 			args.ExcludeRunbooks,
 			args.ExcludeProvider,
-			args.ExcludeLibraryVariableSets)
+			args.ExcludeLibraryVariableSets,
+			args.IgnoreProjectChanges)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -213,9 +214,11 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: false,
 			},
+			IgnoreProjectChanges: false,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
+		IgnoreProjectChanges: false,
 	}
 
 	spaceConverter := converters.SpaceConverter{
@@ -243,6 +246,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 					EnvironmentConverter:   environmentConverter,
 					DetachProjectTemplates: false,
 				},
+				IgnoreProjectChanges: false,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -253,6 +257,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			RunbookConverter:       runbookConverter,
 			IgnoreCacManagedValues: false,
 			ExcludeAllRunbooks:     false,
+			IgnoreProjectChanges:   false,
 		},
 		TenantConverter:                   tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -305,7 +310,8 @@ func ConvertProjectToTerraform(
 	excludeRunbooks bool,
 	excludedRunbooks args.ExcludeRunbooks,
 	excludeProvider bool,
-	excludedLibraryVariableSets args.ExcludeLibraryVariableSets) error {
+	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
+	ignoreProjectChanges bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -447,9 +453,11 @@ func ConvertProjectToTerraform(
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: detachProjectTemplates,
 			},
+			IgnoreProjectChanges: ignoreProjectChanges,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     excludedRunbooks,
+		IgnoreProjectChanges: ignoreProjectChanges,
 	}
 
 	projectConverter := converters.ProjectConverter{
@@ -468,6 +476,7 @@ func ConvertProjectToTerraform(
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: detachProjectTemplates,
 			},
+			IgnoreProjectChanges: ignoreProjectChanges,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -477,6 +486,7 @@ func ConvertProjectToTerraform(
 		ChannelConverter:       channelConverter,
 		IgnoreCacManagedValues: ignoreCacManagedSettings,
 		RunbookConverter:       runbookConverter,
+		IgnoreProjectChanges:   ignoreProjectChanges,
 	}
 
 	var err error

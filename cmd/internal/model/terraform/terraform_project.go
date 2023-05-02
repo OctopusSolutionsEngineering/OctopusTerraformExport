@@ -21,6 +21,7 @@ type TerraformProject struct {
 	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings        `hcl:"git_anonymous_persistence_settings,block"`
 	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings `hcl:"git_username_password_persistence_settings,block"`
 	VersioningStrategy                     *TerraformVersioningStrategy                     `hcl:"versioning_strategy,block"`
+	Lifecycle                              *TerraformLifecycleMetaArgument                  `hcl:"lifecycle,block"`
 }
 
 type TerraformTemplate struct {
@@ -71,4 +72,11 @@ type TerraformVersioningStrategy struct {
 type TerraformDonorPackage struct {
 	DeploymentAction *string `hcl:"deployment_action"`
 	PackageReference *string `hcl:"package_reference"`
+}
+
+type TerraformLifecycleMetaArgument struct {
+	CreateBeforeDestroy *bool    `hcl:"create_before_destroy"`
+	IgnoreChanges       []string `hcl:"ignore_changes"`
+	IgnoreAllChanges    *string  `hcl:"ignore_changes"`
+	ReplaceTriggeredBy  []string `hcl:"replace_triggered_by"`
 }
