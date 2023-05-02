@@ -72,5 +72,10 @@ The following resources have yet to be exported:
 * octopusdeploy_user
 * octopusdeploy_user_role
 
+Features:
+* Exclude channels
+* Exclude triggers
+* Exclude variables
+
 ## Report Card
 ![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)
