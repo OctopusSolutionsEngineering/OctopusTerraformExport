@@ -193,6 +193,8 @@ func exportImportAndTest(
 	exportFunc func(url string, space string, apiKey string, dest string) error,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 
+	t.Parallel()
+
 	testFramework := test.OctopusContainerTest{}
 	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) error {
 		// Act
