@@ -168,11 +168,14 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client:               client,
-			FeedConverter:        feedConverter,
-			AccountConverter:     accountConverter,
-			WorkerPoolConverter:  workerPoolConverter,
-			EnvironmentConverter: environmentConverter,
+			Client: client,
+			OctopusActionProcessor: converters.OctopusActionProcessor{
+				FeedConverter:          feedConverter,
+				AccountConverter:       accountConverter,
+				WorkerPoolConverter:    workerPoolConverter,
+				EnvironmentConverter:   environmentConverter,
+				DetachProjectTemplates: true,
+			},
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,

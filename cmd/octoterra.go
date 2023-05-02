@@ -50,7 +50,8 @@ func main() {
 			args.ProviderVersion,
 			args.DetachProjectTemplates,
 			args.ExcludeAllRunbooks,
-			args.ExcludeRunbooks)
+			args.ExcludeRunbooks,
+			args.ExcludeProvider)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -301,7 +302,8 @@ func ConvertProjectToTerraform(
 	providerVersion string,
 	detachProjectTemplates bool,
 	excludeRunbooks bool,
-	excludedRunbooks args.ExcludeRunbooks) error {
+	excludedRunbooks args.ExcludeRunbooks,
+	excludeProvider bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -314,6 +316,7 @@ func ConvertProjectToTerraform(
 	converters.TerraformProviderGenerator{
 		TerraformBackend: terraformBackend,
 		ProviderVersion:  providerVersion,
+		ExcludeProvider:  excludeProvider,
 	}.ToHcl("space_population", &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}

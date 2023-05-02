@@ -21,6 +21,7 @@ type Arguments struct {
 	ProviderVersion             string
 	ExcludeAllRunbooks          bool
 	ExcludeRunbooks             ExcludeRunbooks
+	ExcludeProvider             bool
 }
 
 type ExcludeRunbooks []string
@@ -52,6 +53,7 @@ func ParseArgs() Arguments {
 	flag.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
 	flag.BoolVar(&arguments.ExcludeAllRunbooks, "excludeAllRunbooks", false, "Exclude all runbooks when exporting a project. This only takes effect when exporting a single project.")
 	flag.Var(&arguments.ExcludeRunbooks, "excludeRunbook", "A runbook to be excluded when exporting a single project.")
+	flag.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flag.Parse()
 
 	if arguments.Url == "" {

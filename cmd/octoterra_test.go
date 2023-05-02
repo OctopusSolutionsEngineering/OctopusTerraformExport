@@ -97,7 +97,8 @@ func exportProjectImportAndTest(
 				"",
 				false,
 				false,
-				nil)
+				nil,
+				false)
 		},
 		testFunc)
 }
@@ -148,7 +149,8 @@ func exportProjectLookupImportAndTest(
 				"",
 				false,
 				false,
-				nil)
+				nil,
+				false)
 		},
 		testFunc)
 }
