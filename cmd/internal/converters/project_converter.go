@@ -187,31 +187,16 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 		if terraformResource.GitUsernamePasswordPersistenceSettings != nil ||
 			terraformResource.GitAnonymousPersistenceSettings != nil ||
 			terraformResource.GitLibraryPersistenceSettings != nil {
-			secretVariableResource := terraform.TerraformVariable{
-				Name:        projectName + "_git_base_path",
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   false,
-				Description: "The git base path for \"" + project.Name + "\"",
-				Default:     &project.PersistenceSettings.BasePath,
+
+			c.writeGitPathVar(projectName, project, file)
+			c.writeGitUrlVar(projectName, project, file)
+
+			// CaC enabled projects save the versioning strategy in git
+			if !c.IgnoreProjectChanges {
+				terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
+					IgnoreChanges: []string{"versioning_strategy"},
+				}
 			}
-
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
-
-			gitUrlVariable := terraform.TerraformVariable{
-				Name:        projectName + "_git_url",
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   false,
-				Description: "The git url for \"" + project.Name + "\"",
-				Default:     &project.PersistenceSettings.Url,
-			}
-
-			block = gohcl.EncodeAsBlock(gitUrlVariable, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
 		}
 
 		return string(file.Bytes()), nil
@@ -219,6 +204,36 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c ProjectConverter) writeGitUrlVar(projectName string, project octopus.Project, file *hclwrite.File) {
+	variableResource := terraform.TerraformVariable{
+		Name:        projectName + "_git_url",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The git url for \"" + project.Name + "\"",
+		Default:     &project.PersistenceSettings.Url,
+	}
+
+	block := gohcl.EncodeAsBlock(variableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+}
+
+func (c ProjectConverter) writeGitPathVar(projectName string, project octopus.Project, file *hclwrite.File) {
+	variableResource := terraform.TerraformVariable{
+		Name:        projectName + "_git_base_path",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The git base path for \"" + project.Name + "\"",
+		Default:     &project.PersistenceSettings.BasePath,
+	}
+
+	block := gohcl.EncodeAsBlock(variableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
 }
 
 func (c ProjectConverter) GetResourceType() string {
