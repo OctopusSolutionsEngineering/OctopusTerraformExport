@@ -97,13 +97,6 @@ func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, rec
 			ConnectivityPolicy:       c.convertConnectivityPolicy(runbook),
 		}
 
-		if c.IgnoreProjectChanges {
-			all := "all"
-			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-				IgnoreAllChanges: &all,
-			}
-		}
-
 		file := hclwrite.NewEmptyFile()
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)
@@ -118,7 +111,13 @@ func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, rec
 			SpacesBefore: 0,
 		}})
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if c.IgnoreProjectChanges {
+			hcl.WriteUnquotedAttribute(block, "lifecycle.ignore_changes", "all")
+		}
+
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}

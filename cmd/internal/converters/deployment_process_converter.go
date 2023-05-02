@@ -173,15 +173,12 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 			}
 		}
 
-		if c.IgnoreProjectChanges || cac {
-			all := "all"
-			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-				IgnoreAllChanges: &all,
-			}
-		}
-
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if c.IgnoreProjectChanges || cac {
+			hcl.WriteUnquotedAttribute(block, "lifecycle.ignore_changes", "all")
+		}
 
 		for _, s := range resource.Steps {
 			for _, a := range s.Actions {

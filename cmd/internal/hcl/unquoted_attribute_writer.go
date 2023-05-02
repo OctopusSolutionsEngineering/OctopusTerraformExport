@@ -3,9 +3,11 @@ package hcl
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"regexp"
 	"strings"
 )
@@ -16,6 +18,14 @@ func WriteUnquotedAttribute(block *hclwrite.Block, attrName string, attrValue st
 	block.Body().SetAttributeTraversal(attrName, hcl.Traversal{
 		hcl.TraverseRoot{Name: attrValue},
 	})
+}
+
+// WriteLifecycleAllAttribute writes a lifecycle block with ignore_changes set to all
+func WriteLifecycleAllAttribute(block *hclwrite.Block) {
+	ignoreAll := terraform.TerraformLifecycleAllMetaArgument{}
+	lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+	WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "all")
+	block.Body().AppendBlock(lifecycleBlock)
 }
 
 // WriteActionProperties is used to pretty print the properties of an action, writing a multiline map for the properties,

@@ -159,13 +159,6 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 			}
 		}
 
-		if c.IgnoreProjectChanges {
-			all := "all"
-			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-				IgnoreAllChanges: &all,
-			}
-		}
-
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -180,6 +173,10 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 			}
+		}
+
+		if c.IgnoreProjectChanges {
+			hcl.WriteUnquotedAttribute(block, "lifecycle.ignore_changes", "all")
 		}
 
 		file.Body().AppendBlock(block)

@@ -147,10 +147,9 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
 
-		if c.IgnoreProjectChanges {
-			all := "all"
+		if !c.IgnoreProjectChanges && project.HasCacConfigured() {
 			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-				IgnoreAllChanges: &all,
+				IgnoreChanges: []string{"versioning_strategy"},
 			}
 		}
 
@@ -185,16 +184,15 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 		if terraformResource.HasCacConfigured() {
 			c.writeGitPathVar(projectName, project, file)
 			c.writeGitUrlVar(projectName, project, file)
-
-			// CaC enabled projects save the versioning strategy in git
-			if !c.IgnoreProjectChanges {
-				terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-					IgnoreChanges: []string{"versioning_strategy"},
-				}
-			}
 		}
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if c.IgnoreProjectChanges {
+			hcl.WriteLifecycleAllAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
