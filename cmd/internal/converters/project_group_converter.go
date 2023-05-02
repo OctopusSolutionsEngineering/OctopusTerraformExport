@@ -5,8 +5,9 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 )
 
@@ -15,7 +16,7 @@ type ProjectGroupConverter struct {
 }
 
 func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.ProjectGroup]{}
+	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -42,7 +43,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 		return nil
 	}
 
-	resource := octopus2.ProjectGroup{}
+	resource := octopus.ProjectGroup{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -61,7 +62,7 @@ func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *Resource
 		return nil
 	}
 
-	resource := octopus2.ProjectGroup{}
+	resource := octopus.ProjectGroup{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -71,7 +72,7 @@ func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *Resource
 	return c.toHcl(resource, false, true, dependencies)
 }
 
-func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	forceLookup := lookup || resource.Name == "Default Project Group"
@@ -85,9 +86,9 @@ func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive b
 	if forceLookup {
 		thisResource.Lookup = "${data.octopusdeploy_project_groups." + projectName + ".project_groups[0].id}"
 		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformProjectGroupData{
+			terraformResource := terraform.TerraformProjectGroupData{
 				Type:        "octopusdeploy_project_groups",
-				Name:        projectName,
+				Name:        "${var." + projectName + "_name}",
 				Ids:         nil,
 				PartialName: resource.Name,
 				Skip:        0,
@@ -96,14 +97,16 @@ func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive b
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
+			c.writeProjectNameVariable(file, projectName, resource.Name)
+
 			return string(file.Bytes()), nil
 		}
 	} else {
 		thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformProjectGroup{
+			terraformResource := terraform.TerraformProjectGroup{
 				Type:         "octopusdeploy_project_group",
-				Name:         projectName,
+				Name:         "${var." + projectName + "_name}",
 				ResourceName: resource.Name,
 				Description:  resource.Description,
 			}
@@ -131,6 +134,21 @@ func (c ProjectGroupConverter) toHcl(resource octopus2.ProjectGroup, recursive b
 
 	dependencies.AddResource(thisResource)
 	return nil
+}
+
+func (c ProjectGroupConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectGroupResourceName string) {
+	secretVariableResource := terraform.TerraformVariable{
+		Name:        projectName + "_name",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The name of the project group to lookup",
+		Default:     &projectGroupResourceName,
+	}
+
+	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
 }
 
 func (c ProjectGroupConverter) GetResourceType() string {
