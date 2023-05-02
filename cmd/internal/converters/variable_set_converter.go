@@ -41,6 +41,47 @@ type VariableSetConverter struct {
 	DefaultSecretVariableValues       bool
 }
 
+// ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
+// defined on a CaC enabled project is not available from the global /variablesets endpoint, and can only be
+// accessed from the project resource.
+func (c VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+	if projectId == "" {
+		return nil
+	}
+
+	collection := octopus.GeneralCollection[octopus.VariableSet]{}
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+
+	if err != nil {
+		return err
+	}
+
+	for _, variables := range collection.Items {
+		err = c.toHcl(variables, true, false, parentName, parentLookup, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+	if projectId == "" {
+		return nil
+	}
+
+	variables := octopus.VariableSet{}
+	_, err := c.Client.GetResource(c.GetGroupResourceType(projectId), &variables)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(variables, false, true, parentName, parentLookup, dependencies)
+}
+
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
@@ -314,6 +355,10 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 
 func (c VariableSetConverter) GetResourceType() string {
 	return "Variables"
+}
+
+func (c VariableSetConverter) GetGroupResourceType(projectId string) string {
+	return "Projects/" + projectId + "/Variables"
 }
 
 func (c VariableSetConverter) convertSecretValue(variable octopus.Variable, resourceName string) *string {

@@ -221,6 +221,56 @@ func (o OctopusClient) GetSpace(resources *octopus2.Space) error {
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
+func (o OctopusClient) GetResource(resourceType string, resources any) (bool, error) {
+	spaceUrl, err := o.GetSpaceBaseUrl()
+
+	if err != nil {
+		return false, err
+	}
+
+	requestURL := spaceUrl + "/" + resourceType
+
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+
+	if err != nil {
+		return false, err
+	}
+
+	if o.ApiKey != "" {
+		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return false, err
+	}
+
+	if res.StatusCode == 404 {
+		return false, nil
+	}
+
+	if res.StatusCode != 200 {
+		return false, errors.New("did not find the requested resource: " + resourceType)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return false, err
+	}
+
+	err = json.Unmarshal(body, resources)
+
+	if err != nil {
+		fmt.Println(string(body))
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (o OctopusClient) GetResourceById(resourceType string, id string, resources any) (bool, error) {
 	req, err := o.getRequest(resourceType, id)
 

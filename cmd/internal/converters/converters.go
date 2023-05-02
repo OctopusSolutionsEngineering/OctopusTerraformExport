@@ -72,6 +72,22 @@ type ConverterAndLookupByProjectId interface {
 	ConverterLookupByProjectId
 }
 
+// ConverterByProjectIdAndName converts objects based on their relationship to a project, with the ability to reference the parent
+type ConverterByProjectIdAndName interface {
+	ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error
+}
+
+// ConverterLookupByProjectIdAndName converts objects to data lookups based on their relationship to a project, with the ability to reference the parent
+type ConverterLookupByProjectIdAndName interface {
+	ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error
+}
+
+// ConverterAndLookupByProjectIdAndName converts objects to HCL and data lookups based on their relationship to a project
+type ConverterAndLookupByProjectIdAndName interface {
+	ConverterByProjectIdAndName
+	ConverterLookupByProjectIdAndName
+}
+
 // ConverterByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies
 type ConverterByProjectIdWithTerraDependencies interface {
 	ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error

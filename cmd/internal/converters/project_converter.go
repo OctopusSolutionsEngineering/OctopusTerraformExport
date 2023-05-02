@@ -22,7 +22,7 @@ type ProjectConverter struct {
 	DeploymentProcessConverter  ConverterAndLookupByIdAndName
 	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
-	VariableSetConverter        ConverterAndLookupByIdWithNameAndParent
+	VariableSetConverter        ConverterAndLookupByProjectIdAndName
 	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
 	RunbookConverter            ConverterAndLookupByIdAndName
 	IgnoreCacManagedValues      bool
@@ -404,17 +404,13 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 	if project.VariableSetId != nil {
 		var err error
 		if lookup {
-			err = c.VariableSetConverter.ToHclLookupByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(project.Id, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
 		} else {
-			err = c.VariableSetConverter.ToHclByIdAndName(*project.VariableSetId, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+			err = c.VariableSetConverter.ToHclByProjectIdAndName(project.Id, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
 		}
 
 		if err != nil {
-			// I've seen cases where CaC projects define a variable set but can not access it. Silently ignore these
-			// cases.
-			if !project.HasCacConfigured() {
-				return err
-			}
+			return err
 		}
 	}
 
