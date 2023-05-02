@@ -40,7 +40,14 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 		return nil
 	}
 
-	return c.toHcl(resource, true, false, projectName, dependencies)
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, project.HasCacConfigured(), true, false, projectName, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -65,10 +72,17 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectNam
 		return nil
 	}
 
-	return c.toHcl(resource, false, true, projectName, dependencies)
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, project.HasCacConfigured(), false, true, projectName, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := ResourceDetails{}
@@ -159,7 +173,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, re
 			}
 		}
 
-		if c.IgnoreProjectChanges {
+		if c.IgnoreProjectChanges || cac {
 			all := "all"
 			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
 				IgnoreAllChanges: &all,

@@ -24,6 +24,12 @@ type TerraformProject struct {
 	Lifecycle                              *TerraformLifecycleMetaArgument                  `hcl:"lifecycle,block"`
 }
 
+func (t TerraformProject) HasCacConfigured() bool {
+	return t.GitUsernamePasswordPersistenceSettings != nil ||
+		t.GitAnonymousPersistenceSettings != nil ||
+		t.GitLibraryPersistenceSettings != nil
+}
+
 type TerraformTemplate struct {
 	Id              *string           `hcl:"id"`
 	Name            *string           `hcl:"name"`

@@ -184,10 +184,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			file.Body().AppendBlock(block)
 		}
 
-		if terraformResource.GitUsernamePasswordPersistenceSettings != nil ||
-			terraformResource.GitAnonymousPersistenceSettings != nil ||
-			terraformResource.GitLibraryPersistenceSettings != nil {
-
+		if terraformResource.HasCacConfigured() {
 			c.writeGitPathVar(projectName, project, file)
 			c.writeGitUrlVar(projectName, project, file)
 
@@ -391,6 +388,7 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 
 	// Export the deployment process
 	if project.DeploymentProcessId != nil && !c.IgnoreCacManagedValues {
+
 		var err error
 		if lookup {
 			err = c.DeploymentProcessConverter.ToHclLookupByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
