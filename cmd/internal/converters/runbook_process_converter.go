@@ -176,7 +176,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 		}
 
 		if c.IgnoreProjectChanges {
-			hcl.WriteUnquotedAttribute(block, "lifecycle.ignore_changes", "all")
+			hcl.WriteLifecycleAllAttribute(block)
 		}
 
 		file.Body().AppendBlock(block)

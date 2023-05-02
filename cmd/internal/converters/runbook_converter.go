@@ -114,7 +114,7 @@ func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, rec
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if c.IgnoreProjectChanges {
-			hcl.WriteUnquotedAttribute(block, "lifecycle.ignore_changes", "all")
+			hcl.WriteLifecycleAllAttribute(block)
 		}
 
 		file.Body().AppendBlock(block)

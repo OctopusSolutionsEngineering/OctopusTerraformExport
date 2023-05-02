@@ -177,7 +177,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if c.IgnoreProjectChanges || cac {
-			hcl.WriteUnquotedAttribute(block, "lifecycle.ignore_changes", "all")
+			hcl.WriteLifecycleAllAttribute(block)
 		}
 
 		for _, s := range resource.Steps {
