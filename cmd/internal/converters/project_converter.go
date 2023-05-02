@@ -168,8 +168,6 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			SpacesBefore: 0,
 		}})
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
 		if terraformResource.GitUsernamePasswordPersistenceSettings != nil {
 			secretVariableResource := terraform.TerraformVariable{
 				Name:        projectName + "_git_password",
@@ -196,6 +194,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			}
 		}
 
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
@@ -411,7 +410,11 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 		}
 
 		if err != nil {
-			return err
+			// I've seen cases where CaC projects define a variable set but can not access it. Silently ignore these
+			// cases.
+			if !project.HasCacConfigured() {
+				return err
+			}
 		}
 	}
 

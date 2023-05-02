@@ -51,10 +51,16 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 	}
 
 	resource := octopus.VariableSet{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	// Some CaC enabled projects have no variable set.
+	// This is expected, so just return.
+	if !found {
+		return nil
 	}
 
 	return c.toHcl(resource, true, false, parentName, parentLookup, dependencies)
@@ -72,10 +78,16 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 	}
 
 	resource := octopus.VariableSet{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	// Some CaC enabled projects have no variable set.
+	// This is expected, so just return.
+	if !found {
+		return nil
 	}
 
 	return c.toHcl(resource, false, true, parentName, parentLookup, dependencies)
