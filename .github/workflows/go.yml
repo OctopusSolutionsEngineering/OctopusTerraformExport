@@ -116,18 +116,22 @@ jobs:
         env:
           GOOS: linux
           GOARCH: amd64
+          CGO_ENABLED: 0
       - run: go build -o octoterra_windows_amd64.exe cmd/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
+          CGO_ENABLED: 0
       - run: go build -o octoterra_macos_amd64 cmd/octoterra.go
         env:
           GOOS: darwin
           GOARCH: amd64
+          CGO_ENABLED: 0
       - run: go build -o octoterra_macos_arm64 cmd/octoterra.go
         env:
           GOOS: darwin
           GOARCH: arm64
+          CGO_ENABLED: 0
       - name: Tag Release
         uses: mathieudutour/github-tag-action@v6.1
         with:
