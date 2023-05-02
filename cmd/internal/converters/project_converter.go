@@ -199,6 +199,19 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
+
+			gitUrlVariable := terraform.TerraformVariable{
+				Name:        projectName + "_git_url",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   false,
+				Description: "The git url for \"" + project.Name + "\"",
+				Default:     &project.PersistenceSettings.Url,
+			}
+
+			block = gohcl.EncodeAsBlock(gitUrlVariable, "variable")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
 		}
 
 		return string(file.Bytes()), nil
@@ -277,7 +290,7 @@ func (c ProjectConverter) convertLibraryGitPersistence(project octopus.Project, 
 
 	return &terraform.TerraformGitLibraryPersistenceSettings{
 		GitCredentialId:   dependencies.GetResource("Git-Credentials", project.PersistenceSettings.Credentials.Id),
-		Url:               project.PersistenceSettings.Url,
+		Url:               "${var." + projectName + "_git_url}",
 		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
 		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
@@ -290,7 +303,7 @@ func (c ProjectConverter) convertAnonymousGitPersistence(project octopus.Project
 	}
 
 	return &terraform.TerraformGitAnonymousPersistenceSettings{
-		Url:               project.PersistenceSettings.Url,
+		Url:               "${var." + projectName + "_git_url}",
 		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
 		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
@@ -303,7 +316,7 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 	}
 
 	return &terraform.TerraformGitUsernamePasswordPersistenceSettings{
-		Url:               project.PersistenceSettings.Url,
+		Url:               "${var." + projectName + "_git_url}",
 		Username:          project.PersistenceSettings.Credentials.Username,
 		Password:          "${var." + projectName + "_git_password}",
 		BasePath:          "${var." + projectName + "_git_base_path}",
