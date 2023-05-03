@@ -49,22 +49,14 @@ func (c VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentNa
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.VariableSet]{}
-	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+	variables := octopus.VariableSet{}
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &variables)
 
 	if err != nil {
 		return err
 	}
 
-	for _, variables := range collection.Items {
-		err = c.toHcl(variables, true, false, parentName, parentLookup, dependencies)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return c.toHcl(variables, true, false, parentName, parentLookup, dependencies)
 }
 
 func (c VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {

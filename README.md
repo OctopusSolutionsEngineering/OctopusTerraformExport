@@ -76,6 +76,8 @@ Features:
 * Exclude channels
 * Exclude triggers
 * Exclude variables
+* Exclude Cac values only if the project is Cac enabled
+* 
 
 ## Report Card
 ![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)
