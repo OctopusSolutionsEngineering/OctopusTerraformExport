@@ -56,7 +56,16 @@ func (c VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentNa
 		return err
 	}
 
-	return c.toHcl(variables, true, false, parentName, parentLookup, dependencies)
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
+
+	return c.toHcl(variables, true, false, ignoreSecrets, parentName, parentLookup, dependencies)
 }
 
 func (c VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -71,7 +80,16 @@ func (c VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, pa
 		return err
 	}
 
-	return c.toHcl(variables, false, true, parentName, parentLookup, dependencies)
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
+
+	return c.toHcl(variables, false, true, ignoreSecrets, parentName, parentLookup, dependencies)
 }
 
 func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -96,7 +114,7 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 		return nil
 	}
 
-	return c.toHcl(resource, true, false, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, true, false, false, parentName, parentLookup, dependencies)
 }
 
 // ToHclLookupByIdAndName exports the variable set as a complete resource, but will reference external resources like accounts,
@@ -123,14 +141,10 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 		return nil
 	}
 
-	return c.toHcl(resource, false, true, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, false, true, false, parentName, parentLookup, dependencies)
 }
 
-func (c VariableSetConverter) ignoreVariable(variable *octopus.Variable) bool {
-	return !variable.IsSensitive && c.IgnoreCacManagedValues
-}
-
-func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if recursive {
 		c.exportChildDependencies(resource, dependencies)
 	}
@@ -138,7 +152,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
-		if c.ignoreVariable(&v) {
+		if ignoreSecrets && v.IsSensitive {
 			continue
 		}
 

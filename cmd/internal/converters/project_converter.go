@@ -273,7 +273,7 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 }
 
 func (c ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
-	if c.IgnoreCacManagedValues {
+	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
 		return nil
 	}
 
@@ -335,7 +335,7 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 }
 
 func (c ProjectConverter) convertVersioningStrategy(project octopus.Project) *terraform.TerraformVersioningStrategy {
-	if c.IgnoreCacManagedValues {
+	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
 		return nil
 	}
 
@@ -384,7 +384,7 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 	}
 
 	// Export the deployment process
-	if project.DeploymentProcessId != nil && !c.IgnoreCacManagedValues {
+	if project.DeploymentProcessId != nil && !(c.IgnoreCacManagedValues && project.HasCacConfigured()) {
 
 		var err error
 		if lookup {
