@@ -152,7 +152,7 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
-		if ignoreSecrets && v.IsSensitive {
+		if ignoreSecrets && !v.IsSensitive {
 			continue
 		}
 
