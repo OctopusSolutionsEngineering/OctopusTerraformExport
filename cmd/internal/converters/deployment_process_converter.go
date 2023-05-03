@@ -47,7 +47,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), true, false, projectName, dependencies)
+	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -79,7 +79,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectNam
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), false, true, projectName, dependencies)
+	return c.toHcl(resource, project.HasCacConfigured(), false, true, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -105,6 +105,8 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 			ProjectId: dependencies.GetResource("Projects", resource.ProjectId),
 			Step:      make([]terraform.TerraformStep, len(resource.Steps)),
 		}
+
+		file := hclwrite.NewEmptyFile()
 
 		for i, s := range resource.Steps {
 			terraformResource.Step[i] = terraform.TerraformStep{
@@ -148,12 +150,20 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 				}
 
 				for _, p := range a.Packages {
+					variableName := c.writePackageIdVariable(
+						file,
+						strutil.EmptyIfNil(p.PackageId),
+						projectName,
+						strutil.EmptyIfNil(a.Name),
+						strutil.EmptyIfNil(p.Name))
+					variableReference := "${var." + variableName + "}"
+
 					if strutil.NilIfEmptyPointer(p.Name) != nil {
 						terraformResource.Step[i].Action[j].Package = append(
 							terraformResource.Step[i].Action[j].Package,
 							terraform.TerraformPackage{
 								Name:                    p.Name,
-								PackageID:               p.PackageId,
+								PackageID:               &variableReference,
 								AcquisitionLocation:     p.AcquisitionLocation,
 								ExtractDuringDeployment: &p.ExtractDuringDeployment,
 								FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
@@ -162,7 +172,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 					} else {
 						terraformResource.Step[i].Action[j].PrimaryPackage = &terraform.TerraformPackage{
 							Name:                    nil,
-							PackageID:               p.PackageId,
+							PackageID:               &variableReference,
 							AcquisitionLocation:     p.AcquisitionLocation,
 							ExtractDuringDeployment: nil,
 							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
@@ -173,7 +183,6 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 			}
 		}
 
-		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if c.IgnoreProjectChanges || cac {
@@ -231,4 +240,33 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 	}
 
 	return nil
+}
+
+func (c DeploymentProcessConverter) writePackageIdVariable(file *hclwrite.File, defaultValue string, projectName string, stepName string, packageName string) string {
+	sanitizedProjectName := sanitizer.SanitizeName(projectName)
+	sanitizedPackageName := sanitizer.SanitizeName(packageName)
+	sanitizedStepName := sanitizer.SanitizeName(stepName)
+
+	variableName := ""
+
+	if packageName == "" {
+		variableName = "project_" + sanitizedProjectName + "_step_" + sanitizedStepName + "_packageid"
+	} else {
+		variableName = "project_" + sanitizedProjectName + "_step_" + sanitizedStepName + "_package_" + sanitizedPackageName + "_packageid"
+	}
+
+	secretVariableResource := terraform.TerraformVariable{
+		Name:        variableName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The package ID for the package named " + packageName + " from step " + stepName + " in project " + projectName,
+		Default:     &defaultValue,
+	}
+
+	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+
+	return variableName
 }

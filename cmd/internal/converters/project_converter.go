@@ -235,8 +235,10 @@ func (c ProjectConverter) GetResourceType() string {
 }
 
 func (c ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
+	sanitizedProjectName := sanitizer.SanitizeName(projectName)
+
 	secretVariableResource := terraform.TerraformVariable{
-		Name:        projectName + "_name",
+		Name:        sanitizedProjectName + "_name",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
