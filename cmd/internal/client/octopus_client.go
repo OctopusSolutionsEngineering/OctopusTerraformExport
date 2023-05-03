@@ -230,6 +230,8 @@ func (o OctopusClient) GetResource(resourceType string, resources any) (bool, er
 
 	requestURL := spaceUrl + "/" + resourceType
 
+	fmt.Println(requestURL)
+
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 	if err != nil {
