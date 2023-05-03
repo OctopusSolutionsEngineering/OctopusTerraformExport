@@ -77,7 +77,7 @@ Features:
 * Exclude triggers
 * Exclude variables
 * Exclude Cac values only if the project is Cac enabled
-* 
+* Expose package ids as variables
 
 ## Report Card
 ![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)
