@@ -149,7 +149,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 
 		if !c.IgnoreProjectChanges && project.HasCacConfigured() {
 			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-				IgnoreChanges: []string{"connectivity_policy"},
+				IgnoreChanges: &[]string{"connectivity_policy"},
 			}
 		}
 

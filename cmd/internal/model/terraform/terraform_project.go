@@ -81,9 +81,9 @@ type TerraformDonorPackage struct {
 }
 
 type TerraformLifecycleMetaArgument struct {
-	CreateBeforeDestroy *bool    `hcl:"create_before_destroy"`
-	IgnoreChanges       []string `hcl:"ignore_changes"`
-	ReplaceTriggeredBy  []string `hcl:"replace_triggered_by"`
+	CreateBeforeDestroy *bool     `hcl:"create_before_destroy"`
+	IgnoreChanges       *[]string `hcl:"ignore_changes"`
+	ReplaceTriggeredBy  *[]string `hcl:"replace_triggered_by"`
 }
 
 type TerraformLifecycleAllMetaArgument struct {
