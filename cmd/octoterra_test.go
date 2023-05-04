@@ -1198,150 +1198,177 @@ func TestVariableSetExport(t *testing.T) {
 
 // TestProjectExport verifies that a project can be reimported with the correct settings
 func TestProjectExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/19-project/space_creation", "../test/terraform/19-project/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/19-project/space_creation",
+		"../test/terraform/19-project/space_population",
+		[]string{},
+		[]string{"project_project_test_step_test_package_test_packageid"},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "Test project" {
-					t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Test project" {
+						t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				if v.AutoCreateRelease {
-					t.Fatal("The project must not have auto release create enabled")
-				}
+					if v.AutoCreateRelease {
+						t.Fatal("The project must not have auto release create enabled")
+					}
 
-				if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
-					t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
-				}
+					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
+						t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+					}
 
-				if v.DefaultToSkipIfAlreadyInstalled {
-					t.Fatal("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
-				}
+					if v.DefaultToSkipIfAlreadyInstalled {
+						t.Fatal("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
+					}
 
-				if v.DiscreteChannelRelease {
-					t.Fatal("The project must not have DiscreteChannelRelease enabled")
-				}
+					if v.DiscreteChannelRelease {
+						t.Fatal("The project must not have DiscreteChannelRelease enabled")
+					}
 
-				if v.IsDisabled {
-					t.Fatal("The project must not have IsDisabled enabled")
-				}
+					if v.IsDisabled {
+						t.Fatal("The project must not have IsDisabled enabled")
+					}
 
-				if v.IsVersionControlled {
-					t.Fatal("The project must not have IsVersionControlled enabled")
-				}
+					if v.IsVersionControlled {
+						t.Fatal("The project must not have IsVersionControlled enabled")
+					}
 
-				if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
-					t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
+						t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
+					}
 
-				if len(v.IncludedLibraryVariableSetIds) != 0 {
-					t.Fatal("The project must not have any library variable sets")
-				}
+					if len(v.IncludedLibraryVariableSetIds) != 0 {
+						t.Fatal("The project must not have any library variable sets")
+					}
 
-				if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
-					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
-				}
+					if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
+						t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+					}
 
-				if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
-					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
-				}
+					if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
+						t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+					}
 
-				if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
-					t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
+					if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
+						t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectChannelExport verifies that a project channel can be reimported with the correct settings
 func TestProjectChannelExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/20-channel/space_creation", "../test/terraform/20-channel/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/20-channel/space_creation",
+		"../test/terraform/20-channel/space_population",
+		[]string{},
+		[]string{"-var=project_test_step_test_package_test_packageid=test2"},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				collection := octopus.GeneralCollection[octopus.Channel]{}
-				err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &collection)
+					deploymentProcess := octopus.DeploymentProcess{}
+					_, err := octopusClient.GetResourceById("DeploymentProcesses", *v.DeploymentProcessId, &deploymentProcess)
 
-				channelName := "Test"
-				foundChannel := false
+					if err != nil {
+						t.Fatal(err.Error())
+					}
 
-				for _, c := range collection.Items {
-					if c.Name == channelName {
-						foundChannel = true
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].PackageId) != "test2" {
+						t.Fatal("Deployment process should have renamed the package ID to test2")
+					}
 
-						if strutil.EmptyIfNil(c.Description) != "Test channel" {
-							t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
-						}
+					collection := octopus.GeneralCollection[octopus.Channel]{}
+					err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &collection)
 
-						if !c.IsDefault {
-							t.Fatal("The channel must be be the default")
-						}
+					if err != nil {
+						t.Fatal(err.Error())
+					}
 
-						if len(c.Rules) != 1 {
-							t.Fatal("The channel must have one rule")
-						}
+					channelName := "Test"
+					foundChannel := false
 
-						if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
-							t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
-						}
+					for _, c := range collection.Items {
+						if c.Name == channelName {
+							foundChannel = true
 
-						if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
-							t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
-						}
+							if strutil.EmptyIfNil(c.Description) != "Test channel" {
+								t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
+							}
 
-						if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
-							t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+							if !c.IsDefault {
+								t.Fatal("The channel must be be the default")
+							}
+
+							if len(c.Rules) != 1 {
+								t.Fatal("The channel must have one rule")
+							}
+
+							if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
+								t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
+							}
+
+							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
+								t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
+							}
+
+							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
+								t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+							}
 						}
 					}
-				}
 
-				if !foundChannel {
-					t.Fatal("Project must have an channel called \"" + channelName + "\"")
+					if !foundChannel {
+						t.Fatal("Project must have an channel called \"" + channelName + "\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestTagSetExport verifies that a tag set can be reimported with the correct settings
