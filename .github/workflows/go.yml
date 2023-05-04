@@ -157,13 +157,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push branch
-        if: ${{ env.BRANCH_NAME != 'master' }}
+        if: ${{ env.BRANCH_NAME != 'main' }}
         uses: docker/build-push-action@v3
         with:
           push: true
           tags: octopussamples/octoterra:${{ steps.determine_version.outputs.preReleaseTag }}
       - name: Build and push latest
-        if: ${{ env.BRANCH_NAME == 'master' }}
+        if: ${{ env.BRANCH_NAME == 'main' }}
         uses: docker/build-push-action@v3
         with:
           push: true
