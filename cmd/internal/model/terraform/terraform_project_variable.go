@@ -15,9 +15,20 @@ type TerraformProjectVariable struct {
 }
 
 type TerraformProjectVariablePrompt struct {
-	Description *string `hcl:"description"`
-	Label       *string `hcl:"label"`
-	IsRequired  bool    `hcl:"is_required"`
+	Description     *string                          `hcl:"description"`
+	Label           *string                          `hcl:"label"`
+	IsRequired      bool                             `hcl:"is_required"`
+	DisplaySettings *TerraformProjectVariableDisplay `hcl:"display_settings,block"`
+}
+
+type TerraformProjectVariableDisplay struct {
+	ControlType  *string                                        `hcl:"control_type"`
+	SelectOption *[]TerraformProjectVariableDisplaySelectOption `hcl:"select_option,block"`
+}
+
+type TerraformProjectVariableDisplaySelectOption struct {
+	DisplayName string `hcl:"display_name"`
+	Value       string `hcl:"value"`
 }
 
 type TerraformProjectVariableScope struct {

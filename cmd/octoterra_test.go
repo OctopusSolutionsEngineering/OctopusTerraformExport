@@ -1141,67 +1141,93 @@ func TestLifecycleExport(t *testing.T) {
 
 // TestVariableSetExport verifies that a variable set can be reimported with the correct settings
 func TestVariableSetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/18-variableset/space_creation", "../test/terraform/18-variableset/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/18-variableset/space_creation",
+		"../test/terraform/18-variableset/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
-		err := octopusClient.GetAllResources("LibraryVariableSets", &collection)
+			collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+			err := octopusClient.GetAllResources("LibraryVariableSets", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "Test variable set" {
-					t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Test variable set" {
+						t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				resource := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+					resource := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
 
-				if len(resource.Variables) != 1 {
-					t.Fatal("The library variable set must have one associated variable")
-				}
+					if len(resource.Variables) != 1 {
+						t.Fatal("The library variable set must have one associated variable")
+					}
 
-				if resource.Variables[0].Name != "Test.Variable" {
-					t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
-				}
+					if resource.Variables[0].Name != "Test.Variable" {
+						t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
+					}
 
-				if resource.Variables[0].Type != "String" {
-					t.Fatal("The library variable set variable must have a type of \"String\"")
-				}
+					if resource.Variables[0].Type != "String" {
+						t.Fatal("The library variable set variable must have a type of \"String\"")
+					}
 
-				if strutil.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
-					t.Fatal("The library variable set variable must have a description of \"Test variable\"")
-				}
+					if strutil.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
+						t.Fatal("The library variable set variable must have a description of \"Test variable\"")
+					}
 
-				if strutil.EmptyIfNil(resource.Variables[0].Value) != "test" {
-					t.Fatal("The library variable set variable must have a value of \"test\"")
-				}
+					if strutil.EmptyIfNil(resource.Variables[0].Value) != "True" {
+						t.Fatal("The library variable set variable must have a value of \"True\"")
+					}
 
-				if resource.Variables[0].IsSensitive {
-					t.Fatal("The library variable set variable must not be sensitive")
-				}
+					if resource.Variables[0].IsSensitive {
+						t.Fatal("The library variable set variable must not be sensitive")
+					}
 
-				if !resource.Variables[0].IsEditable {
-					t.Fatal("The library variable set variable must be editable")
+					if !resource.Variables[0].IsEditable {
+						t.Fatal("The library variable set variable must be editable")
+					}
+
+					if strutil.EmptyIfNil(resource.Variables[0].Prompt.Description) != "test description" {
+						t.Fatal("The library variable set variable must have a prompt description of \"test description\"")
+					}
+
+					if strutil.EmptyIfNil(resource.Variables[0].Prompt.Label) != "test label" {
+						t.Fatal("The library variable set variable must have a prompt label of \"test label\"")
+					}
+
+					if !resource.Variables[0].Prompt.Required {
+						t.Fatal("The library variable set variable must have a required prompt")
+					}
+
+					if resource.Variables[0].Prompt.DisplaySettings["Octopus.ControlType"] != "Select" {
+						t.Fatal("The library variable set variable must have a prompt control type of \"Select\"")
+					}
+
+					if resource.Variables[0].Prompt.DisplaySettings["Octopus.SelectOptions"] != "hi|there" {
+						t.Fatal("The library variable set variable must have a prompt select option of \"hi|there\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectExport verifies that a project can be reimported with the correct settings

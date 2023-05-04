@@ -401,10 +401,42 @@ func (c VariableSetConverter) convertValue(variable octopus.Variable, resourceNa
 func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
 	if prompt.Label != nil || prompt.Description != nil {
 		return &terraform.TerraformProjectVariablePrompt{
-			Description: prompt.Description,
-			Label:       prompt.Label,
-			IsRequired:  prompt.Required,
+			Description:     prompt.Description,
+			Label:           prompt.Label,
+			IsRequired:      prompt.Required,
+			DisplaySettings: c.convertDisplaySettings(prompt),
 		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
+	if prompt.DisplaySettings != nil {
+
+		display := terraform.TerraformProjectVariableDisplay{}
+		if controlType, ok := prompt.DisplaySettings["Octopus.ControlType"]; ok {
+			display.ControlType = &controlType
+		}
+
+		if selectOptions, ok := prompt.DisplaySettings["Octopus.SelectOptions"]; ok {
+			selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
+			for _, o := range strings.Split(selectOptions, "\n") {
+				split := strings.Split(o, "|")
+				if len(split) == 2 {
+					selectOptionsSlice = append(
+						selectOptionsSlice,
+						terraform.TerraformProjectVariableDisplaySelectOption{
+							DisplayName: split[0],
+							Value:       split[1],
+						})
+				}
+			}
+
+			display.SelectOption = &selectOptionsSlice
+		}
+
+		return &display
 	}
 
 	return nil
