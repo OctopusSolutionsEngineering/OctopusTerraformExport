@@ -1207,7 +1207,7 @@ func TestProjectExport(t *testing.T) {
 		"../test/terraform/19-project/space_creation",
 		"../test/terraform/19-project/space_population",
 		[]string{},
-		[]string{"project_project_test_step_test_package_test_packageid"},
+		[]string{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
