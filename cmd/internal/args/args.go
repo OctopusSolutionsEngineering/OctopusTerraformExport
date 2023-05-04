@@ -6,25 +6,26 @@ import (
 )
 
 type Arguments struct {
-	Url                         string
-	ApiKey                      string
-	Space                       string
-	Destination                 string
-	Console                     bool
-	ProjectId                   string
-	ProjectName                 string
-	LookupProjectDependencies   bool
-	IgnoreCacManagedValues      bool
-	BackendBlock                string
-	DetachProjectTemplates      bool
-	DefaultSecretVariableValues bool
-	ProviderVersion             string
-	ExcludeAllRunbooks          bool
-	ExcludeRunbooks             ExcludeRunbooks
-	ExcludeProvider             bool
-	ExcludeLibraryVariableSets  ExcludeLibraryVariableSets
-	IgnoreProjectChanges        bool
-	ExcludeProjectVariables     ExcludeVariables
+	Url                          string
+	ApiKey                       string
+	Space                        string
+	Destination                  string
+	Console                      bool
+	ProjectId                    string
+	ProjectName                  string
+	LookupProjectDependencies    bool
+	IgnoreCacManagedValues       bool
+	BackendBlock                 string
+	DetachProjectTemplates       bool
+	DefaultSecretVariableValues  bool
+	ProviderVersion              string
+	ExcludeAllRunbooks           bool
+	ExcludeRunbooks              ExcludeRunbooks
+	ExcludeProvider              bool
+	ExcludeLibraryVariableSets   ExcludeLibraryVariableSets
+	IgnoreProjectChanges         bool
+	IgnoreProjectVariableChanges bool
+	ExcludeProjectVariables      ExcludeVariables
 }
 
 type ExcludeVariables []string
@@ -81,7 +82,8 @@ func ParseArgs() Arguments {
 	flag.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project.")
 	flag.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
 	flag.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
-	flag.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project when exporting a single project.")
+	flag.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
+	flag.BoolVar(&arguments.IgnoreProjectVariableChanges, "ignoreProjectVariableChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project's variables when exporting a single project. This differs from the ignoreProjectChanges option by only ignoring changes to variables while reapplying changes to all other project settings.")
 	flag.Parse()
 
 	if arguments.Url == "" {
