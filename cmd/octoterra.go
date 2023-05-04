@@ -438,10 +438,36 @@ func ConvertProjectToTerraform(
 		IgnoreCacManagedValues:            ignoreCacManagedSettings,
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
 		ExcludeProjectVariables:           excludedVars,
+		IgnoreProjectChanges:              ignoreProjectChanges,
 	}
+
+	variableSetConverterForLibrary := converters.VariableSetConverter{
+		Client:                            client,
+		ChannelConverter:                  channelConverter,
+		EnvironmentConverter:              environmentConverter,
+		TagSetConverter:                   tagsetConverter,
+		AzureCloudServiceTargetConverter:  azureCloudServiceTargetConverter,
+		AzureServiceFabricTargetConverter: azureServiceFabricTargetConverter,
+		AzureWebAppTargetConverter:        azureWebAppTargetConverter,
+		CloudRegionTargetConverter:        cloudRegionTargetConverter,
+		KubernetesTargetConverter:         kubernetesTargetConverter,
+		ListeningTargetConverter:          listeningTargetConverter,
+		OfflineDropTargetConverter:        offlineDropTargetConverter,
+		PollingTargetConverter:            pollingTargetConverter,
+		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
+		IgnoreCacManagedValues:            ignoreCacManagedSettings,
+		DefaultSecretVariableValues:       defaultSecretVariableValues,
+		ExcludeProjectVariables:           excludedVars,
+		IgnoreProjectChanges:              false,
+	}
+
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:               client,
-		VariableSetConverter: variableSetConverter,
+		VariableSetConverter: variableSetConverterForLibrary,
 		Excluded:             excludedLibraryVariableSets,
 	}
 

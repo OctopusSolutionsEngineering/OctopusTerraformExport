@@ -41,6 +41,7 @@ type VariableSetConverter struct {
 	IgnoreCacManagedValues            bool
 	DefaultSecretVariableValues       bool
 	ExcludeProjectVariables           args.ExcludeVariables
+	IgnoreProjectChanges              bool
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -355,6 +356,11 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 				}
 			}
 			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+
+			// Ignore all changes if requested
+			if c.IgnoreProjectChanges {
+				hcl.WriteLifecycleAllAttribute(block)
+			}
 
 			file.Body().AppendBlock(block)
 
