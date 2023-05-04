@@ -148,10 +148,6 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 }
 
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
-	if recursive {
-		c.exportChildDependencies(resource, dependencies)
-	}
-
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
@@ -840,22 +836,4 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, r
 
 func (c VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
 	return c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1
-}
-
-func (c VariableSetConverter) exportChildDependencies(variableSet octopus.VariableSet, dependencies *ResourceDetailsCollection) error {
-	for _, v := range variableSet.Variables {
-		// Don't export dependencies of excluded variables
-		if c.variableIsExcluded(v) {
-			continue
-		}
-
-		for _, e := range v.Scope.Environment {
-			err := c.EnvironmentConverter.ToHclById(e, dependencies)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
