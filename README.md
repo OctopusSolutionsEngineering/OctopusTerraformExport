@@ -75,8 +75,6 @@ The following resources have yet to be exported:
 Features:
 * Exclude channels
 * Exclude triggers
-* Exclude variables
-* Expose package ids as variables
 
 ## Report Card
 ![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)

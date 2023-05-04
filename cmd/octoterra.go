@@ -53,7 +53,8 @@ func main() {
 			args.ExcludeRunbooks,
 			args.ExcludeProvider,
 			args.ExcludeLibraryVariableSets,
-			args.IgnoreProjectChanges)
+			args.IgnoreProjectChanges,
+			args.ExcludeProjectVariables)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -311,7 +312,8 @@ func ConvertProjectToTerraform(
 	excludedRunbooks args.ExcludeRunbooks,
 	excludeProvider bool,
 	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
-	ignoreProjectChanges bool) error {
+	ignoreProjectChanges bool,
+	excludedVars args.ExcludeVariables) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -435,6 +437,7 @@ func ConvertProjectToTerraform(
 		WorkerPoolConverter:               workerPoolConverter,
 		IgnoreCacManagedValues:            ignoreCacManagedSettings,
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
+		ExcludeProjectVariables:           excludedVars,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:               client,

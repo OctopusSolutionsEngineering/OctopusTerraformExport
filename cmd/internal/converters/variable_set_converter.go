@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -39,6 +40,7 @@ type VariableSetConverter struct {
 	WorkerPoolConverter               ConverterAndLookupById
 	IgnoreCacManagedValues            bool
 	DefaultSecretVariableValues       bool
+	ExcludeProjectVariables           args.ExcludeVariables
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -153,6 +155,11 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
 		if ignoreSecrets && !v.IsSensitive {
+			continue
+		}
+
+		// Do not export excluded variables
+		if c.variableIsExcluded(v) {
 			continue
 		}
 
@@ -753,19 +760,6 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 	return &retValue
 }
 
-func (c VariableSetConverter) exportChildDependencies(variableSet octopus.VariableSet, dependencies *ResourceDetailsCollection) error {
-	for _, v := range variableSet.Variables {
-		for _, e := range v.Scope.Environment {
-			err := c.EnvironmentConverter.ToHclById(e, dependencies)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
 func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
@@ -804,4 +798,26 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, r
 	}
 
 	return terraformDependencies, nil
+}
+
+func (c VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
+	return c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1
+}
+
+func (c VariableSetConverter) exportChildDependencies(variableSet octopus.VariableSet, dependencies *ResourceDetailsCollection) error {
+	for _, v := range variableSet.Variables {
+		// Don't export dependencies of excluded variables
+		if c.variableIsExcluded(v) {
+			continue
+		}
+
+		for _, e := range v.Scope.Environment {
+			err := c.EnvironmentConverter.ToHclById(e, dependencies)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

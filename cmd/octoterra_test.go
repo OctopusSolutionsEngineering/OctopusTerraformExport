@@ -57,6 +57,7 @@ func exportSpaceImportAndTest(
 func exportProjectImportAndTest(
 	t *testing.T,
 	projectName string,
+	excludedVars []string,
 	createSourceBlankSpaceModuleDir string,
 	populateSourceSpaceModuleDir string,
 	createImportBlankSpaceModuleDir string,
@@ -100,7 +101,8 @@ func exportProjectImportAndTest(
 				nil,
 				false,
 				nil,
-				false)
+				false,
+				excludedVars)
 		},
 		testFunc)
 }
@@ -108,6 +110,7 @@ func exportProjectImportAndTest(
 func exportProjectLookupImportAndTest(
 	t *testing.T,
 	projectName string,
+	excludedVars []string,
 	createSourceBlankSpaceModuleDir string,
 	prepopulateSourceBlankSpaceModuleDir string,
 	populateSourceSpaceModuleDir string,
@@ -154,7 +157,8 @@ func exportProjectLookupImportAndTest(
 				nil,
 				false,
 				nil,
-				false)
+				false,
+				excludedVars)
 		},
 		testFunc)
 }
@@ -2336,7 +2340,9 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
 
-	exportProjectImportAndTest(t, "Test",
+	exportProjectImportAndTest(t,
+		"Test",
+		[]string{"Test"},
 		"../test/terraform/38-multipleprojects/space_creation",
 		"../test/terraform/38-multipleprojects/space_population",
 		"../test/terraform/z-createspace",
@@ -2413,11 +2419,11 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if len(variableSet.Variables) != 1 {
-					t.Fatalf("The project must have 1 variable")
+					t.Fatalf("The project must have 1 variable (because the variable called \"Test\" was excluded)")
 				}
 
-				if variableSet.Variables[0].Name != "Test" {
-					t.Fatalf("The project must have 1 variable called \"Test\"")
+				if variableSet.Variables[0].Name != "Test2" {
+					t.Fatalf("The project must have 1 variable called \"Test2\"")
 				}
 				return nil
 			}()
@@ -2697,6 +2703,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 	exportProjectLookupImportAndTest(
 		t,
 		"Test",
+		[]string{},
 		"../test/terraform/43-multipleprojectslookup/space_creation",
 		"../test/terraform/43-multipleprojectslookup/space_prepopulation",
 		"../test/terraform/43-multipleprojectslookup/space_population",

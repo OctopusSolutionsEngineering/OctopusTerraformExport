@@ -47,6 +47,13 @@ resource "octopusdeploy_variable" "string_variable" {
   value     = "PlainText"
 }
 
+resource "octopusdeploy_variable" "string_variable2" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "Test2"
+  value     = "PlainText"
+}
+
 output "octopus_project_1" {
   value = octopusdeploy_project.project_1.id
 }
