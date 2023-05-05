@@ -28,6 +28,7 @@ type ProjectConverter struct {
 	IgnoreCacManagedValues      bool
 	ExcludeAllRunbooks          bool
 	IgnoreProjectChanges        bool
+	IgnoreProjectGroupChanges   bool
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -147,9 +148,19 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
 
-		if !c.IgnoreProjectChanges && project.HasCacConfigured() {
+		if !c.IgnoreProjectChanges {
+			ignoreList := []string{}
+
+			if project.HasCacConfigured() {
+				ignoreList = append(ignoreList, "connectivity_policy")
+			}
+
+			if c.IgnoreProjectGroupChanges {
+				ignoreList = append(ignoreList, "project_group_id")
+			}
+
 			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
-				IgnoreChanges: &[]string{"connectivity_policy"},
+				IgnoreChanges: &ignoreList,
 			}
 		}
 
@@ -235,8 +246,10 @@ func (c ProjectConverter) GetResourceType() string {
 }
 
 func (c ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
+	sanitizedProjectName := sanitizer.SanitizeName(projectName)
+
 	secretVariableResource := terraform.TerraformVariable{
-		Name:        projectName + "_name",
+		Name:        sanitizedProjectName + "_name",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,

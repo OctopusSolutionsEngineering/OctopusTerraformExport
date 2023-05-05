@@ -10,5 +10,18 @@ resource "octopusdeploy_variable" "octopus_admin_api_key" {
   is_sensitive = false
   is_editable = true
   owner_id = octopusdeploy_library_variable_set.octopus_library_variable_set.id
-  value = "test"
+  value = "True"
+
+  prompt {
+    description = "test description"
+    label       = "test label"
+    is_required = true
+    display_settings {
+      control_type = "Select"
+      select_option {
+        display_name = "hi"
+        value = "there"
+      }
+    }
+  }
 }

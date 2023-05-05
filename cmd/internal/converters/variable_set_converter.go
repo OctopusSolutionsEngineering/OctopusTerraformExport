@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -39,6 +40,8 @@ type VariableSetConverter struct {
 	WorkerPoolConverter               ConverterAndLookupById
 	IgnoreCacManagedValues            bool
 	DefaultSecretVariableValues       bool
+	ExcludeProjectVariables           args.ExcludeVariables
+	IgnoreProjectChanges              bool
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -145,14 +148,15 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 }
 
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
-	if recursive {
-		c.exportChildDependencies(resource, dependencies)
-	}
-
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
 		if ignoreSecrets && !v.IsSensitive {
+			continue
+		}
+
+		// Do not export excluded variables
+		if c.variableIsExcluded(v) {
 			continue
 		}
 
@@ -349,6 +353,11 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 			}
 			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
 
+			// Ignore all changes if requested
+			if c.IgnoreProjectChanges {
+				hcl.WriteLifecycleAllAttribute(block)
+			}
+
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
@@ -388,10 +397,42 @@ func (c VariableSetConverter) convertValue(variable octopus.Variable, resourceNa
 func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
 	if prompt.Label != nil || prompt.Description != nil {
 		return &terraform.TerraformProjectVariablePrompt{
-			Description: prompt.Description,
-			Label:       prompt.Label,
-			IsRequired:  prompt.Required,
+			Description:     prompt.Description,
+			Label:           prompt.Label,
+			IsRequired:      prompt.Required,
+			DisplaySettings: c.convertDisplaySettings(prompt),
 		}
+	}
+
+	return nil
+}
+
+func (c VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
+	if prompt.DisplaySettings != nil {
+
+		display := terraform.TerraformProjectVariableDisplay{}
+		if controlType, ok := prompt.DisplaySettings["Octopus.ControlType"]; ok {
+			display.ControlType = &controlType
+		}
+
+		if selectOptions, ok := prompt.DisplaySettings["Octopus.SelectOptions"]; ok {
+			selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
+			for _, o := range strings.Split(selectOptions, "\n") {
+				split := strings.Split(o, "|")
+				if len(split) == 2 {
+					selectOptionsSlice = append(
+						selectOptionsSlice,
+						terraform.TerraformProjectVariableDisplaySelectOption{
+							DisplayName: split[0],
+							Value:       split[1],
+						})
+				}
+			}
+
+			display.SelectOption = &selectOptionsSlice
+		}
+
+		return &display
 	}
 
 	return nil
@@ -753,19 +794,6 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 	return &retValue
 }
 
-func (c VariableSetConverter) exportChildDependencies(variableSet octopus.VariableSet, dependencies *ResourceDetailsCollection) error {
-	for _, v := range variableSet.Variables {
-		for _, e := range v.Scope.Environment {
-			err := c.EnvironmentConverter.ToHclById(e, dependencies)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
 func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
@@ -804,4 +832,8 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, r
 	}
 
 	return terraformDependencies, nil
+}
+
+func (c VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
+	return c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1
 }

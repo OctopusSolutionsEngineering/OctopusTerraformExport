@@ -57,6 +57,7 @@ func exportSpaceImportAndTest(
 func exportProjectImportAndTest(
 	t *testing.T,
 	projectName string,
+	excludedVars []string,
 	createSourceBlankSpaceModuleDir string,
 	populateSourceSpaceModuleDir string,
 	createImportBlankSpaceModuleDir string,
@@ -100,6 +101,9 @@ func exportProjectImportAndTest(
 				nil,
 				false,
 				nil,
+				false,
+				false,
+				excludedVars,
 				false)
 		},
 		testFunc)
@@ -108,6 +112,7 @@ func exportProjectImportAndTest(
 func exportProjectLookupImportAndTest(
 	t *testing.T,
 	projectName string,
+	excludedVars []string,
 	createSourceBlankSpaceModuleDir string,
 	prepopulateSourceBlankSpaceModuleDir string,
 	populateSourceSpaceModuleDir string,
@@ -154,6 +159,9 @@ func exportProjectLookupImportAndTest(
 				nil,
 				false,
 				nil,
+				false,
+				false,
+				excludedVars,
 				false)
 		},
 		testFunc)
@@ -1133,215 +1141,268 @@ func TestLifecycleExport(t *testing.T) {
 
 // TestVariableSetExport verifies that a variable set can be reimported with the correct settings
 func TestVariableSetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/18-variableset/space_creation", "../test/terraform/18-variableset/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/18-variableset/space_creation",
+		"../test/terraform/18-variableset/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
-		err := octopusClient.GetAllResources("LibraryVariableSets", &collection)
+			collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+			err := octopusClient.GetAllResources("LibraryVariableSets", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "Test variable set" {
-					t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Test variable set" {
+						t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				resource := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+					resource := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
 
-				if len(resource.Variables) != 1 {
-					t.Fatal("The library variable set must have one associated variable")
-				}
+					if len(resource.Variables) != 1 {
+						t.Fatal("The library variable set must have one associated variable")
+					}
 
-				if resource.Variables[0].Name != "Test.Variable" {
-					t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
-				}
+					if resource.Variables[0].Name != "Test.Variable" {
+						t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
+					}
 
-				if resource.Variables[0].Type != "String" {
-					t.Fatal("The library variable set variable must have a type of \"String\"")
-				}
+					if resource.Variables[0].Type != "String" {
+						t.Fatal("The library variable set variable must have a type of \"String\"")
+					}
 
-				if strutil.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
-					t.Fatal("The library variable set variable must have a description of \"Test variable\"")
-				}
+					if strutil.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
+						t.Fatal("The library variable set variable must have a description of \"Test variable\"")
+					}
 
-				if strutil.EmptyIfNil(resource.Variables[0].Value) != "test" {
-					t.Fatal("The library variable set variable must have a value of \"test\"")
-				}
+					if strutil.EmptyIfNil(resource.Variables[0].Value) != "True" {
+						t.Fatal("The library variable set variable must have a value of \"True\"")
+					}
 
-				if resource.Variables[0].IsSensitive {
-					t.Fatal("The library variable set variable must not be sensitive")
-				}
+					if resource.Variables[0].IsSensitive {
+						t.Fatal("The library variable set variable must not be sensitive")
+					}
 
-				if !resource.Variables[0].IsEditable {
-					t.Fatal("The library variable set variable must be editable")
+					if !resource.Variables[0].IsEditable {
+						t.Fatal("The library variable set variable must be editable")
+					}
+
+					if strutil.EmptyIfNil(resource.Variables[0].Prompt.Description) != "test description" {
+						t.Fatal("The library variable set variable must have a prompt description of \"test description\"")
+					}
+
+					if strutil.EmptyIfNil(resource.Variables[0].Prompt.Label) != "test label" {
+						t.Fatal("The library variable set variable must have a prompt label of \"test label\"")
+					}
+
+					if !resource.Variables[0].Prompt.Required {
+						t.Fatal("The library variable set variable must have a required prompt")
+					}
+
+					if resource.Variables[0].Prompt.DisplaySettings["Octopus.ControlType"] != "Select" {
+						t.Fatal("The library variable set variable must have a prompt control type of \"Select\"")
+					}
+
+					if resource.Variables[0].Prompt.DisplaySettings["Octopus.SelectOptions"] != "hi|there" {
+						t.Fatal("The library variable set variable must have a prompt select option of \"hi|there\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectExport verifies that a project can be reimported with the correct settings
 func TestProjectExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/19-project/space_creation", "../test/terraform/19-project/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/19-project/space_creation",
+		"../test/terraform/19-project/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "Test project" {
-					t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Test project" {
+						t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				if v.AutoCreateRelease {
-					t.Fatal("The project must not have auto release create enabled")
-				}
+					if v.AutoCreateRelease {
+						t.Fatal("The project must not have auto release create enabled")
+					}
 
-				if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
-					t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
-				}
+					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
+						t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+					}
 
-				if v.DefaultToSkipIfAlreadyInstalled {
-					t.Fatal("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
-				}
+					if v.DefaultToSkipIfAlreadyInstalled {
+						t.Fatal("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
+					}
 
-				if v.DiscreteChannelRelease {
-					t.Fatal("The project must not have DiscreteChannelRelease enabled")
-				}
+					if v.DiscreteChannelRelease {
+						t.Fatal("The project must not have DiscreteChannelRelease enabled")
+					}
 
-				if v.IsDisabled {
-					t.Fatal("The project must not have IsDisabled enabled")
-				}
+					if v.IsDisabled {
+						t.Fatal("The project must not have IsDisabled enabled")
+					}
 
-				if v.IsVersionControlled {
-					t.Fatal("The project must not have IsVersionControlled enabled")
-				}
+					if v.IsVersionControlled {
+						t.Fatal("The project must not have IsVersionControlled enabled")
+					}
 
-				if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
-					t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
+						t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
+					}
 
-				if len(v.IncludedLibraryVariableSetIds) != 0 {
-					t.Fatal("The project must not have any library variable sets")
-				}
+					if len(v.IncludedLibraryVariableSetIds) != 0 {
+						t.Fatal("The project must not have any library variable sets")
+					}
 
-				if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
-					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
-				}
+					if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
+						t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+					}
 
-				if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
-					t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
-				}
+					if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
+						t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+					}
 
-				if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
-					t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
+					if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
+						t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectChannelExport verifies that a project channel can be reimported with the correct settings
 func TestProjectChannelExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/20-channel/space_creation", "../test/terraform/20-channel/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/20-channel/space_creation",
+		"../test/terraform/20-channel/space_population",
+		[]string{},
+		[]string{"-var=project_test_step_test_package_test_packageid=test2"},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				collection := octopus.GeneralCollection[octopus.Channel]{}
-				err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &collection)
+					deploymentProcess := octopus.DeploymentProcess{}
+					_, err := octopusClient.GetResourceById("DeploymentProcesses", *v.DeploymentProcessId, &deploymentProcess)
 
-				channelName := "Test"
-				foundChannel := false
+					if err != nil {
+						t.Fatal(err.Error())
+					}
 
-				for _, c := range collection.Items {
-					if c.Name == channelName {
-						foundChannel = true
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].PackageId) != "test2" {
+						t.Fatal("Deployment process should have renamed the package ID to test2")
+					}
 
-						if strutil.EmptyIfNil(c.Description) != "Test channel" {
-							t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
-						}
+					collection := octopus.GeneralCollection[octopus.Channel]{}
+					err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &collection)
 
-						if !c.IsDefault {
-							t.Fatal("The channel must be be the default")
-						}
+					if err != nil {
+						t.Fatal(err.Error())
+					}
 
-						if len(c.Rules) != 1 {
-							t.Fatal("The channel must have one rule")
-						}
+					channelName := "Test"
+					foundChannel := false
 
-						if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
-							t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
-						}
+					for _, c := range collection.Items {
+						if c.Name == channelName {
+							foundChannel = true
 
-						if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
-							t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
-						}
+							if strutil.EmptyIfNil(c.Description) != "Test channel" {
+								t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
+							}
 
-						if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
-							t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+							if !c.IsDefault {
+								t.Fatal("The channel must be be the default")
+							}
+
+							if len(c.Rules) != 1 {
+								t.Fatal("The channel must have one rule")
+							}
+
+							if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
+								t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
+							}
+
+							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
+								t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
+							}
+
+							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
+								t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+							}
 						}
 					}
-				}
 
-				if !foundChannel {
-					t.Fatal("Project must have an channel called \"" + channelName + "\"")
+					if !foundChannel {
+						t.Fatal("Project must have an channel called \"" + channelName + "\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestTagSetExport verifies that a tag set can be reimported with the correct settings
@@ -2309,7 +2370,9 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
 
-	exportProjectImportAndTest(t, "Test",
+	exportProjectImportAndTest(t,
+		"Test",
+		[]string{"Test"},
 		"../test/terraform/38-multipleprojects/space_creation",
 		"../test/terraform/38-multipleprojects/space_population",
 		"../test/terraform/z-createspace",
@@ -2386,11 +2449,11 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if len(variableSet.Variables) != 1 {
-					t.Fatalf("The project must have 1 variable")
+					t.Fatalf("The project must have 1 variable (because the variable called \"Test\" was excluded)")
 				}
 
-				if variableSet.Variables[0].Name != "Test" {
-					t.Fatalf("The project must have 1 variable called \"Test\"")
+				if variableSet.Variables[0].Name != "Test2" {
+					t.Fatalf("The project must have 1 variable called \"Test2\"")
 				}
 				return nil
 			}()
@@ -2670,6 +2733,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 	exportProjectLookupImportAndTest(
 		t,
 		"Test",
+		[]string{},
 		"../test/terraform/43-multipleprojectslookup/space_creation",
 		"../test/terraform/43-multipleprojectslookup/space_prepopulation",
 		"../test/terraform/43-multipleprojectslookup/space_population",

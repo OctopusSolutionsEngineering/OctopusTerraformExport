@@ -53,7 +53,10 @@ func main() {
 			args.ExcludeRunbooks,
 			args.ExcludeProvider,
 			args.ExcludeLibraryVariableSets,
-			args.IgnoreProjectChanges)
+			args.IgnoreProjectChanges,
+			args.IgnoreProjectVariableChanges,
+			args.ExcludeProjectVariables,
+			args.IgnoreProjectGroupChanges)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -311,7 +314,10 @@ func ConvertProjectToTerraform(
 	excludedRunbooks args.ExcludeRunbooks,
 	excludeProvider bool,
 	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
-	ignoreProjectChanges bool) error {
+	ignoreProjectChanges bool,
+	ignoreProjectVariableChanges bool,
+	excludedVars args.ExcludeVariables,
+	ignoreProjectGroupChanges bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -435,10 +441,37 @@ func ConvertProjectToTerraform(
 		WorkerPoolConverter:               workerPoolConverter,
 		IgnoreCacManagedValues:            ignoreCacManagedSettings,
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
+		ExcludeProjectVariables:           excludedVars,
+		IgnoreProjectChanges:              ignoreProjectChanges || ignoreProjectVariableChanges,
 	}
+
+	variableSetConverterForLibrary := converters.VariableSetConverter{
+		Client:                            client,
+		ChannelConverter:                  channelConverter,
+		EnvironmentConverter:              environmentConverter,
+		TagSetConverter:                   tagsetConverter,
+		AzureCloudServiceTargetConverter:  azureCloudServiceTargetConverter,
+		AzureServiceFabricTargetConverter: azureServiceFabricTargetConverter,
+		AzureWebAppTargetConverter:        azureWebAppTargetConverter,
+		CloudRegionTargetConverter:        cloudRegionTargetConverter,
+		KubernetesTargetConverter:         kubernetesTargetConverter,
+		ListeningTargetConverter:          listeningTargetConverter,
+		OfflineDropTargetConverter:        offlineDropTargetConverter,
+		PollingTargetConverter:            pollingTargetConverter,
+		SshTargetConverter:                sshTargetConverter,
+		AccountConverter:                  accountConverter,
+		FeedConverter:                     feedConverter,
+		CertificateConverter:              certificateConverter,
+		WorkerPoolConverter:               workerPoolConverter,
+		IgnoreCacManagedValues:            ignoreCacManagedSettings,
+		DefaultSecretVariableValues:       defaultSecretVariableValues,
+		ExcludeProjectVariables:           excludedVars,
+		IgnoreProjectChanges:              false,
+	}
+
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:               client,
-		VariableSetConverter: variableSetConverter,
+		VariableSetConverter: variableSetConverterForLibrary,
 		Excluded:             excludedLibraryVariableSets,
 	}
 
@@ -482,11 +515,12 @@ func ConvertProjectToTerraform(
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
-		VariableSetConverter:   variableSetConverter,
-		ChannelConverter:       channelConverter,
-		IgnoreCacManagedValues: ignoreCacManagedSettings,
-		RunbookConverter:       runbookConverter,
-		IgnoreProjectChanges:   ignoreProjectChanges,
+		VariableSetConverter:      variableSetConverter,
+		ChannelConverter:          channelConverter,
+		IgnoreCacManagedValues:    ignoreCacManagedSettings,
+		RunbookConverter:          runbookConverter,
+		IgnoreProjectChanges:      ignoreProjectChanges,
+		IgnoreProjectGroupChanges: ignoreProjectGroupChanges,
 	}
 
 	var err error
