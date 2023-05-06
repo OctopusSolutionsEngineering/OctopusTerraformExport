@@ -168,3 +168,9 @@ jobs:
         with:
           push: true
           tags: octopussamples/octoterra:latest
+      - name: Build and push versioned image
+        if: ${{ env.BRANCH_NAME == 'main' }}
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: octopussamples/octoterra:${{ steps.determine_version.outputs.semVer }}
