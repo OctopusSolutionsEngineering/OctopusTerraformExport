@@ -439,14 +439,29 @@ func (c VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *ter
 }
 
 func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
-	return &terraform.TerraformProjectVariableScope{
-		Actions:      dependencies.GetResources("Actions", prompt.Action...),
-		Channels:     dependencies.GetResources("Channels", prompt.Channel...),
-		Environments: dependencies.GetResources("Environments", prompt.Environment...),
-		Machines:     dependencies.GetResources("Machines", prompt.Machine...),
-		Roles:        prompt.Role,
-		TenantTags:   prompt.TenantTag,
+	actions := dependencies.GetResources("Actions", prompt.Action...)
+	channels := dependencies.GetResources("Channels", prompt.Channel...)
+	environments := dependencies.GetResources("Environments", prompt.Environment...)
+	machines := dependencies.GetResources("Machines", prompt.Machine...)
+
+	if len(actions) != 0 ||
+		len(channels) != 0 ||
+		len(environments) != 0 ||
+		len(machines) != 0 ||
+		len(prompt.Role) != 0 ||
+		len(prompt.TenantTag) != 0 {
+
+		return &terraform.TerraformProjectVariableScope{
+			Actions:      dependencies.GetResources("Actions", prompt.Action...),
+			Channels:     dependencies.GetResources("Channels", prompt.Channel...),
+			Environments: dependencies.GetResources("Environments", prompt.Environment...),
+			Machines:     dependencies.GetResources("Machines", prompt.Machine...),
+			Roles:        prompt.Role,
+			TenantTags:   prompt.TenantTag,
+		}
 	}
+
+	return nil
 
 }
 
