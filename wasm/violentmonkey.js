@@ -2,6 +2,7 @@
 // @name        New script octopus.app
 // @namespace   Violentmonkey Scripts
 // @match       https://*.octopus.app/app
+// @match       http://localhost:18080/app
 // @grant       none
 // @version     1.0
 // @author      -
@@ -609,7 +610,7 @@ function dumpToHcl() {
                         .then((result) => {
                             go.run(result.instance)
 
-                            let server = window.location.protocol + "//" + window.location.hostname
+                            let server = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port
                             let space = window.location.href.split("/")[4]
                             let project = window.location.href.split("/")[6]
 
