@@ -36,7 +36,7 @@ resource "octopusdeploy_project" "project_1" {
     url                = "https://github.com/mcasperson/octogittest.git"
     base_path          = ".octopus/integrationtest"
     default_branch     = "main"
-    protected_branches = []
+    protected_branches = ["test"]
   }
 }
 
