@@ -110,13 +110,14 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 
 		for i, s := range resource.Steps {
 			terraformResource.Step[i] = terraform.TerraformStep{
-				Name:               s.Name,
-				PackageRequirement: s.PackageRequirement,
-				Properties:         c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
-				Condition:          s.Condition,
-				StartTrigger:       s.StartTrigger,
-				Action:             make([]terraform.TerraformAction, len(s.Actions)),
-				TargetRoles:        c.OctopusActionProcessor.GetRoles(s.Properties),
+				Name:                s.Name,
+				PackageRequirement:  s.PackageRequirement,
+				Properties:          c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
+				Condition:           s.Condition,
+				ConditionExpression: strutil.NilIfEmpty(s.Properties["Octopus.Step.ConditionVariableExpression"]),
+				StartTrigger:        s.StartTrigger,
+				Action:              make([]terraform.TerraformAction, len(s.Actions)),
+				TargetRoles:         c.OctopusActionProcessor.GetRoles(s.Properties),
 			}
 
 			for j, a := range s.Actions {

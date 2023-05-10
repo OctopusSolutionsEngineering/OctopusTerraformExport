@@ -9,13 +9,14 @@ type TerraformDeploymentProcess struct {
 }
 
 type TerraformStep struct {
-	Condition          *string           `hcl:"condition"`
-	Name               *string           `hcl:"name"`
-	PackageRequirement *string           `hcl:"package_requirement"`
-	StartTrigger       *string           `hcl:"start_trigger"`
-	Action             []TerraformAction `hcl:"action,block"`
-	Properties         map[string]string `hcl:"properties"`
-	TargetRoles        []string          `hcl:"target_roles"`
+	Condition           *string           `hcl:"condition"`
+	ConditionExpression *string           `hcl:"condition_expression"`
+	Name                *string           `hcl:"name"`
+	PackageRequirement  *string           `hcl:"package_requirement"`
+	StartTrigger        *string           `hcl:"start_trigger"`
+	Action              []TerraformAction `hcl:"action,block"`
+	Properties          map[string]string `hcl:"properties"`
+	TargetRoles         []string          `hcl:"target_roles"`
 }
 
 type TerraformAction struct {

@@ -182,7 +182,7 @@ func (c OctopusActionProcessor) DetachStepTemplates(properties map[string]string
 func (c OctopusActionProcessor) RemoveUnnecessaryStepFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if k != "Octopus.Action.TargetRoles" {
+		if k != "Octopus.Action.TargetRoles" && v != "Octopus.Step.ConditionVariableExpression" {
 			sanitisedProperties[k] = v
 		}
 	}
