@@ -11,6 +11,8 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
+	"strings"
 )
 
 type ProjectConverter struct {
@@ -195,6 +197,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 		if terraformResource.HasCacConfigured() {
 			c.writeGitPathVar(projectName, project, file)
 			c.writeGitUrlVar(projectName, project, file)
+			c.writeProtectedBranchesVar(projectName, project, file)
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -219,6 +222,30 @@ func (c ProjectConverter) writeGitUrlVar(projectName string, project octopus.Pro
 		Sensitive:   false,
 		Description: "The git url for \"" + project.Name + "\"",
 		Default:     &project.PersistenceSettings.Url,
+	}
+
+	block := gohcl.EncodeAsBlock(variableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+}
+
+func (c ProjectConverter) writeProtectedBranchesVar(projectName string, project octopus.Project, file *hclwrite.File) {
+	sanitizedList := lo.Map(project.PersistenceSettings.ProtectedBranchNamePatterns, func(x string, index int) string {
+		return strings.ReplaceAll(x, "\"", "\\\"")
+	})
+
+	list := "[]"
+	if len(sanitizedList) != 0 {
+		list = "[\"" + strings.Join(sanitizedList, "\", ") + "\"]"
+	}
+
+	variableResource := terraform.TerraformVariable{
+		Name:        projectName + "_git_protected_branches",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The protected branches for \"" + project.Name + "\"",
+		Default:     &list,
 	}
 
 	block := gohcl.EncodeAsBlock(variableResource, "variable")
@@ -315,7 +342,7 @@ func (c ProjectConverter) convertLibraryGitPersistence(project octopus.Project, 
 		Url:               "${var." + projectName + "_git_url}",
 		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
-		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
+		ProtectedBranches: "${jsondecode(var." + projectName + "_git_protected_branches)}",
 	}
 }
 
@@ -328,7 +355,7 @@ func (c ProjectConverter) convertAnonymousGitPersistence(project octopus.Project
 		Url:               "${var." + projectName + "_git_url}",
 		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
-		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
+		ProtectedBranches: "${jsondecode(var." + projectName + "_git_protected_branches)}",
 	}
 }
 
@@ -343,7 +370,7 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 		Password:          "${var." + projectName + "_git_password}",
 		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
-		ProtectedBranches: project.PersistenceSettings.ProtectedBranchNamePatterns,
+		ProtectedBranches: "${jsondecode(var." + projectName + "_git_protected_branches)}",
 	}
 }
 

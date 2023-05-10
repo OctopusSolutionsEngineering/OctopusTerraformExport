@@ -46,27 +46,27 @@ type TerraformConnectivityPolicy struct {
 }
 
 type TerraformGitLibraryPersistenceSettings struct {
-	GitCredentialId   string   `hcl:"git_credential_id"`
-	Url               string   `hcl:"url"`
-	BasePath          string   `hcl:"base_path"`
-	DefaultBranch     string   `hcl:"default_branch"`
-	ProtectedBranches []string `hcl:"protected_branches"`
+	GitCredentialId   string `hcl:"git_credential_id"`
+	Url               string `hcl:"url"`
+	BasePath          string `hcl:"base_path"`
+	DefaultBranch     string `hcl:"default_branch"`
+	ProtectedBranches string `hcl:"protected_branches"`
 }
 
 type TerraformGitAnonymousPersistenceSettings struct {
-	Url               string   `hcl:"url"`
-	BasePath          string   `hcl:"base_path"`
-	DefaultBranch     string   `hcl:"default_branch"`
-	ProtectedBranches []string `hcl:"protected_branches"`
+	Url               string `hcl:"url"`
+	BasePath          string `hcl:"base_path"`
+	DefaultBranch     string `hcl:"default_branch"`
+	ProtectedBranches string `hcl:"protected_branches"`
 }
 
 type TerraformGitUsernamePasswordPersistenceSettings struct {
-	Url               string   `hcl:"url"`
-	Username          string   `hcl:"username"`
-	Password          string   `hcl:"password"`
-	BasePath          string   `hcl:"base_path"`
-	DefaultBranch     string   `hcl:"default_branch"`
-	ProtectedBranches []string `hcl:"protected_branches"`
+	Url               string `hcl:"url"`
+	Username          string `hcl:"username"`
+	Password          string `hcl:"password"`
+	BasePath          string `hcl:"base_path"`
+	DefaultBranch     string `hcl:"default_branch"`
+	ProtectedBranches string `hcl:"protected_branches"`
 }
 
 type TerraformVersioningStrategy struct {
