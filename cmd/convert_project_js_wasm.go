@@ -180,6 +180,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
+		ExcludeRunbooksRegex: nil,
 		IgnoreProjectChanges: false,
 	}
 

@@ -51,6 +51,7 @@ func main() {
 			args.DetachProjectTemplates,
 			args.ExcludeAllRunbooks,
 			args.ExcludeRunbooks,
+			args.ExcludeRunbooksRegex,
 			args.ExcludeProvider,
 			args.ExcludeLibraryVariableSets,
 			args.ExcludeLibraryVariableSetsRegex,
@@ -224,6 +225,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
+		ExcludeRunbooksRegex: nil,
 		IgnoreProjectChanges: false,
 	}
 
@@ -315,6 +317,7 @@ func ConvertProjectToTerraform(
 	detachProjectTemplates bool,
 	excludeRunbooks bool,
 	excludedRunbooks args.ExcludeRunbooks,
+	excludeRunbooksRegex args.ExcludeRunbooks,
 	excludeProvider bool,
 	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
 	excludeLibraryVariableSetsRegex args.ExcludeLibraryVariableSets,
@@ -499,6 +502,7 @@ func ConvertProjectToTerraform(
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     excludedRunbooks,
+		ExcludeRunbooksRegex: excludeRunbooksRegex,
 		IgnoreProjectChanges: ignoreProjectChanges,
 	}
 
