@@ -6,29 +6,31 @@ import (
 )
 
 type Arguments struct {
-	Url                          string
-	ApiKey                       string
-	Space                        string
-	Destination                  string
-	Console                      bool
-	ProjectId                    string
-	ProjectName                  string
-	LookupProjectDependencies    bool
-	IgnoreCacManagedValues       bool
-	BackendBlock                 string
-	DetachProjectTemplates       bool
-	DefaultSecretVariableValues  bool
-	ProviderVersion              string
-	ExcludeAllRunbooks           bool
-	ExcludeRunbooks              ExcludeRunbooks
-	ExcludeProvider              bool
-	ExcludeLibraryVariableSets   ExcludeLibraryVariableSets
-	IgnoreProjectChanges         bool
-	IgnoreProjectVariableChanges bool
-	IgnoreProjectGroupChanges    bool
-	IgnoreProjectNameChanges     bool
-	ExcludeProjectVariables      ExcludeVariables
-	ExcludeProjectVariablesRegex ExcludeVariables
+	Url                             string
+	ApiKey                          string
+	Space                           string
+	Destination                     string
+	Console                         bool
+	ProjectId                       string
+	ProjectName                     string
+	LookupProjectDependencies       bool
+	IgnoreCacManagedValues          bool
+	BackendBlock                    string
+	DetachProjectTemplates          bool
+	DefaultSecretVariableValues     bool
+	ProviderVersion                 string
+	ExcludeAllRunbooks              bool
+	ExcludeRunbooks                 ExcludeRunbooks
+	ExcludeRunbooksRegex            ExcludeRunbooks
+	ExcludeProvider                 bool
+	ExcludeLibraryVariableSets      ExcludeLibraryVariableSets
+	ExcludeLibraryVariableSetsRegex ExcludeLibraryVariableSets
+	IgnoreProjectChanges            bool
+	IgnoreProjectVariableChanges    bool
+	IgnoreProjectGroupChanges       bool
+	IgnoreProjectNameChanges        bool
+	ExcludeProjectVariables         ExcludeVariables
+	ExcludeProjectVariablesRegex    ExcludeVariables
 }
 
 type ExcludeVariables []string
@@ -82,7 +84,9 @@ func ParseArgs() Arguments {
 	flag.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
 	flag.BoolVar(&arguments.ExcludeAllRunbooks, "excludeAllRunbooks", false, "Exclude all runbooks when exporting a project. This only takes effect when exporting a single project.")
 	flag.Var(&arguments.ExcludeRunbooks, "excludeRunbook", "A runbook to be excluded when exporting a single project.")
+	flag.Var(&arguments.ExcludeRunbooksRegex, "excludeRunbookRegex", "A runbook to be excluded when exporting a single project based on regex match.")
 	flag.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project.")
+	flag.Var(&arguments.ExcludeLibraryVariableSetsRegex, "excludeLibraryVariableSetsRegex", "A library variable set to be excluded when exporting a single project based on regex match.")
 	flag.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
 	flag.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flag.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")

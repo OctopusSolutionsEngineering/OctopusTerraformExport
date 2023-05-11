@@ -11,14 +11,18 @@ import (
 	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
+	"regexp"
 	"strings"
 )
 
 type LibraryVariableSetConverter struct {
-	Client               client.OctopusClient
-	VariableSetConverter ConverterByIdWithNameAndParent
-	Excluded             args.ExcludeLibraryVariableSets
+	Client                                  client.OctopusClient
+	VariableSetConverter                    ConverterByIdWithNameAndParent
+	Excluded                                args.ExcludeLibraryVariableSets
+	ExcludeLibraryVariableSetsRegex         args.ExcludeLibraryVariableSets
+	excludeLibraryVariableSetsRegexCompiled []*regexp.Regexp
 }
 
 func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -107,7 +111,9 @@ func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *Re
 }
 
 func (c LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
+	c.compileRegexes()
+
+	if c.libraryVariableSetIsExcluded(resource) {
 		return nil
 	}
 
@@ -252,4 +258,30 @@ func (c LibraryVariableSetConverter) convertTemplates(actionPackages []octopus2.
 		})
 	}
 	return collection, templateMap
+}
+
+func (c LibraryVariableSetConverter) compileRegexes() {
+	if c.ExcludeLibraryVariableSetsRegex != nil {
+		c.excludeLibraryVariableSetsRegexCompiled = lo.FilterMap(c.ExcludeLibraryVariableSetsRegex, func(x string, index int) (*regexp.Regexp, bool) {
+			re, err := regexp.Compile(x)
+			if err != nil {
+				return nil, false
+			}
+			return re, true
+		})
+	}
+}
+
+func (c LibraryVariableSetConverter) libraryVariableSetIsExcluded(resource octopus2.LibraryVariableSet) bool {
+	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
+		return true
+	}
+
+	if c.excludeLibraryVariableSetsRegexCompiled != nil {
+		return lo.SomeBy(c.excludeLibraryVariableSetsRegexCompiled, func(x *regexp.Regexp) bool {
+			return x.MatchString(resource.Name)
+		})
+	}
+
+	return false
 }

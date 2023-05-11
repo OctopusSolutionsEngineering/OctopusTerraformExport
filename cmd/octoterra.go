@@ -53,6 +53,7 @@ func main() {
 			args.ExcludeRunbooks,
 			args.ExcludeProvider,
 			args.ExcludeLibraryVariableSets,
+			args.ExcludeLibraryVariableSetsRegex,
 			args.IgnoreProjectChanges,
 			args.IgnoreProjectVariableChanges,
 			args.ExcludeProjectVariables,
@@ -316,6 +317,7 @@ func ConvertProjectToTerraform(
 	excludedRunbooks args.ExcludeRunbooks,
 	excludeProvider bool,
 	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
+	excludeLibraryVariableSetsRegex args.ExcludeLibraryVariableSets,
 	ignoreProjectChanges bool,
 	ignoreProjectVariableChanges bool,
 	excludedVars args.ExcludeVariables,
@@ -476,9 +478,10 @@ func ConvertProjectToTerraform(
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
-		Client:               client,
-		VariableSetConverter: variableSetConverterForLibrary,
-		Excluded:             excludedLibraryVariableSets,
+		Client:                          client,
+		VariableSetConverter:            variableSetConverterForLibrary,
+		Excluded:                        excludedLibraryVariableSets,
+		ExcludeLibraryVariableSetsRegex: excludeLibraryVariableSetsRegex,
 	}
 
 	runbookConverter := converters.RunbookConverter{

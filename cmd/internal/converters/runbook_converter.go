@@ -11,15 +11,19 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/samber/lo"
 	"k8s.io/utils/strings/slices"
+	"regexp"
 )
 
 type RunbookConverter struct {
-	Client                  client.OctopusClient
-	RunbookProcessConverter ConverterAndLookupByIdAndName
-	EnvironmentConverter    ConverterAndLookupById
-	ExcludedRunbooks        args.ExcludeRunbooks
-	IgnoreProjectChanges    bool
+	Client                       client.OctopusClient
+	RunbookProcessConverter      ConverterAndLookupByIdAndName
+	EnvironmentConverter         ConverterAndLookupById
+	ExcludedRunbooks             args.ExcludeRunbooks
+	ExcludeRunbooksRegex         args.ExcludeRunbooks
+	excludeRunbooksRegexCompiled []*regexp.Regexp
+	IgnoreProjectChanges         bool
 }
 
 func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -61,7 +65,9 @@ func (c RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName s
 }
 
 func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludedRunbooks != nil && slices.Index(c.ExcludedRunbooks, runbook.Name) != -1 {
+	c.compileRegexes()
+
+	if c.libraryVariableSetIsExcluded(runbook) {
 		return nil
 	}
 
@@ -215,4 +221,30 @@ func (c RunbookConverter) exportChildDependencies(recursive bool, lookup bool, r
 	}
 
 	return nil
+}
+
+func (c RunbookConverter) compileRegexes() {
+	if c.ExcludeRunbooksRegex != nil {
+		c.excludeRunbooksRegexCompiled = lo.FilterMap(c.ExcludeRunbooksRegex, func(x string, index int) (*regexp.Regexp, bool) {
+			re, err := regexp.Compile(x)
+			if err != nil {
+				return nil, false
+			}
+			return re, true
+		})
+	}
+}
+
+func (c RunbookConverter) libraryVariableSetIsExcluded(runbook octopus.Runbook) bool {
+	if c.ExcludedRunbooks != nil && slices.Index(c.ExcludedRunbooks, runbook.Name) != -1 {
+		return true
+	}
+
+	if c.excludeRunbooksRegexCompiled != nil {
+		return lo.SomeBy(c.excludeRunbooksRegexCompiled, func(x *regexp.Regexp) bool {
+			return x.MatchString(runbook.Name)
+		})
+	}
+
+	return false
 }
