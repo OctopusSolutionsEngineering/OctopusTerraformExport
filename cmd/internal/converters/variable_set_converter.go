@@ -748,7 +748,7 @@ func (c *VariableSetConverter) exportEnvironments(recursive bool, lookup bool, v
 		return nil
 	}
 
-	for _, e := range variable.Scope.Environment {
+	for _, e := range c.filterEnvironmentScope(variable.Scope.Environment) {
 		var err error
 		if recursive {
 			err = c.EnvironmentConverter.ToHclById(e, dependencies)
