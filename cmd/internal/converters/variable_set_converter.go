@@ -45,6 +45,7 @@ type VariableSetConverter struct {
 	ExcludeProjectVariablesRegex         args.ExcludeVariables
 	excludeProjectVariablesRegexCompiled []*regexp.Regexp
 	IgnoreProjectChanges                 bool
+	ExcludeVariableEnvironmentScopes     args.ExcludeVariableEnvironmentScopes
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -297,7 +298,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				SensitiveValue: c.convertSecretValue(v, resourceName),
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
-				Scope:          c.convertScope(v.Scope, dependencies),
+				Scope:          c.convertScope(v, dependencies),
 			}
 
 			if v.IsSensitive {
@@ -442,26 +443,47 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 	return nil
 }
 
-func (c *VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
-	actions := dependencies.GetResources("Actions", prompt.Action...)
-	channels := dependencies.GetResources("Channels", prompt.Channel...)
-	environments := dependencies.GetResources("Environments", prompt.Environment...)
-	machines := dependencies.GetResources("Machines", prompt.Machine...)
+func (c *VariableSetConverter) filterEnvironmentScope(envs []string) []string {
+	if envs == nil {
+		return []string{}
+	}
+
+	return lo.Filter(envs, func(env string, i int) bool {
+		if c.ExcludeVariableEnvironmentScopes != nil && slices.Index(c.ExcludeVariableEnvironmentScopes, env) != -1 {
+			return false
+		}
+
+		return true
+	})
+}
+
+func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
+	filteredEnvironments := c.filterEnvironmentScope(variable.Scope.Environment)
+
+	// Removing all environment scoping may not have been the intention
+	if len(filteredEnvironments) == 0 && len(variable.Scope.Environment) != 0 {
+		fmt.Println("WARNING: Variable " + variable.Name + " removed all environment scopes.")
+	}
+
+	actions := dependencies.GetResources("Actions", variable.Scope.Action...)
+	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
+	environments := dependencies.GetResources("Environments", filteredEnvironments...)
+	machines := dependencies.GetResources("Machines", variable.Scope.Machine...)
 
 	if len(actions) != 0 ||
 		len(channels) != 0 ||
 		len(environments) != 0 ||
 		len(machines) != 0 ||
-		len(prompt.Role) != 0 ||
-		len(prompt.TenantTag) != 0 {
+		len(variable.Scope.Role) != 0 ||
+		len(variable.Scope.TenantTag) != 0 {
 
 		return &terraform.TerraformProjectVariableScope{
-			Actions:      dependencies.GetResources("Actions", prompt.Action...),
-			Channels:     dependencies.GetResources("Channels", prompt.Channel...),
-			Environments: dependencies.GetResources("Environments", prompt.Environment...),
-			Machines:     dependencies.GetResources("Machines", prompt.Machine...),
-			Roles:        prompt.Role,
-			TenantTags:   prompt.TenantTag,
+			Actions:      dependencies.GetResources("Actions", variable.Scope.Action...),
+			Channels:     dependencies.GetResources("Channels", variable.Scope.Channel...),
+			Environments: dependencies.GetResources("Environments", variable.Scope.Environment...),
+			Machines:     dependencies.GetResources("Machines", variable.Scope.Machine...),
+			Roles:        variable.Scope.Role,
+			TenantTags:   variable.Scope.TenantTag,
 		}
 	}
 

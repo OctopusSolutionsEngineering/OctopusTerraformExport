@@ -6,31 +6,43 @@ import (
 )
 
 type Arguments struct {
-	Url                             string
-	ApiKey                          string
-	Space                           string
-	Destination                     string
-	Console                         bool
-	ProjectId                       string
-	ProjectName                     string
-	LookupProjectDependencies       bool
-	IgnoreCacManagedValues          bool
-	BackendBlock                    string
-	DetachProjectTemplates          bool
-	DefaultSecretVariableValues     bool
-	ProviderVersion                 string
-	ExcludeAllRunbooks              bool
-	ExcludeRunbooks                 ExcludeRunbooks
-	ExcludeRunbooksRegex            ExcludeRunbooks
-	ExcludeProvider                 bool
-	ExcludeLibraryVariableSets      ExcludeLibraryVariableSets
-	ExcludeLibraryVariableSetsRegex ExcludeLibraryVariableSets
-	IgnoreProjectChanges            bool
-	IgnoreProjectVariableChanges    bool
-	IgnoreProjectGroupChanges       bool
-	IgnoreProjectNameChanges        bool
-	ExcludeProjectVariables         ExcludeVariables
-	ExcludeProjectVariablesRegex    ExcludeVariables
+	Url                              string
+	ApiKey                           string
+	Space                            string
+	Destination                      string
+	Console                          bool
+	ProjectId                        string
+	ProjectName                      string
+	LookupProjectDependencies        bool
+	IgnoreCacManagedValues           bool
+	BackendBlock                     string
+	DetachProjectTemplates           bool
+	DefaultSecretVariableValues      bool
+	ProviderVersion                  string
+	ExcludeAllRunbooks               bool
+	ExcludeRunbooks                  ExcludeRunbooks
+	ExcludeRunbooksRegex             ExcludeRunbooks
+	ExcludeProvider                  bool
+	ExcludeLibraryVariableSets       ExcludeLibraryVariableSets
+	ExcludeLibraryVariableSetsRegex  ExcludeLibraryVariableSets
+	IgnoreProjectChanges             bool
+	IgnoreProjectVariableChanges     bool
+	IgnoreProjectGroupChanges        bool
+	IgnoreProjectNameChanges         bool
+	ExcludeProjectVariables          ExcludeVariables
+	ExcludeProjectVariablesRegex     ExcludeVariables
+	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
+}
+
+type ExcludeVariableEnvironmentScopes []string
+
+func (i *ExcludeVariableEnvironmentScopes) String() string {
+	return "excluded variable environment scopes"
+}
+
+func (i *ExcludeVariableEnvironmentScopes) Set(value string) error {
+	*i = append(*i, value)
+	return nil
 }
 
 type ExcludeVariables []string
@@ -89,6 +101,7 @@ func ParseArgs() Arguments {
 	flag.Var(&arguments.ExcludeLibraryVariableSetsRegex, "excludeLibraryVariableSetRegex", "A library variable set to be excluded when exporting a single project based on regex match.")
 	flag.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
 	flag.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
+	flag.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
 	flag.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flag.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
 	flag.BoolVar(&arguments.IgnoreProjectVariableChanges, "ignoreProjectVariableChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project's variables when exporting a single project. This differs from the ignoreProjectChanges option by only ignoring changes to variables while reapplying changes to all other project settings.")

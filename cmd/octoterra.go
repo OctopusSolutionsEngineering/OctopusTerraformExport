@@ -59,6 +59,7 @@ func main() {
 			args.IgnoreProjectVariableChanges,
 			args.ExcludeProjectVariables,
 			args.ExcludeProjectVariablesRegex,
+			args.ExcludeVariableEnvironmentScopes,
 			args.IgnoreProjectGroupChanges,
 			args.IgnoreProjectNameChanges)
 	} else {
@@ -325,6 +326,7 @@ func ConvertProjectToTerraform(
 	ignoreProjectVariableChanges bool,
 	excludedVars args.ExcludeVariables,
 	excludedVarsRegex args.ExcludeVariables,
+	excludeVariableEnvironmentScopes args.ExcludeVariableEnvironmentScopes,
 	ignoreProjectGroupChanges bool,
 	ignoreProjectNameChanges bool) error {
 
@@ -452,6 +454,7 @@ func ConvertProjectToTerraform(
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
 		ExcludeProjectVariables:           excludedVars,
 		ExcludeProjectVariablesRegex:      excludedVarsRegex,
+		ExcludeVariableEnvironmentScopes:  excludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              ignoreProjectChanges || ignoreProjectVariableChanges,
 	}
 
@@ -477,6 +480,7 @@ func ConvertProjectToTerraform(
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
 		ExcludeProjectVariables:           excludedVars,
 		ExcludeProjectVariablesRegex:      excludedVarsRegex,
+		ExcludeVariableEnvironmentScopes:  excludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              false,
 	}
 
