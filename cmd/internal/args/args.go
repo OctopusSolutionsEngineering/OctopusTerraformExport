@@ -26,6 +26,7 @@ type Arguments struct {
 	IgnoreProjectChanges         bool
 	IgnoreProjectVariableChanges bool
 	IgnoreProjectGroupChanges    bool
+	IgnoreProjectNameChanges     bool
 	ExcludeProjectVariables      ExcludeVariables
 }
 
@@ -86,6 +87,7 @@ func ParseArgs() Arguments {
 	flag.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
 	flag.BoolVar(&arguments.IgnoreProjectVariableChanges, "ignoreProjectVariableChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project's variables when exporting a single project. This differs from the ignoreProjectChanges option by only ignoring changes to variables while reapplying changes to all other project settings.")
 	flag.BoolVar(&arguments.IgnoreProjectGroupChanges, "ignoreProjectGroupChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's group.")
+	flag.BoolVar(&arguments.IgnoreProjectNameChanges, "ignoreProjectNameChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's name.")
 	flag.Parse()
 
 	if arguments.Url == "" {

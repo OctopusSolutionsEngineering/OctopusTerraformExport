@@ -56,7 +56,8 @@ func main() {
 			args.IgnoreProjectChanges,
 			args.IgnoreProjectVariableChanges,
 			args.ExcludeProjectVariables,
-			args.IgnoreProjectGroupChanges)
+			args.IgnoreProjectGroupChanges,
+			args.IgnoreProjectNameChanges)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -317,7 +318,8 @@ func ConvertProjectToTerraform(
 	ignoreProjectChanges bool,
 	ignoreProjectVariableChanges bool,
 	excludedVars args.ExcludeVariables,
-	ignoreProjectGroupChanges bool) error {
+	ignoreProjectGroupChanges bool,
+	ignoreProjectNameChanges bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -521,6 +523,7 @@ func ConvertProjectToTerraform(
 		RunbookConverter:          runbookConverter,
 		IgnoreProjectChanges:      ignoreProjectChanges,
 		IgnoreProjectGroupChanges: ignoreProjectGroupChanges,
+		IgnoreProjectNameChanges:  ignoreProjectNameChanges,
 	}
 
 	var err error

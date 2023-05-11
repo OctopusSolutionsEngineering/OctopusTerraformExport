@@ -75,7 +75,7 @@ The following resources have yet to be exported:
 Features:
 * Exclude channels
 * Exclude triggers
-* Ignore name, group, tenanted, versioning
+* Ignore tenanted, versioning
 
 ## Report Card
 ![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)

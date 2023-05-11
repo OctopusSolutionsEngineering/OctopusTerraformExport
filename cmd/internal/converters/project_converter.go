@@ -31,6 +31,7 @@ type ProjectConverter struct {
 	ExcludeAllRunbooks          bool
 	IgnoreProjectChanges        bool
 	IgnoreProjectGroupChanges   bool
+	IgnoreProjectNameChanges    bool
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -159,6 +160,10 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 
 			if c.IgnoreProjectGroupChanges {
 				ignoreList = append(ignoreList, "project_group_id")
+			}
+
+			if c.IgnoreProjectNameChanges {
+				ignoreList = append(ignoreList, "name")
 			}
 
 			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{

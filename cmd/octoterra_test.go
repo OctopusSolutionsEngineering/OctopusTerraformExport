@@ -104,6 +104,7 @@ func exportProjectImportAndTest(
 				false,
 				false,
 				excludedVars,
+				false,
 				false)
 		},
 		testFunc)
@@ -162,6 +163,7 @@ func exportProjectLookupImportAndTest(
 				false,
 				false,
 				excludedVars,
+				false,
 				false)
 		},
 		testFunc)
