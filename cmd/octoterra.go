@@ -56,6 +56,7 @@ func main() {
 			args.IgnoreProjectChanges,
 			args.IgnoreProjectVariableChanges,
 			args.ExcludeProjectVariables,
+			args.ExcludeProjectVariablesRegex,
 			args.IgnoreProjectGroupChanges,
 			args.IgnoreProjectNameChanges)
 	} else {
@@ -318,6 +319,7 @@ func ConvertProjectToTerraform(
 	ignoreProjectChanges bool,
 	ignoreProjectVariableChanges bool,
 	excludedVars args.ExcludeVariables,
+	excludedVarsRegex args.ExcludeVariables,
 	ignoreProjectGroupChanges bool,
 	ignoreProjectNameChanges bool) error {
 
@@ -444,6 +446,7 @@ func ConvertProjectToTerraform(
 		IgnoreCacManagedValues:            ignoreCacManagedSettings,
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
 		ExcludeProjectVariables:           excludedVars,
+		ExcludeProjectVariablesRegex:      excludedVarsRegex,
 		IgnoreProjectChanges:              ignoreProjectChanges || ignoreProjectVariableChanges,
 	}
 
@@ -468,6 +471,7 @@ func ConvertProjectToTerraform(
 		IgnoreCacManagedValues:            ignoreCacManagedSettings,
 		DefaultSecretVariableValues:       defaultSecretVariableValues,
 		ExcludeProjectVariables:           excludedVars,
+		ExcludeProjectVariablesRegex:      excludedVarsRegex,
 		IgnoreProjectChanges:              false,
 	}
 

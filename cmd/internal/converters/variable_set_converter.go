@@ -11,6 +11,7 @@ import (
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
 	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
@@ -21,27 +22,29 @@ import (
 // library variable sets. There is no global collection or all endpoint that we can use to dump variables
 // in bulk.
 type VariableSetConverter struct {
-	Client                            client.OctopusClient
-	ChannelConverter                  ConverterByProjectIdWithTerraDependencies
-	EnvironmentConverter              ConverterAndLookupById
-	TagSetConverter                   TagSetConverter
-	AzureCloudServiceTargetConverter  ConverterAndLookupById
-	AzureServiceFabricTargetConverter ConverterAndLookupById
-	AzureWebAppTargetConverter        ConverterAndLookupById
-	CloudRegionTargetConverter        ConverterAndLookupById
-	KubernetesTargetConverter         ConverterAndLookupById
-	ListeningTargetConverter          ConverterAndLookupById
-	OfflineDropTargetConverter        ConverterAndLookupById
-	PollingTargetConverter            ConverterAndLookupById
-	SshTargetConverter                ConverterAndLookupById
-	AccountConverter                  ConverterAndLookupById
-	FeedConverter                     ConverterAndLookupById
-	CertificateConverter              ConverterAndLookupById
-	WorkerPoolConverter               ConverterAndLookupById
-	IgnoreCacManagedValues            bool
-	DefaultSecretVariableValues       bool
-	ExcludeProjectVariables           args.ExcludeVariables
-	IgnoreProjectChanges              bool
+	Client                               client.OctopusClient
+	ChannelConverter                     ConverterByProjectIdWithTerraDependencies
+	EnvironmentConverter                 ConverterAndLookupById
+	TagSetConverter                      TagSetConverter
+	AzureCloudServiceTargetConverter     ConverterAndLookupById
+	AzureServiceFabricTargetConverter    ConverterAndLookupById
+	AzureWebAppTargetConverter           ConverterAndLookupById
+	CloudRegionTargetConverter           ConverterAndLookupById
+	KubernetesTargetConverter            ConverterAndLookupById
+	ListeningTargetConverter             ConverterAndLookupById
+	OfflineDropTargetConverter           ConverterAndLookupById
+	PollingTargetConverter               ConverterAndLookupById
+	SshTargetConverter                   ConverterAndLookupById
+	AccountConverter                     ConverterAndLookupById
+	FeedConverter                        ConverterAndLookupById
+	CertificateConverter                 ConverterAndLookupById
+	WorkerPoolConverter                  ConverterAndLookupById
+	IgnoreCacManagedValues               bool
+	DefaultSecretVariableValues          bool
+	ExcludeProjectVariables              args.ExcludeVariables
+	ExcludeProjectVariablesRegex         args.ExcludeVariables
+	excludeProjectVariablesRegexCompiled []*regexp.Regexp
+	IgnoreProjectChanges                 bool
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -148,6 +151,8 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 }
 
 func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+	c.compileRegexes()
+
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
@@ -849,6 +854,28 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, r
 	return terraformDependencies, nil
 }
 
+func (c VariableSetConverter) compileRegexes() {
+	if c.ExcludeProjectVariablesRegex != nil {
+		c.excludeProjectVariablesRegexCompiled = lo.FilterMap(c.ExcludeProjectVariablesRegex, func(x string, index int) (*regexp.Regexp, bool) {
+			re, err := regexp.Compile(x)
+			if err != nil {
+				return nil, false
+			}
+			return re, true
+		})
+	}
+}
+
 func (c VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
-	return c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1
+	if c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1 {
+		return true
+	}
+
+	if c.excludeProjectVariablesRegexCompiled != nil {
+		return lo.SomeBy(c.excludeProjectVariablesRegexCompiled, func(x *regexp.Regexp) bool {
+			return x.MatchString(variable.Name)
+		})
+	}
+
+	return false
 }
