@@ -208,7 +208,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 	}
-	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
+	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: &variableSetConverter}
 
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
@@ -233,7 +233,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		Client:                      client,
 		AccountConverter:            accountConverter,
 		EnvironmentConverter:        environmentConverter,
-		LibraryVariableSetConverter: libraryVariableSetConverter,
+		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		LifecycleConverter:          lifecycleConverter,
 		WorkerPoolConverter:         workerPoolConverter,
 		TagSetConverter:             tagsetConverter,
@@ -243,7 +243,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			Client:                      client,
 			LifecycleConverter:          lifecycleConverter,
 			GitCredentialsConverter:     gitCredentialsConverter,
-			LibraryVariableSetConverter: libraryVariableSetConverter,
+			LibraryVariableSetConverter: &libraryVariableSetConverter,
 			ProjectGroupConverter:       projectGroupConverter,
 			DeploymentProcessConverter: converters.DeploymentProcessConverter{
 				Client: client,
@@ -260,9 +260,9 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
 				Client: client,
 			},
-			VariableSetConverter:   variableSetConverter,
+			VariableSetConverter:   &variableSetConverter,
 			ChannelConverter:       channelConverter,
-			RunbookConverter:       runbookConverter,
+			RunbookConverter:       &runbookConverter,
 			IgnoreCacManagedValues: false,
 			ExcludeAllRunbooks:     false,
 			IgnoreProjectChanges:   false,
@@ -482,7 +482,7 @@ func ConvertProjectToTerraform(
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                          client,
-		VariableSetConverter:            variableSetConverterForLibrary,
+		VariableSetConverter:            &variableSetConverterForLibrary,
 		Excluded:                        excludedLibraryVariableSets,
 		ExcludeLibraryVariableSetsRegex: excludeLibraryVariableSetsRegex,
 	}
@@ -511,7 +511,7 @@ func ConvertProjectToTerraform(
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
-		LibraryVariableSetConverter: libraryVariableSetConverter,
+		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
 			Client: client,
@@ -528,10 +528,10 @@ func ConvertProjectToTerraform(
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
-		VariableSetConverter:      variableSetConverter,
+		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,
 		IgnoreCacManagedValues:    ignoreCacManagedSettings,
-		RunbookConverter:          runbookConverter,
+		RunbookConverter:          &runbookConverter,
 		IgnoreProjectChanges:      ignoreProjectChanges,
 		IgnoreProjectGroupChanges: ignoreProjectGroupChanges,
 		IgnoreProjectNameChanges:  ignoreProjectNameChanges,

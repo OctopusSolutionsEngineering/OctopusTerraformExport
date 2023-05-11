@@ -50,7 +50,7 @@ type VariableSetConverter struct {
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
 // defined on a CaC enabled project is not available from the global /variablesets endpoint, and can only be
 // accessed from the project resource.
-func (c VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if projectId == "" {
 		return nil
 	}
@@ -74,7 +74,7 @@ func (c VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentNa
 	return c.toHcl(variables, true, false, ignoreSecrets, parentName, parentLookup, dependencies)
 }
 
-func (c VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if projectId == "" {
 		return nil
 	}
@@ -98,7 +98,7 @@ func (c VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, pa
 	return c.toHcl(variables, false, true, ignoreSecrets, parentName, parentLookup, dependencies)
 }
 
-func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -125,7 +125,7 @@ func (c VariableSetConverter) ToHclByIdAndName(id string, parentName string, par
 
 // ToHclLookupByIdAndName exports the variable set as a complete resource, but will reference external resources like accounts,
 // feeds, worker pools, certificates, environments, and targets as data source lookups.
-func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -150,7 +150,7 @@ func (c VariableSetConverter) ToHclLookupByIdAndName(id string, parentName strin
 	return c.toHcl(resource, false, true, false, parentName, parentLookup, dependencies)
 }
 
-func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	nameCount := map[string]int{}
@@ -373,15 +373,15 @@ func (c VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool
 	return nil
 }
 
-func (c VariableSetConverter) GetResourceType() string {
+func (c *VariableSetConverter) GetResourceType() string {
 	return "Variables"
 }
 
-func (c VariableSetConverter) GetGroupResourceType(projectId string) string {
+func (c *VariableSetConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/Variables"
 }
 
-func (c VariableSetConverter) convertSecretValue(variable octopus.Variable, resourceName string) *string {
+func (c *VariableSetConverter) convertSecretValue(variable octopus.Variable, resourceName string) *string {
 	if variable.IsSensitive {
 		value := "${var." + resourceName + "}"
 		return &value
@@ -390,7 +390,7 @@ func (c VariableSetConverter) convertSecretValue(variable octopus.Variable, reso
 	return nil
 }
 
-func (c VariableSetConverter) convertValue(variable octopus.Variable, resourceName string) *string {
+func (c *VariableSetConverter) convertValue(variable octopus.Variable, resourceName string) *string {
 	if !variable.IsSensitive {
 		value := "${var." + resourceName + "}"
 		return &value
@@ -399,8 +399,8 @@ func (c VariableSetConverter) convertValue(variable octopus.Variable, resourceNa
 	return nil
 }
 
-func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
-	if prompt.Label != nil || prompt.Description != nil {
+func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
+	if strutil.EmptyIfNil(prompt.Label) != "" || strutil.EmptyIfNil(prompt.Description) != "" {
 		return &terraform.TerraformProjectVariablePrompt{
 			Description:     prompt.Description,
 			Label:           prompt.Label,
@@ -412,7 +412,7 @@ func (c VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.Te
 	return nil
 }
 
-func (c VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
+func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
 	if prompt.DisplaySettings != nil {
 
 		display := terraform.TerraformProjectVariableDisplay{}
@@ -443,7 +443,7 @@ func (c VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *ter
 	return nil
 }
 
-func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
+func (c *VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
 	actions := dependencies.GetResources("Actions", prompt.Action...)
 	channels := dependencies.GetResources("Channels", prompt.Channel...)
 	environments := dependencies.GetResources("Environments", prompt.Environment...)
@@ -470,7 +470,7 @@ func (c VariableSetConverter) convertScope(prompt octopus.Scope, dependencies *R
 
 }
 
-func (c VariableSetConverter) exportAccounts(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportAccounts(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
@@ -492,7 +492,7 @@ func (c VariableSetConverter) exportAccounts(recursive bool, lookup bool, value 
 	return nil
 }
 
-func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c *VariableSetConverter) getAccount(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -506,7 +506,7 @@ func (c VariableSetConverter) getAccount(value *string, dependencies *ResourceDe
 	return &retValue
 }
 
-func (c VariableSetConverter) exportFeeds(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportFeeds(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
@@ -528,7 +528,7 @@ func (c VariableSetConverter) exportFeeds(recursive bool, lookup bool, value *st
 	return nil
 }
 
-func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c *VariableSetConverter) getFeeds(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -542,7 +542,7 @@ func (c VariableSetConverter) getFeeds(value *string, dependencies *ResourceDeta
 	return &retValue
 }
 
-func (c VariableSetConverter) exportAzureCloudServiceTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportAzureCloudServiceTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -562,7 +562,7 @@ func (c VariableSetConverter) exportAzureCloudServiceTargets(recursive bool, loo
 	return nil
 }
 
-func (c VariableSetConverter) exportAzureServiceFabricTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportAzureServiceFabricTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -582,7 +582,7 @@ func (c VariableSetConverter) exportAzureServiceFabricTargets(recursive bool, lo
 	return nil
 }
 
-func (c VariableSetConverter) exportAzureWebAppTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportAzureWebAppTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -602,7 +602,7 @@ func (c VariableSetConverter) exportAzureWebAppTargets(recursive bool, lookup bo
 	return nil
 }
 
-func (c VariableSetConverter) exportCloudRegionTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportCloudRegionTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -622,7 +622,7 @@ func (c VariableSetConverter) exportCloudRegionTargets(recursive bool, lookup bo
 	return nil
 }
 
-func (c VariableSetConverter) exportKubernetesTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportKubernetesTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -642,7 +642,7 @@ func (c VariableSetConverter) exportKubernetesTargets(recursive bool, lookup boo
 	return nil
 }
 
-func (c VariableSetConverter) exportListeningTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportListeningTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -662,7 +662,7 @@ func (c VariableSetConverter) exportListeningTargets(recursive bool, lookup bool
 	return nil
 }
 
-func (c VariableSetConverter) exportOfflineDropTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportOfflineDropTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -682,7 +682,7 @@ func (c VariableSetConverter) exportOfflineDropTargets(recursive bool, lookup bo
 	return nil
 }
 
-func (c VariableSetConverter) exportPollingTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportPollingTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -702,7 +702,7 @@ func (c VariableSetConverter) exportPollingTargets(recursive bool, lookup bool, 
 	return nil
 }
 
-func (c VariableSetConverter) exportSshTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportSshTargets(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -722,7 +722,7 @@ func (c VariableSetConverter) exportSshTargets(recursive bool, lookup bool, vari
 	return nil
 }
 
-func (c VariableSetConverter) exportEnvironments(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportEnvironments(recursive bool, lookup bool, variable *octopus.Variable, dependencies *ResourceDetailsCollection) error {
 	if variable == nil {
 		return nil
 	}
@@ -742,7 +742,7 @@ func (c VariableSetConverter) exportEnvironments(recursive bool, lookup bool, va
 	return nil
 }
 
-func (c VariableSetConverter) exportCertificates(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportCertificates(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
@@ -764,7 +764,7 @@ func (c VariableSetConverter) exportCertificates(recursive bool, lookup bool, va
 	return nil
 }
 
-func (c VariableSetConverter) getCertificates(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c *VariableSetConverter) getCertificates(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -778,7 +778,7 @@ func (c VariableSetConverter) getCertificates(value *string, dependencies *Resou
 	return &retValue
 }
 
-func (c VariableSetConverter) exportWorkerPools(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) exportWorkerPools(recursive bool, lookup bool, value *string, dependencies *ResourceDetailsCollection) error {
 	if value == nil {
 		return nil
 	}
@@ -800,7 +800,7 @@ func (c VariableSetConverter) exportWorkerPools(recursive bool, lookup bool, val
 	return nil
 }
 
-func (c VariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
+func (c *VariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
 	if value == nil {
 		return nil
 	}
@@ -816,7 +816,7 @@ func (c VariableSetConverter) getWorkerPools(value *string, dependencies *Resour
 
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
-func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
+func (c *VariableSetConverter) addTagSetDependencies(variable octopus.Variable, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
 	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := c.Client.GetAllResources("TagSets", &collection)
 
@@ -854,7 +854,7 @@ func (c VariableSetConverter) addTagSetDependencies(variable octopus.Variable, r
 	return terraformDependencies, nil
 }
 
-func (c VariableSetConverter) compileRegexes() {
+func (c *VariableSetConverter) compileRegexes() {
 	if c.ExcludeProjectVariablesRegex != nil {
 		c.excludeProjectVariablesRegexCompiled = lo.FilterMap(c.ExcludeProjectVariablesRegex, func(x string, index int) (*regexp.Regexp, bool) {
 			re, err := regexp.Compile(x)
@@ -866,7 +866,7 @@ func (c VariableSetConverter) compileRegexes() {
 	}
 }
 
-func (c VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
+func (c *VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
 	if c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1 {
 		return true
 	}

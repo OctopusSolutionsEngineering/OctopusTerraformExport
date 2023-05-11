@@ -25,7 +25,7 @@ type LibraryVariableSetConverter struct {
 	excludeLibraryVariableSetsRegexCompiled []*regexp.Regexp
 }
 
-func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.LibraryVariableSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -44,7 +44,7 @@ func (c LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollecti
 	return nil
 }
 
-func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -63,7 +63,7 @@ func (c LibraryVariableSetConverter) ToHclById(id string, dependencies *Resource
 	return c.toHcl(resource, true, dependencies)
 }
 
-func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -110,7 +110,7 @@ func (c LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *Re
 	return nil
 }
 
-func (c LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	if c.libraryVariableSetIsExcluded(resource) {
@@ -233,11 +233,11 @@ func (c LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet,
 	return nil
 }
 
-func (c LibraryVariableSetConverter) GetResourceType() string {
+func (c *LibraryVariableSetConverter) GetResourceType() string {
 	return "LibraryVariableSets"
 }
 
-func (c LibraryVariableSetConverter) convertTemplates(actionPackages []octopus2.Template, libraryName string) ([]terraform2.TerraformTemplate, []ResourceDetails) {
+func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus2.Template, libraryName string) ([]terraform2.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform2.TerraformTemplate, 0)
 	for i, v := range actionPackages {
@@ -260,7 +260,7 @@ func (c LibraryVariableSetConverter) convertTemplates(actionPackages []octopus2.
 	return collection, templateMap
 }
 
-func (c LibraryVariableSetConverter) compileRegexes() {
+func (c *LibraryVariableSetConverter) compileRegexes() {
 	if c.ExcludeLibraryVariableSetsRegex != nil {
 		c.excludeLibraryVariableSetsRegexCompiled = lo.FilterMap(c.ExcludeLibraryVariableSetsRegex, func(x string, index int) (*regexp.Regexp, bool) {
 			re, err := regexp.Compile(x)
@@ -272,7 +272,7 @@ func (c LibraryVariableSetConverter) compileRegexes() {
 	}
 }
 
-func (c LibraryVariableSetConverter) libraryVariableSetIsExcluded(resource octopus2.LibraryVariableSet) bool {
+func (c *LibraryVariableSetConverter) libraryVariableSetIsExcluded(resource octopus2.LibraryVariableSet) bool {
 	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
 		return true
 	}

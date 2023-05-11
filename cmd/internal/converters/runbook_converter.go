@@ -26,7 +26,7 @@ type RunbookConverter struct {
 	IgnoreProjectChanges         bool
 }
 
-func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -45,7 +45,7 @@ func (c RunbookConverter) ToHclByIdAndName(projectId string, projectName string,
 	return nil
 }
 
-func (c RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -64,7 +64,7 @@ func (c RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName s
 	return nil
 }
 
-func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	if c.libraryVariableSetIsExcluded(runbook) {
@@ -132,15 +132,15 @@ func (c RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, rec
 	return nil
 }
 
-func (c RunbookConverter) GetResourceType() string {
+func (c *RunbookConverter) GetResourceType() string {
 	return "Runbooks"
 }
 
-func (c RunbookConverter) GetGroupResourceType(projectId string) string {
+func (c *RunbookConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/runbooks"
 }
 
-func (c RunbookConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
+func (c *RunbookConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
 	secretVariableResource := terraform.TerraformVariable{
 		Name:        projectName + "_name",
 		Type:        "string",
@@ -155,7 +155,7 @@ func (c RunbookConverter) writeProjectNameVariable(file *hclwrite.File, projectN
 	file.Body().AppendBlock(block)
 }
 
-func (c RunbookConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+func (c *RunbookConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
@@ -178,7 +178,7 @@ func (c RunbookConverter) convertTemplates(actionPackages []octopus.Template, pr
 	return collection, templateMap
 }
 
-func (c RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *terraform.TerraformConnectivityPolicy {
+func (c *RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *terraform.TerraformConnectivityPolicy {
 	return &terraform.TerraformConnectivityPolicy{
 		AllowDeploymentsToNoTargets: runbook.ConnectivityPolicy.AllowDeploymentsToNoTargets,
 		ExcludeUnhealthyTargets:     runbook.ConnectivityPolicy.ExcludeUnhealthyTargets,
@@ -186,14 +186,14 @@ func (c RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *te
 	}
 }
 
-func (c RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terraform.RetentionPolicy {
+func (c *RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terraform.RetentionPolicy {
 	return &terraform.RetentionPolicy{
 		QuantityToKeep:    runbook.RunRetentionPolicy.QuantityToKeep,
 		ShouldKeepForever: runbook.RunRetentionPolicy.ShouldKeepForever,
 	}
 }
 
-func (c RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *ResourceDetailsCollection) error {
 	// Export the deployment process
 	if runbook.RunbookProcessId != nil {
 		var err error
@@ -223,7 +223,7 @@ func (c RunbookConverter) exportChildDependencies(recursive bool, lookup bool, r
 	return nil
 }
 
-func (c RunbookConverter) compileRegexes() {
+func (c *RunbookConverter) compileRegexes() {
 	if c.ExcludeRunbooksRegex != nil {
 		c.excludeRunbooksRegexCompiled = lo.FilterMap(c.ExcludeRunbooksRegex, func(x string, index int) (*regexp.Regexp, bool) {
 			re, err := regexp.Compile(x)
@@ -235,7 +235,7 @@ func (c RunbookConverter) compileRegexes() {
 	}
 }
 
-func (c RunbookConverter) libraryVariableSetIsExcluded(runbook octopus.Runbook) bool {
+func (c *RunbookConverter) libraryVariableSetIsExcluded(runbook octopus.Runbook) bool {
 	if c.ExcludedRunbooks != nil && slices.Index(c.ExcludedRunbooks, runbook.Name) != -1 {
 		return true
 	}
