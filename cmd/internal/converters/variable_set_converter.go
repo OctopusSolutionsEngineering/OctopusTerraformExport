@@ -420,8 +420,8 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 			display.ControlType = &controlType
 		}
 
+		selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
 		if selectOptions, ok := prompt.DisplaySettings["Octopus.SelectOptions"]; ok {
-			selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
 			for _, o := range strings.Split(selectOptions, "\n") {
 				split := strings.Split(o, "|")
 				if len(split) == 2 {
@@ -433,9 +433,8 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 						})
 				}
 			}
-
-			display.SelectOption = &selectOptionsSlice
 		}
+		display.SelectOption = &selectOptionsSlice
 
 		return &display
 	}
