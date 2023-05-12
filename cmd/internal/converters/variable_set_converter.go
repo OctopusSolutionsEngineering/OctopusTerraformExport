@@ -46,6 +46,7 @@ type VariableSetConverter struct {
 	excludeProjectVariablesRegexCompiled []*regexp.Regexp
 	IgnoreProjectChanges                 bool
 	ExcludeVariableEnvironmentScopes     args.ExcludeVariableEnvironmentScopes
+	excludeVariableEnvironmentScopesIds  []string
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -153,6 +154,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
+	c.convertEnvironmentsToIds()
 
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
@@ -443,13 +445,44 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 	return nil
 }
 
+func (c *VariableSetConverter) convertEnvironmentsToIds() {
+	if c.ExcludeVariableEnvironmentScopes == nil {
+		c.excludeVariableEnvironmentScopesIds = []string{}
+	} else {
+		c.excludeVariableEnvironmentScopesIds = lo.FilterMap(c.ExcludeVariableEnvironmentScopes, func(envName string, index int) (string, bool) {
+
+			// for each input environment name, convert it to an ID
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err := c.Client.GetAllResources("Environments", &environments, []string{"partialName", envName})
+			if err == nil {
+				// partial matches can have false positives, so do a second filter to do an exact match
+				filteredList := lo.FilterMap(environments.Items, func(env octopus.Environment, index int) (string, bool) {
+					if env.Name == envName {
+						return env.Id, true
+					}
+
+					return "", false
+				})
+
+				// return the environment id
+				if len(filteredList) != 0 {
+					return filteredList[0], true
+				}
+			}
+
+			// no match found
+			return "", false
+		})
+	}
+}
+
 func (c *VariableSetConverter) filterEnvironmentScope(envs []string) []string {
 	if envs == nil {
 		return []string{}
 	}
 
 	return lo.Filter(envs, func(env string, i int) bool {
-		if c.ExcludeVariableEnvironmentScopes != nil && slices.Index(c.ExcludeVariableEnvironmentScopes, env) != -1 {
+		if c.excludeVariableEnvironmentScopesIds != nil && slices.Index(c.excludeVariableEnvironmentScopesIds, env) != -1 {
 			return false
 		}
 
