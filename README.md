@@ -5,7 +5,7 @@ This app exports an Octopus space to the associated Terraform resources for use 
 
 ## Downloads
 
-Get the compiled binaries from the [releases](https://github.com/mcasperson/OctopusTerraformExport/releases).
+Get the compiled binaries from the [releases](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/releases).
 
 ## Support
 
@@ -78,4 +78,4 @@ Features:
 * Ignore tenanted, versioning
 
 ## Report Card
-![Go Report Card](https://goreportcard.com/badge/mcasperson/OctopusTerraformExport)
+![Go Report Card](https://goreportcard.com/badge/OctopusSolutionsEngineering/OctopusTerraformExport)

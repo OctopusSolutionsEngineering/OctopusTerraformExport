@@ -1,8 +1,8 @@
 package writers
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/google/uuid"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"os"
 	"path/filepath"
 )

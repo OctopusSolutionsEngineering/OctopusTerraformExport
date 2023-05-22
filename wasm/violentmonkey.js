@@ -601,7 +601,7 @@ function dumpToHcl() {
             // Download the WASM file
             GM_xmlhttpRequest({
                 method: "GET",
-                url: "https://github.com/mcasperson/OctopusTerraformExport/raw/main/wasm/convert_project.wasm",
+                url: "https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/raw/main/wasm/convert_project.wasm",
                 responseType: "arraybuffer",
                 onload: function(e) {
                     console.log(e)

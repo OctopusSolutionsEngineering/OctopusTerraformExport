@@ -2,10 +2,10 @@ package converters
 
 import (
 	"fmt"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sliceutil"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"regexp"
 	"strings"
 )

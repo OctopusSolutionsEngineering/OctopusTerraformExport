@@ -2,15 +2,15 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/samber/lo"
 	"strings"
 )

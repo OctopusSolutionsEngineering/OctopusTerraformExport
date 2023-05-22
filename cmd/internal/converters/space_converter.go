@@ -1,14 +1,14 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/hcl"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/sanitizer"
 )
 
 // SpaceConverter creates the files required to create a new space. These files are used in a separate

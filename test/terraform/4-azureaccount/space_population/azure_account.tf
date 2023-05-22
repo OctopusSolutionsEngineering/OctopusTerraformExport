@@ -1,10 +1,9 @@
 resource "octopusdeploy_azure_service_principal" "account_azure" {
   description                       = "Azure Account"
   name                              = "Azure"
-  environments                      = null
-  tenant_tags                       = []
-  tenants                           = null
-  tenanted_deployment_participation = "Untenanted"
+  environments                      = [octopusdeploy_environment.test_environment.id]
+  tenants                           = [octopusdeploy_tenant.tenant_team_a.id]
+  tenanted_deployment_participation = "Tenanted"
   application_id                    = "2eb8bd13-661e-489c-beb9-4103efb9dbdd"
   password                          = "secretgoeshere"
   subscription_id                   = "95bf77d2-64b1-4ed2-9de1-b5451e3881f5"

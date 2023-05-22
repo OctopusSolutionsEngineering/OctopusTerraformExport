@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"sort"
 	"strings"
 	"syscall/js"

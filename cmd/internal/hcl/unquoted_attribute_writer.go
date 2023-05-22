@@ -3,11 +3,11 @@ package hcl
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/terraform"
 	"regexp"
 	"strings"
 )

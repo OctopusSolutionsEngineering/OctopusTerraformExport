@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	octopus2 "github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
+	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"io"
 	"net/http"
 	"net/url"

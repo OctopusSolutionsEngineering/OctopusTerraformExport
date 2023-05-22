@@ -3,12 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/args"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/client"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/converters"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/model/octopus"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
-	"github.com/mcasperson/OctopusTerraformExport/cmd/internal/writers"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/writers"
 	"os"
 	"strings"
 )

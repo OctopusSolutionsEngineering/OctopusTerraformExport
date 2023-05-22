@@ -1,6 +1,6 @@
 package terraform
 
-import "github.com/mcasperson/OctopusTerraformExport/cmd/internal/strutil"
+import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 
 type TerraformConfig struct {
 	RequiredProviders RequiredProviders `hcl:"required_providers,block"`
