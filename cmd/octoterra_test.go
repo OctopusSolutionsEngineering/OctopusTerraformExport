@@ -3324,3 +3324,73 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestSingleProjectWithCertificateVarLookupExport verifies that a single project with a certificate variable can be reimported with the correct settings.
+func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/48-certificateprojectlookup/space_creation",
+		"../test/terraform/48-certificateprojectlookup/space_prepopulation",
+		"../test/terraform/48-certificateprojectlookup/space_population",
+		"../test/terraform/48-certificateprojectlookup/space_creation",
+		"../test/terraform/48-certificateprojectlookup/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			// Verify that the single project was exported
+			err := func() error {
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(projectCollection.Items) != 1 {
+					t.Fatalf("There must only be one project")
+				}
+
+				if projectCollection.Items[0].Name != "Test" {
+					t.Fatalf("The project must be called \"Test\"")
+				}
+
+				// Verify that the variable set was imported
+
+				if projectCollection.Items[0].VariableSetId == nil {
+					t.Fatalf("The project must have a variable set")
+				}
+
+				variableSet := octopus.VariableSet{}
+				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+
+				if err != nil {
+					return err
+				}
+
+				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
+				if len(scopedVar) == 0 {
+					t.Fatalf("The project must have 1 variable called \"test\"")
+				}
+
+				if scopedVar[0].Type != "Certificate" {
+					t.Fatalf("The project must have 1 variable called \"test\" of type certificate")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+}

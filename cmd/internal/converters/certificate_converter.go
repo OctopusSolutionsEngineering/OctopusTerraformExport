@@ -76,7 +76,7 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceD
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
 	thisResource.Id = certificate.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_certificates" + certificateName + ".certificates[0].id}"
+	thisResource.Lookup = "${data.octopusdeploy_certificates." + certificateName + ".certificates[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform2.TerraformCertificateData{
 			Type:        "octopusdeploy_certificates",
