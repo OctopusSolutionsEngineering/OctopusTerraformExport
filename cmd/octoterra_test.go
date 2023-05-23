@@ -3241,12 +3241,24 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 					return err
 				}
 
-				if len(lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "AWS" })) == 0 {
+				awsVars := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "AWS" })
+
+				if len(awsVars) == 0 {
 					t.Fatalf("The project must have 1 variable called \"AWS\"")
 				}
 
-				if len(lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Azure" })) == 0 {
+				if len(awsVars[0].Scope.Environment) != 1 {
+					t.Fatalf("The project must have 1 variable called \"AWS\" scoped to an environment")
+				}
+
+				azureVars := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Azure" })
+
+				if len(azureVars) == 0 {
 					t.Fatalf("The project must have 1 variable called \"Azure\"")
+				}
+
+				if len(azureVars[0].Scope.Environment) != 1 {
+					t.Fatalf("The project must have 1 variable called \"Azure\" scoped to an environment")
 				}
 
 				return nil

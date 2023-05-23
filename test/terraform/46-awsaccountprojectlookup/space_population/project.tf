@@ -5,6 +5,13 @@ data "octopusdeploy_lifecycles" "lifecycle_default_lifecycle" {
   take         = 1
 }
 
+data "octopusdeploy_environments" "test" {
+  ids          = []
+  partial_name = "Test"
+  skip         = 0
+  take         = 1
+}
+
 data "octopusdeploy_project_groups" "project_group" {
   ids          = null
   partial_name = "Test"
@@ -58,6 +65,9 @@ resource "octopusdeploy_variable" "amazon_web_services_account_variable" {
   type      = "AmazonWebServicesAccount"
   name      = "AWS"
   value     = data.octopusdeploy_accounts.aws_account.accounts[0].id
+  scope {
+    environments = [data.octopusdeploy_environments.test.environments[0].id]
+  }
 }
 
 resource "octopusdeploy_variable" "azure_account_variable" {
@@ -65,6 +75,9 @@ resource "octopusdeploy_variable" "azure_account_variable" {
   type      = "AzureAccount"
   name      = "Azure"
   value     = data.octopusdeploy_accounts.azure_account.accounts[0].id
+  scope {
+    environments = [data.octopusdeploy_environments.test.environments[0].id]
+  }
 }
 
 output "octopus_project_1" {
