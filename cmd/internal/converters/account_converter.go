@@ -232,7 +232,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				TenantTags:                      resource.TenantTags,
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-				ManagementEndpoint:              strutil.EmptyIfNil(resource.ResourceManagementEndpointBaseUri),
+				ManagementEndpoint:              strutil.EmptyIfNil(resource.ServiceManagementEndpointBaseUri),
 				StorageEndpointSuffix:           strutil.EmptyIfNil(resource.ServiceManagementEndpointSuffix),
 				SubscriptionId:                  resource.SubscriptionNumber,
 				AzureEnvironment:                strutil.NilIfEmptyPointer(resource.AzureEnvironment),

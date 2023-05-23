@@ -27,6 +27,48 @@ data "octopusdeploy_deployment_targets" "cloud_region" {
   take         = 1
 }
 
+data "octopusdeploy_deployment_targets" "ssh" {
+  partial_name = "Ssh"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_deployment_targets" "polling" {
+  partial_name = "Polling"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_deployment_targets" "listening" {
+  partial_name = "Listening"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_deployment_targets" "offline" {
+  partial_name = "Offline"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_deployment_targets" "azure" {
+  partial_name = "Azure"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_deployment_targets" "service_facbric" {
+  partial_name = "ServiceFabric"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_deployment_targets" "webapp" {
+  partial_name = "WebApp"
+  skip         = 0
+  take         = 1
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -60,7 +102,14 @@ resource "octopusdeploy_variable" "scoped_var" {
   scope {
     machines = [
       data.octopusdeploy_kubernetes_cluster_deployment_targets.test.kubernetes_cluster_deployment_targets[0].id,
-      data.octopusdeploy_deployment_targets.cloud_region.deployment_targets[0].id
+      data.octopusdeploy_deployment_targets.cloud_region.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.ssh.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.polling.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.listening.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.offline.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.azure.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.service_facbric.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.webapp.deployment_targets[0].id,
     ]
   }
 }
