@@ -77,7 +77,7 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_deployment_targets" + resourceName + ".deployment_targets[0].id}"
+	thisResource.Lookup = "${data.octopusdeploy_deployment_targets." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform.TerraformDeploymentTargetsData{
 			Type:        "octopusdeploy_deployment_targets",
