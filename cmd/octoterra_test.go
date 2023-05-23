@@ -2476,6 +2476,11 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				if variableSet.Variables[0].Name != "Test2" {
 					t.Fatalf("The project must have 1 variable called \"Test2\"")
 				}
+
+				if len(variableSet.Variables[0].Scope.Environment) != 1 {
+					t.Fatalf("The project must have 1 variable called \"Test2\" scoped to an environment")
+				}
+
 				return nil
 			}()
 

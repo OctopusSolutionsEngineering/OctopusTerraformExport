@@ -52,6 +52,9 @@ resource "octopusdeploy_variable" "string_variable2" {
   type      = "String"
   name      = "Test2"
   value     = "PlainText"
+  scope {
+    environments = [octopusdeploy_environment.test_environment.id]
+  }
 }
 
 output "octopus_project_1" {
