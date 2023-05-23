@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -18,7 +18,7 @@ type SshTargetConverter struct {
 }
 
 func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.SshEndpointResource]{}
+	collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return nil
 	}
 
-	resource := octopus2.SshEndpointResource{}
+	resource := octopus.SshEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -64,11 +64,15 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 		return nil
 	}
 
-	resource := octopus2.SshEndpointResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "Ssh" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -98,7 +102,7 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 	return nil
 }
 
-func (c SshTargetConverter) toHcl(target octopus2.SshEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if target.Endpoint.CommunicationStyle == "Ssh" {
 
 		if recursive {
@@ -182,7 +186,7 @@ func (c SshTargetConverter) getAccount(account string, dependencies *ResourceDet
 	return accountLookup
 }
 
-func (c SshTargetConverter) exportDependencies(target octopus2.SshEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

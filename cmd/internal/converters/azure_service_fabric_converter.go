@@ -64,11 +64,15 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 		return nil
 	}
 
-	resource := octopus.AzureServiceFabricResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "AzureServiceFabricCluster" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}

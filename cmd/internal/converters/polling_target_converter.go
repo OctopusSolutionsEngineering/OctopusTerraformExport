@@ -63,11 +63,15 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *Resourc
 		return nil
 	}
 
-	resource := octopus.PollingEndpointResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "TentacleActive" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}

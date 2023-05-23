@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -18,7 +18,7 @@ type AzureWebAppTargetConverter struct {
 }
 
 func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.AzureWebAppResource]{}
+	collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return nil
 	}
 
-	resource := octopus2.AzureWebAppResource{}
+	resource := octopus.AzureWebAppResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -64,11 +64,15 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	resource := octopus2.AzureWebAppResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "AzureWebApp" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -98,7 +102,7 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *Res
 	return nil
 }
 
-func (c AzureWebAppTargetConverter) toHcl(target octopus2.AzureWebAppResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "AzureWebApp" {
 
@@ -210,7 +214,7 @@ func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *Res
 	return &machineLookup
 }
 
-func (c AzureWebAppTargetConverter) exportDependencies(target octopus2.AzureWebAppResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAppResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

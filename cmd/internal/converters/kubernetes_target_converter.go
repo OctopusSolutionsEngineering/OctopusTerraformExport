@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -20,7 +20,7 @@ type KubernetesTargetConverter struct {
 }
 
 func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.KubernetesEndpointResource]{}
+	collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -47,7 +47,7 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 		return nil
 	}
 
-	resource := octopus2.KubernetesEndpointResource{}
+	resource := octopus.KubernetesEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -66,11 +66,15 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 		return nil
 	}
 
-	resource := octopus2.KubernetesEndpointResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "Kubernetes" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -100,7 +104,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 	return nil
 }
 
-func (c KubernetesTargetConverter) toHcl(target octopus2.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "Kubernetes" {
 		if recursive {
@@ -188,7 +192,7 @@ func (c KubernetesTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c KubernetesTargetConverter) getAwsAuth(target *octopus2.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAwsAccountAuthentication {
+func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAwsAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAws" {
 		return &terraform.TerraformAwsAccountAuthentication{
 			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -205,7 +209,7 @@ func (c KubernetesTargetConverter) getAwsAuth(target *octopus2.KubernetesEndpoin
 	return nil
 }
 
-func (c KubernetesTargetConverter) getK8sAuth(target *octopus2.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAccountAuthentication {
+func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesStandard" {
 		return &terraform.TerraformAccountAuthentication{
 			AccountId: c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -215,7 +219,7 @@ func (c KubernetesTargetConverter) getK8sAuth(target *octopus2.KubernetesEndpoin
 	return nil
 }
 
-func (c KubernetesTargetConverter) getGoogleAuth(target *octopus2.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformGcpAccountAuthentication {
+func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformGcpAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesGoogleCloud" {
 		return &terraform.TerraformGcpAccountAuthentication{
 			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -232,7 +236,7 @@ func (c KubernetesTargetConverter) getGoogleAuth(target *octopus2.KubernetesEndp
 	return nil
 }
 
-func (c KubernetesTargetConverter) getCertAuth(target *octopus2.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformCertificateAuthentication {
+func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformCertificateAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesCertificate" {
 		return &terraform.TerraformCertificateAuthentication{
 			ClientCertificate: dependencies.GetResourcePointer("Certificates", target.Endpoint.Authentication.ClientCertificate),
@@ -242,7 +246,7 @@ func (c KubernetesTargetConverter) getCertAuth(target *octopus2.KubernetesEndpoi
 	return nil
 }
 
-func (c KubernetesTargetConverter) getAzureAuth(target *octopus2.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAzureServicePrincipalAuthentication {
+func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAzureServicePrincipalAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAzure" {
 		return &terraform.TerraformAzureServicePrincipalAuthentication{
 			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -297,7 +301,7 @@ func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *Res
 	return &workerPoolLookup
 }
 
-func (c KubernetesTargetConverter) exportDependencies(target octopus2.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 

@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -18,7 +18,7 @@ type AzureCloudServiceTargetConverter struct {
 }
 
 func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.AzureCloudServiceResource]{}
+	collection := octopus.GeneralCollection[octopus.AzureCloudServiceResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *Res
 		return nil
 	}
 
-	resource := octopus2.AzureCloudServiceResource{}
+	resource := octopus.AzureCloudServiceResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -64,11 +64,15 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 		return nil
 	}
 
-	resource := octopus2.AzureCloudServiceResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "AzureCloudService" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -98,7 +102,7 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 	return nil
 }
 
-func (c AzureCloudServiceTargetConverter) toHcl(target octopus2.AzureCloudServiceResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "AzureCloudService" {
 		if recursive {
@@ -177,7 +181,7 @@ func (c AzureCloudServiceTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus2.AzureCloudServiceResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.AzureCloudServiceResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

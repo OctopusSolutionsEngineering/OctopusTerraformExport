@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -17,7 +17,7 @@ type OfflineDropTargetConverter struct {
 }
 
 func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.OfflineDropResource]{}
+	collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return nil
 	}
 
-	resource := octopus2.OfflineDropResource{}
+	resource := octopus.OfflineDropResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -63,11 +63,15 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	resource := octopus2.OfflineDropResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "OfflineDrop" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -97,7 +101,7 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 	return nil
 }
 
-func (c OfflineDropTargetConverter) toHcl(target octopus2.OfflineDropResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if target.Endpoint.CommunicationStyle == "OfflineDrop" {
 		if recursive {
 			err := c.exportDependencies(target, dependencies)
@@ -183,7 +187,7 @@ func (c OfflineDropTargetConverter) getMachinePolicy(machine string, dependencie
 	return &machineLookup
 }
 
-func (c OfflineDropTargetConverter) exportDependencies(target octopus2.OfflineDropResource, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) exportDependencies(target octopus.OfflineDropResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

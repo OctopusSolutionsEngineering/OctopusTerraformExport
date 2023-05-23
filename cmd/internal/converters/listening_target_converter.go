@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -17,7 +17,7 @@ type ListeningTargetConverter struct {
 }
 
 func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.ListeningEndpointResource]{}
+	collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 		return nil
 	}
 
-	resource := octopus2.ListeningEndpointResource{}
+	resource := octopus.ListeningEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -63,11 +63,15 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 		return nil
 	}
 
-	resource := octopus2.ListeningEndpointResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "TentaclePassive" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -97,7 +101,7 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 	return nil
 }
 
-func (c ListeningTargetConverter) toHcl(target octopus2.ListeningEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "TentaclePassive" {
 
@@ -188,7 +192,7 @@ func (c ListeningTargetConverter) getMachinePolicy(machine string, dependencies 
 	return &machineLookup
 }
 
-func (c ListeningTargetConverter) exportDependencies(target octopus2.ListeningEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) exportDependencies(target octopus.ListeningEndpointResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

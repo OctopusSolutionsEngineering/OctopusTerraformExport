@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -17,7 +17,7 @@ type CloudRegionTargetConverter struct {
 }
 
 func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.CloudRegionResource]{}
+	collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return nil
 	}
 
-	resource := octopus2.CloudRegionResource{}
+	resource := octopus.CloudRegionResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -63,11 +63,15 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	resource := octopus2.CloudRegionResource{}
+	resource := octopus.Machine{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
+	}
+
+	if resource.Endpoint.CommunicationStyle != "None" {
+		return nil
 	}
 
 	thisResource := ResourceDetails{}
@@ -97,7 +101,7 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *Res
 	return nil
 }
 
-func (c CloudRegionTargetConverter) toHcl(target octopus2.CloudRegionResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 
 	if target.Endpoint.CommunicationStyle == "None" {
 
@@ -184,7 +188,7 @@ func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencie
 	return &machineLookup
 }
 
-func (c CloudRegionTargetConverter) exportDependencies(target octopus2.CloudRegionResource, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, dependencies *ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
