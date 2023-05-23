@@ -21,6 +21,12 @@ data "octopusdeploy_kubernetes_cluster_deployment_targets" "test" {
   take         = 1
 }
 
+data "octopusdeploy_deployment_targets" "cloud_region" {
+  partial_name = "CloudRegion"
+  skip         = 0
+  take         = 1
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -52,7 +58,10 @@ resource "octopusdeploy_variable" "scoped_var" {
   name     = "test"
   value    = "test"
   scope {
-    machines = [data.octopusdeploy_kubernetes_cluster_deployment_targets.test.kubernetes_cluster_deployment_targets[0].id]
+    machines = [
+      data.octopusdeploy_kubernetes_cluster_deployment_targets.test.kubernetes_cluster_deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.cloud_region.deployment_targets[0].id
+    ]
   }
 }
 

@@ -3310,8 +3310,8 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 					t.Fatalf("The project must have 1 variable called \"test\"")
 				}
 
-				if len(scopedVar[0].Scope.Machine) != 1 {
-					t.Fatalf("The project must have 1 variable called \"test\" scoped to a machine")
+				if len(scopedVar[0].Scope.Machine) != 2 {
+					t.Fatalf("The project must have 1 variable called \"test\" scoped to two machines")
 				}
 
 				return nil
