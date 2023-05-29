@@ -9,9 +9,10 @@ Get the compiled binaries from the [releases](https://github.com/OctopusSolution
 
 ## Support
 
-Feel free to raise an [issue](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/issues) with any bugs of feature enhancements. 
+This tool is part of a pilot programme to support platform engineering teams.
 
-Note this open source project has no offical support.
+The Octopus support teams will make reasonable endeavours to support teams that wish to use this tool. However, existing support Service Level Agreements (SLAs) do not apply to `octoterra`,
+and should not be relied on for production deployments.
 
 ## Usage
 
