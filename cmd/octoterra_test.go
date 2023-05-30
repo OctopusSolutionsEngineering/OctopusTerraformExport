@@ -3416,3 +3416,105 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestSingleProjectWithFeedLookupExport verifies that a single project referencing multiple feeds variable can be reimported with the correct settings.
+func TestSingleProjectWithFeedLookupExport(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/49-feedprojectlookup/space_creation",
+		"../test/terraform/49-feedprojectlookup/space_prepopulation",
+		"../test/terraform/49-feedprojectlookup/space_population",
+		"../test/terraform/49-feedprojectlookup/space_creation",
+		"../test/terraform/49-feedprojectlookup/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			// Verify that the single project was exported
+			err := func() error {
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(projectCollection.Items) != 1 {
+					t.Fatalf("There must only be one project")
+				}
+
+				if projectCollection.Items[0].Name != "Test" {
+					t.Fatalf("The project must be called \"Test\"")
+				}
+
+				// Verify that the variable set was imported
+
+				if projectCollection.Items[0].DeploymentProcessId == nil {
+					t.Fatalf("The project must have a deployment process set")
+				}
+
+				deploymentProcess := octopus.DeploymentProcess{}
+				_, err = octopusClient.GetResourceById("DeploymentProcesses", *projectCollection.Items[0].DeploymentProcessId, &deploymentProcess)
+
+				if err != nil {
+					return err
+				}
+
+				if len(deploymentProcess.Steps) != 1 {
+					t.Fatalf("The project must have a deployment process with one step")
+				}
+
+				if len(deploymentProcess.Steps[0].Actions) != 1 {
+					t.Fatalf("The project must have a deployment process with one step and one action")
+				}
+
+				if len(deploymentProcess.Steps[0].Actions[0].Packages) != 5 {
+					t.Fatalf("The project must have a step with 5 packages")
+				}
+
+				for _, stepPackage := range deploymentProcess.Steps[0].Actions[0].Packages {
+					feed := octopus.Feed{}
+					_, err = octopusClient.GetResourceById("Feeds", *stepPackage.FeedId, &feed)
+
+					if err != nil {
+						return err
+					}
+
+					if strutil.EmptyIfNil(stepPackage.PackageId) == "package1" && strutil.EmptyIfNil(feed.FeedType) != "Docker" {
+						t.Fatalf("package1 must come from a Docker feed")
+					}
+
+					if strutil.EmptyIfNil(stepPackage.PackageId) == "package2" && strutil.EmptyIfNil(feed.FeedType) != "Helm" {
+						t.Fatalf("package2 must come from a Helm feed")
+					}
+
+					if strutil.EmptyIfNil(stepPackage.PackageId) == "package3" && strutil.EmptyIfNil(feed.FeedType) != "Maven" {
+						t.Fatalf("package3 must come from a Maven feed")
+					}
+
+					if strutil.EmptyIfNil(stepPackage.PackageId) == "package4" && strutil.EmptyIfNil(feed.FeedType) != "NuGet" {
+						t.Fatalf("package4 must come from a NuGet feed")
+					}
+
+					if strutil.EmptyIfNil(stepPackage.PackageId) == "package5" && strutil.EmptyIfNil(feed.FeedType) != "GitHub" {
+						t.Fatalf("package5 must come from a GitHub feed")
+					}
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+}
