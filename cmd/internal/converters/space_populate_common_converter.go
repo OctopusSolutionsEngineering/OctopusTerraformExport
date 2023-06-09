@@ -149,13 +149,14 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, de
 
 		file := hclwrite.NewEmptyFile()
 
-		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "variable")
+		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "output")
 		file.Body().AppendBlock(octopusServerBlock)
 
-		octopusApiKeyBlock := gohcl.EncodeAsBlock(octopusApiKey, "variable")
+		octopusApiKeyBlock := gohcl.EncodeAsBlock(octopusApiKey, "output")
+		hcl.WriteUnquotedAttribute(octopusApiKeyBlock, "sensitive", "true")
 		file.Body().AppendBlock(octopusApiKeyBlock)
 
-		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
+		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "output")
 		file.Body().AppendBlock(octopusSpaceIdBlock)
 
 		return string(file.Bytes()), nil
