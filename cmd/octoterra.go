@@ -53,6 +53,7 @@ func main() {
 			args.ExcludeRunbooks,
 			args.ExcludeRunbooksRegex,
 			args.ExcludeProvider,
+			args.IncludeOctopusOutputVars,
 			args.ExcludeLibraryVariableSets,
 			args.ExcludeLibraryVariableSetsRegex,
 			args.IgnoreProjectChanges,
@@ -320,6 +321,7 @@ func ConvertProjectToTerraform(
 	excludedRunbooks args.ExcludeRunbooks,
 	excludeRunbooksRegex args.ExcludeRunbooks,
 	excludeProvider bool,
+	includeOctopusOutputVars bool,
 	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
 	excludeLibraryVariableSetsRegex args.ExcludeLibraryVariableSets,
 	ignoreProjectChanges bool,
@@ -339,9 +341,10 @@ func ConvertProjectToTerraform(
 	dependencies := converters.ResourceDetailsCollection{}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend: terraformBackend,
-		ProviderVersion:  providerVersion,
-		ExcludeProvider:  excludeProvider,
+		TerraformBackend:         terraformBackend,
+		ProviderVersion:          providerVersion,
+		ExcludeProvider:          excludeProvider,
+		IncludeOctopusOutputVars: includeOctopusOutputVars,
 	}.ToHcl("space_population", &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}

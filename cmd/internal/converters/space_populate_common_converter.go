@@ -10,15 +10,19 @@ import (
 // TerraformProviderGenerator creates the common terraform files required to populate a space
 // including the provider, terraform config, and common vars
 type TerraformProviderGenerator struct {
-	TerraformBackend string
-	ProviderVersion  string
-	ExcludeProvider  bool
+	TerraformBackend         string
+	ProviderVersion          string
+	ExcludeProvider          bool
+	IncludeOctopusOutputVars bool
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
 	c.createProvider(directory, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, dependencies)
+	if c.IncludeOctopusOutputVars {
+		c.createOctopusOutputVars(directory, dependencies)
+	}
 }
 
 func (c TerraformProviderGenerator) createProvider(directory string, dependencies *ResourceDetailsCollection) {
@@ -108,6 +112,50 @@ func (c TerraformProviderGenerator) createVariables(directory string, dependenci
 
 		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
 		hcl.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
+		file.Body().AppendBlock(octopusSpaceIdBlock)
+
+		return string(file.Bytes()), nil
+	}
+	dependencies.AddResource(thisResource)
+}
+
+// createOctopusOutputVars captures the details of the octopus server as output variables. This is
+// useful when finding the created resources from the Terraform state.
+func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, dependencies *ResourceDetailsCollection) {
+	if c.ExcludeProvider {
+		return
+	}
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = directory + "/provider_output_vars.tf"
+	thisResource.Id = ""
+	thisResource.ResourceType = ""
+	thisResource.Lookup = ""
+	thisResource.ToHcl = func() (string, error) {
+		octopusServer := terraform2.TerraformOutput{
+			Name:  "octopus_server",
+			Value: "${var.octopus_server}",
+		}
+
+		octopusApiKey := terraform2.TerraformOutput{
+			Name:  "octopus_apikey",
+			Value: "${var.octopus_apikey}",
+		}
+
+		octopusSpaceId := terraform2.TerraformOutput{
+			Name:  "octopus_space_id",
+			Value: "${var.octopus_space_id}",
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "variable")
+		file.Body().AppendBlock(octopusServerBlock)
+
+		octopusApiKeyBlock := gohcl.EncodeAsBlock(octopusApiKey, "variable")
+		file.Body().AppendBlock(octopusApiKeyBlock)
+
+		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
 		file.Body().AppendBlock(octopusSpaceIdBlock)
 
 		return string(file.Bytes()), nil
