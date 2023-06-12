@@ -147,6 +147,21 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, de
 			Value: "${var.octopus_space_id}",
 		}
 
+		octopusSpaceNameData := terraform2.TerraformSpaceData{
+			Type:         "octopusdeploy_spaces",
+			Name:         "octopus_space_name",
+			ResourceName: nil,
+			Ids:          []string{"${var.octopus_space_id}"},
+			PartialName:  nil,
+			Skip:         0,
+			Take:         1,
+		}
+
+		octopusSpaceName := terraform2.TerraformOutput{
+			Name:  "octopus_space_name",
+			Value: "${data.octopusdeploy_spaces.octopus_space_name.spaces[0].name}",
+		}
+
 		file := hclwrite.NewEmptyFile()
 
 		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "output")
@@ -158,6 +173,9 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, de
 
 		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "output")
 		file.Body().AppendBlock(octopusSpaceIdBlock)
+
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusSpaceNameData, "data"))
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusSpaceName, "output"))
 
 		return string(file.Bytes()), nil
 	}
