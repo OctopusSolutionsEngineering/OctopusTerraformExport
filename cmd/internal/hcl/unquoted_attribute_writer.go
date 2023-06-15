@@ -33,11 +33,23 @@ func WriteLifecycleAllAttribute(block *hclwrite.Block) {
 func WriteActionProperties(block *hclwrite.Block, stepName string, actionName string, properties map[string]string) {
 	for _, stepBlock := range block.Body().Blocks() {
 		stepNameTokens := hclwrite.Tokens{}
-		blockStepName := getAttributeValue(stepBlock.Body().GetAttribute("name").BuildTokens(stepNameTokens))
+		blockStepNameAttribute := stepBlock.Body().GetAttribute("name")
+
+		if blockStepNameAttribute == nil {
+			continue
+		}
+
+		blockStepName := getAttributeValue(blockStepNameAttribute.BuildTokens(stepNameTokens))
 		if blockStepName == stepName {
 			for _, actionBlock := range stepBlock.Body().Blocks() {
 				actionNameTokens := hclwrite.Tokens{}
-				blockActionName := getAttributeValue(actionBlock.Body().GetAttribute("name").BuildTokens(actionNameTokens))
+				blockActionNameAttibute := actionBlock.Body().GetAttribute("name")
+
+				if blockActionNameAttibute == nil {
+					continue
+				}
+
+				blockActionName := getAttributeValue(blockActionNameAttibute.BuildTokens(actionNameTokens))
 				if blockActionName == actionName {
 					actionBlock.Body().SetAttributeTraversal("properties", hcl.Traversal{
 						hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
