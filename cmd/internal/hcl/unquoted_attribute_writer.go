@@ -54,8 +54,8 @@ func WriteActionProperties(block *hclwrite.Block, stepName string, actionName st
 					actionBlock.Body().SetAttributeTraversal("properties", hcl.Traversal{
 						hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
 					})
+					break
 				}
-				break
 			}
 			break
 		}
