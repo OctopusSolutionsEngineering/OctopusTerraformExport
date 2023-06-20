@@ -96,13 +96,13 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
-			if action.WorkerPoolId != "" {
+			workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)
 
-				workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)
+			if err != nil {
+				return err
+			}
 
-				if err != nil {
-					return err
-				}
+			if workerPoolId != "" {
 
 				if recursive {
 					err = c.WorkerPoolConverter.ToHclById(workerPoolId, dependencies)

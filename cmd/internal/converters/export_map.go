@@ -1,5 +1,7 @@
 package converters
 
+import "fmt"
+
 type ToHcl func() (string, error)
 
 // ResourceDetails is used to capture the dependencies required by the root resources that was
@@ -56,6 +58,8 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 			return r.Lookup
 		}
 	}
+
+	fmt.Println("Failed to resolve " + id + " of type " + resourceType)
 
 	return ""
 }
