@@ -62,7 +62,8 @@ func main() {
 			args.ExcludeProjectVariablesRegex,
 			args.ExcludeVariableEnvironmentScopes,
 			args.IgnoreProjectGroupChanges,
-			args.IgnoreProjectNameChanges)
+			args.IgnoreProjectNameChanges,
+			args.LookUpDefaultWorkerPools)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -212,6 +213,12 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: &variableSetConverter}
 
+	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
+		WorkerPoolConverter:     workerPoolConverter,
+		LookupDefaultWorkerPool: false,
+		Client:                  client,
+	}
+
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
@@ -222,8 +229,10 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: false,
+				WorkerPoolProcessor:    workerPoolProcessor,
 			},
 			IgnoreProjectChanges: false,
+			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
@@ -255,8 +264,10 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 					WorkerPoolConverter:    workerPoolConverter,
 					EnvironmentConverter:   environmentConverter,
 					DetachProjectTemplates: false,
+					WorkerPoolProcessor:    workerPoolProcessor,
 				},
 				IgnoreProjectChanges: false,
+				WorkerPoolProcessor:  workerPoolProcessor,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -330,7 +341,8 @@ func ConvertProjectToTerraform(
 	excludedVarsRegex args.ExcludeVariables,
 	excludeVariableEnvironmentScopes args.ExcludeVariableEnvironmentScopes,
 	ignoreProjectGroupChanges bool,
-	ignoreProjectNameChanges bool) error {
+	ignoreProjectNameChanges bool,
+	lookUpDefaultWorkerPools bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -494,6 +506,12 @@ func ConvertProjectToTerraform(
 		ExcludeLibraryVariableSetsRegex: excludeLibraryVariableSetsRegex,
 	}
 
+	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
+		WorkerPoolConverter:     workerPoolConverter,
+		LookupDefaultWorkerPool: lookUpDefaultWorkerPools,
+		Client:                  client,
+	}
+
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
@@ -504,8 +522,10 @@ func ConvertProjectToTerraform(
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: detachProjectTemplates,
+				WorkerPoolProcessor:    workerPoolProcessor,
 			},
 			IgnoreProjectChanges: ignoreProjectChanges,
+			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     excludedRunbooks,
@@ -528,8 +548,10 @@ func ConvertProjectToTerraform(
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: detachProjectTemplates,
+				WorkerPoolProcessor:    workerPoolProcessor,
 			},
 			IgnoreProjectChanges: ignoreProjectChanges,
+			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

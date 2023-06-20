@@ -165,6 +165,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
 
+	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
+		WorkerPoolConverter:     workerPoolConverter,
+		LookupDefaultWorkerPool: false,
+		Client:                  client,
+	}
+
 	runbookConverter := converters.RunbookConverter{
 		Client: client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
@@ -175,8 +181,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: true,
+				WorkerPoolProcessor:    workerPoolProcessor,
 			},
 			IgnoreProjectChanges: false,
+			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
@@ -199,8 +207,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: true,
+				WorkerPoolProcessor:    workerPoolProcessor,
 			},
 			IgnoreProjectChanges: false,
+			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

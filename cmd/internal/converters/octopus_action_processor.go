@@ -18,6 +18,7 @@ type OctopusActionProcessor struct {
 	WorkerPoolConverter    ConverterAndLookupById
 	EnvironmentConverter   ConverterAndLookupById
 	DetachProjectTemplates bool
+	WorkerPoolProcessor    OctopusWorkerPoolProcessor
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
@@ -96,11 +97,17 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			if action.WorkerPoolId != "" {
-				var err error
+
+				workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)
+
+				if err != nil {
+					return err
+				}
+
 				if recursive {
-					err = c.WorkerPoolConverter.ToHclById(action.WorkerPoolId, dependencies)
+					err = c.WorkerPoolConverter.ToHclById(workerPoolId, dependencies)
 				} else if lookup {
-					err = c.WorkerPoolConverter.ToHclLookupById(action.WorkerPoolId, dependencies)
+					err = c.WorkerPoolConverter.ToHclLookupById(workerPoolId, dependencies)
 				}
 
 				if err != nil {

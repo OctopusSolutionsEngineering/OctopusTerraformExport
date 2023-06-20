@@ -33,6 +33,7 @@ type Arguments struct {
 	ExcludeProjectVariables          ExcludeVariables
 	ExcludeProjectVariablesRegex     ExcludeVariables
 	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
+	LookUpDefaultWorkerPools         bool
 }
 
 type ExcludeVariableEnvironmentScopes []string
@@ -109,6 +110,7 @@ func ParseArgs() Arguments {
 	flag.BoolVar(&arguments.IgnoreProjectVariableChanges, "ignoreProjectVariableChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project's variables when exporting a single project. This differs from the ignoreProjectChanges option by only ignoring changes to variables while reapplying changes to all other project settings.")
 	flag.BoolVar(&arguments.IgnoreProjectGroupChanges, "ignoreProjectGroupChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's group.")
 	flag.BoolVar(&arguments.IgnoreProjectNameChanges, "ignoreProjectNameChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's name.")
+	flag.BoolVar(&arguments.LookUpDefaultWorkerPools, "lookUpDefaultWorkerPools", false, "Reference the default worker pool by name when a step uses the default worker pool.")
 	flag.Parse()
 
 	if arguments.Url == "" {

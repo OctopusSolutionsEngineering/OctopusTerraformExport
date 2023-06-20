@@ -16,6 +16,7 @@ type RunbookProcessConverter struct {
 	Client                 client.OctopusClient
 	OctopusActionProcessor OctopusActionProcessor
 	IgnoreProjectChanges   bool
+	WorkerPoolProcessor    OctopusWorkerPoolProcessor
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
@@ -112,6 +113,12 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 				actionResource.Lookup = "${octopusdeploy_runbook_process." + resourceName + ".step[" + fmt.Sprint(i) + "].action[" + fmt.Sprint(j) + "].id}"
 				dependencies.AddResource(actionResource)
 
+				workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(a.WorkerPoolId)
+
+				if err != nil {
+					return "", err
+				}
+
 				terraformResource.Step[i].Action[j] = terraform.TerraformAction{
 					Name:                          a.Name,
 					ActionType:                    a.ActionType,
@@ -119,7 +126,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 					IsDisabled:                    a.IsDisabled,
 					CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 					IsRequired:                    a.IsRequired,
-					WorkerPoolId:                  dependencies.GetResource("WorkerPools", a.WorkerPoolId),
+					WorkerPoolId:                  dependencies.GetResource("WorkerPools", workerPoolId),
 					Container:                     c.OctopusActionProcessor.ConvertContainer(a.Container, dependencies),
 					WorkerPoolVariable:            a.WorkerPoolVariable,
 					Environments:                  dependencies.GetResources("Environments", a.Environments...),

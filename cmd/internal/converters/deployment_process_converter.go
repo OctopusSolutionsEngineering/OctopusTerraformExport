@@ -16,6 +16,7 @@ type DeploymentProcessConverter struct {
 	Client                 client.OctopusClient
 	OctopusActionProcessor OctopusActionProcessor
 	IgnoreProjectChanges   bool
+	WorkerPoolProcessor    OctopusWorkerPoolProcessor
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -129,6 +130,12 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 				actionResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".step[" + fmt.Sprint(i) + "].action[" + fmt.Sprint(j) + "].id}"
 				dependencies.AddResource(actionResource)
 
+				workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(a.WorkerPoolId)
+
+				if err != nil {
+					return "", err
+				}
+
 				terraformResource.Step[i].Action[j] = terraform.TerraformAction{
 					Name:                          a.Name,
 					ActionType:                    a.ActionType,
@@ -136,7 +143,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 					IsDisabled:                    a.IsDisabled,
 					CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 					IsRequired:                    a.IsRequired,
-					WorkerPoolId:                  dependencies.GetResource("WorkerPools", a.WorkerPoolId),
+					WorkerPoolId:                  dependencies.GetResource("WorkerPools", workerPoolId),
 					Container:                     c.OctopusActionProcessor.ConvertContainer(a.Container, dependencies),
 					WorkerPoolVariable:            a.WorkerPoolVariable,
 					Environments:                  dependencies.GetResources("Environments", a.Environments...),
