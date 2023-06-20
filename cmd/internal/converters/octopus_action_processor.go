@@ -149,7 +149,8 @@ func (c OctopusActionProcessor) EscapePercents(properties map[string]string) map
 // RemoveUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
 func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[string]string) map[string]string {
 	unnecessaryFields := []string{"Octopus.Action.Package.PackageId",
-		"Octopus.Action.RunOnServer",
+		// This value is usually redundant and specified by the run_on_server property, but it doesn't work for runbooks in 0.12.2
+		// "Octopus.Action.RunOnServer",
 		"Octopus.Action.EnabledFeatures",
 		"Octopus.Action.Aws.CloudFormationTemplateParametersRaw",
 		"Octopus.Action.Package.FeedId"}
