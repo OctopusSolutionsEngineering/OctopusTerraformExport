@@ -6,8 +6,7 @@ type ConsoleWriter struct {
 }
 
 func (c ConsoleWriter) Write(files map[string]string) (string, error) {
-	for k, v := range files {
-		fmt.Println(k)
+	for _, v := range files {
 		fmt.Println(v)
 	}
 

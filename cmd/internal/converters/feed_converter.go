@@ -1,8 +1,6 @@
 package converters
 
 import (
-	"errors"
-	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -12,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type FeedConverter struct {
@@ -360,7 +359,7 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			// We don't do anything with this feed
 			return "", nil
 		} else {
-			fmt.Println(errors.New("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\"."))
+			zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
 		}
 
 		return "", nil
@@ -477,6 +476,6 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		// We don't do anything with this feed
 	} else {
-		fmt.Println(errors.New("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\"."))
+		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
 	}
 }

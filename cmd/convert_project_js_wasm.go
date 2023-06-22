@@ -5,6 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"go.uber.org/zap"
 	"sort"
 	"strings"
 	"syscall/js"
@@ -19,7 +20,7 @@ func main() {
 func convertProject() js.Func {
 	return js.FuncOf(func(this js.Value, funcArgs []js.Value) any {
 		if len(funcArgs) != 3 {
-			fmt.Println("Must pass in url, space, and project slug")
+			zap.L().Error("Must pass in url, space, and project slug")
 		}
 
 		handler := js.FuncOf(func(this js.Value, args []js.Value) interface{} {

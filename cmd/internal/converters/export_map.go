@@ -1,6 +1,8 @@
 package converters
 
-import "fmt"
+import (
+	"go.uber.org/zap"
+)
 
 type ToHcl func() (string, error)
 
@@ -59,7 +61,7 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 		}
 	}
 
-	fmt.Println("Failed to resolve " + id + " of type " + resourceType)
+	zap.L().Error("Failed to resolve " + id + " of type " + resourceType)
 
 	return ""
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
@@ -495,7 +496,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependenc
 
 	// Removing all environment scoping may not have been the intention
 	if len(filteredEnvironments) == 0 && len(variable.Scope.Environment) != 0 {
-		fmt.Println("WARNING: Variable " + variable.Name + " removed all environment scopes.")
+		zap.L().Warn("WARNING: Variable " + variable.Name + " removed all environment scopes.")
 	}
 
 	actions := dependencies.GetResources("Actions", variable.Scope.Action...)

@@ -58,6 +58,9 @@ require (
 	github.com/testcontainers/testcontainers-go v0.20.0 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.7 // indirect
 	github.com/zclconf/go-cty v1.12.1 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect

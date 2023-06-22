@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/writers"
+	"go.uber.org/zap"
 	"os"
 	"strings"
 )
@@ -74,7 +75,7 @@ func main() {
 }
 
 func errorExit(message string) {
-	fmt.Println(message)
+	zap.L().Error(message)
 	os.Exit(1)
 }
 

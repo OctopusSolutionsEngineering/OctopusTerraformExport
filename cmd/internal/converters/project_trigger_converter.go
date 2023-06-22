@@ -1,7 +1,6 @@
 package converters
 
 import (
-	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -9,6 +8,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type ProjectTriggerConverter struct {
@@ -36,7 +36,7 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, recursive bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	// Scheduled triggers with types like "OnceDailySchedule" are not supported
 	if projectTrigger.Filter.FilterType != "MachineFilter" {
-		fmt.Println("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
+		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
 		return nil
 	}
 

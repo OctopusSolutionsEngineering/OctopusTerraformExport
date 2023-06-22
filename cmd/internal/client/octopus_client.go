@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/url"
@@ -62,7 +63,7 @@ func (o OctopusClient) lookupSpaceAsName() (string, error) {
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		fmt.Println(err.Error())
+		zap.L().Error(err.Error())
 		return "", err
 	}
 
@@ -152,8 +153,6 @@ func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request
 
 	requestURL := spaceUrl + "/" + resourceType + "/" + id
 
-	fmt.Println(requestURL)
-
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 	if err != nil {
@@ -230,8 +229,6 @@ func (o OctopusClient) GetResource(resourceType string, resources any) (bool, er
 
 	requestURL := spaceUrl + "/" + resourceType
 
-	fmt.Println(requestURL)
-
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 	if err != nil {
@@ -266,7 +263,7 @@ func (o OctopusClient) GetResource(resourceType string, resources any) (bool, er
 	err = json.Unmarshal(body, resources)
 
 	if err != nil {
-		fmt.Println(string(body))
+		zap.L().Error(string(body))
 		return false, err
 	}
 
@@ -304,7 +301,7 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	err = json.Unmarshal(body, resources)
 
 	if err != nil {
-		fmt.Println(string(body))
+		zap.L().Error(string(body))
 		return false, err
 	}
 
