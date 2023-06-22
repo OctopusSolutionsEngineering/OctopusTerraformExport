@@ -62,14 +62,14 @@ jobs:
         with:
           name: Dependencies
           path: dependencies.txt
-#      - name: List Dependency Updates
-#        run: go list -u -m -f "{{if .Update}}{{.}}{{end}}" all > dependencyUpdates.txt
-#        shell: bash
-#      - name: Collect Dependency Updates
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: Dependencies Updates
-#          path: dependencyUpdates.txt
+      - name: List Dependency Updates
+        run: go list -u -m -f "{{if .Update}}{{.}}{{end}}" all > dependencyUpdates.txt
+        shell: bash
+      - name: Collect Dependency Updates
+        uses: actions/upload-artifact@v3
+        with:
+          name: Dependencies Updates
+          path: dependencyUpdates.txt
       - name: Clone the Terraform provider source
         run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
         shell: bash
