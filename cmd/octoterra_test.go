@@ -327,7 +327,7 @@ func TestProjectGroupExport(t *testing.T) {
 		for _, v := range collection.Items {
 			if v.Name == "Test" {
 				found = true
-				if *v.Description != "Test Description" {
+				if strutil.EmptyIfNil(v.Description) != "Test Description" {
 					t.Fatalf("The project group must be have a description of \"Test Description\"")
 				}
 			}
@@ -363,7 +363,7 @@ func TestAwsAccountExport(t *testing.T) {
 			for _, v := range collection.Items {
 				if v.Name == "AWS Account" {
 					found = true
-					if *v.AccessKey != "ABCDEFGHIJKLMNOPQRST" {
+					if strutil.EmptyIfNil(v.AccessKey) != "ABCDEFGHIJKLMNOPQRST" {
 						t.Fatalf("The account must be have an access key of \"ABCDEFGHIJKLMNOPQRST\"")
 					}
 				}
@@ -394,23 +394,23 @@ func TestAzureAccountExport(t *testing.T) {
 		for _, v := range collection.Items {
 			if v.Name == "Azure" {
 				found = true
-				if *v.ClientId != "2eb8bd13-661e-489c-beb9-4103efb9dbdd" {
+				if strutil.EmptyIfNil(v.ClientId) != "2eb8bd13-661e-489c-beb9-4103efb9dbdd" {
 					t.Fatalf("The account must be have a client ID of \"2eb8bd13-661e-489c-beb9-4103efb9dbdd\"")
 				}
 
-				if *v.SubscriptionNumber != "95bf77d2-64b1-4ed2-9de1-b5451e3881f5" {
+				if strutil.EmptyIfNil(v.SubscriptionNumber) != "95bf77d2-64b1-4ed2-9de1-b5451e3881f5" {
 					t.Fatalf("The account must be have a client ID of \"95bf77d2-64b1-4ed2-9de1-b5451e3881f5\"")
 				}
 
-				if *v.TenantId != "18eb006b-c3c8-4a72-93cd-fe4b293f82ee" {
+				if strutil.EmptyIfNil(v.TenantId) != "18eb006b-c3c8-4a72-93cd-fe4b293f82ee" {
 					t.Fatalf("The account must be have a client ID of \"18eb006b-c3c8-4a72-93cd-fe4b293f82ee\"")
 				}
 
-				if *v.Description != "Azure Account" {
+				if strutil.EmptyIfNil(v.Description) != "Azure Account" {
 					t.Fatalf("The account must be have a description of \"Azure Account\"")
 				}
 
-				if *v.TenantedDeploymentParticipation != "Tenanted" {
+				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Tenanted" {
 					t.Fatalf("The account must be have a tenanted deployment participation of \"Tenanted\"")
 				}
 
@@ -449,7 +449,7 @@ func TestUsernamePasswordAccountExport(t *testing.T) {
 		for _, v := range collection.Items {
 			if v.Name == "GKE" {
 				found = true
-				if *v.Username != "admin" {
+				if strutil.EmptyIfNil(v.Username) != "admin" {
 					t.Fatalf("The account must be have a username of \"admin\"")
 				}
 
@@ -457,11 +457,11 @@ func TestUsernamePasswordAccountExport(t *testing.T) {
 					t.Fatalf("The account must be have a password")
 				}
 
-				if *v.Description != "A test account" {
+				if strutil.EmptyIfNil(v.Description) != "A test account" {
 					t.Fatalf("The account must be have a description of \"A test account\"")
 				}
 
-				if *v.TenantedDeploymentParticipation != "Untenanted" {
+				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
 					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
 				}
 
@@ -500,11 +500,11 @@ func TestGcpAccountExport(t *testing.T) {
 					t.Fatalf("The account must be have a JSON key")
 				}
 
-				if *v.Description != "A test account" {
+				if strutil.EmptyIfNil(v.Description) != "A test account" {
 					t.Fatalf("The account must be have a description of \"A test account\"")
 				}
 
-				if *v.TenantedDeploymentParticipation != "Untenanted" {
+				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
 					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
 				}
 
@@ -525,62 +525,64 @@ func TestGcpAccountExport(t *testing.T) {
 // TestSshAccountExport verifies that a SSH account can be reimported with the correct settings
 func TestSshAccountExport(t *testing.T) {
 	// We set the passphrase because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
-	exportSpaceImportAndTest(t, "../test/terraform/7-sshaccount/space_creation", "../test/terraform/7-sshaccount/space_population", []string{}, []string{
-		"-var=account_ssh_cert=whatever",
-		"-var=account_ssh=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/7-sshaccount/space_creation",
+		"../test/terraform/7-sshaccount/space_population",
+		[]string{},
+		[]string{
+			"-var=account_ssh_cert=whatever",
+			"-var=account_ssh=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
+		}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Account]{}
-		err := octopusClient.GetAllResources("Accounts", &collection)
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		accountName := "SSH"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == accountName {
-				found = true
-				if v.AccountType != "SshKeyPair" {
-					t.Fatal("The account must be have a type of \"SshKeyPair\"")
-				}
+			accountName := "SSH"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == accountName {
+					found = true
+					if v.AccountType != "SshKeyPair" {
+						t.Fatal("The account must be have a type of \"SshKeyPair\"")
+					}
 
-				if *v.Username != "admin" {
-					t.Fatal("The account must be have a username of \"admin\"")
-				}
+					if strutil.EmptyIfNil(v.Username) != "admin" {
+						t.Fatal("The account must be have a username of \"admin\"")
+					}
 
-				if *v.Description != "A test account" {
-					// This appears to be a bug in the provider where the description is not set
-					t.Log("BUG: The account must be have a description of \"A test account\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						// This appears to be a bug in the provider where the description is not set
+						t.Log("BUG: The account must be have a description of \"A test account\"")
+					}
 
-				if *v.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
+					}
 
-				if len(v.TenantTags) != 0 {
-					t.Fatal("The account must be have no tenant tags")
+					if len(v.TenantTags) != 0 {
+						t.Fatal("The account must be have no tenant tags")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestAzureSubscriptionAccountExport verifies that an azure account can be reimported with the correct settings
 func TestAzureSubscriptionAccountExport(t *testing.T) {
-	// I could not figure out a combination of properties that made this resource work
-	//return
-
 	exportSpaceImportAndTest(t,
 		"../test/terraform/8-azuresubscriptionaccount/space_creation",
 		"../test/terraform/8-azuresubscriptionaccount/space_population",
@@ -608,11 +610,11 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 						t.Fatal("The account must be have a type of \"AzureSubscription\"")
 					}
 
-					if *v.Description != "A test account" {
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
 						t.Fatal("BUG: The account must be have a description of \"A test account\"")
 					}
 
-					if *v.TenantedDeploymentParticipation != "Untenanted" {
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
 						t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
 					}
 
@@ -659,11 +661,11 @@ func TestTokenAccountExport(t *testing.T) {
 					t.Fatal("The account must be have a token")
 				}
 
-				if *v.Description != "A test account" {
+				if strutil.EmptyIfNil(v.Description) != "A test account" {
 					t.Fatal("The account must be have a description of \"A test account\"")
 				}
 
-				if *v.TenantedDeploymentParticipation != "Untenanted" {
+				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
 					t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
 				}
 
@@ -703,15 +705,15 @@ func TestHelmFeedExport(t *testing.T) {
 			if v.Name == feedName {
 				found = true
 
-				if *v.FeedType != "Helm" {
+				if strutil.EmptyIfNil(v.FeedType) != "Helm" {
 					t.Fatal("The feed must have a type of \"Helm\"")
 				}
 
-				if *v.Username != "username" {
+				if strutil.EmptyIfNil(v.Username) != "username" {
 					t.Fatal("The feed must have a username of \"username\"")
 				}
 
-				if *v.FeedUri != "https://charts.helm.sh/stable/" {
+				if strutil.EmptyIfNil(v.FeedUri) != "https://charts.helm.sh/stable/" {
 					t.Fatal("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
 				}
 
@@ -768,19 +770,19 @@ func TestDockerFeedExport(t *testing.T) {
 				if v.Name == feedName {
 					found = true
 
-					if *v.FeedType != "Docker" {
+					if strutil.EmptyIfNil(v.FeedType) != "Docker" {
 						t.Fatal("The feed must have a type of \"Docker\"")
 					}
 
-					if *v.Username != "username" {
+					if strutil.EmptyIfNil(v.Username) != "username" {
 						t.Fatal("The feed must have a username of \"username\"")
 					}
 
-					if *v.ApiVersion != "v1" {
+					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
 						t.Fatal("The feed must be have a API version of \"v1\"")
 					}
 
-					if *v.FeedUri != "https://index.docker.io" {
+					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
 						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
 					}
 
@@ -844,15 +846,15 @@ func TestEcrFeedExport(t *testing.T) {
 			if v.Name == feedName {
 				found = true
 
-				if *v.FeedType != "AwsElasticContainerRegistry" {
+				if strutil.EmptyIfNil(v.FeedType) != "AwsElasticContainerRegistry" {
 					t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
 				}
 
-				if *v.AccessKey != os.Getenv("ECR_ACCESS_KEY") {
+				if strutil.EmptyIfNil(v.AccessKey) != os.Getenv("ECR_ACCESS_KEY") {
 					t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
 				}
 
-				if *v.Region != "us-east-1" {
+				if strutil.EmptyIfNil(v.Region) != "us-east-1" {
 					t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
 				}
 
@@ -904,11 +906,11 @@ func TestMavenFeedExport(t *testing.T) {
 			if v.Name == feedName {
 				found = true
 
-				if *v.FeedType != "Maven" {
+				if strutil.EmptyIfNil(v.FeedType) != "Maven" {
 					t.Fatal("The feed must have a type of \"Maven\"")
 				}
 
-				if *v.Username != "username" {
+				if strutil.EmptyIfNil(v.Username) != "username" {
 					t.Fatal("The feed must have a username of \"username\"")
 				}
 
@@ -920,7 +922,7 @@ func TestMavenFeedExport(t *testing.T) {
 					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
 				}
 
-				if *v.FeedUri != "https://repo.maven.apache.org/maven2/" {
+				if strutil.EmptyIfNil(v.FeedUri) != "https://repo.maven.apache.org/maven2/" {
 					t.Fatal("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
 				}
 
@@ -972,7 +974,7 @@ func TestNugetFeedExport(t *testing.T) {
 			if v.Name == feedName {
 				found = true
 
-				if *v.FeedType != "NuGet" {
+				if strutil.EmptyIfNil(v.FeedType) != "NuGet" {
 					t.Fatal("The feed must have a type of \"NuGet\"")
 				}
 
@@ -980,7 +982,7 @@ func TestNugetFeedExport(t *testing.T) {
 					t.Fatal("The feed must have enhanced mode set to true")
 				}
 
-				if *v.Username != "username" {
+				if strutil.EmptyIfNil(v.Username) != "username" {
 					t.Fatal("The feed must have a username of \"username\"")
 				}
 
@@ -992,7 +994,7 @@ func TestNugetFeedExport(t *testing.T) {
 					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
 				}
 
-				if *v.FeedUri != "https://index.docker.io" {
+				if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
 					t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
 				}
 
@@ -1046,7 +1048,7 @@ func TestWorkerPoolExport(t *testing.T) {
 					t.Fatal("The worker pool must be have a type of \"StaticWorkerPool\" (was \"" + v.WorkerPoolType + "\"")
 				}
 
-				if *v.Description != "A test worker pool" {
+				if strutil.EmptyIfNil(v.Description) != "A test worker pool" {
 					t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
 				}
 
@@ -1370,7 +1372,7 @@ func TestProjectChannelExport(t *testing.T) {
 					found = true
 
 					deploymentProcess := octopus.DeploymentProcess{}
-					_, err := octopusClient.GetResourceById("DeploymentProcesses", *v.DeploymentProcessId, &deploymentProcess)
+					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
 
 					if err != nil {
 						t.Fatal(err.Error())
@@ -2432,7 +2434,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				for _, v := range collection.Items {
 					if v.Name == "Test" {
 						found = true
-						if *v.Description != "Test Description" {
+						if strutil.EmptyIfNil(v.Description) != "Test Description" {
 							t.Fatalf("The project group must be have a description of \"Test Description\"")
 						}
 					}
