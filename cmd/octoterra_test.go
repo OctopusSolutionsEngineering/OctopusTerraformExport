@@ -113,6 +113,7 @@ func exportProjectImportAndTest(
 				[]string{},
 				nil,
 				false,
+				false,
 				false)
 		},
 		testFunc)
@@ -176,6 +177,7 @@ func exportProjectLookupImportAndTest(
 				excludedVars,
 				[]string{},
 				nil,
+				false,
 				false,
 				false)
 		},
