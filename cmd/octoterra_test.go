@@ -4,6 +4,7 @@ import (
 	"fmt"
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/google/uuid"
@@ -914,11 +915,11 @@ func TestMavenFeedExport(t *testing.T) {
 					t.Fatal("The feed must have a username of \"username\"")
 				}
 
-				if *v.DownloadAttempts != 5 {
+				if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
 					t.Fatal("The feed must be have a downloads attempts set to \"5\"")
 				}
 
-				if *v.DownloadRetryBackoffSeconds != 10 {
+				if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
 					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
 				}
 
@@ -986,11 +987,11 @@ func TestNugetFeedExport(t *testing.T) {
 					t.Fatal("The feed must have a username of \"username\"")
 				}
 
-				if *v.DownloadAttempts != 5 {
+				if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
 					t.Fatal("The feed must be have a downloads attempts set to \"5\"")
 				}
 
-				if *v.DownloadRetryBackoffSeconds != 10 {
+				if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
 					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
 				}
 
@@ -3030,11 +3031,11 @@ func TestGithubFeedExport(t *testing.T) {
 					t.Fatal("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
 				}
 
-				if *v.DownloadAttempts != 1 {
+				if intutil.ZeroIfNil(v.DownloadAttempts) != 1 {
 					t.Fatal("The feed must be have a downloads attempts set to \"1\"")
 				}
 
-				if *v.DownloadRetryBackoffSeconds != 30 {
+				if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 30 {
 					t.Fatal("The feed must be have a downloads retry backoff set to \"30\"")
 				}
 
