@@ -8,8 +8,9 @@ require (
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
 	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230417081345-fe8c660438ba
 	github.com/samber/lo v1.38.1
-	golang.org/x/exp v0.0.0-20230304125523-9ff063c70017
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
+	go.uber.org/zap v1.24.0
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 )
 
 require (
@@ -43,7 +44,7 @@ require (
 	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
+	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
@@ -57,15 +58,14 @@ require (
 	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/testcontainers/testcontainers-go v0.20.0 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.7 // indirect
-	github.com/zclconf/go-cty v1.12.1 // indirect
+	github.com/zclconf/go-cty v1.13.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20230323212658-478b75c54725 // indirect
 	google.golang.org/grpc v1.54.0 // indirect
