@@ -615,15 +615,17 @@ func processResources(resources []converters.ResourceDetails) (map[string]string
 }
 
 func writeFiles(files map[string]string, dest string, console bool) error {
-	writer := writers.NewFileWriter(dest)
-	output, err := writer.Write(files)
-	if err != nil {
-		return err
+	if dest != "" {
+		writer := writers.NewFileWriter(dest)
+		_, err := writer.Write(files)
+		if err != nil {
+			return err
+		}
 	}
 
 	if console {
 		consoleWriter := writers.ConsoleWriter{}
-		output, err = consoleWriter.Write(files)
+		output, err := consoleWriter.Write(files)
 		if err != nil {
 			return err
 		}
