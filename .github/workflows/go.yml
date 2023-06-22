@@ -62,9 +62,9 @@ jobs:
         with:
           name: Dependencies
           path: dependencies.txt
-      - name: List Dependency Updates
-        run: go list -u -m -f "{{if .Update}}{{.}}{{end}}" all > dependencyUpdates.txt
-        shell: bash
+#      - name: List Dependency Updates
+#        run: go list -u -m -f "{{if .Update}}{{.}}{{end}}" all > dependencyUpdates.txt
+#        shell: bash
       - name: Collect Dependency Updates
         uses: actions/upload-artifact@v3
         with:
