@@ -620,7 +620,6 @@ func writeFiles(files map[string]string, dest string, console bool) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(output)
 
 	if console {
 		consoleWriter := writers.ConsoleWriter{}
