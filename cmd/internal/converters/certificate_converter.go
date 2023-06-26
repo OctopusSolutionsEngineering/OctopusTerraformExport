@@ -87,7 +87,9 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceD
 			Take:        1,
 		}
 		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+		block := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a certificate called \""+certificate.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.certificates) != 0")
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}

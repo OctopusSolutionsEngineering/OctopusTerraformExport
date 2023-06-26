@@ -379,7 +379,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:     1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \"BuiltIn\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -394,7 +396,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -409,7 +413,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -424,7 +430,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -439,7 +447,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -454,7 +464,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -469,7 +481,9 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

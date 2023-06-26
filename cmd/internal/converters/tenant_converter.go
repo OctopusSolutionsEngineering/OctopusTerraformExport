@@ -136,7 +136,9 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bo
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a tenant called \""+tenant.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.tenants) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

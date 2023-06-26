@@ -95,10 +95,10 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
-
 			c.writeProjectNameVariable(file, projectName, resource.Name)
-
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a machine policy called \""+projectName+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.project_groups) != 0")
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

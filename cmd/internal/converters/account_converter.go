@@ -92,7 +92,9 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 			Take:        1,
 		}
 		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+		block := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.accounts) != 0")
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}
