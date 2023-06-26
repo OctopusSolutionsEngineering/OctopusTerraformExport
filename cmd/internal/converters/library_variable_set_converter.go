@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -26,7 +27,7 @@ type LibraryVariableSetConverter struct {
 }
 
 func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.LibraryVariableSet]{}
+	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -53,7 +54,7 @@ func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *Resourc
 		return nil
 	}
 
-	resource := octopus2.LibraryVariableSet{}
+	resource := octopus.LibraryVariableSet{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -72,7 +73,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 		return nil
 	}
 
-	resource := octopus2.LibraryVariableSet{}
+	resource := octopus.LibraryVariableSet{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -92,7 +93,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data.octopusdeploy_library_variable_sets." + resourceName + ".library_variable_sets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformLibraryVariableSetData{
+		terraformResource := terraform.TerraformLibraryVariableSetData{
 			Type:        "octopusdeploy_library_variable_sets",
 			Name:        resourceName,
 			Ids:         nil,
@@ -100,8 +101,11 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 			Skip:        0,
 			Take:        1,
 		}
+
 		file := hclwrite.NewEmptyFile()
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
+		block := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a library variable set called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.library_variable_sets) != 0")
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}
@@ -110,7 +114,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 	return nil
 }
 
-func (c *LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	if c.libraryVariableSetIsExcluded(resource) {
@@ -143,7 +147,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet
 		file := hclwrite.NewEmptyFile()
 
 		if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-			terraformResource := terraform2.TerraformLibraryVariableSet{
+			terraformResource := terraform.TerraformLibraryVariableSet{
 				Type:         "octopusdeploy_library_variable_set",
 				Name:         resourceName,
 				ResourceName: resource.Name,
@@ -170,7 +174,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet
 					"# data.octopusdeploy_library_variable_sets." + resourceName + ".library_variable_sets[0].id\n"),
 				SpacesBefore: 0,
 			}})
-			terraformDataResource := terraform2.TerraformLibraryVariableSetData{
+			terraformDataResource := terraform.TerraformLibraryVariableSetData{
 				Type:        "octopusdeploy_library_variable_sets",
 				Name:        resourceName,
 				Ids:         nil,
@@ -182,7 +186,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
-			variable := octopus2.VariableSet{}
+			variable := octopus.VariableSet{}
 			_, err := c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
 
 			if err != nil {
@@ -201,12 +205,12 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus2.LibraryVariableSet
 				}
 			}
 
-			terraformResource := terraform2.TerraformScriptModule{
+			terraformResource := terraform.TerraformScriptModule{
 				Type:         "octopusdeploy_script_module",
 				Name:         resourceName,
 				ResourceName: resource.Name,
 				Description:  resource.Description,
-				Script: terraform2.TerraformScriptModuleScript{
+				Script: terraform.TerraformScriptModuleScript{
 					Body:   script,
 					Syntax: scriptLanguage,
 				},
@@ -237,11 +241,11 @@ func (c *LibraryVariableSetConverter) GetResourceType() string {
 	return "LibraryVariableSets"
 }
 
-func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus2.Template, libraryName string) ([]terraform2.TerraformTemplate, []ResourceDetails) {
+func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
-	collection := make([]terraform2.TerraformTemplate, 0)
+	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
-		collection = append(collection, terraform2.TerraformTemplate{
+		collection = append(collection, terraform.TerraformTemplate{
 			Name:            v.Name,
 			Label:           v.Label,
 			HelpText:        v.HelpText,
@@ -272,7 +276,7 @@ func (c *LibraryVariableSetConverter) compileRegexes() {
 	}
 }
 
-func (c *LibraryVariableSetConverter) libraryVariableSetIsExcluded(resource octopus2.LibraryVariableSet) bool {
+func (c *LibraryVariableSetConverter) libraryVariableSetIsExcluded(resource octopus.LibraryVariableSet) bool {
 	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
 		return true
 	}

@@ -28,6 +28,20 @@ func WriteLifecycleAllAttribute(block *hclwrite.Block) {
 	block.Body().AppendBlock(lifecycleBlock)
 }
 
+// WriteLifecyclePostCondition writes a lifecycle block with a postcondition
+func WriteLifecyclePostCondition(block *hclwrite.Block, errorMessage string, condition string) {
+	postCondition := terraform.TerraformLifecyclePostCondition{
+		ErrorMessage: errorMessage,
+	}
+	postConditionBlock := gohcl.EncodeAsBlock(postCondition, "postcondition")
+	WriteUnquotedAttribute(postConditionBlock, "condition", condition)
+
+	lifecycle := terraform.TerraformLifecycleMetaArgument{}
+	lifecycleBlock := gohcl.EncodeAsBlock(lifecycle, "lifecycle")
+	lifecycleBlock.Body().AppendBlock(postConditionBlock)
+	block.Body().AppendBlock(lifecycleBlock)
+}
+
 // WriteActionProperties is used to pretty print the properties of an action, writing a multiline map for the properties,
 // and extracting JSON blobs as maps for easy reading.
 func WriteActionProperties(block *hclwrite.Block, stepName string, actionName string, properties map[string]string) {
