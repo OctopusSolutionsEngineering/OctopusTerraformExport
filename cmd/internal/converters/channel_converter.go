@@ -107,7 +107,8 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			}
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(data, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a channel called \""+channel.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.channels) != 0")
+			// Channel lookup really needs to be project specific before we can validate like this
+			//hcl.WriteLifecyclePostCondition(block, "Failed to resolve a channel called \""+channel.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.channels) != 0")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
