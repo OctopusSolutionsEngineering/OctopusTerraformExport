@@ -135,6 +135,7 @@ func exportProjectLookupImportAndTest(
 	createImportSpaceVars []string,
 	prepopulateSpaceVars []string,
 	importSpaceVars []string,
+	ignoreTenants []string,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 
 	exportImportAndTest(
@@ -183,7 +184,7 @@ func exportProjectLookupImportAndTest(
 				false,
 				false,
 				false,
-				[]string{},
+				ignoreTenants,
 				false)
 		},
 		testFunc)
@@ -2789,6 +2790,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		[]string{
 			"-var=project_test_git_base_path=.octopus/integrationtestimport",
 		},
+		[]string{"Team A"},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3222,6 +3224,7 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
+		[]string{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3303,6 +3306,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
+		[]string{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3373,6 +3377,7 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
+		[]string{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3439,6 +3444,7 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 		"../test/terraform/49-feedprojectlookup/space_population",
 		"../test/terraform/49-feedprojectlookup/space_creation",
 		"../test/terraform/49-feedprojectlookup/space_prepopulation",
+		[]string{},
 		[]string{},
 		[]string{},
 		[]string{},
