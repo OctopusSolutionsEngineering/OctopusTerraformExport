@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -19,6 +20,7 @@ type TenantConverter struct {
 	TenantVariableConverter ConverterByTenantId
 	EnvironmentConverter    ConverterById
 	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
+	ExcludeTenants          args.ExcludeTenants
 }
 
 func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -90,6 +92,11 @@ func (c TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *
 }
 
 func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+
+	// Ignore excluded tenants
+	if slices.Index(c.ExcludeTenants, tenant.Name) != -1 {
+		return nil
+	}
 
 	if recursive {
 		// Export the tenant variables
