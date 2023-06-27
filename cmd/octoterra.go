@@ -65,7 +65,8 @@ func main() {
 			args.IgnoreProjectGroupChanges,
 			args.IgnoreProjectNameChanges,
 			args.LookUpDefaultWorkerPools,
-			args.ExcludeTenants)
+			args.ExcludeTenants,
+			args.ExcludeAllTenants)
 	} else {
 		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
 	}
@@ -345,7 +346,8 @@ func ConvertProjectToTerraform(
 	ignoreProjectGroupChanges bool,
 	ignoreProjectNameChanges bool,
 	lookUpDefaultWorkerPools bool,
-	excludeTenants args.ExcludeTenants) error {
+	excludeTenants args.ExcludeTenants,
+	excludeAllTenants bool) error {
 
 	client := client.OctopusClient{
 		Url:    url,
@@ -379,6 +381,7 @@ func ConvertProjectToTerraform(
 		EnvironmentConverter:    environmentConverter,
 		TagSetConverter:         tagsetConverter,
 		ExcludeTenants:          excludeTenants,
+		ExcludeAllTenants:       excludeAllTenants,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
