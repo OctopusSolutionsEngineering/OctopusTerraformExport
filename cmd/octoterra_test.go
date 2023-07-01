@@ -1183,7 +1183,9 @@ func TestVariableSetExport(t *testing.T) {
 		"../test/terraform/18-variableset/space_creation",
 		"../test/terraform/18-variableset/space_population",
 		[]string{},
-		[]string{},
+		[]string{
+			"-var=library_variable_set_test_test_secretvariable_1=blah",
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1209,52 +1211,72 @@ func TestVariableSetExport(t *testing.T) {
 					resource := octopus.VariableSet{}
 					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
 
-					if len(resource.Variables) != 1 {
-						t.Fatal("The library variable set must have one associated variable")
-					}
+					firstVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.Variable" })
+					secondVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.SecretVariable" })
+					thirdVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.TagScopedVariable" })
 
-					if resource.Variables[0].Name != "Test.Variable" {
+					if len(firstVar) != 1 {
 						t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
 					}
 
-					if resource.Variables[0].Type != "String" {
+					if len(secondVar) != 1 {
+						t.Fatal("The library variable set variable must have a name of \"Test.SecretVariable\"")
+					}
+
+					if len(thirdVar) != 1 {
+						t.Fatal("The library variable set variable must have a name of \"Test.TagScopedVariable\"")
+					}
+
+					if firstVar[0].Type != "String" {
 						t.Fatal("The library variable set variable must have a type of \"String\"")
 					}
 
-					if strutil.EmptyIfNil(resource.Variables[0].Description) != "Test variable" {
+					if strutil.EmptyIfNil(firstVar[0].Description) != "Test variable" {
 						t.Fatal("The library variable set variable must have a description of \"Test variable\"")
 					}
 
-					if strutil.EmptyIfNil(resource.Variables[0].Value) != "True" {
+					if strutil.EmptyIfNil(firstVar[0].Value) != "True" {
 						t.Fatal("The library variable set variable must have a value of \"True\"")
 					}
 
-					if resource.Variables[0].IsSensitive {
+					if firstVar[0].IsSensitive {
 						t.Fatal("The library variable set variable must not be sensitive")
 					}
 
-					if !resource.Variables[0].IsEditable {
+					if !firstVar[0].IsEditable {
 						t.Fatal("The library variable set variable must be editable")
 					}
 
-					if strutil.EmptyIfNil(resource.Variables[0].Prompt.Description) != "test description" {
+					if strutil.EmptyIfNil(firstVar[0].Prompt.Description) != "test description" {
 						t.Fatal("The library variable set variable must have a prompt description of \"test description\"")
 					}
 
-					if strutil.EmptyIfNil(resource.Variables[0].Prompt.Label) != "test label" {
+					if strutil.EmptyIfNil(firstVar[0].Prompt.Label) != "test label" {
 						t.Fatal("The library variable set variable must have a prompt label of \"test label\"")
 					}
 
-					if !resource.Variables[0].Prompt.Required {
+					if !firstVar[0].Prompt.Required {
 						t.Fatal("The library variable set variable must have a required prompt")
 					}
 
-					if resource.Variables[0].Prompt.DisplaySettings["Octopus.ControlType"] != "Select" {
+					if firstVar[0].Prompt.DisplaySettings["Octopus.ControlType"] != "Select" {
 						t.Fatal("The library variable set variable must have a prompt control type of \"Select\"")
 					}
 
-					if resource.Variables[0].Prompt.DisplaySettings["Octopus.SelectOptions"] != "hi|there" {
+					if firstVar[0].Prompt.DisplaySettings["Octopus.SelectOptions"] != "hi|there" {
 						t.Fatal("The library variable set variable must have a prompt select option of \"hi|there\"")
+					}
+
+					if !secondVar[0].IsSensitive {
+						t.Fatal("The library variable set variable \"Test.SecretVariable\" must be sensitive")
+					}
+
+					if len(thirdVar[0].Scope.TenantTag) != 1 {
+						t.Fatal("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scopes")
+					}
+
+					if thirdVar[0].Scope.TenantTag[0] != "tag1/a" {
+						t.Fatal("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scope of \"tag1/a\"")
 					}
 				}
 			}

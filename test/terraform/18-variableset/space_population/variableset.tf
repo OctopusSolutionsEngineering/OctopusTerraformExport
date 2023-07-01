@@ -25,3 +25,29 @@ resource "octopusdeploy_variable" "octopus_admin_api_key" {
     }
   }
 }
+
+resource "octopusdeploy_variable" "secret" {
+  name = "Test.SecretVariable"
+  type = "Sensitive"
+  description = "Test variable"
+  is_sensitive = true
+  is_editable = true
+  owner_id = octopusdeploy_library_variable_set.octopus_library_variable_set.id
+  value = "True"
+}
+
+resource "octopusdeploy_variable" "tag_scoped" {
+  depends_on = [octopusdeploy_tag.tag_a]
+
+  name         = "Test.TagScopedVariable"
+  type         = "String"
+  description  = "Test variable"
+  is_sensitive = false
+  is_editable  = true
+  owner_id     = octopusdeploy_library_variable_set.octopus_library_variable_set.id
+  value        = "True"
+
+  scope {
+    tenant_tags = ["tag1/a"]
+  }
+}
