@@ -1,7 +1,6 @@
 package converters
 
 import (
-	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -153,29 +152,6 @@ func (c *RunbookConverter) writeProjectNameVariable(file *hclwrite.File, project
 	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
-}
-
-func (c *RunbookConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
-	templateMap := make([]ResourceDetails, 0)
-	collection := make([]terraform.TerraformTemplate, 0)
-	for i, v := range actionPackages {
-		collection = append(collection, terraform.TerraformTemplate{
-			Name:            v.Name,
-			Label:           v.Label,
-			HelpText:        v.HelpText,
-			DefaultValue:    v.DefaultValue,
-			DisplaySettings: v.DisplaySettings,
-		})
-
-		templateMap = append(templateMap, ResourceDetails{
-			Id:           v.Id,
-			ResourceType: "ProjectTemplates",
-			Lookup:       "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
-			FileName:     "",
-			ToHcl:        nil,
-		})
-	}
-	return collection, templateMap
 }
 
 func (c *RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *terraform.TerraformConnectivityPolicy {
