@@ -20,6 +20,8 @@ name: Go Build
 'on':
   workflow_dispatch: {}
   push: {}
+  schedule:
+    - cron: 0 20 * * 1-5
 jobs:
   build:
     runs-on: ubuntu-latest
