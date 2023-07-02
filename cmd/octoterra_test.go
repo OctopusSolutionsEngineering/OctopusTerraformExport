@@ -3101,7 +3101,7 @@ func TestGithubFeedExport(t *testing.T) {
 	})
 }
 
-// TestRunbookExport verifies that a github feed can be reimported with the correct settings
+// TestRunbookExport verifies that a runbook can be reimported with the correct settings
 func TestRunbookExport(t *testing.T) {
 	exportSpaceImportAndTest(
 		t,
@@ -3170,12 +3170,32 @@ func TestRunbookExport(t *testing.T) {
 						t.Fatal("Failed to retrieve the runbook process")
 					}
 
-					if len(process.Steps) != 1 {
-						t.Fatal("The runbook must have a 1 step, was \"" + fmt.Sprint(len(process.Steps)) + "\"")
+					if len(process.Steps) != 2 {
+						t.Fatal("The runbook must have a 2 steps, was \"" + fmt.Sprint(len(process.Steps)) + "\"")
 					}
 
 					if strutil.EmptyIfNil(process.Steps[0].Name) != "Hello world (using PowerShell)" {
 						t.Fatal("The runbook step must have a name of \"Hello world (using PowerShell)\", was \"" + strutil.EmptyIfNil(process.Steps[0].Name) + "\"")
+					}
+
+					if len(process.Steps[0].Actions[0].Packages) != 1 {
+						t.Fatal("The runbook must have one package")
+					}
+
+					if strutil.EmptyIfNil(process.Steps[0].Actions[0].Packages[0].Name) != "package1" {
+						t.Fatal("The runbook must have one package called \"package1\", was \"" + strutil.EmptyIfNil(process.Steps[0].Actions[0].Packages[0].Name) + "\"")
+					}
+
+					if strutil.EmptyIfNil(process.Steps[1].Name) != "Test" {
+						t.Fatal("The runbook step must have a name of \"Test\", was \"" + strutil.EmptyIfNil(process.Steps[1].Name) + "\"")
+					}
+
+					if len(process.Steps[1].Actions[0].Packages) != 1 {
+						t.Fatal("The runbook must have one package")
+					}
+
+					if strutil.EmptyIfNil(process.Steps[1].Actions[0].Packages[0].Name) != "" {
+						t.Fatal("The runbook must have one unnamed primary package, was \"" + strutil.EmptyIfNil(process.Steps[1].Actions[0].Packages[0].Name) + "\"")
 					}
 				}
 			}
