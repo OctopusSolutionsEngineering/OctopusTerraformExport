@@ -637,7 +637,7 @@ func writeFiles(files map[string]string, dest string, console bool) error {
 		}
 	}
 
-	if console {
+	if console || dest == "" {
 		consoleWriter := writers.ConsoleWriter{}
 		output, err := consoleWriter.Write(files)
 		if err != nil {
