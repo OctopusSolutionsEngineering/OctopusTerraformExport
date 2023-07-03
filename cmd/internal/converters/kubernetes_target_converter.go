@@ -134,7 +134,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
-				ClusterCertificate:              dependencies.GetResourcePointer("Certificate", target.Endpoint.ClusterCertificate),
+				ClusterCertificate:              dependencies.GetResourcePointer("Certificates", target.Endpoint.ClusterCertificate),
 				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 				HealthStatus:                    nil,
 				Id:                              nil,

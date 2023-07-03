@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 )
 
@@ -86,6 +87,8 @@ func (c *ResourceDetailsCollection) GetResourcePointer(resourceType string, id *
 				return &r.Lookup
 			}
 		}
+
+		zap.L().Error("Failed to resolve " + strutil.EmptyIfNil(id) + " of type " + resourceType)
 	}
 
 	empty := ""
