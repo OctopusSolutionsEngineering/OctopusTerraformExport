@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -15,7 +16,16 @@ import (
 )
 
 func main() {
-	args := args.ParseArgs()
+	args, output, err := args.ParseArgs(os.Args[1:])
+
+	if err == flag.ErrHelp {
+		fmt.Println(output)
+		os.Exit(2)
+	} else if err != nil {
+		fmt.Println("got error:", err)
+		fmt.Println("output:\n", output)
+		os.Exit(1)
+	}
 
 	if args.Url == "" {
 		errorExit("You must specify the URL with the -url argument")
@@ -24,8 +34,6 @@ func main() {
 	if args.ApiKey == "" {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
-
-	var err error = nil
 
 	projectId := args.ProjectId
 	if args.ProjectName != "" {
