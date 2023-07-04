@@ -1084,44 +1084,86 @@ func TestWorkerPoolExport(t *testing.T) {
 
 // TestEnvironmentExport verifies that an environment can be reimported with the correct settings
 func TestEnvironmentExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/16-environment/space_creation", "../test/terraform/16-environment/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/16-environment/space_creation",
+		"../test/terraform/16-environment/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Environment]{}
-		err := octopusClient.GetAllResources("Environments", &collection)
+			collection := octopus.GeneralCollection[octopus.Environment]{}
+			err := octopusClient.GetAllResources("Environments", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Development"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Development"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "A test environment" {
-					t.Fatal("The environment must be have a description of \"A test environment\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test environment" {
+						t.Fatal("The environment must be have a description of \"A test environment\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
+					}
 
-				if !v.AllowDynamicInfrastructure {
-					t.Fatal("The environment must have dynamic infrastructure enabled.")
-				}
+					if !v.AllowDynamicInfrastructure {
+						t.Fatal("The environment must have dynamic infrastructure enabled.")
+					}
 
-				if v.UseGuidedFailure {
-					t.Fatal("The environment must not have guided failure enabled.")
+					if v.UseGuidedFailure {
+						t.Fatal("The environment must not have guided failure enabled.")
+					}
+
+					jiraIntegration := lo.Filter(v.ExtensionSettings, func(item octopus.Extension, index int) bool {
+						return item.ExtensionId == "jira-integration"
+					})
+
+					if len(jiraIntegration) != 1 {
+						t.Fatal("The environment must have Jira integration settings.")
+					}
+
+					if jiraEnvironment, ok := jiraIntegration[0].Values["JiraEnvironmentType"]; !ok || jiraEnvironment != "unmapped" {
+						t.Fatal("The environment must have Jira environment type pf \"unmapped\".")
+					}
+
+					jsmIntegration := lo.Filter(v.ExtensionSettings, func(item octopus.Extension, index int) bool {
+						return item.ExtensionId == "jiraservicemanagement-integration"
+					})
+
+					if len(jsmIntegration) != 1 {
+						t.Fatal("The environment must have JSM integration settings.")
+					}
+
+					if jsmChangeControlled, ok := jsmIntegration[0].Values["JsmChangeControlled"]; !ok || !jsmChangeControlled.(bool) {
+						t.Fatal("The environment must have jsm integration enabled.")
+					}
+
+					serviceNowIntegration := lo.Filter(v.ExtensionSettings, func(item octopus.Extension, index int) bool {
+						return item.ExtensionId == "servicenow-integration"
+					})
+
+					if len(serviceNowIntegration) != 1 {
+						t.Fatal("The environment must have service integration settings.")
+					}
+
+					if snowChangeControlled, ok := serviceNowIntegration[0].Values["ServiceNowChangeControlled"]; !ok || !snowChangeControlled.(bool) {
+						t.Fatal("The environment must have service now integration enabled.")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an environment called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an environment called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestLifecycleExport verifies that a lifecycle can be reimported with the correct settings
