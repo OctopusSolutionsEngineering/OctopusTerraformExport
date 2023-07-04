@@ -19,7 +19,9 @@ permissions:
 name: Go Build
 'on':
   workflow_dispatch: {}
-  push: {}
+  push:
+    paths-ignore:
+      - '**/*.md'
 jobs:
   build:
     runs-on: ubuntu-latest
