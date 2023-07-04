@@ -20,10 +20,6 @@ resource octopusdeploy_kubernetes_cluster_deployment_target test_k8s {
   thumbprint                        = ""
   uri                               = ""
 
-  endpoint {
-    communication_style = "Kubernetes"
-  }
-
   container {
     feed_id = ""
     image   = ""

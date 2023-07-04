@@ -20,15 +20,6 @@ resource octopusdeploy_kubernetes_cluster_deployment_target test_eks{
   thumbprint                        = ""
   uri                               = ""
 
-  endpoint {
-    communication_style    = "Kubernetes"
-    cluster_certificate    = ""
-    cluster_url            = "https://cluster"
-    namespace              = ""
-    skip_tls_verification  = true
-    default_worker_pool_id = ""
-  }
-
   container {
     feed_id = ""
     image   = ""
