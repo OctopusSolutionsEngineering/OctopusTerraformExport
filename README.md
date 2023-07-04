@@ -1,7 +1,5 @@
 # Octopus Terraform Exporter
-![Coverage](https://img.shields.io/badge/Coverage-81.2%25-brightgreen)
-
-![Go Report Card](https://goreportcard.com/badge/OctopusSolutionsEngineering/OctopusTerraformExport)
+![Coverage](https://img.shields.io/badge/Coverage-81.2%25-brightgreen) ![Go Report Card](https://goreportcard.com/badge/OctopusSolutionsEngineering/OctopusTerraformExport)
 
 This app exports an Octopus space to the associated Terraform resources for use with the 
 [Octopus Terraform Provider](https://registry.terraform.io/providers/OctopusDeployLabs/octopusdeploy).
