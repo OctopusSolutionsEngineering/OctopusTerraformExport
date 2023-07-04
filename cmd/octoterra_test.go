@@ -2064,6 +2064,62 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 		})
 }
 
+// TestK8sTargetGcpAuthExport verifies that a k8s machine with google authentication can be reimported with the correct settings
+func TestK8sTargetGcpAuthExport(t *testing.T) {
+	exportSpaceImportAndTest(t,
+		"../test/terraform/53-k8stargetgcp/space_creation",
+		"../test/terraform/53-k8stargetgcp/space_population",
+		[]string{},
+		[]string{"-var=account_google=secretgoeshere"},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			foundResource := false
+
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
+
+					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
+						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+					}
+
+					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesGoogleCloud" {
+						t.Fatalf("Target must use GCP authentication")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.Authentication.Project) != "myproject" {
+						t.Fatalf("Target must set the project to myproject")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.Authentication.ClusterName) != "mycluster" {
+						t.Fatalf("Target must set the cluster name to mycluster")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.Authentication.Region) != "region" {
+						t.Fatalf("Target must set the region to region")
+					}
+				}
+			}
+
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
 // TestSshTargetExport verifies that a ssh machine can be reimported with the correct settings
 func TestSshTargetExport(t *testing.T) {
 	// See https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/blob/main/octopusdeploy/schema_ssh_key_account.go#L16
