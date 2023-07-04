@@ -1,0 +1,54 @@
+name: Go Test
+'on':
+  workflow_dispatch: {}
+  schedule:
+    - cron: 0 20 * * 1-5
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ^1.20
+      - name: Install Dependencies
+        run: go get ./...
+        shell: bash
+      - name: Clone the Terraform provider source
+        run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
+        shell: bash
+      - name: Build the Terraform provider from source
+        run: go build -o terraform-provider-octopusdeploy
+        working-directory: terraform-provider-octopusdeploy
+      - name: Override the location used by Terraform provider
+        run: |-
+          cat <<EOT >> ~/.terraformrc
+          provider_installation {
+              dev_overrides {
+              "octopusdeploylabs/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
+            }
+            direct {}
+          }
+          EOT
+      - name: Test
+        run: |-
+          go install gotest.tools/gotestsum@latest
+          gotestsum --junitfile results.xml -- -v -timeout 0 -json ./...
+        shell: bash
+        env:
+          LICENSE: ${{ secrets.LICENSE }}
+          ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
+          ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
+          GIT_CREDENTIAL: ${{ secrets.GIT_CREDENTIAL }}
+          OCTOTESTSKIPINIT: true
+          OCTODISABLEOCTOCONTAINERLOGGING: true
+          OCTOTESTDUMPSTATE: true
+          OCTOTESTDEFAULTSPACEID: Spaces-2
+          GOMAXPROCS: 1
