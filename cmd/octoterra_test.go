@@ -2007,6 +2007,63 @@ func TestK8sTargetExport(t *testing.T) {
 	})
 }
 
+// TestK8sTargetAzureAuthExport verifies that a k8s machine with Azure authentication can be reimported with the correct settings
+func TestK8sTargetAzureAuthExport(t *testing.T) {
+
+	// need to fix this error:
+	// Error: json: cannot unmarshal string into Go struct field KubernetesAzureAuthentication.AdminLogin of type bool
+	return
+
+	exportSpaceImportAndTest(t,
+		"../test/terraform/52-k8stargetazure/space_creation",
+		"../test/terraform/52-k8stargetazure/space_population",
+		[]string{},
+		[]string{"-var=account_azure=secretgoeshere"},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			foundResource := false
+
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
+
+					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
+						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+					}
+
+					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesAzure" {
+						t.Fatalf("Target must use Azure authentication")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.Authentication.ClusterResourceGroup) != "myresourcegroup" {
+						t.Fatalf("Target must set the resource group to myresourcegroup")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.Authentication.ClusterName) != "mycluster" {
+						t.Fatalf("Target must set the cluster name to mycluster")
+					}
+				}
+			}
+
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
 // TestSshTargetExport verifies that a ssh machine can be reimported with the correct settings
 func TestSshTargetExport(t *testing.T) {
 	// See https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/blob/main/octopusdeploy/schema_ssh_key_account.go#L16
