@@ -104,7 +104,7 @@ jobs:
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 3
+          GOMAXPROCS: 2
       - name: Archive code coverage results
         if: always()
         uses: actions/upload-artifact@v3
