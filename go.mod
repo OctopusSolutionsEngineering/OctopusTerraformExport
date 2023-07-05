@@ -6,7 +6,6 @@ require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.28.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
-	github.com/mcasperson/OctopusTerraformTestFramework v0.0.0-20230417081345-fe8c660438ba
 	github.com/samber/lo v1.38.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
