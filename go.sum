@@ -132,6 +132,8 @@ github.com/Microsoft/go-winio v0.6.0/go.mod h1:cTAf44im0RAYeL23bpB+fzCyDH2MJiz2B
 github.com/Microsoft/hcsshim v0.10.0-rc.7 h1:HBytQPxcv8Oy4244zbQbe6hnOnx544eL5QPUqhJldz8=
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.21.0 h1:7Tz0Y2la30RzYpg3fl/y9HZ1F2MmYJlWn3rjc6EIB0s=
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.21.0/go.mod h1:GZmFu6LmN8Yg0tEoZx3ytk9FnaH+84cWm7u5TdWZC6E=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20230705013726-f2b1cf2d21de h1:QgJidNXbBNSSLnJlRjFbFSnX6Xy9L2ujiVVYRLrLN+o=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20230705013726-f2b1cf2d21de/go.mod h1:ltRYzU6Dw2WB09wDGB/zofUkB8Un13Qx30eqsw77SFw=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
 github.com/agext/levenshtein v1.2.3/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
@@ -387,6 +389,8 @@ github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG
 github.com/tchap/go-patricia/v2 v2.3.1 h1:6rQp39lgIYZ+MHmdEq4xzuk1t7OdC35z/xm0BGhTkes=
 github.com/testcontainers/testcontainers-go v0.20.0 h1:ASrcJee7vcWNw43yUgL2n8KA5IOywrF031GawlrkVkE=
 github.com/testcontainers/testcontainers-go v0.20.0/go.mod h1:zb+NOlCQBkZ7RQp4QI+YMIHyO2CQ/qsXzNF5eLJ24SY=
+github.com/testcontainers/testcontainers-go v0.20.1 h1:mK15UPJ8c5P+NsQKmkqzs/jMdJt6JMs5vlw2y4j92c0=
+github.com/testcontainers/testcontainers-go v0.20.1/go.mod h1:zb+NOlCQBkZ7RQp4QI+YMIHyO2CQ/qsXzNF5eLJ24SY=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/urfave/cli v1.22.12 h1:igJgVw1JdKH+trcLWLeLwZjU9fEfPesQ+9/e4MQ44S8=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=

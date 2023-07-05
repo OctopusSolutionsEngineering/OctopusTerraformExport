@@ -16,6 +16,7 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20230705013726-f2b1cf2d21de // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
@@ -56,7 +57,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
-	github.com/testcontainers/testcontainers-go v0.20.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.20.1 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.7 // indirect
 	github.com/zclconf/go-cty v1.13.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
