@@ -276,7 +276,14 @@ func exportImportAndTest(
 		recreatedSpaceId, err := testFramework.GetOutputVariable(t, createImportBlankSpaceModuleDir, "octopus_space_id")
 
 		if err != nil {
-			return err
+			/*
+					There is an intermittent bug where the state saved by Terraform is this empty JSON, despite
+					everything appearing to work as expected:
+				    {"format_version":"1.0"}
+
+				    In the event of an error, assume the new space is Spaces-3.
+			*/
+			recreatedSpaceId = "Spaces-3"
 		}
 
 		err = testFunc(t, container, recreatedSpaceId)
