@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/test"
 	"github.com/google/uuid"
+	cp "github.com/otiai10/copy"
 	"github.com/samber/lo"
 	"k8s.io/utils/strings/slices"
 	"os"
@@ -40,12 +41,28 @@ func exportSpaceImportAndTest(
 	importSpaceVars []string,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 
+	/*
+		The directory holding the module to create the space must be copied to allow for parallel
+		test execution.
+	*/
+	dir, err := os.MkdirTemp("", "octoterra")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	err = cp.Copy("../test/terraform/z-createspace", dir)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	exportImportAndTest(
 		t,
 		createSourceBlankSpaceModuleDir,
 		"",
 		populateSourceSpaceModuleDir,
-		"../test/terraform/z-createspace",
+		dir,
 		"",
 		createSourceSpaceVars,
 		[]string{},
@@ -283,6 +300,7 @@ func exportImportAndTest(
 
 				    In the event of an error, assume the new space is Spaces-3.
 			*/
+			t.Log("Falling back to default value of Spaces-3")
 			recreatedSpaceId = "Spaces-3"
 		}
 
@@ -294,39 +312,45 @@ func exportImportAndTest(
 
 // TestSpaceExport verifies that a space can be reimported with the correct settings
 func TestSpaceExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/1-singlespace/space_creation", "../test/terraform/1-singlespace/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/1-singlespace/space_creation",
+		"../test/terraform/1-singlespace/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		space := octopus.Space{}
-		err := octopusClient.GetSpace(&space)
+			space := octopus.Space{}
+			err := octopusClient.GetSpace(&space)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		if space.Name != "Test3" {
-			t.Fatalf("New space must have the name \"Test3\"")
-		}
+			if space.Name != "Test3" {
+				t.Fatalf("New space must have the name \"Test3\"")
+			}
 
-		if *space.Description != "My test space" {
-			t.Fatalf("New space must have the name \"My test space\"")
-		}
+			if *space.Description != "My test space" {
+				t.Fatalf("New space must have the name \"My test space\"")
+			}
 
-		if space.IsDefault {
-			t.Fatalf("New space must not be the default one")
-		}
+			if space.IsDefault {
+				t.Fatalf("New space must not be the default one")
+			}
 
-		if space.TaskQueueStopped {
-			t.Fatalf("New space must not have the task queue stopped")
-		}
+			if space.TaskQueueStopped {
+				t.Fatalf("New space must not have the task queue stopped")
+			}
 
-		if slices.Index(space.SpaceManagersTeams, "teams-administrators") == -1 {
-			t.Fatalf("New space must have teams-administrators as a manager team")
-		}
+			if slices.Index(space.SpaceManagersTeams, "teams-administrators") == -1 {
+				t.Fatalf("New space must have teams-administrators as a manager team")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectGroupExport verifies that a project group can be reimported with the correct settings

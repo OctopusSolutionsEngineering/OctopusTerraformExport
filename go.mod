@@ -4,8 +4,10 @@ go 1.19
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.28.0
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20230705105638-f5ef7c07973b
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
+	github.com/otiai10/copy v1.12.0
 	github.com/samber/lo v1.38.1
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
@@ -15,7 +17,6 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20230705105638-f5ef7c07973b // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
