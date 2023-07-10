@@ -294,6 +294,55 @@ func (c ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectN
 	file.Body().AppendBlock(block)
 }
 
+func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectName string, projectResourceDescription string) {
+	sanitizedProjectName := sanitizer.SanitizeName(projectName)
+
+	descriptionPrefixVariable := terraform.TerraformVariable{
+		Name:        sanitizedProjectName + "_description_prefix",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "An optional prefix to add to the project description",
+	}
+
+	prefixBlock := gohcl.EncodeAsBlock(descriptionPrefixVariable, "variable")
+	hcl.WriteUnquotedAttribute(prefixBlock, "type", "string")
+	file.Body().AppendBlock(prefixBlock)
+
+	descriptionSuffixVariable := terraform.TerraformVariable{
+		Name:        sanitizedProjectName + "_description_suffix",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "An optional suffix to add to the project description",
+	}
+
+	suffixBlock := gohcl.EncodeAsBlock(descriptionSuffixVariable, "variable")
+	hcl.WriteUnquotedAttribute(suffixBlock, "type", "string")
+	file.Body().AppendBlock(suffixBlock)
+
+	/*
+		The default value wraps the existing project description with a prefix and suffix to allow the final
+		description to be easily modified.
+	*/
+	descriptionDefault := "${var." + sanitizedProjectName + "_description_prefix}" +
+		projectResourceDescription +
+		"${var." + sanitizedProjectName + "_description_suffix}"
+
+	descriptionVariable := terraform.TerraformVariable{
+		Name:        sanitizedProjectName + "_description",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The description of the project exported from " + projectResourceDescription,
+		Default:     &descriptionDefault,
+	}
+
+	block := gohcl.EncodeAsBlock(descriptionVariable, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+}
+
 func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
