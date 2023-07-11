@@ -135,7 +135,6 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			AutoCreateRelease:                      project.AutoCreateRelease,
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
-			Description:                            strutil.NilIfEmpty("${var." + projectName + "_description_prefix}${var." + projectName + "_description}${var." + projectName + "_description_suffix}"),
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
 			IsDisabled:                             project.IsDisabled,
 			IsVersionControlled:                    project.IsVersionControlled,
@@ -207,6 +206,8 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		hcl.WriteUnquotedAttribute(block, "description", "\"${var."+projectName+"_description_prefix}${var."+projectName+"_description}${var."+projectName+"_description_suffix}\"")
 
 		if c.IgnoreProjectChanges {
 			hcl.WriteLifecycleAllAttribute(block)
