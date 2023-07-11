@@ -101,9 +101,9 @@ func ParseBoolPointer(input *string) *bool {
 
 func UnEscapeDollar(fileMap map[string]string) map[string]string {
 	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
-	regex := regexp.MustCompile(`"\$\$\{(.*?)}"`)
+	regex := regexp.MustCompile(`\$\$\{(.*?)}`)
 	for k, v := range fileMap {
-		fileMap[k] = regex.ReplaceAllString(v, "\"${$1}\"")
+		fileMap[k] = regex.ReplaceAllString(v, "${$1}")
 	}
 
 	return fileMap

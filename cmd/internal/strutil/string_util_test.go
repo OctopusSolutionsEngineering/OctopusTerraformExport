@@ -109,14 +109,16 @@ func TestUnEscapeDollar(t *testing.T) {
 		"entry2": "$${value}",
 		"entry3": "\"value\"",
 		"entry4": "value",
+		"entry5": "\"$${value}blah$${value}\"",
+		"entry6": "default     = \"$${var.project_noopterraform_description_prefix}NoOpTerraform$${var.project_noopterraform_description_suffix}\"",
 	})
 
 	if unescapedMap["entry1"] != "\"${value}\"" {
 		t.Fatalf("result should have been \"${value}\"")
 	}
 
-	if unescapedMap["entry2"] != "$${value}" {
-		t.Fatalf("result should have been $${value}")
+	if unescapedMap["entry2"] != "${value}" {
+		t.Fatalf("result should have been ${value}")
 	}
 
 	if unescapedMap["entry3"] != "\"value\"" {
@@ -125,6 +127,14 @@ func TestUnEscapeDollar(t *testing.T) {
 
 	if unescapedMap["entry4"] != "value" {
 		t.Fatalf("result should have been value")
+	}
+
+	if unescapedMap["entry5"] != "\"${value}blah${value}\"" {
+		t.Fatalf("result should have been \"${value}\"blah\"${value}\"")
+	}
+
+	if unescapedMap["entry6"] != "default     = \"${var.project_noopterraform_description_prefix}NoOpTerraform${var.project_noopterraform_description_suffix}\"" {
+		t.Fatalf("result should have been default     = \"${var.project_noopterraform_description_prefix}NoOpTerraform${var.project_noopterraform_description_suffix}\"")
 	}
 }
 

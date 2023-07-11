@@ -348,17 +348,15 @@ func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, p
 		The default value wraps the existing project description with a prefix and suffix to allow the final
 		description to be easily modified.
 	*/
-	descriptionDefault := "${var." + sanitizedProjectName + "_description_prefix}" +
-		projectResourceDescription +
-		"${var." + sanitizedProjectName + "_description_suffix}"
-
 	descriptionVariable := terraform.TerraformVariable{
 		Name:        sanitizedProjectName + "_description",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
 		Description: "The description of the project exported from " + projectResourceDescription,
-		Default:     &descriptionDefault,
+		Default: strutil.NilIfEmpty("${var." + sanitizedProjectName + "_description_prefix}" +
+			projectResourceDescription +
+			"${var." + sanitizedProjectName + "_description_suffix}"),
 	}
 
 	block := gohcl.EncodeAsBlock(descriptionVariable, "variable")
