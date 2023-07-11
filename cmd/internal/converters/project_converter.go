@@ -135,7 +135,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			AutoCreateRelease:                      project.AutoCreateRelease,
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
-			Description:                            project.Description,
+			Description:                            strutil.NilIfEmpty("${var." + projectName + "_description}"),
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
 			IsDisabled:                             project.IsDisabled,
 			IsVersionControlled:                    project.IsVersionControlled,
@@ -174,6 +174,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 		file := hclwrite.NewEmptyFile()
 
 		c.writeProjectNameVariable(file, projectName, project.Name)
+		c.writeProjectDescriptionVariable(file, projectName, project.Name)
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
