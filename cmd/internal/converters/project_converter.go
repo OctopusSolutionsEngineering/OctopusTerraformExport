@@ -235,10 +235,32 @@ func (c ProjectConverter) writeGitUrlVar(projectName string, project octopus.Pro
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectConverter) writeProtectedBranchesVar(projectName string, project octopus.Project, file *hclwrite.File) {
-	sanitizedList := lo.Map(project.PersistenceSettings.ProtectedBranchNamePatterns, func(x string, index int) string {
+// Octopus has two places where protected branches are defined: the explicit list of branches and optionally the default branch.
+// The TF provider only has the explicit list. So getProtectedBranches builds a single list taking these two sources
+// into account.
+func (c ProjectConverter) getProtectedBranches(project octopus.Project) []string {
+	branches := lo.Map(project.PersistenceSettings.ProtectedBranchNamePatterns, func(x string, index int) string {
 		return strings.ReplaceAll(x, "\"", "\\\"")
 	})
+
+	if project.PersistenceSettings.ProtectedDefaultBranch {
+		branches = append(branches, project.PersistenceSettings.DefaultBranch)
+	}
+
+	return branches
+}
+
+func (c ProjectConverter) writeProtectedBranchesVar(projectName string, project octopus.Project, file *hclwrite.File) {
+
+	sanitizedList := c.getProtectedBranches(project)
+
+	if project.PersistenceSettings.ProtectedDefaultBranch {
+		sanitizedList = []string{project.PersistenceSettings.DefaultBranch}
+	} else {
+		sanitizedList = lo.Map(project.PersistenceSettings.ProtectedBranchNamePatterns, func(x string, index int) string {
+			return strings.ReplaceAll(x, "\"", "\\\"")
+		})
+	}
 
 	list := "[]"
 	if len(sanitizedList) != 0 {
