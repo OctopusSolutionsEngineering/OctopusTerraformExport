@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func StrPointer(input string) *string {
+	return &input
+}
+
 func NilIfEmptyPointer(input *string) *string {
 	if input == nil {
 		return nil

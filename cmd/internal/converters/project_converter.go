@@ -135,7 +135,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			AutoCreateRelease:                      project.AutoCreateRelease,
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
-			Description:                            strutil.NilIfEmpty("${var." + projectName + "_description}"),
+			Description:                            strutil.NilIfEmpty("${var." + projectName + "_description_prefix}${var." + projectName + "_description}${var." + projectName + "_description_suffix}"),
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
 			IsDisabled:                             project.IsDisabled,
 			IsVersionControlled:                    project.IsVersionControlled,
@@ -174,7 +174,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 		file := hclwrite.NewEmptyFile()
 
 		c.writeProjectNameVariable(file, projectName, project.Name)
-		c.writeProjectDescriptionVariable(file, projectName, project.Name)
+		c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
@@ -317,15 +317,16 @@ func (c ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectN
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectName string, projectResourceDescription string) {
-	sanitizedProjectName := sanitizer.SanitizeName(projectName)
+func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) {
+	sanitizedProjectName := sanitizer.SanitizeName(projectResourceName)
 
 	descriptionPrefixVariable := terraform.TerraformVariable{
 		Name:        sanitizedProjectName + "_description_prefix",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
-		Description: "An optional prefix to add to the project description",
+		Description: "An optional prefix to add to the project description for the project " + projectName,
+		Default:     strutil.StrPointer(""),
 	}
 
 	prefixBlock := gohcl.EncodeAsBlock(descriptionPrefixVariable, "variable")
@@ -337,7 +338,8 @@ func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, p
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
-		Description: "An optional suffix to add to the project description",
+		Description: "An optional suffix to add to the project description for the project " + projectName,
+		Default:     strutil.StrPointer(""),
 	}
 
 	suffixBlock := gohcl.EncodeAsBlock(descriptionSuffixVariable, "variable")
@@ -353,10 +355,8 @@ func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, p
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
-		Description: "The description of the project exported from " + projectResourceDescription,
-		Default: strutil.NilIfEmpty("${var." + sanitizedProjectName + "_description_prefix}" +
-			projectResourceDescription +
-			"${var." + sanitizedProjectName + "_description_suffix}"),
+		Description: "The description of the project exported from " + projectName,
+		Default:     strutil.StrPointer(projectResourceDescription),
 	}
 
 	block := gohcl.EncodeAsBlock(descriptionVariable, "variable")
