@@ -1263,7 +1263,7 @@ func TestVariableSetExport(t *testing.T) {
 		"../test/terraform/18-variableset/space_population",
 		[]string{},
 		[]string{
-			"-var=library_variable_set_test_test_secretvariable_1=blah",
+			"-var=library_variable_set_variables_test_test_secretvariable_1=blah",
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
