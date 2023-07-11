@@ -123,7 +123,9 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 
 	thisResource := ResourceDetails{}
 
-	resourceName := "library_variable_set_" + sanitizer.SanitizeName(resource.Name)
+	// embedding the type allows files to be distinguished by script module and variable
+	resourceName := "library_variable_set_" + sanitizer.SanitizeName(strutil.EmptyIfNil(resource.ContentType)) +
+		"_" + sanitizer.SanitizeName(resource.Name)
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName)
