@@ -105,7 +105,8 @@ func ParseBoolPointer(input *string) *bool {
 
 func UnEscapeDollar(fileMap map[string]string) map[string]string {
 	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
-	regex := regexp.MustCompile(`\$\$\{(.*?)}`)
+	// Assume any reference to a var, data, or an octopusdeploy resource must be treated as an interpolated string
+	regex := regexp.MustCompile(`\$\$\{((var\.|data\.|octopusdeploy[^.]+\.).*?)}`)
 	for k, v := range fileMap {
 		fileMap[k] = regex.ReplaceAllString(v, "${$1}")
 	}

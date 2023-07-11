@@ -105,20 +105,21 @@ func TestNilIfFalse(t *testing.T) {
 
 func TestUnEscapeDollar(t *testing.T) {
 	unescapedMap := UnEscapeDollar(map[string]string{
-		"entry1": "\"$${value}\"",
-		"entry2": "$${value}",
+		"entry1": "\"$${var.value}\"",
+		"entry2": "$${var.value}",
 		"entry3": "\"value\"",
 		"entry4": "value",
-		"entry5": "\"$${value}blah$${value}\"",
+		"entry5": "\"$${var.value}blah$${var.value}\"",
 		"entry6": "default     = \"$${var.project_noopterraform_description_prefix}NoOpTerraform$${var.project_noopterraform_description_suffix}\"",
+		"entry7": "environments = [\"$${data.octopusdeploy_environments.test.environments[0].id}\"]",
 	})
 
-	if unescapedMap["entry1"] != "\"${value}\"" {
-		t.Fatalf("result should have been \"${value}\"")
+	if unescapedMap["entry1"] != "\"${var.value}\"" {
+		t.Fatalf("result should have been \"${var.value}\"")
 	}
 
-	if unescapedMap["entry2"] != "${value}" {
-		t.Fatalf("result should have been ${value}")
+	if unescapedMap["entry2"] != "${var.value}" {
+		t.Fatalf("result should have been ${var.value}")
 	}
 
 	if unescapedMap["entry3"] != "\"value\"" {
@@ -129,12 +130,16 @@ func TestUnEscapeDollar(t *testing.T) {
 		t.Fatalf("result should have been value")
 	}
 
-	if unescapedMap["entry5"] != "\"${value}blah${value}\"" {
-		t.Fatalf("result should have been \"${value}\"blah\"${value}\"")
+	if unescapedMap["entry5"] != "\"${var.value}blah${var.value}\"" {
+		t.Fatalf("result should have been \"${var.value}\"blah\"${var.value}\"")
 	}
 
 	if unescapedMap["entry6"] != "default     = \"${var.project_noopterraform_description_prefix}NoOpTerraform${var.project_noopterraform_description_suffix}\"" {
 		t.Fatalf("result should have been default     = \"${var.project_noopterraform_description_prefix}NoOpTerraform${var.project_noopterraform_description_suffix}\"")
+	}
+
+	if unescapedMap["entry7"] != "environments = [\"${data.octopusdeploy_environments.test.environments[0].id}\"]" {
+		t.Fatalf("result should have been environments = [\"${data.octopusdeploy_environments.test.environments[0].id}\"]")
 	}
 }
 
