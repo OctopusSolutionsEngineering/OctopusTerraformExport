@@ -109,6 +109,8 @@ func TestUnEscapeDollar(t *testing.T) {
 		"entry2": "$${value}",
 		"entry3": "\"value\"",
 		"entry4": "value",
+		"entry6": "default     = \"$${var.project_noopterraform_description_prefix}NoOpTerraform$${var.project_noopterraform_description_suffix}\"",
+		"entry7": "environments = [\"$${data.octopusdeploy_environments.test.environments[0].id}\"]",
 	})
 
 	if unescapedMap["entry1"] != "\"${value}\"" {
@@ -125,6 +127,16 @@ func TestUnEscapeDollar(t *testing.T) {
 
 	if unescapedMap["entry4"] != "value" {
 		t.Fatalf("result should have been value")
+	}
+
+	// This is a use case that does match the simple expectations of one single interpolation taking up the whole string.
+	// Cases like this would be handled by manually adding the attribute to the HCL block.
+	if unescapedMap["entry6"] != "default     = \"$${var.project_noopterraform_description_prefix}NoOpTerraform$${var.project_noopterraform_description_suffix}\"" {
+		t.Fatalf("result should have been default     = \"$${var.project_noopterraform_description_prefix}NoOpTerraform$${var.project_noopterraform_description_suffix}\"")
+	}
+
+	if unescapedMap["entry7"] != "environments = [\"${data.octopusdeploy_environments.test.environments[0].id}\"]" {
+		t.Fatalf("result should have been environments = [\"$${data.octopusdeploy_environments.test.environments[0].id}\"]")
 	}
 }
 
