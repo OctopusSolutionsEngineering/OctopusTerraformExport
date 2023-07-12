@@ -229,7 +229,7 @@ func exportProjectLookupImportAndTest(
 				Console:                          true,
 				ProjectId:                        projectId,
 				ProjectName:                      "",
-				LookupProjectDependencies:        false,
+				LookupProjectDependencies:        true,
 				IgnoreCacManagedValues:           false,
 				BackendBlock:                     "",
 				DetachProjectTemplates:           false,
