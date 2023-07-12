@@ -35,48 +35,18 @@ func main() {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
-	projectId := args.ProjectId
 	if args.ProjectName != "" {
-		projectId, err = ConvertProjectNameToId(args.Url, args.Space, args.ApiKey, args.ProjectName)
+		args.ProjectId, err = ConvertProjectNameToId(args.Url, args.Space, args.ApiKey, args.ProjectName)
 
 		if err != nil {
 			errorExit(err.Error())
 		}
 	}
 
-	if projectId != "" {
-		err = ConvertProjectToTerraform(
-			args.Url,
-			args.Space,
-			args.ApiKey,
-			args.Destination,
-			args.Console,
-			projectId,
-			args.LookupProjectDependencies,
-			args.IgnoreCacManagedValues,
-			args.BackendBlock,
-			args.DefaultSecretVariableValues,
-			args.ProviderVersion,
-			args.DetachProjectTemplates,
-			args.ExcludeAllRunbooks,
-			args.ExcludeRunbooks,
-			args.ExcludeRunbooksRegex,
-			args.ExcludeProvider,
-			args.IncludeOctopusOutputVars,
-			args.ExcludeLibraryVariableSets,
-			args.ExcludeLibraryVariableSetsRegex,
-			args.IgnoreProjectChanges,
-			args.IgnoreProjectVariableChanges,
-			args.ExcludeProjectVariables,
-			args.ExcludeProjectVariablesRegex,
-			args.ExcludeVariableEnvironmentScopes,
-			args.IgnoreProjectGroupChanges,
-			args.IgnoreProjectNameChanges,
-			args.LookUpDefaultWorkerPools,
-			args.ExcludeTenants,
-			args.ExcludeAllTenants)
+	if args.ProjectId != "" {
+		err = ConvertProjectToTerraform(args)
 	} else {
-		err = ConvertSpaceToTerraform(args.Url, args.Space, args.ApiKey, args.Destination, args.Console, args.DetachProjectTemplates)
+		err = ConvertSpaceToTerraform(args)
 	}
 
 	if err != nil {
@@ -108,11 +78,11 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	return "", errors.New("did not find project with name " + name)
 }
 
-func ConvertSpaceToTerraform(url string, space string, apiKey string, dest string, console bool, detachProjectTemplates bool) error {
+func ConvertSpaceToTerraform(args args.Arguments) error {
 	client := client.OctopusClient{
-		Url:    url,
-		Space:  space,
-		ApiKey: apiKey,
+		Url:    args.Url,
+		Space:  args.Space,
+		ApiKey: args.ApiKey,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
@@ -150,6 +120,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -157,12 +128,14 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -175,12 +148,14 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -188,12 +163,14 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -201,6 +178,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	variableSetConverter := converters.VariableSetConverter{
@@ -226,7 +204,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
-		LookupDefaultWorkerPool: false,
+		LookupDefaultWorkerPool: args.LookUpDefaultWorkerPools,
 		Client:                  client,
 	}
 
@@ -239,7 +217,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: false,
+				DetachProjectTemplates: args.DetachProjectTemplates,
 				WorkerPoolProcessor:    workerPoolProcessor,
 			},
 			IgnoreProjectChanges: false,
@@ -274,7 +252,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 					AccountConverter:       accountConverter,
 					WorkerPoolConverter:    workerPoolConverter,
 					EnvironmentConverter:   environmentConverter,
-					DetachProjectTemplates: false,
+					DetachProjectTemplates: args.DetachProjectTemplates,
 					WorkerPoolProcessor:    workerPoolProcessor,
 				},
 				IgnoreProjectChanges: false,
@@ -289,7 +267,7 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 			RunbookConverter:       &runbookConverter,
 			IgnoreCacManagedValues: false,
 			ExcludeAllRunbooks:     false,
-			IgnoreProjectChanges:   false,
+			IgnoreProjectChanges:   args.IgnoreProjectChanges,
 		},
 		TenantConverter:                   tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -321,55 +299,26 @@ func ConvertSpaceToTerraform(url string, space string, apiKey string, dest strin
 		return err
 	}
 
-	err = writeFiles(strutil.UnEscapeDollar(hcl), dest, console)
+	err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
 
 	return err
 }
 
-func ConvertProjectToTerraform(
-	url string,
-	space string,
-	apiKey string,
-	dest string,
-	console bool,
-	projectId string,
-	lookupProjectDependencies bool,
-	ignoreCacManagedSettings bool,
-	terraformBackend string,
-	defaultSecretVariableValues bool,
-	providerVersion string,
-	detachProjectTemplates bool,
-	excludeRunbooks bool,
-	excludedRunbooks args.ExcludeRunbooks,
-	excludeRunbooksRegex args.ExcludeRunbooks,
-	excludeProvider bool,
-	includeOctopusOutputVars bool,
-	excludedLibraryVariableSets args.ExcludeLibraryVariableSets,
-	excludeLibraryVariableSetsRegex args.ExcludeLibraryVariableSets,
-	ignoreProjectChanges bool,
-	ignoreProjectVariableChanges bool,
-	excludedVars args.ExcludeVariables,
-	excludedVarsRegex args.ExcludeVariables,
-	excludeVariableEnvironmentScopes args.ExcludeVariableEnvironmentScopes,
-	ignoreProjectGroupChanges bool,
-	ignoreProjectNameChanges bool,
-	lookUpDefaultWorkerPools bool,
-	excludeTenants args.ExcludeTenants,
-	excludeAllTenants bool) error {
+func ConvertProjectToTerraform(args args.Arguments) error {
 
 	client := client.OctopusClient{
-		Url:    url,
-		Space:  space,
-		ApiKey: apiKey,
+		Url:    args.Url,
+		Space:  args.Space,
+		ApiKey: args.ApiKey,
 	}
 
 	dependencies := converters.ResourceDetailsCollection{}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         terraformBackend,
-		ProviderVersion:          providerVersion,
-		ExcludeProvider:          excludeProvider,
-		IncludeOctopusOutputVars: includeOctopusOutputVars,
+		TerraformBackend:         args.BackendBlock,
+		ProviderVersion:          args.ProviderVersion,
+		ExcludeProvider:          args.ExcludeProvider,
+		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
 	}.ToHcl("space_population", &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}
@@ -388,8 +337,8 @@ func ConvertProjectToTerraform(
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
 		TagSetConverter:         tagsetConverter,
-		ExcludeTenants:          excludeTenants,
-		ExcludeAllTenants:       excludeAllTenants,
+		ExcludeTenants:          args.ExcludeTenants,
+		ExcludeAllTenants:       args.ExcludeAllTenants,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
@@ -406,6 +355,7 @@ func ConvertProjectToTerraform(
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -413,30 +363,35 @@ func ConvertProjectToTerraform(
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -444,12 +399,14 @@ func ConvertProjectToTerraform(
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -457,6 +414,7 @@ func ConvertProjectToTerraform(
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	feedConverter := converters.FeedConverter{Client: client}
@@ -480,12 +438,12 @@ func ConvertProjectToTerraform(
 		FeedConverter:                     feedConverter,
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
-		IgnoreCacManagedValues:            ignoreCacManagedSettings,
-		DefaultSecretVariableValues:       defaultSecretVariableValues,
-		ExcludeProjectVariables:           excludedVars,
-		ExcludeProjectVariablesRegex:      excludedVarsRegex,
-		ExcludeVariableEnvironmentScopes:  excludeVariableEnvironmentScopes,
-		IgnoreProjectChanges:              ignoreProjectChanges || ignoreProjectVariableChanges,
+		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
+		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
+		ExcludeProjectVariables:           args.ExcludeProjectVariables,
+		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
+		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
+		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -506,24 +464,24 @@ func ConvertProjectToTerraform(
 		FeedConverter:                     feedConverter,
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
-		IgnoreCacManagedValues:            ignoreCacManagedSettings,
-		DefaultSecretVariableValues:       defaultSecretVariableValues,
-		ExcludeProjectVariables:           excludedVars,
-		ExcludeProjectVariablesRegex:      excludedVarsRegex,
-		ExcludeVariableEnvironmentScopes:  excludeVariableEnvironmentScopes,
+		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
+		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
+		ExcludeProjectVariables:           args.ExcludeProjectVariables,
+		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
+		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              false,
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                          client,
 		VariableSetConverter:            &variableSetConverterForLibrary,
-		Excluded:                        excludedLibraryVariableSets,
-		ExcludeLibraryVariableSetsRegex: excludeLibraryVariableSetsRegex,
+		Excluded:                        args.ExcludeLibraryVariableSets,
+		ExcludeLibraryVariableSetsRegex: args.ExcludeLibraryVariableSetsRegex,
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
-		LookupDefaultWorkerPool: lookUpDefaultWorkerPools,
+		LookupDefaultWorkerPool: args.LookUpDefaultWorkerPools,
 		Client:                  client,
 	}
 
@@ -536,20 +494,20 @@ func ConvertProjectToTerraform(
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: detachProjectTemplates,
+				DetachProjectTemplates: args.DetachProjectTemplates,
 				WorkerPoolProcessor:    workerPoolProcessor,
 			},
-			IgnoreProjectChanges: ignoreProjectChanges,
+			IgnoreProjectChanges: args.IgnoreProjectChanges,
 			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		EnvironmentConverter: environmentConverter,
-		ExcludedRunbooks:     excludedRunbooks,
-		ExcludeRunbooksRegex: excludeRunbooksRegex,
-		IgnoreProjectChanges: ignoreProjectChanges,
+		ExcludedRunbooks:     args.ExcludeRunbooks,
+		ExcludeRunbooksRegex: args.ExcludeRunbooksRegex,
+		IgnoreProjectChanges: args.IgnoreProjectChanges,
 	}
 
 	projectConverter := converters.ProjectConverter{
-		ExcludeAllRunbooks:          excludeRunbooks,
+		ExcludeAllRunbooks:          args.ExcludeAllRunbooks,
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
@@ -562,10 +520,10 @@ func ConvertProjectToTerraform(
 				AccountConverter:       accountConverter,
 				WorkerPoolConverter:    workerPoolConverter,
 				EnvironmentConverter:   environmentConverter,
-				DetachProjectTemplates: detachProjectTemplates,
+				DetachProjectTemplates: args.DetachProjectTemplates,
 				WorkerPoolProcessor:    workerPoolProcessor,
 			},
-			IgnoreProjectChanges: ignoreProjectChanges,
+			IgnoreProjectChanges: args.IgnoreProjectChanges,
 			WorkerPoolProcessor:  workerPoolProcessor,
 		},
 		TenantConverter: tenantConverter,
@@ -574,18 +532,19 @@ func ConvertProjectToTerraform(
 		},
 		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,
-		IgnoreCacManagedValues:    ignoreCacManagedSettings,
+		IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
 		RunbookConverter:          &runbookConverter,
-		IgnoreProjectChanges:      ignoreProjectChanges,
-		IgnoreProjectGroupChanges: ignoreProjectGroupChanges,
-		IgnoreProjectNameChanges:  ignoreProjectNameChanges,
+		IgnoreProjectChanges:      args.IgnoreProjectChanges,
+		IgnoreProjectGroupChanges: args.IgnoreProjectGroupChanges,
+		IgnoreProjectNameChanges:  args.IgnoreProjectNameChanges,
+		ExcludeProjects:           args.ExcludeProjects,
 	}
 
 	var err error
-	if lookupProjectDependencies {
-		err = projectConverter.ToHclLookupById(projectId, &dependencies)
+	if args.LookupProjectDependencies {
+		err = projectConverter.ToHclLookupById(args.ProjectId, &dependencies)
 	} else {
-		err = projectConverter.ToHclById(projectId, &dependencies)
+		err = projectConverter.ToHclById(args.ProjectId, &dependencies)
 	}
 
 	if err != nil {
@@ -598,7 +557,7 @@ func ConvertProjectToTerraform(
 		return err
 	}
 
-	err = writeFiles(strutil.UnEscapeDollar(hcl), dest, console)
+	err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
 
 	return err
 }

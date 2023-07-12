@@ -16,6 +16,7 @@ type SshTargetConverter struct {
 	MachinePolicyConverter ConverterById
 	AccountConverter       ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -57,6 +58,10 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 }
 
 func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -106,6 +111,10 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 }
 
 func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if target.Endpoint.CommunicationStyle == "Ssh" {
 
 		if recursive {

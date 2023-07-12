@@ -16,6 +16,7 @@ type AzureCloudServiceTargetConverter struct {
 	MachinePolicyConverter ConverterById
 	AccountConverter       ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -57,6 +58,10 @@ func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *Res
 }
 
 func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -106,6 +111,9 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 }
 
 func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
 
 	if target.Endpoint.CommunicationStyle == "AzureCloudService" {
 		if recursive {

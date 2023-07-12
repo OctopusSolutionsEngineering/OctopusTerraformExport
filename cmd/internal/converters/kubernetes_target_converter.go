@@ -18,6 +18,7 @@ type KubernetesTargetConverter struct {
 	AccountConverter       ConverterById
 	CertificateConverter   ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -59,6 +60,10 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 }
 
 func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -108,6 +113,9 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 }
 
 func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
 
 	if target.Endpoint.CommunicationStyle == "Kubernetes" {
 		if recursive {

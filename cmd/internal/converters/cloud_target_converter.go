@@ -15,6 +15,7 @@ type CloudRegionTargetConverter struct {
 	Client                 client.OctopusClient
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -56,6 +57,10 @@ func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceD
 }
 
 func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -105,6 +110,9 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *Res
 }
 
 func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
 
 	if target.Endpoint.CommunicationStyle == "None" {
 

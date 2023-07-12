@@ -14,6 +14,7 @@ type OfflineDropTargetConverter struct {
 	Client                 client.OctopusClient
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -55,6 +56,10 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceD
 }
 
 func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -102,6 +107,10 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 }
 
 func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if target.Endpoint.CommunicationStyle == "OfflineDrop" {
 		if recursive {
 			err := c.exportDependencies(target, dependencies)

@@ -15,6 +15,7 @@ type ListeningTargetConverter struct {
 	Client                 client.OctopusClient
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -56,6 +57,10 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 }
 
 func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -105,6 +110,9 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 }
 
 func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
 
 	if target.Endpoint.CommunicationStyle == "TentaclePassive" {
 

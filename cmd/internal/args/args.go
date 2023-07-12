@@ -37,6 +37,19 @@ type Arguments struct {
 	LookUpDefaultWorkerPools         bool
 	ExcludeTenants                   ExcludeTenants
 	ExcludeAllTenants                bool
+	ExcludeProjects                  ExcludeProjects
+	ExcludeAllTargets                bool
+}
+
+type ExcludeProjects []string
+
+func (i *ExcludeProjects) String() string {
+	return "excluded projects"
+}
+
+func (i *ExcludeProjects) Set(value string) error {
+	*i = append(*i, value)
+	return nil
 }
 
 type ExcludeTenants []string
@@ -123,6 +136,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flags.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
+	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported.")
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", false, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
 	flags.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
@@ -131,6 +145,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.IgnoreProjectNameChanges, "ignoreProjectNameChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's name.")
 	flags.BoolVar(&arguments.LookUpDefaultWorkerPools, "lookUpDefaultWorkerPools", false, "Reference the worker pool by name when a step uses the default worker pool. This means exported projects do not inherit the default worker pool when they are applied in a new space.")
 	flags.BoolVar(&arguments.ExcludeAllTenants, "excludeAllTenants", false, "Exclude all tenants from being exported.")
+	flags.BoolVar(&arguments.ExcludeAllTargets, "excludeAllTargets", false, "Exclude all targets from being exported.")
 	err := flags.Parse(args)
 
 	if err != nil {

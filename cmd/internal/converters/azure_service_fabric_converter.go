@@ -15,6 +15,7 @@ type AzureServiceFabricTargetConverter struct {
 	Client                 client.OctopusClient
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -56,6 +57,10 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 }
 
 func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -105,6 +110,9 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 }
 
 func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
 
 	if target.Endpoint.CommunicationStyle == "AzureServiceFabricCluster" {
 

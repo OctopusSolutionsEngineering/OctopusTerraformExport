@@ -16,6 +16,7 @@ type AzureWebAppTargetConverter struct {
 	MachinePolicyConverter ConverterById
 	AccountConverter       ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -57,6 +58,10 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 }
 
 func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -106,6 +111,9 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *Res
 }
 
 func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
 
 	if target.Endpoint.CommunicationStyle == "AzureWebApp" {
 

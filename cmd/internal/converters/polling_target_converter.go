@@ -14,6 +14,7 @@ type PollingTargetConverter struct {
 	Client                 client.OctopusClient
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
+	ExcludeAllTargets      bool
 }
 
 func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -55,6 +56,10 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 }
 
 func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -102,6 +107,10 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *Resourc
 }
 
 func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if target.Endpoint.CommunicationStyle == "TentacleActive" {
 		if recursive {
 			err := c.exportDependencies(target, dependencies)

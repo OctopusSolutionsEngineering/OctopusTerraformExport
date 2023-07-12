@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"k8s.io/utils/strings/slices"
 	"strings"
 )
 
@@ -32,6 +34,7 @@ type ProjectConverter struct {
 	IgnoreProjectChanges        bool
 	IgnoreProjectGroupChanges   bool
 	IgnoreProjectNameChanges    bool
+	ExcludeProjects             args.ExcludeProjects
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -94,6 +97,10 @@ func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 }
 
 func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
+	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
+		return nil
+	}
+
 	thisResource := ResourceDetails{}
 
 	projectName := "project_" + sanitizer.SanitizeName(project.Name)
