@@ -142,6 +142,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
