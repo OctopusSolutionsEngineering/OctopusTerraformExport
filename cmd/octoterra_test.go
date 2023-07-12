@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
+	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -69,7 +70,42 @@ func exportSpaceImportAndTest(
 		[]string{},
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			return ConvertSpaceToTerraform(url, space, test.ApiKey, dest, true, false)
+			args := args2.Arguments{
+				Url:                              url,
+				ApiKey:                           test.ApiKey,
+				Space:                            space,
+				Destination:                      dest,
+				Console:                          true,
+				ProjectId:                        "",
+				ProjectName:                      "",
+				LookupProjectDependencies:        false,
+				IgnoreCacManagedValues:           false,
+				BackendBlock:                     "",
+				DetachProjectTemplates:           false,
+				DefaultSecretVariableValues:      false,
+				ProviderVersion:                  "",
+				ExcludeAllRunbooks:               false,
+				ExcludeRunbooks:                  nil,
+				ExcludeRunbooksRegex:             nil,
+				ExcludeProvider:                  false,
+				IncludeOctopusOutputVars:         false,
+				ExcludeLibraryVariableSets:       nil,
+				ExcludeLibraryVariableSetsRegex:  nil,
+				IgnoreProjectChanges:             false,
+				IgnoreProjectVariableChanges:     false,
+				IgnoreProjectGroupChanges:        false,
+				IgnoreProjectNameChanges:         false,
+				ExcludeProjectVariables:          nil,
+				ExcludeProjectVariablesRegex:     nil,
+				ExcludeVariableEnvironmentScopes: nil,
+				LookUpDefaultWorkerPools:         false,
+				ExcludeTenants:                   nil,
+				ExcludeAllTenants:                false,
+				ExcludeProjects:                  nil,
+				ExcludeAllTargets:                false,
+			}
+
+			return ConvertSpaceToTerraform(args)
 		},
 		testFunc)
 }
@@ -106,36 +142,42 @@ func exportProjectImportAndTest(
 				return err
 			}
 
-			return ConvertProjectToTerraform(
-				url,
-				space,
-				test.ApiKey,
-				dest,
-				true,
-				projectId,
-				false,
-				false,
-				"",
-				false,
-				"",
-				false,
-				false,
-				nil,
-				nil,
-				false,
-				false,
-				nil,
-				nil,
-				false,
-				false,
-				excludedVars,
-				[]string{},
-				nil,
-				false,
-				false,
-				lookUpDefaultWorkerPools,
-				[]string{},
-				false)
+			args := args2.Arguments{
+				Url:                              url,
+				ApiKey:                           test.ApiKey,
+				Space:                            space,
+				Destination:                      dest,
+				Console:                          true,
+				ProjectId:                        projectId,
+				ProjectName:                      "",
+				LookupProjectDependencies:        false,
+				IgnoreCacManagedValues:           false,
+				BackendBlock:                     "",
+				DetachProjectTemplates:           false,
+				DefaultSecretVariableValues:      false,
+				ProviderVersion:                  "",
+				ExcludeAllRunbooks:               false,
+				ExcludeRunbooks:                  nil,
+				ExcludeRunbooksRegex:             nil,
+				ExcludeProvider:                  false,
+				IncludeOctopusOutputVars:         false,
+				ExcludeLibraryVariableSets:       nil,
+				ExcludeLibraryVariableSetsRegex:  nil,
+				IgnoreProjectChanges:             false,
+				IgnoreProjectVariableChanges:     false,
+				IgnoreProjectGroupChanges:        false,
+				IgnoreProjectNameChanges:         false,
+				ExcludeProjectVariables:          excludedVars,
+				ExcludeProjectVariablesRegex:     nil,
+				ExcludeVariableEnvironmentScopes: nil,
+				LookUpDefaultWorkerPools:         lookUpDefaultWorkerPools,
+				ExcludeTenants:                   nil,
+				ExcludeAllTenants:                false,
+				ExcludeProjects:                  nil,
+				ExcludeAllTargets:                false,
+			}
+
+			return ConvertProjectToTerraform(args)
 		},
 		testFunc)
 }
@@ -179,36 +221,42 @@ func exportProjectLookupImportAndTest(
 				return err
 			}
 
-			return ConvertProjectToTerraform(
-				url,
-				space,
-				test.ApiKey,
-				dest,
-				true,
-				projectId,
-				true,
-				false,
-				"",
-				false,
-				"",
-				false,
-				false,
-				nil,
-				nil,
-				false,
-				false,
-				nil,
-				nil,
-				false,
-				false,
-				excludedVars,
-				[]string{},
-				nil,
-				false,
-				false,
-				lookUpDefaultWorkerPools,
-				ignoreTenants,
-				false)
+			args := args2.Arguments{
+				Url:                              url,
+				ApiKey:                           test.ApiKey,
+				Space:                            space,
+				Destination:                      dest,
+				Console:                          true,
+				ProjectId:                        projectId,
+				ProjectName:                      "",
+				LookupProjectDependencies:        false,
+				IgnoreCacManagedValues:           false,
+				BackendBlock:                     "",
+				DetachProjectTemplates:           false,
+				DefaultSecretVariableValues:      false,
+				ProviderVersion:                  "",
+				ExcludeAllRunbooks:               false,
+				ExcludeRunbooks:                  nil,
+				ExcludeRunbooksRegex:             nil,
+				ExcludeProvider:                  false,
+				IncludeOctopusOutputVars:         false,
+				ExcludeLibraryVariableSets:       nil,
+				ExcludeLibraryVariableSetsRegex:  nil,
+				IgnoreProjectChanges:             false,
+				IgnoreProjectVariableChanges:     false,
+				IgnoreProjectGroupChanges:        false,
+				IgnoreProjectNameChanges:         false,
+				ExcludeProjectVariables:          excludedVars,
+				ExcludeProjectVariablesRegex:     nil,
+				ExcludeVariableEnvironmentScopes: nil,
+				LookUpDefaultWorkerPools:         lookUpDefaultWorkerPools,
+				ExcludeTenants:                   ignoreTenants,
+				ExcludeAllTenants:                false,
+				ExcludeProjects:                  nil,
+				ExcludeAllTargets:                false,
+			}
+
+			return ConvertProjectToTerraform(args)
 		},
 		testFunc)
 }
