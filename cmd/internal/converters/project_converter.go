@@ -139,7 +139,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 			Type:                                   "octopusdeploy_project",
 			Name:                                   projectName,
 			ResourceName:                           "${var." + projectName + "_name}",
-			AutoCreateRelease:                      project.AutoCreateRelease,
+			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no ay to reference the package
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
