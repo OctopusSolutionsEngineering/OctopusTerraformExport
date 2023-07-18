@@ -142,6 +142,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
+		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -262,12 +263,15 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
 				Client: client,
 			},
-			VariableSetConverter:   &variableSetConverter,
-			ChannelConverter:       channelConverter,
-			RunbookConverter:       &runbookConverter,
-			IgnoreCacManagedValues: false,
-			ExcludeAllRunbooks:     false,
-			IgnoreProjectChanges:   args.IgnoreProjectChanges,
+			VariableSetConverter:      &variableSetConverter,
+			ChannelConverter:          channelConverter,
+			RunbookConverter:          &runbookConverter,
+			IgnoreCacManagedValues:    false,
+			ExcludeAllRunbooks:        false,
+			IgnoreProjectChanges:      args.IgnoreProjectChanges,
+			IgnoreProjectGroupChanges: false,
+			IgnoreProjectNameChanges:  false,
+			ExcludeProjects:           args.ExcludeProjects,
 		},
 		TenantConverter:                   tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -537,7 +541,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		IgnoreProjectChanges:      args.IgnoreProjectChanges,
 		IgnoreProjectGroupChanges: args.IgnoreProjectGroupChanges,
 		IgnoreProjectNameChanges:  args.IgnoreProjectNameChanges,
-		ExcludeProjects:           args.ExcludeProjects,
+		ExcludeProjects:           nil,
 	}
 
 	var err error
