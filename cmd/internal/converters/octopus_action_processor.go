@@ -132,7 +132,10 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 }
 
 func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
-	return c.replaceFeedIds(c.replaceAccountIds(properties, dependencies), dependencies)
+	properties = c.replaceAccountIds(properties, dependencies)
+	properties = c.replaceFeedIds(properties, dependencies)
+	properties = c.replaceProjectIds(properties, dependencies)
+	return properties
 }
 
 // https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
@@ -225,6 +228,20 @@ func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dep
 func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Accounts") {
+			if strings.Contains(v, v2.Id) {
+				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
+			}
+		}
+	}
+
+	return properties
+}
+
+// replaceProjectIds looks for any property value that is a valid project ID and replaces it with a resource ID lookup.
+// This also looks in the property values, for instance when you export a JSON blob that has feed references.
+func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+	for k, v := range properties {
+		for _, v2 := range dependencies.GetAllResource("Projects") {
 			if strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
