@@ -51,11 +51,6 @@ func (c SpaceConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 		return err
 	}
 
-	// Generate common terraform config files
-	pacePopulateCommonGenerator := TerraformProviderGenerator{}
-	pacePopulateCommonGenerator.ToHcl("space_population", dependencies)
-	pacePopulateCommonGenerator.ToHcl("space_creation", dependencies)
-
 	// Convert the feeds
 	err = c.FeedConverter.ToHcl(dependencies)
 
