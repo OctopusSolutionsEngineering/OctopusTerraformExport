@@ -108,6 +108,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenants:       args.ExcludeTenants,
 		ExcludeAllTenants:    args.ExcludeAllTenants,
 		ExcludeTenantsExcept: args.ExcludeTenantsExcept,
+		Excluder:             converters.DefaultExcluder{},
 	}
 	tagsetConverter := converters.TagSetConverter{Client: client}
 	tenantConverter := converters.TenantConverter{
@@ -118,6 +119,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenants:          args.ExcludeTenants,
 		ExcludeAllTenants:       args.ExcludeAllTenants,
 		ExcludeTenantsExcept:    args.ExcludeTenantsExcept,
+		Excluder:                converters.DefaultExcluder{},
 	}
 	accountConverter := converters.AccountConverter{
 		Client:               client,
@@ -362,6 +364,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenants:       args.ExcludeTenants,
 		ExcludeAllTenants:    args.ExcludeAllTenants,
 		ExcludeTenantsExcept: args.ExcludeTenantsExcept,
+		Excluder:             converters.DefaultExcluder{},
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
@@ -371,6 +374,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenants:          args.ExcludeTenants,
 		ExcludeAllTenants:       args.ExcludeAllTenants,
 		ExcludeTenantsExcept:    args.ExcludeTenantsExcept,
+		Excluder:                converters.DefaultExcluder{},
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}

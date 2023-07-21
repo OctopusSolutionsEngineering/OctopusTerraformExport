@@ -72,7 +72,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
-	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tenantVariableConverter := converters.TenantVariableConverter{
+		Client:   client,
+		Excluder: converters.DefaultExcluder{},
+	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
