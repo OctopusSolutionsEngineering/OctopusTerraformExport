@@ -85,6 +85,22 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ApiKey: args.ApiKey,
 	}
 
+	dependencies := converters.ResourceDetailsCollection{}
+
+	converters.TerraformProviderGenerator{
+		TerraformBackend:         args.BackendBlock,
+		ProviderVersion:          args.ProviderVersion,
+		ExcludeProvider:          args.ExcludeProvider,
+		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+	}.ToHcl("space_population", &dependencies)
+
+	converters.TerraformProviderGenerator{
+		TerraformBackend:         args.BackendBlock,
+		ProviderVersion:          args.ProviderVersion,
+		ExcludeProvider:          args.ExcludeProvider,
+		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+	}.ToHcl("space_creation", &dependencies)
+
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
@@ -291,8 +307,6 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		AzureWebAppTargetConverter:        azureWebAppTargetConverter,
 		FeedConverter:                     feedConverter,
 	}
-
-	dependencies := converters.ResourceDetailsCollection{}
 
 	err := spaceConverter.ToHcl(&dependencies)
 
