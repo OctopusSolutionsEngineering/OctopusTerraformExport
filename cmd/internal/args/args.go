@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"os"
+	"strings"
 )
 
 type Arguments struct {
@@ -49,7 +50,13 @@ func (i *ExcludeProjects) String() string {
 }
 
 func (i *ExcludeProjects) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
@@ -60,7 +67,13 @@ func (i *ExcludeTenantsExcept) String() string {
 }
 
 func (i *ExcludeTenantsExcept) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
@@ -71,7 +84,13 @@ func (i *ExcludeTenants) String() string {
 }
 
 func (i *ExcludeTenants) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
@@ -82,7 +101,13 @@ func (i *ExcludeVariableEnvironmentScopes) String() string {
 }
 
 func (i *ExcludeVariableEnvironmentScopes) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
@@ -93,7 +118,13 @@ func (i *ExcludeVariables) String() string {
 }
 
 func (i *ExcludeVariables) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
@@ -106,7 +137,13 @@ func (i *ExcludeRunbooks) String() string {
 type ExcludeLibraryVariableSets []string
 
 func (i *ExcludeRunbooks) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
@@ -115,7 +152,13 @@ func (i *ExcludeLibraryVariableSets) String() string {
 }
 
 func (i *ExcludeLibraryVariableSets) Set(value string) error {
-	*i = append(*i, value)
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
 	return nil
 }
 
