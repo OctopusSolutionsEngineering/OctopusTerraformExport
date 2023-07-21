@@ -95,6 +95,17 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 			thisResource.Id = id
 			thisResource.ResourceType = c.GetResourceType()
 			thisResource.Lookup = "${octopusdeploy_tenant_common_variable." + variableName + ".id}"
+
+			/*
+				Tenants can define secrets, in which case value is an object indicating the state of the
+				secret, but not the value. In this case we can only export an empty string.
+				TODO: Create a variable to override this value if needed.
+			*/
+			fixedValue := ""
+			if stringValue, ok := value.(string); !ok {
+				fixedValue = stringValue
+			}
+
 			thisResource.ToHcl = func() (string, error) {
 				file := hclwrite.NewEmptyFile()
 				terraformResource := terraform2.TerraformTenantCommonVariable{
@@ -104,7 +115,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 					LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", l.LibraryVariableSetId),
 					TemplateId:           dependencies.GetResource("CommonTemplateMap", id),
 					TenantId:             dependencies.GetResource("Tenants", tenant.TenantId),
-					Value:                &value,
+					Value:                &fixedValue,
 				}
 				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 				return string(file.Bytes()), nil

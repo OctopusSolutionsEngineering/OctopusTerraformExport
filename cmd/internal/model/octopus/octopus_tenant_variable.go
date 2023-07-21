@@ -20,5 +20,5 @@ type LibraryVariable struct {
 	LibraryVariableSetId   string
 	LibraryVariableSetName string
 	Templates              []Template
-	Variables              map[string]string
+	Variables              map[string]any
 }
