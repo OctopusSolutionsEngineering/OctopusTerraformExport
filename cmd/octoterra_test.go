@@ -1788,50 +1788,56 @@ func TestScriptModuleExport(t *testing.T) {
 
 // TestTenantsExport verifies that a git credential can be reimported with the correct settings
 func TestTenantsExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/24-tenants/space_creation", "../test/terraform/24-tenants/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/24-tenants/space_creation",
+		"../test/terraform/24-tenants/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Tenant]{}
-		err := octopusClient.GetAllResources("Tenants", &collection)
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Team A"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Team A"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-					t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+						t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				if len(v.TenantTags) != 2 {
-					t.Fatal("The tenant must have two tags")
-				}
+					if len(v.TenantTags) != 2 {
+						t.Fatal("The tenant must have two tags")
+					}
 
-				if len(v.ProjectEnvironments) != 1 {
-					t.Fatal("The tenant must have one project environment")
-				}
+					if len(v.ProjectEnvironments) != 1 {
+						t.Fatal("The tenant must have one project environment")
+					}
 
-				for _, u := range v.ProjectEnvironments {
-					if len(u) != 3 {
-						t.Fatal("The tenant must have be linked to three environments")
+					for _, u := range v.ProjectEnvironments {
+						if len(u) != 3 {
+							t.Fatal("The tenant must have be linked to three environments")
+						}
 					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestCertificateExport verifies that a certificate can be reimported with the correct settings
@@ -4086,6 +4092,89 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 
 			if err != nil {
 				return err
+			}
+
+			return nil
+		})
+}
+
+// TestTenantCommonVarsExport verifies that a tenant with common variables can be reimported with the correct settings
+func TestTenantCommonVarsExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/56-tenantcommonvars/space_creation",
+		"../test/terraform/56-tenantcommonvars/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Team A"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+						t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					if len(v.TenantTags) != 2 {
+						t.Fatal("The tenant must have two tags")
+					}
+
+					if len(v.ProjectEnvironments) != 1 {
+						t.Fatal("The tenant must have one project environment")
+					}
+
+					for _, u := range v.ProjectEnvironments {
+						if len(u) != 3 {
+							t.Fatal("The tenant must have be linked to three environments")
+						}
+					}
+
+					resource := octopus.TenantVariable{}
+					err = octopusClient.GetAllResources("Tenants/"+v.Id+"/Variables", &resource)
+
+					if err != nil {
+						return err
+					}
+
+					for _, v := range resource.LibraryVariables {
+						for variableId, variableValue := range v.Variables {
+							template := lo.Filter(v.Templates, func(item octopus.Template, index int) bool {
+								return item.Id == variableId
+							})
+
+							if len(template) != 1 {
+								t.Fatalf("Expected to find one template that matched the variable value")
+							}
+
+							variableValueString, ok := variableValue.(string)
+
+							if ok {
+								if strutil.EmptyIfNil(template[0].Name) == "VariableA" {
+									if variableValueString != "Override Variable A" {
+										t.Fatalf("Tenant variable must be Override Variable A (was " + variableValueString + ")")
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
