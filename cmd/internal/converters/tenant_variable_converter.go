@@ -2,16 +2,21 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"golang.org/x/exp/slices"
 )
 
 type TenantVariableConverter struct {
-	Client client.OctopusClient
+	Client               client.OctopusClient
+	ExcludeTenants       args.ExcludeTenants
+	ExcludeTenantsExcept args.ExcludeTenantsExcept
+	ExcludeAllTenants    bool
 }
 
 func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -45,6 +50,16 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *Resour
 }
 
 func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	// Ignore excluded tenants
+	if c.ExcludeAllTenants || (c.ExcludeTenants != nil && slices.Index(c.ExcludeTenants, tenant.TenantName) != -1) {
+		return nil
+	}
+
+	// If any tenants are marked for exception from exclusion, exclude anything else
+	if c.ExcludeTenantsExcept != nil && len(c.ExcludeTenantsExcept) != 0 && slices.Index(c.ExcludeTenantsExcept, tenant.TenantName) == -1 {
+		return nil
+	}
 
 	for _, p := range tenant.ProjectVariables {
 

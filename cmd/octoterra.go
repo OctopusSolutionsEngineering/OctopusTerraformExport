@@ -103,7 +103,12 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	environmentConverter := converters.EnvironmentConverter{Client: client}
-	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tenantVariableConverter := converters.TenantVariableConverter{
+		Client:               client,
+		ExcludeTenants:       args.ExcludeTenants,
+		ExcludeAllTenants:    args.ExcludeAllTenants,
+		ExcludeTenantsExcept: args.ExcludeTenantsExcept,
+	}
 	tagsetConverter := converters.TagSetConverter{Client: client}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
@@ -352,7 +357,12 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
-	tenantVariableConverter := converters.TenantVariableConverter{Client: client}
+	tenantVariableConverter := converters.TenantVariableConverter{
+		Client:               client,
+		ExcludeTenants:       args.ExcludeTenants,
+		ExcludeAllTenants:    args.ExcludeAllTenants,
+		ExcludeTenantsExcept: args.ExcludeTenantsExcept,
+	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
 		TenantVariableConverter: tenantVariableConverter,
