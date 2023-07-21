@@ -21,6 +21,7 @@ type TenantConverter struct {
 	EnvironmentConverter    ConverterById
 	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
 	ExcludeTenants          args.ExcludeTenants
+	ExcludeTenantsExcept    args.ExcludeTenantsExcept
 	ExcludeAllTenants       bool
 }
 
@@ -95,7 +96,12 @@ func (c TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *
 func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants
-	if c.ExcludeAllTenants || slices.Index(c.ExcludeTenants, tenant.Name) != -1 {
+	if c.ExcludeAllTenants || (c.ExcludeTenants != nil && slices.Index(c.ExcludeTenants, tenant.Name) != -1) {
+		return nil
+	}
+
+	// If any tenants are marked for exception from exclusion, exclude anything else
+	if c.ExcludeTenantsExcept != nil && len(c.ExcludeTenantsExcept) != 0 && slices.Index(c.ExcludeTenantsExcept, tenant.Name) == -1 {
 		return nil
 	}
 

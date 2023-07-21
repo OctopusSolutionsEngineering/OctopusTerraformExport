@@ -36,6 +36,7 @@ type Arguments struct {
 	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
 	LookUpDefaultWorkerPools         bool
 	ExcludeTenants                   ExcludeTenants
+	ExcludeTenantsExcept             ExcludeTenantsExcept
 	ExcludeAllTenants                bool
 	ExcludeProjects                  ExcludeProjects
 	ExcludeAllTargets                bool
@@ -48,6 +49,17 @@ func (i *ExcludeProjects) String() string {
 }
 
 func (i *ExcludeProjects) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+type ExcludeTenantsExcept []string
+
+func (i *ExcludeTenantsExcept) String() string {
+	return "exclude tenants except"
+}
+
+func (i *ExcludeTenantsExcept) Set(value string) error {
 	*i = append(*i, value)
 	return nil
 }
@@ -136,6 +148,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flags.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
+	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported.")
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", false, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
