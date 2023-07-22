@@ -112,9 +112,13 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 				TODO: Create a variable to override this value if needed.
 			*/
 			fixedValue := ""
-			if stringValue, ok := value.(string); !ok {
+			if stringValue, ok := value.(string); ok {
 				fixedValue = stringValue
 			}
+
+			l := l
+			id := id
+			tenant := tenant
 
 			thisResource.ToHcl = func() (string, error) {
 				file := hclwrite.NewEmptyFile()

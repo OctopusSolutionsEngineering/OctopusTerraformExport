@@ -4149,6 +4149,8 @@ func TestTenantCommonVarsExport(t *testing.T) {
 						return err
 					}
 
+					foundCount := 0
+
 					for _, v := range resource.LibraryVariables {
 						for variableId, variableValue := range v.Variables {
 							template := lo.Filter(v.Templates, func(item octopus.Template, index int) bool {
@@ -4163,12 +4165,24 @@ func TestTenantCommonVarsExport(t *testing.T) {
 
 							if ok {
 								if strutil.EmptyIfNil(template[0].Name) == "VariableA" {
+									foundCount++
 									if variableValueString != "Override Variable A" {
 										t.Fatalf("Tenant variable must be Override Variable A (was " + variableValueString + ")")
 									}
 								}
+
+								if strutil.EmptyIfNil(template[0].Name) == "VariableB" {
+									foundCount++
+									if variableValueString != "Override Variable B" {
+										t.Fatalf("Tenant variable must be Override Variable B (was " + variableValueString + ")")
+									}
+								}
 							}
 						}
+					}
+
+					if foundCount != 2 {
+						t.Fatalf("Should have found two regular variables")
 					}
 				}
 			}
