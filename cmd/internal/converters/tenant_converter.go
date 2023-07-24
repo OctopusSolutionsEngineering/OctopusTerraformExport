@@ -214,17 +214,27 @@ func (c TenantConverter) GetResourceType() string {
 	return "Tenants"
 }
 
+func (c TenantConverter) excludeProject(projectId string) (bool, error) {
+	project := octopus2.Project{}
+	_, err := c.Client.GetResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return false, err
+	}
+
+	return slices.Index(c.ExcludeProjects, project.Name) != -1, nil
+}
+
 func (c TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
 	terraformProjectEnvironments := []terraform.TerraformProjectEnvironment{}
 	for k, v := range tags {
-		project := octopus2.Project{}
-		_, err := c.Client.GetResourceById("Projects", k, &project)
+		exclude, err := c.excludeProject(k)
 
 		if err != nil {
 			return []terraform.TerraformProjectEnvironment{}, err
 		}
 
-		if slices.Index(c.ExcludeProjects, project.Name) != -1 {
+		if exclude {
 			continue
 		}
 
