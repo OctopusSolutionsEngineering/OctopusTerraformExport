@@ -215,6 +215,10 @@ func (c TenantConverter) GetResourceType() string {
 }
 
 func (c TenantConverter) excludeProject(projectId string) (bool, error) {
+	if c.ExcludeProjects == nil {
+		return false, nil
+	}
+
 	project := octopus2.Project{}
 	_, err := c.Client.GetResourceById("Projects", projectId, &project)
 
