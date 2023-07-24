@@ -120,6 +120,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeAllTenants:       args.ExcludeAllTenants,
 		ExcludeTenantsExcept:    args.ExcludeTenantsExcept,
 		Excluder:                converters.DefaultExcluder{},
+		ExcludeProjects:         args.ExcludeProjects,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:               client,
@@ -375,6 +376,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeAllTenants:       args.ExcludeAllTenants,
 		ExcludeTenantsExcept:    args.ExcludeTenantsExcept,
 		Excluder:                converters.DefaultExcluder{},
+		ExcludeProjects:         args.ExcludeProjects,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}

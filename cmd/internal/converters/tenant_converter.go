@@ -24,6 +24,7 @@ type TenantConverter struct {
 	ExcludeTenantsExcept    args.ExcludeTenantsExcept
 	ExcludeAllTenants       bool
 	Excluder                ExcludeByName
+	ExcludeProjects         args.ExcludeProjects
 }
 
 func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -163,8 +164,16 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bo
 				ClonedFromTenantId: nil,
 				Description:        strutil.NilIfEmptyPointer(tenant.Description),
 				TenantTags:         tenant.TenantTags,
-				ProjectEnvironment: c.getProjects(tenant.ProjectEnvironments, dependencies),
 			}
+
+			projectEnvironments, err := c.getProjects(tenant.ProjectEnvironments, dependencies)
+
+			if err != nil {
+				return "", err
+			}
+
+			terraformResource.ProjectEnvironment = projectEnvironments
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -205,17 +214,26 @@ func (c TenantConverter) GetResourceType() string {
 	return "Tenants"
 }
 
-func (c TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) []terraform.TerraformProjectEnvironment {
-	terraformProjectEnvironments := make([]terraform.TerraformProjectEnvironment, len(tags))
-	index := 0
+func (c TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
+	terraformProjectEnvironments := []terraform.TerraformProjectEnvironment{}
 	for k, v := range tags {
-		terraformProjectEnvironments[index] = terraform.TerraformProjectEnvironment{
+		project := octopus2.Project{}
+		_, err := c.Client.GetResourceById("Projects", k, &project)
+
+		if err != nil {
+			return []terraform.TerraformProjectEnvironment{}, err
+		}
+
+		if slices.Index(c.ExcludeProjects, project.Name) != -1 {
+			continue
+		}
+
+		terraformProjectEnvironments = append(terraformProjectEnvironments, terraform.TerraformProjectEnvironment{
 			Environments: c.lookupEnvironments(v, dependencies),
 			ProjectId:    dependencies.GetResource("Projects", k),
-		}
-		index++
+		})
 	}
-	return terraformProjectEnvironments
+	return terraformProjectEnvironments, nil
 }
 
 func (c TenantConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
