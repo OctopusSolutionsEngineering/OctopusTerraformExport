@@ -80,7 +80,7 @@ func exportSpaceImportAndTest(
 				ProjectName:                      "",
 				LookupProjectDependencies:        false,
 				IgnoreCacManagedValues:           false,
-				BackendBlock:                     "",
+				BackendBlock:                     "local",
 				DetachProjectTemplates:           false,
 				DefaultSecretVariableValues:      false,
 				ProviderVersion:                  "",
