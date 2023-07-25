@@ -266,8 +266,6 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			return err
 		}
 
-		tagSetDependencies, err := c.addTagSetDependencies(v, recursive, dependencies)
-
 		if err != nil {
 			return err
 		}
@@ -351,16 +349,28 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-			// Explicitly describe the dependency between a target and a tag set
-			dependsOn := []string{}
-			for resourceType, terraformDependencies := range tagSetDependencies {
-				for _, terraformDependency := range terraformDependencies {
-					dependency := dependencies.GetResource(resourceType, terraformDependency)
-					dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
-					dependsOn = append(dependsOn, dependency)
+			// If we are creating the tag sets (i.e. exporting a space or recursively exporting a project),
+			// ensure tag sets are create before the variable.
+			// If we are doing a lookup, the tag sets are expected to already be available, and so there is
+			// no dependency relationship.
+			if !lookup {
+				tagSetDependencies, err := c.addTagSetDependencies(v, recursive, dependencies)
+
+				if err != nil {
+					return "", err
 				}
+
+				// Explicitly describe the dependency between a variable and a tag set
+				dependsOn := []string{}
+				for resourceType, terraformDependencies := range tagSetDependencies {
+					for _, terraformDependency := range terraformDependencies {
+						dependency := dependencies.GetResource(resourceType, terraformDependency)
+						dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
+						dependsOn = append(dependsOn, dependency)
+					}
+				}
+				hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
 			}
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
 
 			// Ignore all changes if requested
 			if c.IgnoreProjectChanges {

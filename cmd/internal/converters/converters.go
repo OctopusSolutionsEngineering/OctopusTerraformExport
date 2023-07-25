@@ -114,6 +114,11 @@ type ConvertToHclByResource[C any] interface {
 	ToHclByResource(resource C, dependencies *ResourceDetailsCollection) error
 }
 
+// ConvertToHclByResource creates a data lookup from the objects
+type ConvertToHclLookupByResource[C any] interface {
+	ToHclLookupByResource(resource C, dependencies *ResourceDetailsCollection) error
+}
+
 // Converter converts all objects in bulk
 type Converter interface {
 	ToHcl(dependencies *ResourceDetailsCollection) error
