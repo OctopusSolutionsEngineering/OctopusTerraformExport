@@ -4218,3 +4218,67 @@ func TestTenantCommonVarsExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestSingleProjectWithScriptModuleLookupExport verifies that a single project referencing a script module can be reimported with the correct settings.
+func TestSingleProjectWithScriptModuleLookupExport(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/57-scriptmoduleprojectlookup/space_creation",
+		"../test/terraform/57-scriptmoduleprojectlookup/space_prepopulation",
+		"../test/terraform/57-scriptmoduleprojectlookup/space_population",
+		"../test/terraform/57-scriptmoduleprojectlookup/space_creation",
+		"../test/terraform/57-scriptmoduleprojectlookup/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			// Verify that the single project was exported
+			err := func() error {
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(projectCollection.Items) != 1 {
+					t.Fatalf("There must only be one project")
+				}
+
+				if projectCollection.Items[0].Name != "Test" {
+					t.Fatalf("The project must be called \"Test\"")
+				}
+
+				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
+					t.Fatalf("The project must link to 1 library variable set")
+				}
+
+				resource := octopus.LibraryVariableSet{}
+				_, err = octopusClient.GetResourceById("LibraryVariableSets", projectCollection.Items[0].IncludedLibraryVariableSetIds[0], &resource)
+
+				if err != nil {
+					return err
+				}
+
+				if resource.Name != "Script Module" {
+					t.Fatalf("The project must link to 1 library variable set called \"Script Module\"")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+}
