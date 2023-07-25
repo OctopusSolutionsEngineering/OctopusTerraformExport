@@ -132,6 +132,9 @@ jobs:
       - name: Push changes
         if: steps.verify-changed-files.outputs.files_changed == 'true'
         uses: ad-m/github-push-action@master
+        # This step fails if anything was pushed before the step was run.
+        # It is not critical that the coverage badge be updated, so allow this step to fail.
+        continue-on-error: true
         with:
           github_token: ${{ github.token }}
           branch: ${{ github.head_ref }}
