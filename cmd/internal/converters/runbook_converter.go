@@ -66,7 +66,7 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
-	if c.libraryVariableSetIsExcluded(runbook) {
+	if c.runbookIsExcluded(runbook) {
 		return nil
 	}
 
@@ -211,7 +211,7 @@ func (c *RunbookConverter) compileRegexes() {
 	}
 }
 
-func (c *RunbookConverter) libraryVariableSetIsExcluded(runbook octopus.Runbook) bool {
+func (c *RunbookConverter) runbookIsExcluded(runbook octopus.Runbook) bool {
 	if c.ExcludedRunbooks != nil && slices.Index(c.ExcludedRunbooks, runbook.Name) != -1 {
 		return true
 	}

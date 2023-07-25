@@ -199,8 +199,7 @@ func exportProjectLookupImportAndTest(
 	createImportSpaceVars []string,
 	prepopulateSpaceVars []string,
 	importSpaceVars []string,
-	ignoreTenants []string,
-	lookUpDefaultWorkerPools bool,
+	argumnets args2.Arguments,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 
 	exportImportAndTest(
@@ -230,30 +229,30 @@ func exportProjectLookupImportAndTest(
 				ProjectId:                        projectId,
 				ProjectName:                      "",
 				LookupProjectDependencies:        true,
-				IgnoreCacManagedValues:           false,
-				BackendBlock:                     "",
-				DetachProjectTemplates:           false,
-				DefaultSecretVariableValues:      false,
-				ProviderVersion:                  "",
-				ExcludeAllRunbooks:               false,
-				ExcludeRunbooks:                  nil,
-				ExcludeRunbooksRegex:             nil,
-				ExcludeProvider:                  false,
-				IncludeOctopusOutputVars:         false,
-				ExcludeLibraryVariableSets:       nil,
-				ExcludeLibraryVariableSetsRegex:  nil,
-				IgnoreProjectChanges:             false,
-				IgnoreProjectVariableChanges:     false,
-				IgnoreProjectGroupChanges:        false,
-				IgnoreProjectNameChanges:         false,
-				ExcludeProjectVariables:          excludedVars,
-				ExcludeProjectVariablesRegex:     nil,
-				ExcludeVariableEnvironmentScopes: nil,
-				LookUpDefaultWorkerPools:         lookUpDefaultWorkerPools,
-				ExcludeTenants:                   ignoreTenants,
-				ExcludeAllTenants:                false,
-				ExcludeProjects:                  nil,
-				ExcludeAllTargets:                false,
+				IgnoreCacManagedValues:           argumnets.IgnoreCacManagedValues,
+				BackendBlock:                     argumnets.BackendBlock,
+				DetachProjectTemplates:           argumnets.DetachProjectTemplates,
+				DefaultSecretVariableValues:      argumnets.DefaultSecretVariableValues,
+				ProviderVersion:                  argumnets.ProviderVersion,
+				ExcludeAllRunbooks:               argumnets.ExcludeAllRunbooks,
+				ExcludeRunbooks:                  argumnets.ExcludeRunbooks,
+				ExcludeRunbooksRegex:             argumnets.ExcludeRunbooksRegex,
+				ExcludeProvider:                  argumnets.ExcludeProvider,
+				IncludeOctopusOutputVars:         argumnets.IncludeOctopusOutputVars,
+				ExcludeLibraryVariableSets:       argumnets.ExcludeLibraryVariableSets,
+				ExcludeLibraryVariableSetsRegex:  argumnets.ExcludeLibraryVariableSetsRegex,
+				IgnoreProjectChanges:             argumnets.IgnoreProjectChanges,
+				IgnoreProjectVariableChanges:     argumnets.IgnoreProjectVariableChanges,
+				IgnoreProjectGroupChanges:        argumnets.IgnoreProjectGroupChanges,
+				IgnoreProjectNameChanges:         argumnets.IgnoreProjectNameChanges,
+				ExcludeProjectVariables:          argumnets.ExcludeProjectVariables,
+				ExcludeProjectVariablesRegex:     argumnets.ExcludeProjectVariablesRegex,
+				ExcludeVariableEnvironmentScopes: argumnets.ExcludeVariableEnvironmentScopes,
+				LookUpDefaultWorkerPools:         argumnets.LookUpDefaultWorkerPools,
+				ExcludeTenants:                   argumnets.ExcludeTenants,
+				ExcludeAllTenants:                argumnets.ExcludeAllTenants,
+				ExcludeProjects:                  argumnets.ExcludeProjects,
+				ExcludeAllTargets:                argumnets.ExcludeAllTargets,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -3129,7 +3128,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 
 // TestSingleProjectLookupExport verifies that a single project can be reimported with the correct settings.
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been referenced via data source lookups,
-// and that unrelated resources were not exported.
+// and that unrelated or excluded resources were not exported.
 func TestSingleProjectLookupExport(t *testing.T) {
 	if os.Getenv("GIT_CREDENTIAL") == "" {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
@@ -3152,8 +3151,12 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		[]string{
 			"-var=project_test_git_base_path=.octopus/integrationtestimport",
 		},
-		[]string{"Team A"},
-		false,
+		args2.Arguments{
+			ExcludeTenants:           []string{"Team A"},
+			LookUpDefaultWorkerPools: false,
+			ExcludeRunbooksRegex:     []string{"^MyRunbook$"},
+			ExcludeRunbooks:          []string{"MyRunbook2"},
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3196,6 +3199,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				if variableSet.Variables[0].Name != "Test" {
 					t.Fatalf("The project must have 1 variable called \"Test\"")
 				}
+
 				return nil
 			}()
 
@@ -3248,6 +3252,30 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				if !foundTrigger {
 					t.Fatalf("The space must have a trigger called \"Test 1\"")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			// Verify that the runbook was excluded
+			err = func() error {
+				collection := octopus.GeneralCollection[octopus.Runbook]{}
+				err := octopusClient.GetAllResources("Runbooks", &collection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(collection.Items) != 1 {
+					t.Fatalf("One runbook should have been exported")
+				}
+
+				if collection.Items[0].Name != "MyRunbook3" {
+					t.Fatalf("The runbook should be called MyRunbook3")
 				}
 
 				return nil
@@ -3607,8 +3635,7 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
-		[]string{},
-		false,
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3690,8 +3717,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
-		[]string{},
-		false,
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3864,8 +3890,7 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
-		[]string{},
-		false,
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3936,8 +3961,7 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{},
-		[]string{},
-		false,
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
