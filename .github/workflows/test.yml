@@ -47,7 +47,7 @@ jobs:
           ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
           ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
           GIT_CREDENTIAL: ${{ secrets.GIT_CREDENTIAL }}
-          OCTOTESTSKIPINIT: true
+          OCTOTESTSKIPINIT: false
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
