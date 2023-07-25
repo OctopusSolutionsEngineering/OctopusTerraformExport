@@ -4282,3 +4282,55 @@ func TestSingleProjectWithScriptModuleLookupExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestProjectWithScriptModuleExport verifies that a project with a script module can be reimported with the correct settings
+func TestProjectWithScriptModuleExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/58-scriptmodule/space_creation",
+		"../test/terraform/58-scriptmodule/space_population",
+		[]string{},
+		[]string{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if len(v.IncludedLibraryVariableSetIds) != 1 {
+						t.Fatal("The project must have a library variable set")
+					}
+
+					resource := octopus.LibraryVariableSet{}
+					_, err = octopusClient.GetResourceById("LibraryVariableSets", v.IncludedLibraryVariableSetIds[0], &resource)
+
+					if err != nil {
+						return err
+					}
+
+					if resource.Name != "Script Module" {
+						t.Fatalf("The project must link to 1 library variable set called \"Script Module\"")
+					}
+
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
