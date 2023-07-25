@@ -143,7 +143,13 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_library_variable_set." + resourceName + ".id}"
+
+	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
+		thisResource.Lookup = "${octopusdeploy_library_variable_set." + resourceName + ".id}"
+	} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
+		thisResource.Lookup = "${octopusdeploy_script_module." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
