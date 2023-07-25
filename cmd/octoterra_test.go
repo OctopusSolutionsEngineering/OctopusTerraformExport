@@ -88,7 +88,7 @@ func exportSpaceImportAndTest(
 				ExcludeRunbooks:                  nil,
 				ExcludeRunbooksRegex:             nil,
 				ExcludeProvider:                  false,
-				IncludeOctopusOutputVars:         false,
+				IncludeOctopusOutputVars:         true,
 				ExcludeLibraryVariableSets:       nil,
 				ExcludeLibraryVariableSetsRegex:  nil,
 				IgnoreProjectChanges:             false,

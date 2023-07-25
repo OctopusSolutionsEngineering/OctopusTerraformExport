@@ -123,16 +123,3 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 func (c TagSetConverter) GetResourceType() string {
 	return "TagSets"
 }
-
-func (c TagSetConverter) getTagSetTags(tags []octopus2.Tag) []terraform.TerraformTag {
-	terraformTags := make([]terraform.TerraformTag, len(tags))
-	for i, v := range tags {
-		terraformTags[i] = terraform.TerraformTag{
-			ResourceName: v.Name,
-			Color:        v.Color,
-			Description:  strutil.NilIfEmptyPointer(v.Description),
-			SortOrder:    v.SortOrder,
-		}
-	}
-	return terraformTags
-}

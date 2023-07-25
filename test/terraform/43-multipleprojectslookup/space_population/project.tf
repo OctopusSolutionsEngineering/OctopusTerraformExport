@@ -159,7 +159,7 @@ resource "octopusdeploy_runbook" "runbook3" {
 }
 
 resource "octopusdeploy_runbook_process" "runbook" {
-  runbook_id = octopusdeploy_runbook.runbook.id
+  runbook_id = octopusdeploy_runbook.runbook3.id
 
 
 
