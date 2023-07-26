@@ -5,7 +5,7 @@ data "octopusdeploy_machine_policies" "default_machine_policy" {
   take         = 1
 }
 
-resource octopusdeploy_kubernetes_cluster_deployment_target test_eks{
+resource octopusdeploy_kubernetes_cluster_deployment_target test_eks {
   cluster_url                       = "https://cluster"
   environments                      = ["${octopusdeploy_environment.test_environment.id}"]
   name                              = "Test"
@@ -19,6 +19,7 @@ resource octopusdeploy_kubernetes_cluster_deployment_target test_eks{
   tenants                           = []
   thumbprint                        = ""
   uri                               = ""
+  default_worker_pool_id            = octopusdeploy_static_worker_pool.workerpool_docker.id
 
   container {
     feed_id = ""

@@ -21,6 +21,12 @@ resource "octopusdeploy_azure_web_app_deployment_target" "target_web_app" {
   tenants                           = []
   thumbprint                        = ""
   web_app_slot_name                 = "slot1"
+# This doesn't work for setting the worker pool
+#  endpoint {
+#    communication_style    = "AzureWebApp"
+#    default_worker_pool_id = octopusdeploy_static_worker_pool.workerpool_docker.id
+#  }
+
 }
 resource "octopusdeploy_azure_service_principal" "account_sales_account" {
   name                              = "Sales Account"

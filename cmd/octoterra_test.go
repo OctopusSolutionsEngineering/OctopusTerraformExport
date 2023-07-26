@@ -2098,39 +2098,48 @@ func TestProjectTriggerExport(t *testing.T) {
 
 // TestK8sTargetExport verifies that a k8s machine can be reimported with the correct settings
 func TestK8sTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/29-k8starget/space_creation", "../test/terraform/29-k8starget/space_population", []string{}, []string{
-		"-var=account_aws_account=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/29-k8starget/space_creation",
+		"../test/terraform/29-k8starget/space_population",
+		[]string{},
+		[]string{
+			"-var=account_aws_account=whatever",
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			return err
-		}
+			resourceName := "Test"
+			foundResource := false
 
-		resourceName := "Test"
-		foundResource := false
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
+						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+					}
 
-				if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-					t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+					if strutil.EmptyIfNil(machine.Endpoint.DefaultWorkerPoolId) == "" {
+						t.Fatalf("The machine must specify a default worker pool")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestK8sTargetAzureAuthExport verifies that a k8s machine with Azure authentication can be reimported with the correct settings
@@ -2748,6 +2757,10 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 
 				if machine.Endpoint.WebAppSlotName != "slot1" {
 					t.Fatal("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
+				}
+
+				if machine.Endpoint.DefaultWorkerPoolId == "" {
+					t.Fatalf("The machine must specify a worker pool")
 				}
 			}
 		}
