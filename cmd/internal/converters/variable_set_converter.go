@@ -323,7 +323,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 
 				file.Body().AppendBlock(block)
-			} else if v.Type == "String" {
+			} else if v.Type == "String" && !hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
 				// Use a second terraform variable to allow the octopus variable to be defined at apply time.
 				// Note this only applies to string variables, as other types likely reference resources
 				// that are being created by terraform, and these dynamic values can not be used as default
@@ -340,10 +340,6 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 				block := gohcl.EncodeAsBlock(regularVariable, "variable")
 				hcl.WriteUnquotedAttribute(block, "type", "string")
-				// variable lookups need to be raw expressions
-				if hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
-					hcl.WriteUnquotedAttribute(block, "default", strutil.EmptyIfNil(value))
-				}
 				file.Body().AppendBlock(block)
 			}
 

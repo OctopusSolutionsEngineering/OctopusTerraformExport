@@ -77,6 +77,34 @@ resource "octopusdeploy_variable" "string_variable3" {
   }
 }
 
+resource "octopusdeploy_variable" "string_variable4" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "HelmFeed"
+  value     = octopusdeploy_helm_feed.feed_helm.id
+}
+
+resource "octopusdeploy_variable" "string_variable5" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "UsernamePassword"
+  value     = octopusdeploy_username_password_account.account_gke.id
+}
+
+resource "octopusdeploy_variable" "string_variable6" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "WorkerPool"
+  value     = octopusdeploy_static_worker_pool.workerpool_docker.id
+}
+
+resource "octopusdeploy_variable" "string_variable7" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "Certificate"
+  value     = octopusdeploy_certificate.certificate_kind_ca.id
+}
+
 output "octopus_project_1" {
   value = octopusdeploy_project.project_1.id
 }
