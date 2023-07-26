@@ -1,5 +1,5 @@
 # Octopus Terraform Exporter
-![Coverage](https://img.shields.io/badge/Coverage-83.5%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-83.4%25-brightgreen)
 
 This app exports an Octopus space to the associated Terraform resources for use with the 
 [Octopus Terraform Provider](https://registry.terraform.io/providers/OctopusDeployLabs/octopusdeploy).
