@@ -31,6 +31,8 @@ func TestParseFlagsCorrect(t *testing.T) {
 		"mylibvarset",
 		"-excludeLibraryVariableSetRegex",
 		"mylibvarsetregex",
+		"-excludeTenantsExcept",
+		"mytenant",
 	})
 
 	if err != nil {
@@ -87,5 +89,9 @@ func TestParseFlagsCorrect(t *testing.T) {
 
 	if args.ExcludeLibraryVariableSetsRegex[0] != "mylibvarsetregex" {
 		t.Fatalf("Variable set regex mylibvarsetregex should have been excluded")
+	}
+
+	if args.ExcludeTenantsExcept[0] != "mytenant" {
+		t.Fatalf("Tenants except mytenant should have been excluded")
 	}
 }
