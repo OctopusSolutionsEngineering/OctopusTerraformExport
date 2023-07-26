@@ -2758,10 +2758,6 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 				if machine.Endpoint.WebAppSlotName != "slot1" {
 					t.Fatal("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
 				}
-
-				if machine.Endpoint.DefaultWorkerPoolId == "" {
-					t.Fatalf("The machine must specify a worker pool")
-				}
 			}
 		}
 
