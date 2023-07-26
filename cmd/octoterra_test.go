@@ -4497,6 +4497,13 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 					t.Fatalf("The machine called CloudRegion needs to be assigned to 1 tenant")
 				}
 
+				tenant := octopus.Tenant{}
+				_, err = octopusClient.GetResourceById("Tenants", machine.TenantIds[0], &tenant)
+
+				if tenant.Name != "Team A" {
+					t.Fatalf("The tenant called Team A must have been exported")
+				}
+
 				return nil
 			}()
 
