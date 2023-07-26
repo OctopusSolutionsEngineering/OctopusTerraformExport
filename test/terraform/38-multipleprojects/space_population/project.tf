@@ -57,6 +57,16 @@ resource "octopusdeploy_variable" "string_variable2" {
   }
 }
 
+resource "octopusdeploy_variable" "scoped_var" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "tenantscoped"
+  value    = "test"
+  scope {
+    tenant_tags = ["tag1/a"]
+  }
+}
+
 output "octopus_project_1" {
   value = octopusdeploy_project.project_1.id
 }

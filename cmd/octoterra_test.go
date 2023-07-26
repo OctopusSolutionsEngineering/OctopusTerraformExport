@@ -2847,16 +2847,32 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					return err
 				}
 
-				if len(variableSet.Variables) != 1 {
-					t.Fatalf("The project must have 1 variable (because the variable called \"Test\" was excluded)")
+				if len(variableSet.Variables) != 2 {
+					t.Fatalf("The project must have 2 variable (because the variable called \"Test\" was excluded)")
 				}
 
-				if variableSet.Variables[0].Name != "Test2" {
+				envScoped := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "Test2"
+				})
+
+				tenantScoped := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "tenantscoped"
+				})
+
+				if len(envScoped) == 0 {
 					t.Fatalf("The project must have 1 variable called \"Test2\"")
 				}
 
-				if len(variableSet.Variables[0].Scope.Environment) != 1 {
+				if len(tenantScoped) == 0 {
+					t.Fatalf("The project must have 1 variable called \"tenantscoped\"")
+				}
+
+				if len(envScoped[0].Scope.Environment) != 1 {
 					t.Fatalf("The project must have 1 variable called \"Test2\" scoped to an environment")
+				}
+
+				if len(tenantScoped[0].Scope.TenantTag) != 1 {
+					t.Fatalf("The project must have 1 variable called \"tenantscoped\" scoped to an tagset")
 				}
 
 				return nil
