@@ -14,3 +14,10 @@ func TestSanitizer(t *testing.T) {
 		t.Fatal("Should have been able to double sanitize a string with no change")
 	}
 }
+
+func TestSanitizerWithNil(t *testing.T) {
+	sanitizedName := SanitizeNamePointer(nil)
+	if sanitizedName != "" {
+		t.Fatal("Sanitized name should be empty string")
+	}
+}
