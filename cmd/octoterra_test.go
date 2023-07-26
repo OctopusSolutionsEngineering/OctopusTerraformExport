@@ -40,6 +40,7 @@ func exportSpaceImportAndTest(
 	populateSourceSpaceModuleDir string,
 	createSourceSpaceVars []string,
 	importSpaceVars []string,
+	arguments args2.Arguments,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 
 	/*
@@ -79,30 +80,30 @@ func exportSpaceImportAndTest(
 				ProjectId:                        "",
 				ProjectName:                      "",
 				LookupProjectDependencies:        false,
-				IgnoreCacManagedValues:           false,
-				BackendBlock:                     "local",
-				DetachProjectTemplates:           false,
-				DefaultSecretVariableValues:      false,
-				ProviderVersion:                  "",
-				ExcludeAllRunbooks:               false,
-				ExcludeRunbooks:                  nil,
-				ExcludeRunbooksRegex:             nil,
-				ExcludeProvider:                  false,
-				IncludeOctopusOutputVars:         true,
-				ExcludeLibraryVariableSets:       nil,
-				ExcludeLibraryVariableSetsRegex:  nil,
-				IgnoreProjectChanges:             false,
-				IgnoreProjectVariableChanges:     false,
-				IgnoreProjectGroupChanges:        false,
-				IgnoreProjectNameChanges:         false,
-				ExcludeProjectVariables:          nil,
-				ExcludeProjectVariablesRegex:     nil,
-				ExcludeVariableEnvironmentScopes: nil,
-				LookUpDefaultWorkerPools:         false,
-				ExcludeTenants:                   nil,
-				ExcludeAllTenants:                false,
-				ExcludeProjects:                  nil,
-				ExcludeAllTargets:                false,
+				IgnoreCacManagedValues:           arguments.IgnoreCacManagedValues,
+				BackendBlock:                     arguments.BackendBlock,
+				DetachProjectTemplates:           arguments.DetachProjectTemplates,
+				DefaultSecretVariableValues:      arguments.DefaultSecretVariableValues,
+				ProviderVersion:                  arguments.ProviderVersion,
+				ExcludeAllRunbooks:               arguments.ExcludeAllRunbooks,
+				ExcludeRunbooks:                  arguments.ExcludeRunbooks,
+				ExcludeRunbooksRegex:             arguments.ExcludeRunbooksRegex,
+				ExcludeProvider:                  arguments.ExcludeProvider,
+				IncludeOctopusOutputVars:         arguments.IncludeOctopusOutputVars,
+				ExcludeLibraryVariableSets:       arguments.ExcludeLibraryVariableSets,
+				ExcludeLibraryVariableSetsRegex:  arguments.ExcludeLibraryVariableSetsRegex,
+				IgnoreProjectChanges:             arguments.IgnoreProjectChanges,
+				IgnoreProjectVariableChanges:     arguments.IgnoreProjectVariableChanges,
+				IgnoreProjectGroupChanges:        arguments.IgnoreProjectGroupChanges,
+				IgnoreProjectNameChanges:         arguments.IgnoreProjectNameChanges,
+				ExcludeProjectVariables:          arguments.ExcludeProjectVariables,
+				ExcludeProjectVariablesRegex:     arguments.ExcludeProjectVariablesRegex,
+				ExcludeVariableEnvironmentScopes: arguments.ExcludeVariableEnvironmentScopes,
+				LookUpDefaultWorkerPools:         arguments.LookUpDefaultWorkerPools,
+				ExcludeTenants:                   arguments.ExcludeTenants,
+				ExcludeAllTenants:                arguments.ExcludeAllTenants,
+				ExcludeProjects:                  arguments.ExcludeProjects,
+				ExcludeAllTargets:                arguments.ExcludeAllTargets,
 			}
 
 			return ConvertSpaceToTerraform(args)
@@ -121,7 +122,7 @@ func exportProjectImportAndTest(
 	initialiseVars []string,
 	initializeSpaceVars []string,
 	importSpaceVars []string,
-	argumnets args2.Arguments,
+	arguments args2.Arguments,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
 
 	exportImportAndTest(
@@ -151,30 +152,30 @@ func exportProjectImportAndTest(
 				ProjectId:                        projectId,
 				ProjectName:                      "",
 				LookupProjectDependencies:        false,
-				IgnoreCacManagedValues:           argumnets.IgnoreCacManagedValues,
-				BackendBlock:                     argumnets.BackendBlock,
-				DetachProjectTemplates:           argumnets.DetachProjectTemplates,
-				DefaultSecretVariableValues:      argumnets.DefaultSecretVariableValues,
-				ProviderVersion:                  argumnets.ProviderVersion,
-				ExcludeAllRunbooks:               argumnets.ExcludeAllRunbooks,
-				ExcludeRunbooks:                  argumnets.ExcludeRunbooks,
-				ExcludeRunbooksRegex:             argumnets.ExcludeRunbooksRegex,
-				ExcludeProvider:                  argumnets.ExcludeProvider,
-				IncludeOctopusOutputVars:         argumnets.IncludeOctopusOutputVars,
-				ExcludeLibraryVariableSets:       argumnets.ExcludeLibraryVariableSets,
-				ExcludeLibraryVariableSetsRegex:  argumnets.ExcludeLibraryVariableSetsRegex,
-				IgnoreProjectChanges:             argumnets.IgnoreProjectChanges,
-				IgnoreProjectVariableChanges:     argumnets.IgnoreProjectVariableChanges,
-				IgnoreProjectGroupChanges:        argumnets.IgnoreProjectGroupChanges,
-				IgnoreProjectNameChanges:         argumnets.IgnoreProjectNameChanges,
+				IgnoreCacManagedValues:           arguments.IgnoreCacManagedValues,
+				BackendBlock:                     arguments.BackendBlock,
+				DetachProjectTemplates:           arguments.DetachProjectTemplates,
+				DefaultSecretVariableValues:      arguments.DefaultSecretVariableValues,
+				ProviderVersion:                  arguments.ProviderVersion,
+				ExcludeAllRunbooks:               arguments.ExcludeAllRunbooks,
+				ExcludeRunbooks:                  arguments.ExcludeRunbooks,
+				ExcludeRunbooksRegex:             arguments.ExcludeRunbooksRegex,
+				ExcludeProvider:                  arguments.ExcludeProvider,
+				IncludeOctopusOutputVars:         arguments.IncludeOctopusOutputVars,
+				ExcludeLibraryVariableSets:       arguments.ExcludeLibraryVariableSets,
+				ExcludeLibraryVariableSetsRegex:  arguments.ExcludeLibraryVariableSetsRegex,
+				IgnoreProjectChanges:             arguments.IgnoreProjectChanges,
+				IgnoreProjectVariableChanges:     arguments.IgnoreProjectVariableChanges,
+				IgnoreProjectGroupChanges:        arguments.IgnoreProjectGroupChanges,
+				IgnoreProjectNameChanges:         arguments.IgnoreProjectNameChanges,
 				ExcludeProjectVariables:          excludedVars,
-				ExcludeProjectVariablesRegex:     argumnets.ExcludeProjectVariablesRegex,
-				ExcludeVariableEnvironmentScopes: argumnets.ExcludeVariableEnvironmentScopes,
-				LookUpDefaultWorkerPools:         argumnets.LookUpDefaultWorkerPools,
-				ExcludeTenants:                   argumnets.ExcludeTenants,
-				ExcludeAllTenants:                argumnets.ExcludeAllTenants,
-				ExcludeProjects:                  argumnets.ExcludeProjects,
-				ExcludeAllTargets:                argumnets.ExcludeAllTargets,
+				ExcludeProjectVariablesRegex:     arguments.ExcludeProjectVariablesRegex,
+				ExcludeVariableEnvironmentScopes: arguments.ExcludeVariableEnvironmentScopes,
+				LookUpDefaultWorkerPools:         arguments.LookUpDefaultWorkerPools,
+				ExcludeTenants:                   arguments.ExcludeTenants,
+				ExcludeAllTenants:                arguments.ExcludeAllTenants,
+				ExcludeProjects:                  arguments.ExcludeProjects,
+				ExcludeAllTargets:                arguments.ExcludeAllTargets,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -365,6 +366,7 @@ func TestSpaceExport(t *testing.T) {
 		"../test/terraform/1-singlespace/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -402,33 +404,40 @@ func TestSpaceExport(t *testing.T) {
 
 // TestProjectGroupExport verifies that a project group can be reimported with the correct settings
 func TestProjectGroupExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/2-projectgroup/space_creation", "../test/terraform/2-projectgroup/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/2-projectgroup/space_creation",
+		"../test/terraform/2-projectgroup/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
-		err := octopusClient.GetAllResources("ProjectGroups", &collection)
+			collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
+			err := octopusClient.GetAllResources("ProjectGroups", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == "Test" {
-				found = true
-				if strutil.EmptyIfNil(v.Description) != "Test Description" {
-					t.Fatalf("The project group must be have a description of \"Test Description\"")
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "Test" {
+					found = true
+					if strutil.EmptyIfNil(v.Description) != "Test Description" {
+						t.Fatalf("The project group must be have a description of \"Test Description\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatalf("Space must have a project group called \"Test\"")
-		}
+			if !found {
+				t.Fatalf("Space must have a project group called \"Test\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestAwsAccountExport verifies that an AWS account can be reimported with the correct settings
@@ -438,6 +447,7 @@ func TestAwsAccountExport(t *testing.T) {
 		"../test/terraform/3-awsaccount/space_population",
 		[]string{},
 		[]string{"-var=account_aws_account=secretgoeshere"},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -469,147 +479,168 @@ func TestAwsAccountExport(t *testing.T) {
 
 // TestAzureAccountExport verifies that an Azure account can be reimported with the correct settings
 func TestAzureAccountExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/4-azureaccount/space_creation", "../test/terraform/4-azureaccount/space_population", []string{}, []string{"-var=account_azure=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/4-azureaccount/space_creation",
+		"../test/terraform/4-azureaccount/space_population",
+		[]string{},
+		[]string{"-var=account_azure=secretgoeshere"},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Account]{}
-		err := octopusClient.GetAllResources("Accounts", &collection)
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == "Azure" {
-				found = true
-				if strutil.EmptyIfNil(v.ClientId) != "2eb8bd13-661e-489c-beb9-4103efb9dbdd" {
-					t.Fatalf("The account must be have a client ID of \"2eb8bd13-661e-489c-beb9-4103efb9dbdd\"")
-				}
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "Azure" {
+					found = true
+					if strutil.EmptyIfNil(v.ClientId) != "2eb8bd13-661e-489c-beb9-4103efb9dbdd" {
+						t.Fatalf("The account must be have a client ID of \"2eb8bd13-661e-489c-beb9-4103efb9dbdd\"")
+					}
 
-				if strutil.EmptyIfNil(v.SubscriptionNumber) != "95bf77d2-64b1-4ed2-9de1-b5451e3881f5" {
-					t.Fatalf("The account must be have a client ID of \"95bf77d2-64b1-4ed2-9de1-b5451e3881f5\"")
-				}
+					if strutil.EmptyIfNil(v.SubscriptionNumber) != "95bf77d2-64b1-4ed2-9de1-b5451e3881f5" {
+						t.Fatalf("The account must be have a client ID of \"95bf77d2-64b1-4ed2-9de1-b5451e3881f5\"")
+					}
 
-				if strutil.EmptyIfNil(v.TenantId) != "18eb006b-c3c8-4a72-93cd-fe4b293f82ee" {
-					t.Fatalf("The account must be have a client ID of \"18eb006b-c3c8-4a72-93cd-fe4b293f82ee\"")
-				}
+					if strutil.EmptyIfNil(v.TenantId) != "18eb006b-c3c8-4a72-93cd-fe4b293f82ee" {
+						t.Fatalf("The account must be have a client ID of \"18eb006b-c3c8-4a72-93cd-fe4b293f82ee\"")
+					}
 
-				if strutil.EmptyIfNil(v.Description) != "Azure Account" {
-					t.Fatalf("The account must be have a description of \"Azure Account\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Azure Account" {
+						t.Fatalf("The account must be have a description of \"Azure Account\"")
+					}
 
-				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Tenanted" {
-					t.Fatalf("The account must be have a tenanted deployment participation of \"Tenanted\"")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Tenanted" {
+						t.Fatalf("The account must be have a tenanted deployment participation of \"Tenanted\"")
+					}
 
-				if len(v.EnvironmentIds) != 1 {
-					t.Fatalf("The account must be scoped to an environment")
-				}
+					if len(v.EnvironmentIds) != 1 {
+						t.Fatalf("The account must be scoped to an environment")
+					}
 
-				if len(v.TenantIds) != 1 {
-					t.Fatalf("The account must be scoped to an tenant")
+					if len(v.TenantIds) != 1 {
+						t.Fatalf("The account must be scoped to an tenant")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatalf("Space must have an Azure account called \"Azure\"")
-		}
+			if !found {
+				t.Fatalf("Space must have an Azure account called \"Azure\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestUsernamePasswordAccountExport verifies that a username/password account can be reimported with the correct settings
 func TestUsernamePasswordAccountExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/5-userpassaccount/space_creation", "../test/terraform/5-userpassaccount/space_population", []string{}, []string{"-var=account_gke=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/5-userpassaccount/space_creation",
+		"../test/terraform/5-userpassaccount/space_population",
+		[]string{},
+		[]string{"-var=account_gke=secretgoeshere"},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Account]{}
-		err := octopusClient.GetAllResources("Accounts", &collection)
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == "GKE" {
-				found = true
-				if strutil.EmptyIfNil(v.Username) != "admin" {
-					t.Fatalf("The account must be have a username of \"admin\"")
-				}
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "GKE" {
+					found = true
+					if strutil.EmptyIfNil(v.Username) != "admin" {
+						t.Fatalf("The account must be have a username of \"admin\"")
+					}
 
-				if !v.Password.HasValue {
-					t.Fatalf("The account must be have a password")
-				}
+					if !v.Password.HasValue {
+						t.Fatalf("The account must be have a password")
+					}
 
-				if strutil.EmptyIfNil(v.Description) != "A test account" {
-					t.Fatalf("The account must be have a description of \"A test account\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						t.Fatalf("The account must be have a description of \"A test account\"")
+					}
 
-				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+					}
 
-				if len(v.TenantTags) != 0 {
-					t.Fatalf("The account must be have no tenant tags")
+					if len(v.TenantTags) != 0 {
+						t.Fatalf("The account must be have no tenant tags")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatalf("Space must have an account called \"GKE\"")
-		}
+			if !found {
+				t.Fatalf("Space must have an account called \"GKE\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestGcpAccountExport verifies that a GCP account can be reimported with the correct settings
 func TestGcpAccountExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/6-gcpaccount/space_creation", "../test/terraform/6-gcpaccount/space_population", []string{}, []string{"-var=account_google=secretgoeshere"}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/6-gcpaccount/space_creation",
+		"../test/terraform/6-gcpaccount/space_population",
+		[]string{},
+		[]string{"-var=account_google=secretgoeshere"},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Account]{}
-		err := octopusClient.GetAllResources("Accounts", &collection)
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == "Google" {
-				found = true
-				if !v.JsonKey.HasValue {
-					t.Fatalf("The account must be have a JSON key")
-				}
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "Google" {
+					found = true
+					if !v.JsonKey.HasValue {
+						t.Fatalf("The account must be have a JSON key")
+					}
 
-				if strutil.EmptyIfNil(v.Description) != "A test account" {
-					t.Fatalf("The account must be have a description of \"A test account\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						t.Fatalf("The account must be have a description of \"A test account\"")
+					}
 
-				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-					t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+					}
 
-				if len(v.TenantTags) != 0 {
-					t.Fatalf("The account must be have no tenant tags")
+					if len(v.TenantTags) != 0 {
+						t.Fatalf("The account must be have no tenant tags")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatalf("Space must have an account called \"Google\"")
-		}
+			if !found {
+				t.Fatalf("Space must have an account called \"Google\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestSshAccountExport verifies that a SSH account can be reimported with the correct settings
@@ -623,7 +654,9 @@ func TestSshAccountExport(t *testing.T) {
 		[]string{
 			"-var=account_ssh_cert=whatever",
 			"-var=account_ssh=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
-		}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -679,7 +712,9 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 		[]string{},
 		[]string{
 			"-var=account_subscription_cert=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",
-		}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -724,113 +759,127 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 
 // TestTokenAccountExport verifies that a token account can be reimported with the correct settings
 func TestTokenAccountExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/9-tokenaccount/space_creation", "../test/terraform/9-tokenaccount/space_population", []string{}, []string{
-		"-var=account_token=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/9-tokenaccount/space_creation",
+		"../test/terraform/9-tokenaccount/space_population",
+		[]string{},
+		[]string{
+			"-var=account_token=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Account]{}
-		err := octopusClient.GetAllResources("Accounts", &collection)
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		accountName := "Token"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == accountName {
-				found = true
-				if v.AccountType != "Token" {
-					t.Fatal("The account must be have a type of \"Token\"")
-				}
+			accountName := "Token"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == accountName {
+					found = true
+					if v.AccountType != "Token" {
+						t.Fatal("The account must be have a type of \"Token\"")
+					}
 
-				if !v.Token.HasValue {
-					t.Fatal("The account must be have a token")
-				}
+					if !v.Token.HasValue {
+						t.Fatal("The account must be have a token")
+					}
 
-				if strutil.EmptyIfNil(v.Description) != "A test account" {
-					t.Fatal("The account must be have a description of \"A test account\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						t.Fatal("The account must be have a description of \"A test account\"")
+					}
 
-				if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-					t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
-				}
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
+					}
 
-				if len(v.TenantTags) != 0 {
-					t.Fatal("The account must be have no tenant tags")
+					if len(v.TenantTags) != 0 {
+						t.Fatal("The account must be have no tenant tags")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an account called \"" + accountName + "\"")
-		}
+			if !found {
+				t.Fatal("Space must have an account called \"" + accountName + "\"")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestHelmFeedExport verifies that a helm feed can be reimported with the correct settings
 func TestHelmFeedExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/10-helmfeed/space_creation", "../test/terraform/10-helmfeed/space_population", []string{}, []string{
-		"-var=feed_helm_password=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/10-helmfeed/space_creation",
+		"../test/terraform/10-helmfeed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_helm_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Feed]{}
-		err := octopusClient.GetAllResources("Feeds", &collection)
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		feedName := "Helm"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == feedName {
-				found = true
+			feedName := "Helm"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
 
-				if strutil.EmptyIfNil(v.FeedType) != "Helm" {
-					t.Fatal("The feed must have a type of \"Helm\"")
-				}
-
-				if strutil.EmptyIfNil(v.Username) != "username" {
-					t.Fatal("The feed must have a username of \"username\"")
-				}
-
-				if strutil.EmptyIfNil(v.FeedUri) != "https://charts.helm.sh/stable/" {
-					t.Fatal("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
-				}
-
-				foundExecutionTarget := false
-				foundNotAcquired := false
-				for _, o := range v.PackageAcquisitionLocationOptions {
-					if o == "ExecutionTarget" {
-						foundExecutionTarget = true
+					if strutil.EmptyIfNil(v.FeedType) != "Helm" {
+						t.Fatal("The feed must have a type of \"Helm\"")
 					}
 
-					if o == "NotAcquired" {
-						foundNotAcquired = true
+					if strutil.EmptyIfNil(v.Username) != "username" {
+						t.Fatal("The feed must have a username of \"username\"")
 					}
-				}
 
-				if !(foundExecutionTarget && foundNotAcquired) {
-					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					if strutil.EmptyIfNil(v.FeedUri) != "https://charts.helm.sh/stable/" {
+						t.Fatal("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
+					}
+
+					foundExecutionTarget := false
+					foundNotAcquired := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "NotAcquired" {
+							foundNotAcquired = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundNotAcquired) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestDockerFeedExport verifies that a docker feed can be reimported with the correct settings
@@ -842,7 +891,9 @@ func TestDockerFeedExport(t *testing.T) {
 		[]string{},
 		[]string{
 			"-var=feed_docker_password=whatever",
-		}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -913,251 +964,279 @@ func TestEcrFeedExport(t *testing.T) {
 		t.Fatal("the ECR_SECRET_KEY environment variable must be set a valid AWS secret key")
 	}
 
-	exportSpaceImportAndTest(t, "../test/terraform/12-ecrfeed/space_creation", "../test/terraform/12-ecrfeed/space_population", []string{
-		"-var=feed_ecr_access_key=" + os.Getenv("ECR_ACCESS_KEY"),
-		"-var=feed_ecr_secret_key=" + os.Getenv("ECR_SECRET_KEY"),
-	}, []string{
-		"-var=feed_ecr_password=" + os.Getenv("ECR_SECRET_KEY"),
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/12-ecrfeed/space_creation",
+		"../test/terraform/12-ecrfeed/space_population",
+		[]string{
+			"-var=feed_ecr_access_key=" + os.Getenv("ECR_ACCESS_KEY"),
+			"-var=feed_ecr_secret_key=" + os.Getenv("ECR_SECRET_KEY"),
+		},
+		[]string{
+			"-var=feed_ecr_password=" + os.Getenv("ECR_SECRET_KEY"),
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Feed]{}
-		err := octopusClient.GetAllResources("Feeds", &collection)
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		feedName := "ECR"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == feedName {
-				found = true
+			feedName := "ECR"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
 
-				if strutil.EmptyIfNil(v.FeedType) != "AwsElasticContainerRegistry" {
-					t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
-				}
-
-				if strutil.EmptyIfNil(v.AccessKey) != os.Getenv("ECR_ACCESS_KEY") {
-					t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
-				}
-
-				if strutil.EmptyIfNil(v.Region) != "us-east-1" {
-					t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
-				}
-
-				foundExecutionTarget := false
-				foundNotAcquired := false
-				for _, o := range v.PackageAcquisitionLocationOptions {
-					if o == "ExecutionTarget" {
-						foundExecutionTarget = true
+					if strutil.EmptyIfNil(v.FeedType) != "AwsElasticContainerRegistry" {
+						t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
 					}
 
-					if o == "NotAcquired" {
-						foundNotAcquired = true
+					if strutil.EmptyIfNil(v.AccessKey) != os.Getenv("ECR_ACCESS_KEY") {
+						t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
 					}
-				}
 
-				if !(foundExecutionTarget && foundNotAcquired) {
-					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					if strutil.EmptyIfNil(v.Region) != "us-east-1" {
+						t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
+					}
+
+					foundExecutionTarget := false
+					foundNotAcquired := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "NotAcquired" {
+							foundNotAcquired = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundNotAcquired) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestMavenFeedExport verifies that a maven feed can be reimported with the correct settings
 func TestMavenFeedExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/13-mavenfeed/space_creation", "../test/terraform/13-mavenfeed/space_population", []string{}, []string{
-		"-var=feed_maven_password=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/13-mavenfeed/space_creation",
+		"../test/terraform/13-mavenfeed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_maven_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Feed]{}
-		err := octopusClient.GetAllResources("Feeds", &collection)
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		feedName := "Maven"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == feedName {
-				found = true
+			feedName := "Maven"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
 
-				if strutil.EmptyIfNil(v.FeedType) != "Maven" {
-					t.Fatal("The feed must have a type of \"Maven\"")
-				}
-
-				if strutil.EmptyIfNil(v.Username) != "username" {
-					t.Fatal("The feed must have a username of \"username\"")
-				}
-
-				if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
-					t.Fatal("The feed must be have a downloads attempts set to \"5\"")
-				}
-
-				if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
-					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
-				}
-
-				if strutil.EmptyIfNil(v.FeedUri) != "https://repo.maven.apache.org/maven2/" {
-					t.Fatal("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
-				}
-
-				foundExecutionTarget := false
-				foundServer := false
-				for _, o := range v.PackageAcquisitionLocationOptions {
-					if o == "ExecutionTarget" {
-						foundExecutionTarget = true
+					if strutil.EmptyIfNil(v.FeedType) != "Maven" {
+						t.Fatal("The feed must have a type of \"Maven\"")
 					}
 
-					if o == "Server" {
-						foundServer = true
+					if strutil.EmptyIfNil(v.Username) != "username" {
+						t.Fatal("The feed must have a username of \"username\"")
 					}
-				}
 
-				if !(foundExecutionTarget && foundServer) {
-					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+					if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
+						t.Fatal("The feed must be have a downloads attempts set to \"5\"")
+					}
+
+					if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
+						t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
+					}
+
+					if strutil.EmptyIfNil(v.FeedUri) != "https://repo.maven.apache.org/maven2/" {
+						t.Fatal("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
+					}
+
+					foundExecutionTarget := false
+					foundServer := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "Server" {
+							foundServer = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundServer) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestNugetFeedExport verifies that a nuget feed can be reimported with the correct settings
 func TestNugetFeedExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/14-nugetfeed/space_creation", "../test/terraform/14-nugetfeed/space_population", []string{}, []string{
-		"-var=feed_nuget_password=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/14-nugetfeed/space_creation",
+		"../test/terraform/14-nugetfeed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_nuget_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Feed]{}
-		err := octopusClient.GetAllResources("Feeds", &collection)
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		feedName := "Nuget"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == feedName {
-				found = true
+			feedName := "Nuget"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
 
-				if strutil.EmptyIfNil(v.FeedType) != "NuGet" {
-					t.Fatal("The feed must have a type of \"NuGet\"")
-				}
-
-				if !v.EnhancedMode {
-					t.Fatal("The feed must have enhanced mode set to true")
-				}
-
-				if strutil.EmptyIfNil(v.Username) != "username" {
-					t.Fatal("The feed must have a username of \"username\"")
-				}
-
-				if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
-					t.Fatal("The feed must be have a downloads attempts set to \"5\"")
-				}
-
-				if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
-					t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
-				}
-
-				if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
-					t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
-				}
-
-				foundExecutionTarget := false
-				foundServer := false
-				for _, o := range v.PackageAcquisitionLocationOptions {
-					if o == "ExecutionTarget" {
-						foundExecutionTarget = true
+					if strutil.EmptyIfNil(v.FeedType) != "NuGet" {
+						t.Fatal("The feed must have a type of \"NuGet\"")
 					}
 
-					if o == "Server" {
-						foundServer = true
+					if !v.EnhancedMode {
+						t.Fatal("The feed must have enhanced mode set to true")
 					}
-				}
 
-				if !(foundExecutionTarget && foundServer) {
-					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+					if strutil.EmptyIfNil(v.Username) != "username" {
+						t.Fatal("The feed must have a username of \"username\"")
+					}
+
+					if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
+						t.Fatal("The feed must be have a downloads attempts set to \"5\"")
+					}
+
+					if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
+						t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
+					}
+
+					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
+						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+					}
+
+					foundExecutionTarget := false
+					foundServer := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "Server" {
+							foundServer = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundServer) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestWorkerPoolExport verifies that a static worker pool can be reimported with the correct settings
 func TestWorkerPoolExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/15-workerpool/space_creation", "../test/terraform/15-workerpool/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/15-workerpool/space_creation",
+		"../test/terraform/15-workerpool/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.WorkerPool]{}
-		err := octopusClient.GetAllResources("WorkerPools", &collection)
+			collection := octopus.GeneralCollection[octopus.WorkerPool]{}
+			err := octopusClient.GetAllResources("WorkerPools", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		workerPoolName := "Docker"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == workerPoolName {
-				found = true
+			workerPoolName := "Docker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerPoolName {
+					found = true
 
-				if v.WorkerPoolType != "StaticWorkerPool" {
-					t.Fatal("The worker pool must be have a type of \"StaticWorkerPool\" (was \"" + v.WorkerPoolType + "\"")
-				}
+					if v.WorkerPoolType != "StaticWorkerPool" {
+						t.Fatal("The worker pool must be have a type of \"StaticWorkerPool\" (was \"" + v.WorkerPoolType + "\"")
+					}
 
-				if strutil.EmptyIfNil(v.Description) != "A test worker pool" {
-					t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test worker pool" {
+						t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
+					}
 
-				if v.SortOrder != 3 {
-					t.Fatal("The worker pool must be have a sort order of \"3\" (was \"" + fmt.Sprint(v.SortOrder) + "\"")
-				}
+					if v.SortOrder != 3 {
+						t.Fatal("The worker pool must be have a sort order of \"3\" (was \"" + fmt.Sprint(v.SortOrder) + "\"")
+					}
 
-				if v.IsDefault {
-					t.Fatal("The worker pool must be must not be the default")
+					if v.IsDefault {
+						t.Fatal("The worker pool must be must not be the default")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an worker pool called \"" + workerPoolName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an worker pool called \"" + workerPoolName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestEnvironmentExport verifies that an environment can be reimported with the correct settings
@@ -1168,6 +1247,7 @@ func TestEnvironmentExport(t *testing.T) {
 		"../test/terraform/16-environment/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1246,60 +1326,67 @@ func TestEnvironmentExport(t *testing.T) {
 
 // TestLifecycleExport verifies that a lifecycle can be reimported with the correct settings
 func TestLifecycleExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/17-lifecycle/space_creation", "../test/terraform/17-lifecycle/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/17-lifecycle/space_creation",
+		"../test/terraform/17-lifecycle/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Lifecycle]{}
-		err := octopusClient.GetAllResources("Lifecycles", &collection)
+			collection := octopus.GeneralCollection[octopus.Lifecycle]{}
+			err := octopusClient.GetAllResources("Lifecycles", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Simple"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Simple"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "A test lifecycle" {
-					t.Fatal("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "A test lifecycle" {
+						t.Fatal("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
-					t.Fatal("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
-				}
+					if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
+						t.Fatal("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
+					}
 
-				if v.TentacleRetentionPolicy.ShouldKeepForever {
-					t.Fatal("The lifecycle must be have a tentacle retention not set to keep forever")
-				}
+					if v.TentacleRetentionPolicy.ShouldKeepForever {
+						t.Fatal("The lifecycle must be have a tentacle retention not set to keep forever")
+					}
 
-				if v.TentacleRetentionPolicy.Unit != "Items" {
-					t.Fatal("The lifecycle must be have a tentacle retention unit set to \"Items\" (was \"" + v.TentacleRetentionPolicy.Unit + "\")")
-				}
+					if v.TentacleRetentionPolicy.Unit != "Items" {
+						t.Fatal("The lifecycle must be have a tentacle retention unit set to \"Items\" (was \"" + v.TentacleRetentionPolicy.Unit + "\")")
+					}
 
-				if v.ReleaseRetentionPolicy.QuantityToKeep != 1 {
-					t.Fatal("The lifecycle must be have a release retention policy of \"1\" (was \"" + fmt.Sprint(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
-				}
+					if v.ReleaseRetentionPolicy.QuantityToKeep != 1 {
+						t.Fatal("The lifecycle must be have a release retention policy of \"1\" (was \"" + fmt.Sprint(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
+					}
 
-				if !v.ReleaseRetentionPolicy.ShouldKeepForever {
-					t.Log("BUG: The lifecycle must be have a release retention set to keep forever (known bug - the provider creates this field as false)")
-				}
+					if !v.ReleaseRetentionPolicy.ShouldKeepForever {
+						t.Log("BUG: The lifecycle must be have a release retention set to keep forever (known bug - the provider creates this field as false)")
+					}
 
-				if v.ReleaseRetentionPolicy.Unit != "Days" {
-					t.Fatal("The lifecycle must be have a release retention unit set to \"Days\" (was \"" + v.ReleaseRetentionPolicy.Unit + "\")")
+					if v.ReleaseRetentionPolicy.Unit != "Days" {
+						t.Fatal("The lifecycle must be have a release retention unit set to \"Days\" (was \"" + v.ReleaseRetentionPolicy.Unit + "\")")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an lifecycle called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an lifecycle called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestVariableSetExport verifies that a variable set can be reimported with the correct settings
@@ -1312,6 +1399,7 @@ func TestVariableSetExport(t *testing.T) {
 		[]string{
 			"-var=library_variable_set_variables_test_test_secretvariable_1=blah",
 		},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1423,6 +1511,7 @@ func TestProjectExport(t *testing.T) {
 		"../test/terraform/19-project/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1507,6 +1596,7 @@ func TestProjectChannelExport(t *testing.T) {
 		"../test/terraform/20-channel/space_population",
 		[]string{},
 		[]string{"-var=project_test_step_test_package_test_packageid=test2"},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1592,197 +1682,218 @@ func TestProjectChannelExport(t *testing.T) {
 
 // TestTagSetExport verifies that a tag set can be reimported with the correct settings
 func TestTagSetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/21-tagset/space_creation", "../test/terraform/21-tagset/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/21-tagset/space_creation",
+		"../test/terraform/21-tagset/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.TagSet]{}
-		err := octopusClient.GetAllResources("TagSets", &collection)
+			collection := octopus.GeneralCollection[octopus.TagSet]{}
+			err := octopusClient.GetAllResources("TagSets", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "tag1"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "tag1"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "Test tagset" {
-					t.Fatal("The tag set must be have a description of \"Test tagset\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "Test tagset" {
+						t.Fatal("The tag set must be have a description of \"Test tagset\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				if v.SortOrder != 0 {
-					t.Fatal("The tag set must be have a sort order of \"0\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
-				}
+					if v.SortOrder != 0 {
+						t.Fatal("The tag set must be have a sort order of \"0\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
+					}
 
-				tagAFound := false
-				for _, u := range v.Tags {
-					if u.Name == "a" {
-						tagAFound = true
+					tagAFound := false
+					for _, u := range v.Tags {
+						if u.Name == "a" {
+							tagAFound = true
 
-						if strutil.EmptyIfNil(u.Description) != "tag a" {
-							t.Fatal("The tag a must be have a description of \"tag a\" (was \"" + strutil.EmptyIfNil(u.Description) + "\")")
-						}
+							if strutil.EmptyIfNil(u.Description) != "tag a" {
+								t.Fatal("The tag a must be have a description of \"tag a\" (was \"" + strutil.EmptyIfNil(u.Description) + "\")")
+							}
 
-						if u.Color != "#333333" {
-							t.Fatal("The tag a must be have a color of \"#333333\" (was \"" + u.Color + "\")")
-						}
+							if u.Color != "#333333" {
+								t.Fatal("The tag a must be have a color of \"#333333\" (was \"" + u.Color + "\")")
+							}
 
-						if u.SortOrder != 2 {
-							t.Fatal("The tag a must be have a sort order of \"2\" (was \"" + fmt.Sprint(u.SortOrder) + "\")")
+							if u.SortOrder != 2 {
+								t.Fatal("The tag a must be have a sort order of \"2\" (was \"" + fmt.Sprint(u.SortOrder) + "\")")
+							}
 						}
 					}
-				}
 
-				if !tagAFound {
-					t.Fatal("Tag Set must have an tag called \"a\"")
+					if !tagAFound {
+						t.Fatal("Tag Set must have an tag called \"a\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an tag set called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an tag set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestGitCredentialsExport verifies that a git credential can be reimported with the correct settings
 func TestGitCredentialsExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/22-gitcredentialtest/space_creation", "../test/terraform/22-gitcredentialtest/space_population", []string{}, []string{
-		"-var=gitcredential_test=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/22-gitcredentialtest/space_creation",
+		"../test/terraform/22-gitcredentialtest/space_population",
+		[]string{},
+		[]string{
+			"-var=gitcredential_test=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.GitCredentials]{}
-		err := octopusClient.GetAllResources("Git-Credentials", &collection)
+			collection := octopus.GeneralCollection[octopus.GitCredentials]{}
+			err := octopusClient.GetAllResources("Git-Credentials", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(v.Description) != "test git credential" {
-					t.Fatal("The git credential must be have a description of \"test git credential\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(v.Description) != "test git credential" {
+						t.Fatal("The git credential must be have a description of \"test git credential\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
 
-				if v.Details.Username != "admin" {
-					t.Fatal("The git credential must be have a username of \"admin\" (was \"" + v.Details.Username + "\")")
-				}
+					if v.Details.Username != "admin" {
+						t.Fatal("The git credential must be have a username of \"admin\" (was \"" + v.Details.Username + "\")")
+					}
 
-				if v.Details.Type != "UsernamePassword" {
-					t.Fatal("The git credential must be have a credential type of \"UsernamePassword\" (was \"" + v.Details.Type + "\")")
+					if v.Details.Type != "UsernamePassword" {
+						t.Fatal("The git credential must be have a credential type of \"UsernamePassword\" (was \"" + v.Details.Type + "\")")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an git credential called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an git credential called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestScriptModuleExport verifies that a script module set can be reimported with the correct settings
 func TestScriptModuleExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/23-scriptmodule/space_creation", "../test/terraform/23-scriptmodule/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/23-scriptmodule/space_creation",
+		"../test/terraform/23-scriptmodule/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
-		err := octopusClient.GetAllResources("LibraryVariableSets", &collection)
+			collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+			err := octopusClient.GetAllResources("LibraryVariableSets", &collection)
 
-		if err != nil {
-			return err
-		}
-
-		resourceName := "Test2"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
-
-				if strutil.EmptyIfNil(v.Description) != "Test script module" {
-					t.Fatal("The library variable set must be have a description of \"Test script module\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
-				}
-
-				resource := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
-
-				if len(resource.Variables) != 2 {
-					t.Fatal("The library variable set must have two associated variables")
-				}
-
-				foundScript := false
-				foundLanguage := false
-				for _, u := range resource.Variables {
-					if u.Name == "Octopus.Script.Module[Test2]" {
-						foundScript = true
-
-						if u.Type != "String" {
-							t.Fatal("The library variable set variable must have a type of \"String\"")
-						}
-
-						if strutil.EmptyIfNil(u.Value) != "echo \"hi\"" {
-							t.Fatal("The library variable set variable must have a value of \"\"echo \\\"hi\\\"\"\"")
-						}
-
-						if u.IsSensitive {
-							t.Fatal("The library variable set variable must not be sensitive")
-						}
-
-						if !u.IsEditable {
-							t.Fatal("The library variable set variable must be editable")
-						}
-					}
-
-					if u.Name == "Octopus.Script.Module.Language[Test2]" {
-						foundLanguage = true
-
-						if u.Type != "String" {
-							t.Fatal("The library variable set variable must have a type of \"String\"")
-						}
-
-						if strutil.EmptyIfNil(u.Value) != "PowerShell" {
-							t.Fatal("The library variable set variable must have a value of \"PowerShell\"")
-						}
-
-						if u.IsSensitive {
-							t.Fatal("The library variable set variable must not be sensitive")
-						}
-
-						if !u.IsEditable {
-							t.Fatal("The library variable set variable must be editable")
-						}
-					}
-				}
-
-				if !foundLanguage || !foundScript {
-					t.Fatal("Script module must create two variables for script and language")
-				}
-
+			if err != nil {
+				return err
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			resourceName := "Test2"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-		return nil
-	})
+					if strutil.EmptyIfNil(v.Description) != "Test script module" {
+						t.Fatal("The library variable set must be have a description of \"Test script module\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					resource := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+
+					if len(resource.Variables) != 2 {
+						t.Fatal("The library variable set must have two associated variables")
+					}
+
+					foundScript := false
+					foundLanguage := false
+					for _, u := range resource.Variables {
+						if u.Name == "Octopus.Script.Module[Test2]" {
+							foundScript = true
+
+							if u.Type != "String" {
+								t.Fatal("The library variable set variable must have a type of \"String\"")
+							}
+
+							if strutil.EmptyIfNil(u.Value) != "echo \"hi\"" {
+								t.Fatal("The library variable set variable must have a value of \"\"echo \\\"hi\\\"\"\"")
+							}
+
+							if u.IsSensitive {
+								t.Fatal("The library variable set variable must not be sensitive")
+							}
+
+							if !u.IsEditable {
+								t.Fatal("The library variable set variable must be editable")
+							}
+						}
+
+						if u.Name == "Octopus.Script.Module.Language[Test2]" {
+							foundLanguage = true
+
+							if u.Type != "String" {
+								t.Fatal("The library variable set variable must have a type of \"String\"")
+							}
+
+							if strutil.EmptyIfNil(u.Value) != "PowerShell" {
+								t.Fatal("The library variable set variable must have a value of \"PowerShell\"")
+							}
+
+							if u.IsSensitive {
+								t.Fatal("The library variable set variable must not be sensitive")
+							}
+
+							if !u.IsEditable {
+								t.Fatal("The library variable set variable must be editable")
+							}
+						}
+					}
+
+					if !foundLanguage || !foundScript {
+						t.Fatal("Script module must create two variables for script and language")
+					}
+
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
 }
 
 // TestTenantsExport verifies that a git credential can be reimported with the correct settings
@@ -1793,6 +1904,7 @@ func TestTenantsExport(t *testing.T) {
 		"../test/terraform/24-tenants/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1841,259 +1953,287 @@ func TestTenantsExport(t *testing.T) {
 
 // TestCertificateExport verifies that a certificate can be reimported with the correct settings
 func TestCertificateExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/25-certificates/space_creation", "../test/terraform/25-certificates/space_population", []string{}, []string{
-		"-var=certificate_test_data=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",
-		"-var=certificate_test_password=Password01!",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/25-certificates/space_creation",
+		"../test/terraform/25-certificates/space_population",
+		[]string{},
+		[]string{
+			"-var=certificate_test_data=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",
+			"-var=certificate_test_password=Password01!",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Certificate]{}
-		err := octopusClient.GetAllResources("Certificates", &collection)
+			collection := octopus.GeneralCollection[octopus.Certificate]{}
+			err := octopusClient.GetAllResources("Certificates", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if v.Notes != "A test certificate" {
-					t.Fatal("The tenant must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
-				}
+					if v.Notes != "A test certificate" {
+						t.Fatal("The tenant must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
+					}
 
-				if v.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The tenant must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
-				}
+					if v.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The tenant must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
+					}
 
-				if v.SubjectDistinguishedName != "CN=test.com" {
-					t.Fatal("The tenant must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
-				}
+					if v.SubjectDistinguishedName != "CN=test.com" {
+						t.Fatal("The tenant must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
+					}
 
-				if len(v.EnvironmentIds) != 0 {
-					t.Fatal("The tenant must have one project environment")
-				}
+					if len(v.EnvironmentIds) != 0 {
+						t.Fatal("The tenant must have one project environment")
+					}
 
-				if len(v.TenantTags) != 0 {
-					t.Fatal("The tenant must have no tenant tags")
-				}
+					if len(v.TenantTags) != 0 {
+						t.Fatal("The tenant must have no tenant tags")
+					}
 
-				if len(v.TenantIds) != 0 {
-					t.Fatal("The tenant must have no tenants")
+					if len(v.TenantIds) != 0 {
+						t.Fatal("The tenant must have no tenants")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestTenantVariablesExport verifies that a tenant variables can be reimported with the correct settings
 func TestTenantVariablesExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/26-tenant_variables/space_creation", "../test/terraform/26-tenant_variables/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/26-tenant_variables/space_creation",
+		"../test/terraform/26-tenant_variables/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := []octopus.TenantVariable{}
-		err := octopusClient.GetAllResources("TenantVariables/All", &collection)
+			collection := []octopus.TenantVariable{}
+			err := octopusClient.GetAllResources("TenantVariables/All", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, tenantVariable := range collection {
-			for _, project := range tenantVariable.ProjectVariables {
-				if project.ProjectName == resourceName {
-					for _, variables := range project.Variables {
-						for _, value := range variables {
-							// we expect one project variable to be defined
-							found = true
-							if value != "my value" {
-								t.Fatal("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
+			resourceName := "Test"
+			found := false
+			for _, tenantVariable := range collection {
+				for _, project := range tenantVariable.ProjectVariables {
+					if project.ProjectName == resourceName {
+						for _, variables := range project.Variables {
+							for _, value := range variables {
+								// we expect one project variable to be defined
+								found = true
+								if value != "my value" {
+									t.Fatal("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
+								}
 							}
 						}
 					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an tenant project variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an tenant project variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestMachinePolicyExport verifies that a machine policies can be reimported with the correct settings
 func TestMachinePolicyExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/27-machinepolicy/space_creation", "../test/terraform/27-machinepolicy/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/27-machinepolicy/space_creation",
+		"../test/terraform/27-machinepolicy/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.MachinePolicy]{}
-		err := octopusClient.GetAllResources("MachinePolicies", &collection)
+			collection := octopus.GeneralCollection[octopus.MachinePolicy]{}
+			err := octopusClient.GetAllResources("MachinePolicies", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Testing"
-		found := false
-		for _, machinePolicy := range collection.Items {
-			if machinePolicy.Name == resourceName {
-				found = true
+			resourceName := "Testing"
+			found := false
+			for _, machinePolicy := range collection.Items {
+				if machinePolicy.Name == resourceName {
+					found = true
 
-				if strutil.EmptyIfNil(machinePolicy.Description) != "test machine policy" {
-					t.Fatal("The machine policy must have a description of \"test machine policy\" (was \"" + strutil.EmptyIfNil(machinePolicy.Description) + "\")")
-				}
+					if strutil.EmptyIfNil(machinePolicy.Description) != "test machine policy" {
+						t.Fatal("The machine policy must have a description of \"test machine policy\" (was \"" + strutil.EmptyIfNil(machinePolicy.Description) + "\")")
+					}
 
-				if machinePolicy.ConnectionConnectTimeout != "00:01:00" {
-					t.Fatal("The machine policy must have a ConnectionConnectTimeout of \"00:01:00\" (was \"" + machinePolicy.ConnectionConnectTimeout + "\")")
-				}
+					if machinePolicy.ConnectionConnectTimeout != "00:01:00" {
+						t.Fatal("The machine policy must have a ConnectionConnectTimeout of \"00:01:00\" (was \"" + machinePolicy.ConnectionConnectTimeout + "\")")
+					}
 
-				if *machinePolicy.ConnectionRetryCountLimit != 5 {
-					t.Fatal("The machine policy must have a ConnectionRetryCountLimit of \"5\" (was \"" + fmt.Sprint(machinePolicy.ConnectionRetryCountLimit) + "\")")
-				}
+					if *machinePolicy.ConnectionRetryCountLimit != 5 {
+						t.Fatal("The machine policy must have a ConnectionRetryCountLimit of \"5\" (was \"" + fmt.Sprint(machinePolicy.ConnectionRetryCountLimit) + "\")")
+					}
 
-				if machinePolicy.ConnectionRetrySleepInterval != "00:00:01" {
-					t.Fatal("The machine policy must have a ConnectionRetrySleepInterval of \"00:00:01\" (was \"" + machinePolicy.ConnectionRetrySleepInterval + "\")")
-				}
+					if machinePolicy.ConnectionRetrySleepInterval != "00:00:01" {
+						t.Fatal("The machine policy must have a ConnectionRetrySleepInterval of \"00:00:01\" (was \"" + machinePolicy.ConnectionRetrySleepInterval + "\")")
+					}
 
-				if machinePolicy.ConnectionRetryTimeLimit != "00:05:00" {
-					t.Fatal("The machine policy must have a ConnectionRetryTimeLimit of \"00:05:00\" (was \"" + machinePolicy.ConnectionRetryTimeLimit + "\")")
-				}
+					if machinePolicy.ConnectionRetryTimeLimit != "00:05:00" {
+						t.Fatal("The machine policy must have a ConnectionRetryTimeLimit of \"00:05:00\" (was \"" + machinePolicy.ConnectionRetryTimeLimit + "\")")
+					}
 
-				if machinePolicy.PollingRequestMaximumMessageProcessingTimeout != "00:10:00" {
-					t.Fatal("The machine policy must have a PollingRequestMaximumMessageProcessingTimeout of \"00:10:00\" (was \"" + machinePolicy.PollingRequestMaximumMessageProcessingTimeout + "\")")
-				}
+					if machinePolicy.PollingRequestMaximumMessageProcessingTimeout != "00:10:00" {
+						t.Fatal("The machine policy must have a PollingRequestMaximumMessageProcessingTimeout of \"00:10:00\" (was \"" + machinePolicy.PollingRequestMaximumMessageProcessingTimeout + "\")")
+					}
 
-				if machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan != "00:20:00" {
-					t.Fatal("The machine policy must have a DeleteMachinesElapsedTimeSpan of \"00:20:00\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan + "\")")
-				}
+					if machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan != "00:20:00" {
+						t.Fatal("The machine policy must have a DeleteMachinesElapsedTimeSpan of \"00:20:00\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan + "\")")
+					}
 
-				if machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior != "DeleteUnavailableMachines" {
-					t.Fatal("The machine policy must have a MachineCleanupPolicy.DeleteMachinesBehavior of \"DeleteUnavailableMachines\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior + "\")")
-				}
+					if machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior != "DeleteUnavailableMachines" {
+						t.Fatal("The machine policy must have a MachineCleanupPolicy.DeleteMachinesBehavior of \"DeleteUnavailableMachines\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior + "\")")
+					}
 
-				if machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior != "ExpectedToBeOnline" {
-					t.Fatal("The machine policy must have a MachineConnectivityPolicy.MachineConnectivityBehavior of \"ExpectedToBeOnline\" (was \"" + machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior + "\")")
-				}
+					if machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior != "ExpectedToBeOnline" {
+						t.Fatal("The machine policy must have a MachineConnectivityPolicy.MachineConnectivityBehavior of \"ExpectedToBeOnline\" (was \"" + machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior + "\")")
+					}
 
-				if machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType != "Inline" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType + "\")")
-				}
+					if machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType != "Inline" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType + "\")")
+					}
 
-				if machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody != "" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody of \"\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody + "\")")
-				}
+					if machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody != "" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody of \"\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody + "\")")
+					}
 
-				if machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType != "Inline" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType + "\")")
-				}
+					if machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType != "Inline" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType + "\")")
+					}
 
-				if strings.HasPrefix(machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody, "$freeDiskSpaceThreshold") {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody to start with \"$freeDiskSpaceThreshold\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody + "\")")
-				}
+					if strings.HasPrefix(machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody, "$freeDiskSpaceThreshold") {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody to start with \"$freeDiskSpaceThreshold\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody + "\")")
+					}
 
-				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) != "UTC" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCronTimezone of \"UTC\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) + "\")")
-				}
+					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) != "UTC" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCronTimezone of \"UTC\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) + "\")")
+					}
 
-				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) != "" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCron of \"\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) + "\")")
-				}
+					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) != "" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCron of \"\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) + "\")")
+					}
 
-				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) != "RunScript" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckType of \"RunScript\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) + "\")")
-				}
+					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) != "RunScript" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckType of \"RunScript\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) + "\")")
+					}
 
-				if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) != "00:10:00" {
-					t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckInterval of \"00:10:00\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) + "\")")
-				}
+					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) != "00:10:00" {
+						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckInterval of \"00:10:00\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) + "\")")
+					}
 
-				if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) != "UpdateOnDeployment" {
-					t.Fatal("The machine policy must have a MachineUpdatePolicy.CalamariUpdateBehavior of \"UpdateOnDeployment\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
-				}
+					if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) != "UpdateOnDeployment" {
+						t.Fatal("The machine policy must have a MachineUpdatePolicy.CalamariUpdateBehavior of \"UpdateOnDeployment\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+					}
 
-				if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior) != "NeverUpdate" {
-					t.Fatal("The machine policy must have a MachineUpdatePolicy.TentacleUpdateBehavior of \"NeverUpdate\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+					if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior) != "NeverUpdate" {
+						t.Fatal("The machine policy must have a MachineUpdatePolicy.TentacleUpdateBehavior of \"NeverUpdate\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an machine policy for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an machine policy for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectTriggerExport verifies that a project trigger can be reimported with the correct settings
 func TestProjectTriggerExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/28-projecttrigger/space_creation", "../test/terraform/28-projecttrigger/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/28-projecttrigger/space_creation",
+		"../test/terraform/28-projecttrigger/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		foundProject := false
-		foundTrigger := false
-		for _, project := range collection.Items {
-			if project.Name == resourceName {
-				foundProject = true
+			resourceName := "Test"
+			foundProject := false
+			foundTrigger := false
+			for _, project := range collection.Items {
+				if project.Name == resourceName {
+					foundProject = true
 
-				triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
-				err = octopusClient.GetAllResources("Projects/"+project.Id+"/Triggers", &triggers)
+					triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+					err = octopusClient.GetAllResources("Projects/"+project.Id+"/Triggers", &triggers)
 
-				for _, trigger := range triggers.Items {
-					foundTrigger = true
+					for _, trigger := range triggers.Items {
+						foundTrigger = true
 
-					if trigger.Name != "test" {
-						t.Fatal("The project must have a trigger called \"test\" (was \"" + trigger.Name + "\")")
-					}
+						if trigger.Name != "test" {
+							t.Fatal("The project must have a trigger called \"test\" (was \"" + trigger.Name + "\")")
+						}
 
-					if trigger.Filter.FilterType != "MachineFilter" {
-						t.Fatal("The project trigger must have Filter.FilterType set to \"MachineFilter\" (was \"" + trigger.Filter.FilterType + "\")")
-					}
+						if trigger.Filter.FilterType != "MachineFilter" {
+							t.Fatal("The project trigger must have Filter.FilterType set to \"MachineFilter\" (was \"" + trigger.Filter.FilterType + "\")")
+						}
 
-					if trigger.Filter.EventGroups[0] != "MachineAvailableForDeployment" {
-						t.Fatal("The project trigger must have Filter.EventGroups[0] set to \"MachineFilter\" (was \"" + trigger.Filter.EventGroups[0] + "\")")
+						if trigger.Filter.EventGroups[0] != "MachineAvailableForDeployment" {
+							t.Fatal("The project trigger must have Filter.EventGroups[0] set to \"MachineFilter\" (was \"" + trigger.Filter.EventGroups[0] + "\")")
+						}
 					}
 				}
 			}
-		}
 
-		if !foundProject {
-			t.Fatal("Space must have an project \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundProject {
+				t.Fatal("Space must have an project \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		if !foundTrigger {
-			t.Fatal("Project must have a trigger")
-		}
+			if !foundTrigger {
+				t.Fatal("Project must have a trigger")
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestK8sTargetExport verifies that a k8s machine can be reimported with the correct settings
@@ -2106,6 +2246,7 @@ func TestK8sTargetExport(t *testing.T) {
 		[]string{
 			"-var=account_aws_account=whatever",
 		},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2154,6 +2295,7 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 		"../test/terraform/52-k8stargetazure/space_population",
 		[]string{},
 		[]string{"-var=account_azure=secretgoeshere"},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -2206,6 +2348,7 @@ func TestK8sTargetGcpAuthExport(t *testing.T) {
 		"../test/terraform/53-k8stargetgcp/space_population",
 		[]string{},
 		[]string{"-var=account_google=secretgoeshere"},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -2264,6 +2407,7 @@ func TestK8sTargetTokenAuthExport(t *testing.T) {
 		[]string{
 			"-var=account_token=whatever",
 		},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -2311,6 +2455,7 @@ func TestK8sTargetCertAuthExport(t *testing.T) {
 			"-var=certificate_test_data=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",
 			"-var=certificate_test_password=Password01!",
 		},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -2351,243 +2496,278 @@ func TestK8sTargetCertAuthExport(t *testing.T) {
 // TestSshTargetExport verifies that a ssh machine can be reimported with the correct settings
 func TestSshTargetExport(t *testing.T) {
 	// See https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/blob/main/octopusdeploy/schema_ssh_key_account.go#L16
-	exportSpaceImportAndTest(t, "../test/terraform/30-sshtarget/space_creation", "../test/terraform/30-sshtarget/space_population", []string{
-		"-var=account_ec2_sydney=LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlKbkRCT0Jna3Foa2lHOXcwQkJRMHdRVEFwQmdrcWhraUc5dzBCQlF3d0hBUUlwNEUxV1ZrejJEd0NBZ2dBCk1Bd0dDQ3FHU0liM0RRSUpCUUF3RkFZSUtvWklodmNOQXdjRUNIemFuVE1QbHA4ZkJJSUpTSncrdW5BL2ZaVFUKRGdrdWk2QnhOY0REUFg3UHZJZmNXU1dTc3V3YWRhYXdkVEdjY1JVd3pGNTNmRWJTUXJBYzJuWFkwUWVVcU1wcAo4QmdXUUthWlB3MEdqck5OQVJaTy9QYklxaU5ERFMybVRSekZidzREcFY5aDdlblZjL1ZPNlhJdzlxYVYzendlCnhEejdZSkJ2ckhmWHNmTmx1blErYTZGdlRUVkVyWkE1Ukp1dEZUVnhUWVR1Z3lvWWNXZzAzQWlsMDh3eDhyTHkKUkgvTjNjRlEzaEtLcVZuSHQvdnNZUUhTMnJJYkt0RTluelFPWDRxRDdVYXM3Z0c0L2ZkcmZQZjZFWTR1aGpBcApUeGZRTDUzcTBQZG85T09MZlRReFRxakVNaFpidjV1aEN5d0N2VHdWTmVLZ2MzN1pqdDNPSjI3NTB3U2t1TFZvCnllR0VaQmtML1VONjJjTUJuYlFsSTEzR2FXejBHZ0NJNGkwS3UvRmE4aHJZQTQwcHVFdkEwZFBYcVFGMDhYbFYKM1RJUEhGRWdBWlJpTmpJWmFyQW00THdnL1F4Z203OUR1SVM3VHh6RCtpN1pNSmsydjI1ck14Ly9MMXNNUFBtOQpWaXBwVnpLZmpqRmpwTDVjcVJucC9UdUZSVWpHaDZWMFBXVVk1eTVzYjJBWHpuSGZVd1lqeFNoUjBKWXpXejAwCjNHbklwNnlJa1UvL3dFVGJLcVliMjd0RjdETm1WMUxXQzl0ell1dm4yK2EwQkpnU0Jlc3c4WFJ1WWorQS92bVcKWk1YbkF2anZXR3RBUzA4d0ZOV3F3QUtMbzJYUHBXWGVMa3BZUHo1ZnY2QnJaNVNwYTg4UFhsa1VmOVF0VHRobwprZFlGOWVMdk5hTXpSSWJhbmRGWjdLcHUvN2I3L0tDWE9rMUhMOUxvdEpwY2tJdTAxWS81TnQwOHp5cEVQQ1RzClVGWG5DODNqK2tWMktndG5XcXlEL2k3Z1dwaHJSK0IrNE9tM3VZU1RuY042a2d6ZkV3WldpUVA3ZkpiNlYwTHoKc29yU09sK2g2WDRsMC9oRVdScktVQTBrOXpPZU9TQXhlbmpVUXFReWdUd0RqQTJWbTdSZXI2ZElDMVBwNmVETgpBVEJ0ME1NZjJJTytxbTJtK0VLd1FVSXY4ZXdpdEpab016MFBaOHB6WEM0ZFMyRTErZzZmbnE2UGJ5WWRISDJnCmVraXk4Y2duVVJmdHJFaVoyMUxpMWdpdTJaeVM5QUc0Z1ZuT0E1Y05oSzZtRDJUaGl5UUl2M09yUDA0aDFTNlEKQUdGeGJONEhZK0tCYnVITTYwRG1PQXR5c3o4QkJheHFwWjlXQkVhV01ubFB6eEI2SnFqTGJrZ1BkQ2wycytUWAphcWx0UDd6QkpaenVTeVNQc2tQR1NBREUvaEF4eDJFM1RQeWNhQlhQRVFUM2VkZmNsM09nYXRmeHBSYXJLV09PCnFHM2lteW42ZzJiNjhWTlBDSnBTYTNKZ1Axb0NNVlBpa2RCSEdSVUV3N2dXTlJVOFpXRVJuS292M2c0MnQ4dkEKU2Z0a3VMdkhoUnlPQW91SUVsNjJIems0WC9CeVVOQ2J3MW50RzFQeHpSaERaV2dPaVhPNi94WFByRlpKa3BtcQpZUUE5dW83OVdKZy9zSWxucFJCdFlUbUh4eU9mNk12R2svdXlkZExkcmZ6MHB6QUVmWm11YTVocWh5M2Y4YlNJCmpxMlJwUHE3eHJ1Y2djbFAwTWFjdHkrbm9wa0N4M0lNRUE4NE9MQ3dxZjVtemtwY0U1M3hGaU1hcXZTK0dHZmkKZlZnUGpXTXRzMFhjdEtCV2tUbVFFN3MxSE5EV0g1dlpJaDY2WTZncXR0cjU2VGdtcHRLWHBVdUJ1MEdERFBQbwp1aGI4TnVRRjZwNHNoM1dDbXlzTU9uSW5jaXRxZWE4NTFEMmloK2lIY3VqcnJidkVYZGtjMnlxUHBtK3Q3SXBvCm1zWkxVemdXRlZpNWY3KzZiZU56dGJ3T2tmYmdlQVAyaklHTzdtR1pKWWM0L1d1eXBqeVRKNlBQVC9IMUc3K3QKUTh5R3FDV3BzNFdQM2srR3hrbW90cnFROFcxa0J1RDJxTEdmSTdMMGZUVE9lWk0vQUZ1VDJVSkcxKzQ2czJVVwp2RlF2VUJmZ0dTWlh3c1VUeGJRTlZNaTJib1BCRkNxbUY2VmJTcmw2YVgrSm1NNVhySUlqUUhGUFZWVGxzeUtpClVDUC9PQTJOWlREdW9IcC9EM0s1Qjh5MlIyUTlqZlJ0RkcwL0dnMktCbCtObzdTbXlPcWlsUlNkZ1VJb0p5QkcKRGovZXJ4ZkZNMlc3WTVsNGZ2ZlNpdU1OZmlUTVdkY3cxSStnVkpGMC9mTHRpYkNoUlg0OTlIRWlXUHZkTGFKMwppcDJEYU9ReS9QZG5zK3hvaWlMNWtHV25BVUVwanNjWno0YU5DZFowOXRUb1FhK2RZd3g1R1ovNUtmbnVpTURnClBrWjNXalFpOVlZRWFXbVIvQ2JmMjAyRXdoNjdIZzVqWE5kb0RNendXT0V4RFNkVFFYZVdzUUI0LzNzcjE2S2MKeitGN2xhOXhHVEVhTDllQitwcjY5L2JjekJLMGVkNXUxYUgxcXR3cjcrMmliNmZDdlMyblRGQTM1ZG50YXZlUwp4VUJVZ0NzRzVhTTl4b2pIQ0o4RzRFMm9iRUEwUDg2SFlqZEJJSXF5U0txZWtQYmFybW4xR1JrdUVlbU5hTVdyCkM2bWZqUXR5V2ZMWnlSbUlhL1dkSVgzYXhqZHhYa3kydm4yNVV6MXZRNklrNnRJcktPYUJnRUY1cmYwY014dTUKN1BYeTk0dnc1QjE0Vlcra2JqQnkyY3hIajJhWnJEaE53UnVQNlpIckg5MHZuN2NmYjYwU0twRWxxdmZwdlN0VQpvQnVXQlFEUUE3bHpZajhhT3BHend3LzlYTjI5MGJrUnd4elVZRTBxOVl4bS9VSHJTNUlyRWtKSml2SUlEb3hICjF4VTVLd2ErbERvWDJNcERrZlBQVE9XSjVqZG8wbXNsN0dBTmc1WGhERnBpb2hFMEdSS2lGVytYcjBsYkJKU2oKUkxibytrbzhncXU2WHB0OWU4U0Y5OEJ4bFpEcFBVMG5PcGRrTmxwTVpKYVlpaUUzRjRFRG9DcE56bmxpY2JrcApjZ2FrcGVrbS9YS21RSlJxWElXci8wM29SdUVFTXBxZzlRbjdWRG8zR0FiUTlnNUR5U1Bid0xvT25xQ0V3WGFJCkF6alFzWU4rc3VRd2FqZHFUcEthZ1FCbWRaMmdNZDBTMTV1Ukt6c2wxOHgzK1JabmRiNWoxNjNuV0NkMlQ5VDgKald3NURISDgvVUFkSGZoOHh0RTJ6bWRHbEg5T3I5U2hIMzViMWgxVm8rU2pNMzRPeWpwVjB3TmNVL1psOTBUdAp1WnJwYnBwTXZCZUVmRzZTczVXVGhySm9LaGl0RkNwWlVqaDZvdnk3Mzd6ditKaUc4aDRBNG1GTmRPSUtBd0I0Cmp2Nms3V3poUVlEa2Q0ZXRoajNndVJCTGZQNThNVEJKaWhZemVINkUzclhjSGE5b0xnREgzczd4bU8yVEtUY24Kd3VIM3AvdC9WWFN3UGJ0QXBXUXdTRFNKSnA5WkF4S0Q1eVdmd3lTU2ZQVGtwM2c1b2NmKzBhSk1Kc2FkU3lwNQpNR1Vic1oxd1hTN2RXMDhOYXZ2WmpmbElNUm8wUFZDbkRVcFp1bjJuekhTRGJDSjB1M0ZYd1lFQzFFejlJUnN0ClJFbDdpdTZQRlVMSldSU0V0SzBKY1lLS0ltNXhQWHIvbTdPc2duMUNJL0F0cTkrWEFjODk1MGVxeTRwTFVQYkYKZkhFOFhVYWFzUU82MDJTeGpnOTZZaWJ3ZnFyTDF2Vjd1MitUYzJleUZ1N3oxUGRPZDQyWko5M2wvM3lOUW92egora0JuQVdObzZ3WnNKSitHNDZDODNYRVBLM0h1bGw1dFg2UDU4NUQ1b3o5U1oyZGlTd1FyVFN1THVSL0JCQUpVCmd1K2FITkJGRmVtUXNEL2QxMllud1h3d3FkZXVaMDVmQlFiWUREdldOM3daUjJJeHZpd1E0bjZjZWl3OUZ4QmcKbWlzMFBGY2NZOWl0SnJrYXlWQVVZUFZ3Sm5XSmZEK2pQNjJ3UWZJWmhhbFQrZDJpUzVQaDEwdWlMNHEvY1JuYgo1c1Mvc2o0Tm5QYmpxc1ZmZWlKTEh3PT0KLS0tLS1FTkQgRU5DUllQVEVEIFBSSVZBVEUgS0VZLS0tLS0K",
-		"-var=account_ec2_sydney_cert=whatever",
-	}, []string{
-		"-var=account_ec2_sydney=LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlKbkRCT0Jna3Foa2lHOXcwQkJRMHdRVEFwQmdrcWhraUc5dzBCQlF3d0hBUUlwNEUxV1ZrejJEd0NBZ2dBCk1Bd0dDQ3FHU0liM0RRSUpCUUF3RkFZSUtvWklodmNOQXdjRUNIemFuVE1QbHA4ZkJJSUpTSncrdW5BL2ZaVFUKRGdrdWk2QnhOY0REUFg3UHZJZmNXU1dTc3V3YWRhYXdkVEdjY1JVd3pGNTNmRWJTUXJBYzJuWFkwUWVVcU1wcAo4QmdXUUthWlB3MEdqck5OQVJaTy9QYklxaU5ERFMybVRSekZidzREcFY5aDdlblZjL1ZPNlhJdzlxYVYzendlCnhEejdZSkJ2ckhmWHNmTmx1blErYTZGdlRUVkVyWkE1Ukp1dEZUVnhUWVR1Z3lvWWNXZzAzQWlsMDh3eDhyTHkKUkgvTjNjRlEzaEtLcVZuSHQvdnNZUUhTMnJJYkt0RTluelFPWDRxRDdVYXM3Z0c0L2ZkcmZQZjZFWTR1aGpBcApUeGZRTDUzcTBQZG85T09MZlRReFRxakVNaFpidjV1aEN5d0N2VHdWTmVLZ2MzN1pqdDNPSjI3NTB3U2t1TFZvCnllR0VaQmtML1VONjJjTUJuYlFsSTEzR2FXejBHZ0NJNGkwS3UvRmE4aHJZQTQwcHVFdkEwZFBYcVFGMDhYbFYKM1RJUEhGRWdBWlJpTmpJWmFyQW00THdnL1F4Z203OUR1SVM3VHh6RCtpN1pNSmsydjI1ck14Ly9MMXNNUFBtOQpWaXBwVnpLZmpqRmpwTDVjcVJucC9UdUZSVWpHaDZWMFBXVVk1eTVzYjJBWHpuSGZVd1lqeFNoUjBKWXpXejAwCjNHbklwNnlJa1UvL3dFVGJLcVliMjd0RjdETm1WMUxXQzl0ell1dm4yK2EwQkpnU0Jlc3c4WFJ1WWorQS92bVcKWk1YbkF2anZXR3RBUzA4d0ZOV3F3QUtMbzJYUHBXWGVMa3BZUHo1ZnY2QnJaNVNwYTg4UFhsa1VmOVF0VHRobwprZFlGOWVMdk5hTXpSSWJhbmRGWjdLcHUvN2I3L0tDWE9rMUhMOUxvdEpwY2tJdTAxWS81TnQwOHp5cEVQQ1RzClVGWG5DODNqK2tWMktndG5XcXlEL2k3Z1dwaHJSK0IrNE9tM3VZU1RuY042a2d6ZkV3WldpUVA3ZkpiNlYwTHoKc29yU09sK2g2WDRsMC9oRVdScktVQTBrOXpPZU9TQXhlbmpVUXFReWdUd0RqQTJWbTdSZXI2ZElDMVBwNmVETgpBVEJ0ME1NZjJJTytxbTJtK0VLd1FVSXY4ZXdpdEpab016MFBaOHB6WEM0ZFMyRTErZzZmbnE2UGJ5WWRISDJnCmVraXk4Y2duVVJmdHJFaVoyMUxpMWdpdTJaeVM5QUc0Z1ZuT0E1Y05oSzZtRDJUaGl5UUl2M09yUDA0aDFTNlEKQUdGeGJONEhZK0tCYnVITTYwRG1PQXR5c3o4QkJheHFwWjlXQkVhV01ubFB6eEI2SnFqTGJrZ1BkQ2wycytUWAphcWx0UDd6QkpaenVTeVNQc2tQR1NBREUvaEF4eDJFM1RQeWNhQlhQRVFUM2VkZmNsM09nYXRmeHBSYXJLV09PCnFHM2lteW42ZzJiNjhWTlBDSnBTYTNKZ1Axb0NNVlBpa2RCSEdSVUV3N2dXTlJVOFpXRVJuS292M2c0MnQ4dkEKU2Z0a3VMdkhoUnlPQW91SUVsNjJIems0WC9CeVVOQ2J3MW50RzFQeHpSaERaV2dPaVhPNi94WFByRlpKa3BtcQpZUUE5dW83OVdKZy9zSWxucFJCdFlUbUh4eU9mNk12R2svdXlkZExkcmZ6MHB6QUVmWm11YTVocWh5M2Y4YlNJCmpxMlJwUHE3eHJ1Y2djbFAwTWFjdHkrbm9wa0N4M0lNRUE4NE9MQ3dxZjVtemtwY0U1M3hGaU1hcXZTK0dHZmkKZlZnUGpXTXRzMFhjdEtCV2tUbVFFN3MxSE5EV0g1dlpJaDY2WTZncXR0cjU2VGdtcHRLWHBVdUJ1MEdERFBQbwp1aGI4TnVRRjZwNHNoM1dDbXlzTU9uSW5jaXRxZWE4NTFEMmloK2lIY3VqcnJidkVYZGtjMnlxUHBtK3Q3SXBvCm1zWkxVemdXRlZpNWY3KzZiZU56dGJ3T2tmYmdlQVAyaklHTzdtR1pKWWM0L1d1eXBqeVRKNlBQVC9IMUc3K3QKUTh5R3FDV3BzNFdQM2srR3hrbW90cnFROFcxa0J1RDJxTEdmSTdMMGZUVE9lWk0vQUZ1VDJVSkcxKzQ2czJVVwp2RlF2VUJmZ0dTWlh3c1VUeGJRTlZNaTJib1BCRkNxbUY2VmJTcmw2YVgrSm1NNVhySUlqUUhGUFZWVGxzeUtpClVDUC9PQTJOWlREdW9IcC9EM0s1Qjh5MlIyUTlqZlJ0RkcwL0dnMktCbCtObzdTbXlPcWlsUlNkZ1VJb0p5QkcKRGovZXJ4ZkZNMlc3WTVsNGZ2ZlNpdU1OZmlUTVdkY3cxSStnVkpGMC9mTHRpYkNoUlg0OTlIRWlXUHZkTGFKMwppcDJEYU9ReS9QZG5zK3hvaWlMNWtHV25BVUVwanNjWno0YU5DZFowOXRUb1FhK2RZd3g1R1ovNUtmbnVpTURnClBrWjNXalFpOVlZRWFXbVIvQ2JmMjAyRXdoNjdIZzVqWE5kb0RNendXT0V4RFNkVFFYZVdzUUI0LzNzcjE2S2MKeitGN2xhOXhHVEVhTDllQitwcjY5L2JjekJLMGVkNXUxYUgxcXR3cjcrMmliNmZDdlMyblRGQTM1ZG50YXZlUwp4VUJVZ0NzRzVhTTl4b2pIQ0o4RzRFMm9iRUEwUDg2SFlqZEJJSXF5U0txZWtQYmFybW4xR1JrdUVlbU5hTVdyCkM2bWZqUXR5V2ZMWnlSbUlhL1dkSVgzYXhqZHhYa3kydm4yNVV6MXZRNklrNnRJcktPYUJnRUY1cmYwY014dTUKN1BYeTk0dnc1QjE0Vlcra2JqQnkyY3hIajJhWnJEaE53UnVQNlpIckg5MHZuN2NmYjYwU0twRWxxdmZwdlN0VQpvQnVXQlFEUUE3bHpZajhhT3BHend3LzlYTjI5MGJrUnd4elVZRTBxOVl4bS9VSHJTNUlyRWtKSml2SUlEb3hICjF4VTVLd2ErbERvWDJNcERrZlBQVE9XSjVqZG8wbXNsN0dBTmc1WGhERnBpb2hFMEdSS2lGVytYcjBsYkJKU2oKUkxibytrbzhncXU2WHB0OWU4U0Y5OEJ4bFpEcFBVMG5PcGRrTmxwTVpKYVlpaUUzRjRFRG9DcE56bmxpY2JrcApjZ2FrcGVrbS9YS21RSlJxWElXci8wM29SdUVFTXBxZzlRbjdWRG8zR0FiUTlnNUR5U1Bid0xvT25xQ0V3WGFJCkF6alFzWU4rc3VRd2FqZHFUcEthZ1FCbWRaMmdNZDBTMTV1Ukt6c2wxOHgzK1JabmRiNWoxNjNuV0NkMlQ5VDgKald3NURISDgvVUFkSGZoOHh0RTJ6bWRHbEg5T3I5U2hIMzViMWgxVm8rU2pNMzRPeWpwVjB3TmNVL1psOTBUdAp1WnJwYnBwTXZCZUVmRzZTczVXVGhySm9LaGl0RkNwWlVqaDZvdnk3Mzd6ditKaUc4aDRBNG1GTmRPSUtBd0I0Cmp2Nms3V3poUVlEa2Q0ZXRoajNndVJCTGZQNThNVEJKaWhZemVINkUzclhjSGE5b0xnREgzczd4bU8yVEtUY24Kd3VIM3AvdC9WWFN3UGJ0QXBXUXdTRFNKSnA5WkF4S0Q1eVdmd3lTU2ZQVGtwM2c1b2NmKzBhSk1Kc2FkU3lwNQpNR1Vic1oxd1hTN2RXMDhOYXZ2WmpmbElNUm8wUFZDbkRVcFp1bjJuekhTRGJDSjB1M0ZYd1lFQzFFejlJUnN0ClJFbDdpdTZQRlVMSldSU0V0SzBKY1lLS0ltNXhQWHIvbTdPc2duMUNJL0F0cTkrWEFjODk1MGVxeTRwTFVQYkYKZkhFOFhVYWFzUU82MDJTeGpnOTZZaWJ3ZnFyTDF2Vjd1MitUYzJleUZ1N3oxUGRPZDQyWko5M2wvM3lOUW92egora0JuQVdObzZ3WnNKSitHNDZDODNYRVBLM0h1bGw1dFg2UDU4NUQ1b3o5U1oyZGlTd1FyVFN1THVSL0JCQUpVCmd1K2FITkJGRmVtUXNEL2QxMllud1h3d3FkZXVaMDVmQlFiWUREdldOM3daUjJJeHZpd1E0bjZjZWl3OUZ4QmcKbWlzMFBGY2NZOWl0SnJrYXlWQVVZUFZ3Sm5XSmZEK2pQNjJ3UWZJWmhhbFQrZDJpUzVQaDEwdWlMNHEvY1JuYgo1c1Mvc2o0Tm5QYmpxc1ZmZWlKTEh3PT0KLS0tLS1FTkQgRU5DUllQVEVEIFBSSVZBVEUgS0VZLS0tLS0K",
-		"-var=account_ec2_sydney_cert=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/30-sshtarget/space_creation",
+		"../test/terraform/30-sshtarget/space_population",
+		[]string{
+			"-var=account_ec2_sydney=LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlKbkRCT0Jna3Foa2lHOXcwQkJRMHdRVEFwQmdrcWhraUc5dzBCQlF3d0hBUUlwNEUxV1ZrejJEd0NBZ2dBCk1Bd0dDQ3FHU0liM0RRSUpCUUF3RkFZSUtvWklodmNOQXdjRUNIemFuVE1QbHA4ZkJJSUpTSncrdW5BL2ZaVFUKRGdrdWk2QnhOY0REUFg3UHZJZmNXU1dTc3V3YWRhYXdkVEdjY1JVd3pGNTNmRWJTUXJBYzJuWFkwUWVVcU1wcAo4QmdXUUthWlB3MEdqck5OQVJaTy9QYklxaU5ERFMybVRSekZidzREcFY5aDdlblZjL1ZPNlhJdzlxYVYzendlCnhEejdZSkJ2ckhmWHNmTmx1blErYTZGdlRUVkVyWkE1Ukp1dEZUVnhUWVR1Z3lvWWNXZzAzQWlsMDh3eDhyTHkKUkgvTjNjRlEzaEtLcVZuSHQvdnNZUUhTMnJJYkt0RTluelFPWDRxRDdVYXM3Z0c0L2ZkcmZQZjZFWTR1aGpBcApUeGZRTDUzcTBQZG85T09MZlRReFRxakVNaFpidjV1aEN5d0N2VHdWTmVLZ2MzN1pqdDNPSjI3NTB3U2t1TFZvCnllR0VaQmtML1VONjJjTUJuYlFsSTEzR2FXejBHZ0NJNGkwS3UvRmE4aHJZQTQwcHVFdkEwZFBYcVFGMDhYbFYKM1RJUEhGRWdBWlJpTmpJWmFyQW00THdnL1F4Z203OUR1SVM3VHh6RCtpN1pNSmsydjI1ck14Ly9MMXNNUFBtOQpWaXBwVnpLZmpqRmpwTDVjcVJucC9UdUZSVWpHaDZWMFBXVVk1eTVzYjJBWHpuSGZVd1lqeFNoUjBKWXpXejAwCjNHbklwNnlJa1UvL3dFVGJLcVliMjd0RjdETm1WMUxXQzl0ell1dm4yK2EwQkpnU0Jlc3c4WFJ1WWorQS92bVcKWk1YbkF2anZXR3RBUzA4d0ZOV3F3QUtMbzJYUHBXWGVMa3BZUHo1ZnY2QnJaNVNwYTg4UFhsa1VmOVF0VHRobwprZFlGOWVMdk5hTXpSSWJhbmRGWjdLcHUvN2I3L0tDWE9rMUhMOUxvdEpwY2tJdTAxWS81TnQwOHp5cEVQQ1RzClVGWG5DODNqK2tWMktndG5XcXlEL2k3Z1dwaHJSK0IrNE9tM3VZU1RuY042a2d6ZkV3WldpUVA3ZkpiNlYwTHoKc29yU09sK2g2WDRsMC9oRVdScktVQTBrOXpPZU9TQXhlbmpVUXFReWdUd0RqQTJWbTdSZXI2ZElDMVBwNmVETgpBVEJ0ME1NZjJJTytxbTJtK0VLd1FVSXY4ZXdpdEpab016MFBaOHB6WEM0ZFMyRTErZzZmbnE2UGJ5WWRISDJnCmVraXk4Y2duVVJmdHJFaVoyMUxpMWdpdTJaeVM5QUc0Z1ZuT0E1Y05oSzZtRDJUaGl5UUl2M09yUDA0aDFTNlEKQUdGeGJONEhZK0tCYnVITTYwRG1PQXR5c3o4QkJheHFwWjlXQkVhV01ubFB6eEI2SnFqTGJrZ1BkQ2wycytUWAphcWx0UDd6QkpaenVTeVNQc2tQR1NBREUvaEF4eDJFM1RQeWNhQlhQRVFUM2VkZmNsM09nYXRmeHBSYXJLV09PCnFHM2lteW42ZzJiNjhWTlBDSnBTYTNKZ1Axb0NNVlBpa2RCSEdSVUV3N2dXTlJVOFpXRVJuS292M2c0MnQ4dkEKU2Z0a3VMdkhoUnlPQW91SUVsNjJIems0WC9CeVVOQ2J3MW50RzFQeHpSaERaV2dPaVhPNi94WFByRlpKa3BtcQpZUUE5dW83OVdKZy9zSWxucFJCdFlUbUh4eU9mNk12R2svdXlkZExkcmZ6MHB6QUVmWm11YTVocWh5M2Y4YlNJCmpxMlJwUHE3eHJ1Y2djbFAwTWFjdHkrbm9wa0N4M0lNRUE4NE9MQ3dxZjVtemtwY0U1M3hGaU1hcXZTK0dHZmkKZlZnUGpXTXRzMFhjdEtCV2tUbVFFN3MxSE5EV0g1dlpJaDY2WTZncXR0cjU2VGdtcHRLWHBVdUJ1MEdERFBQbwp1aGI4TnVRRjZwNHNoM1dDbXlzTU9uSW5jaXRxZWE4NTFEMmloK2lIY3VqcnJidkVYZGtjMnlxUHBtK3Q3SXBvCm1zWkxVemdXRlZpNWY3KzZiZU56dGJ3T2tmYmdlQVAyaklHTzdtR1pKWWM0L1d1eXBqeVRKNlBQVC9IMUc3K3QKUTh5R3FDV3BzNFdQM2srR3hrbW90cnFROFcxa0J1RDJxTEdmSTdMMGZUVE9lWk0vQUZ1VDJVSkcxKzQ2czJVVwp2RlF2VUJmZ0dTWlh3c1VUeGJRTlZNaTJib1BCRkNxbUY2VmJTcmw2YVgrSm1NNVhySUlqUUhGUFZWVGxzeUtpClVDUC9PQTJOWlREdW9IcC9EM0s1Qjh5MlIyUTlqZlJ0RkcwL0dnMktCbCtObzdTbXlPcWlsUlNkZ1VJb0p5QkcKRGovZXJ4ZkZNMlc3WTVsNGZ2ZlNpdU1OZmlUTVdkY3cxSStnVkpGMC9mTHRpYkNoUlg0OTlIRWlXUHZkTGFKMwppcDJEYU9ReS9QZG5zK3hvaWlMNWtHV25BVUVwanNjWno0YU5DZFowOXRUb1FhK2RZd3g1R1ovNUtmbnVpTURnClBrWjNXalFpOVlZRWFXbVIvQ2JmMjAyRXdoNjdIZzVqWE5kb0RNendXT0V4RFNkVFFYZVdzUUI0LzNzcjE2S2MKeitGN2xhOXhHVEVhTDllQitwcjY5L2JjekJLMGVkNXUxYUgxcXR3cjcrMmliNmZDdlMyblRGQTM1ZG50YXZlUwp4VUJVZ0NzRzVhTTl4b2pIQ0o4RzRFMm9iRUEwUDg2SFlqZEJJSXF5U0txZWtQYmFybW4xR1JrdUVlbU5hTVdyCkM2bWZqUXR5V2ZMWnlSbUlhL1dkSVgzYXhqZHhYa3kydm4yNVV6MXZRNklrNnRJcktPYUJnRUY1cmYwY014dTUKN1BYeTk0dnc1QjE0Vlcra2JqQnkyY3hIajJhWnJEaE53UnVQNlpIckg5MHZuN2NmYjYwU0twRWxxdmZwdlN0VQpvQnVXQlFEUUE3bHpZajhhT3BHend3LzlYTjI5MGJrUnd4elVZRTBxOVl4bS9VSHJTNUlyRWtKSml2SUlEb3hICjF4VTVLd2ErbERvWDJNcERrZlBQVE9XSjVqZG8wbXNsN0dBTmc1WGhERnBpb2hFMEdSS2lGVytYcjBsYkJKU2oKUkxibytrbzhncXU2WHB0OWU4U0Y5OEJ4bFpEcFBVMG5PcGRrTmxwTVpKYVlpaUUzRjRFRG9DcE56bmxpY2JrcApjZ2FrcGVrbS9YS21RSlJxWElXci8wM29SdUVFTXBxZzlRbjdWRG8zR0FiUTlnNUR5U1Bid0xvT25xQ0V3WGFJCkF6alFzWU4rc3VRd2FqZHFUcEthZ1FCbWRaMmdNZDBTMTV1Ukt6c2wxOHgzK1JabmRiNWoxNjNuV0NkMlQ5VDgKald3NURISDgvVUFkSGZoOHh0RTJ6bWRHbEg5T3I5U2hIMzViMWgxVm8rU2pNMzRPeWpwVjB3TmNVL1psOTBUdAp1WnJwYnBwTXZCZUVmRzZTczVXVGhySm9LaGl0RkNwWlVqaDZvdnk3Mzd6ditKaUc4aDRBNG1GTmRPSUtBd0I0Cmp2Nms3V3poUVlEa2Q0ZXRoajNndVJCTGZQNThNVEJKaWhZemVINkUzclhjSGE5b0xnREgzczd4bU8yVEtUY24Kd3VIM3AvdC9WWFN3UGJ0QXBXUXdTRFNKSnA5WkF4S0Q1eVdmd3lTU2ZQVGtwM2c1b2NmKzBhSk1Kc2FkU3lwNQpNR1Vic1oxd1hTN2RXMDhOYXZ2WmpmbElNUm8wUFZDbkRVcFp1bjJuekhTRGJDSjB1M0ZYd1lFQzFFejlJUnN0ClJFbDdpdTZQRlVMSldSU0V0SzBKY1lLS0ltNXhQWHIvbTdPc2duMUNJL0F0cTkrWEFjODk1MGVxeTRwTFVQYkYKZkhFOFhVYWFzUU82MDJTeGpnOTZZaWJ3ZnFyTDF2Vjd1MitUYzJleUZ1N3oxUGRPZDQyWko5M2wvM3lOUW92egora0JuQVdObzZ3WnNKSitHNDZDODNYRVBLM0h1bGw1dFg2UDU4NUQ1b3o5U1oyZGlTd1FyVFN1THVSL0JCQUpVCmd1K2FITkJGRmVtUXNEL2QxMllud1h3d3FkZXVaMDVmQlFiWUREdldOM3daUjJJeHZpd1E0bjZjZWl3OUZ4QmcKbWlzMFBGY2NZOWl0SnJrYXlWQVVZUFZ3Sm5XSmZEK2pQNjJ3UWZJWmhhbFQrZDJpUzVQaDEwdWlMNHEvY1JuYgo1c1Mvc2o0Tm5QYmpxc1ZmZWlKTEh3PT0KLS0tLS1FTkQgRU5DUllQVEVEIFBSSVZBVEUgS0VZLS0tLS0K",
+			"-var=account_ec2_sydney_cert=whatever",
+		},
+		[]string{
+			"-var=account_ec2_sydney=LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlKbkRCT0Jna3Foa2lHOXcwQkJRMHdRVEFwQmdrcWhraUc5dzBCQlF3d0hBUUlwNEUxV1ZrejJEd0NBZ2dBCk1Bd0dDQ3FHU0liM0RRSUpCUUF3RkFZSUtvWklodmNOQXdjRUNIemFuVE1QbHA4ZkJJSUpTSncrdW5BL2ZaVFUKRGdrdWk2QnhOY0REUFg3UHZJZmNXU1dTc3V3YWRhYXdkVEdjY1JVd3pGNTNmRWJTUXJBYzJuWFkwUWVVcU1wcAo4QmdXUUthWlB3MEdqck5OQVJaTy9QYklxaU5ERFMybVRSekZidzREcFY5aDdlblZjL1ZPNlhJdzlxYVYzendlCnhEejdZSkJ2ckhmWHNmTmx1blErYTZGdlRUVkVyWkE1Ukp1dEZUVnhUWVR1Z3lvWWNXZzAzQWlsMDh3eDhyTHkKUkgvTjNjRlEzaEtLcVZuSHQvdnNZUUhTMnJJYkt0RTluelFPWDRxRDdVYXM3Z0c0L2ZkcmZQZjZFWTR1aGpBcApUeGZRTDUzcTBQZG85T09MZlRReFRxakVNaFpidjV1aEN5d0N2VHdWTmVLZ2MzN1pqdDNPSjI3NTB3U2t1TFZvCnllR0VaQmtML1VONjJjTUJuYlFsSTEzR2FXejBHZ0NJNGkwS3UvRmE4aHJZQTQwcHVFdkEwZFBYcVFGMDhYbFYKM1RJUEhGRWdBWlJpTmpJWmFyQW00THdnL1F4Z203OUR1SVM3VHh6RCtpN1pNSmsydjI1ck14Ly9MMXNNUFBtOQpWaXBwVnpLZmpqRmpwTDVjcVJucC9UdUZSVWpHaDZWMFBXVVk1eTVzYjJBWHpuSGZVd1lqeFNoUjBKWXpXejAwCjNHbklwNnlJa1UvL3dFVGJLcVliMjd0RjdETm1WMUxXQzl0ell1dm4yK2EwQkpnU0Jlc3c4WFJ1WWorQS92bVcKWk1YbkF2anZXR3RBUzA4d0ZOV3F3QUtMbzJYUHBXWGVMa3BZUHo1ZnY2QnJaNVNwYTg4UFhsa1VmOVF0VHRobwprZFlGOWVMdk5hTXpSSWJhbmRGWjdLcHUvN2I3L0tDWE9rMUhMOUxvdEpwY2tJdTAxWS81TnQwOHp5cEVQQ1RzClVGWG5DODNqK2tWMktndG5XcXlEL2k3Z1dwaHJSK0IrNE9tM3VZU1RuY042a2d6ZkV3WldpUVA3ZkpiNlYwTHoKc29yU09sK2g2WDRsMC9oRVdScktVQTBrOXpPZU9TQXhlbmpVUXFReWdUd0RqQTJWbTdSZXI2ZElDMVBwNmVETgpBVEJ0ME1NZjJJTytxbTJtK0VLd1FVSXY4ZXdpdEpab016MFBaOHB6WEM0ZFMyRTErZzZmbnE2UGJ5WWRISDJnCmVraXk4Y2duVVJmdHJFaVoyMUxpMWdpdTJaeVM5QUc0Z1ZuT0E1Y05oSzZtRDJUaGl5UUl2M09yUDA0aDFTNlEKQUdGeGJONEhZK0tCYnVITTYwRG1PQXR5c3o4QkJheHFwWjlXQkVhV01ubFB6eEI2SnFqTGJrZ1BkQ2wycytUWAphcWx0UDd6QkpaenVTeVNQc2tQR1NBREUvaEF4eDJFM1RQeWNhQlhQRVFUM2VkZmNsM09nYXRmeHBSYXJLV09PCnFHM2lteW42ZzJiNjhWTlBDSnBTYTNKZ1Axb0NNVlBpa2RCSEdSVUV3N2dXTlJVOFpXRVJuS292M2c0MnQ4dkEKU2Z0a3VMdkhoUnlPQW91SUVsNjJIems0WC9CeVVOQ2J3MW50RzFQeHpSaERaV2dPaVhPNi94WFByRlpKa3BtcQpZUUE5dW83OVdKZy9zSWxucFJCdFlUbUh4eU9mNk12R2svdXlkZExkcmZ6MHB6QUVmWm11YTVocWh5M2Y4YlNJCmpxMlJwUHE3eHJ1Y2djbFAwTWFjdHkrbm9wa0N4M0lNRUE4NE9MQ3dxZjVtemtwY0U1M3hGaU1hcXZTK0dHZmkKZlZnUGpXTXRzMFhjdEtCV2tUbVFFN3MxSE5EV0g1dlpJaDY2WTZncXR0cjU2VGdtcHRLWHBVdUJ1MEdERFBQbwp1aGI4TnVRRjZwNHNoM1dDbXlzTU9uSW5jaXRxZWE4NTFEMmloK2lIY3VqcnJidkVYZGtjMnlxUHBtK3Q3SXBvCm1zWkxVemdXRlZpNWY3KzZiZU56dGJ3T2tmYmdlQVAyaklHTzdtR1pKWWM0L1d1eXBqeVRKNlBQVC9IMUc3K3QKUTh5R3FDV3BzNFdQM2srR3hrbW90cnFROFcxa0J1RDJxTEdmSTdMMGZUVE9lWk0vQUZ1VDJVSkcxKzQ2czJVVwp2RlF2VUJmZ0dTWlh3c1VUeGJRTlZNaTJib1BCRkNxbUY2VmJTcmw2YVgrSm1NNVhySUlqUUhGUFZWVGxzeUtpClVDUC9PQTJOWlREdW9IcC9EM0s1Qjh5MlIyUTlqZlJ0RkcwL0dnMktCbCtObzdTbXlPcWlsUlNkZ1VJb0p5QkcKRGovZXJ4ZkZNMlc3WTVsNGZ2ZlNpdU1OZmlUTVdkY3cxSStnVkpGMC9mTHRpYkNoUlg0OTlIRWlXUHZkTGFKMwppcDJEYU9ReS9QZG5zK3hvaWlMNWtHV25BVUVwanNjWno0YU5DZFowOXRUb1FhK2RZd3g1R1ovNUtmbnVpTURnClBrWjNXalFpOVlZRWFXbVIvQ2JmMjAyRXdoNjdIZzVqWE5kb0RNendXT0V4RFNkVFFYZVdzUUI0LzNzcjE2S2MKeitGN2xhOXhHVEVhTDllQitwcjY5L2JjekJLMGVkNXUxYUgxcXR3cjcrMmliNmZDdlMyblRGQTM1ZG50YXZlUwp4VUJVZ0NzRzVhTTl4b2pIQ0o4RzRFMm9iRUEwUDg2SFlqZEJJSXF5U0txZWtQYmFybW4xR1JrdUVlbU5hTVdyCkM2bWZqUXR5V2ZMWnlSbUlhL1dkSVgzYXhqZHhYa3kydm4yNVV6MXZRNklrNnRJcktPYUJnRUY1cmYwY014dTUKN1BYeTk0dnc1QjE0Vlcra2JqQnkyY3hIajJhWnJEaE53UnVQNlpIckg5MHZuN2NmYjYwU0twRWxxdmZwdlN0VQpvQnVXQlFEUUE3bHpZajhhT3BHend3LzlYTjI5MGJrUnd4elVZRTBxOVl4bS9VSHJTNUlyRWtKSml2SUlEb3hICjF4VTVLd2ErbERvWDJNcERrZlBQVE9XSjVqZG8wbXNsN0dBTmc1WGhERnBpb2hFMEdSS2lGVytYcjBsYkJKU2oKUkxibytrbzhncXU2WHB0OWU4U0Y5OEJ4bFpEcFBVMG5PcGRrTmxwTVpKYVlpaUUzRjRFRG9DcE56bmxpY2JrcApjZ2FrcGVrbS9YS21RSlJxWElXci8wM29SdUVFTXBxZzlRbjdWRG8zR0FiUTlnNUR5U1Bid0xvT25xQ0V3WGFJCkF6alFzWU4rc3VRd2FqZHFUcEthZ1FCbWRaMmdNZDBTMTV1Ukt6c2wxOHgzK1JabmRiNWoxNjNuV0NkMlQ5VDgKald3NURISDgvVUFkSGZoOHh0RTJ6bWRHbEg5T3I5U2hIMzViMWgxVm8rU2pNMzRPeWpwVjB3TmNVL1psOTBUdAp1WnJwYnBwTXZCZUVmRzZTczVXVGhySm9LaGl0RkNwWlVqaDZvdnk3Mzd6ditKaUc4aDRBNG1GTmRPSUtBd0I0Cmp2Nms3V3poUVlEa2Q0ZXRoajNndVJCTGZQNThNVEJKaWhZemVINkUzclhjSGE5b0xnREgzczd4bU8yVEtUY24Kd3VIM3AvdC9WWFN3UGJ0QXBXUXdTRFNKSnA5WkF4S0Q1eVdmd3lTU2ZQVGtwM2c1b2NmKzBhSk1Kc2FkU3lwNQpNR1Vic1oxd1hTN2RXMDhOYXZ2WmpmbElNUm8wUFZDbkRVcFp1bjJuekhTRGJDSjB1M0ZYd1lFQzFFejlJUnN0ClJFbDdpdTZQRlVMSldSU0V0SzBKY1lLS0ltNXhQWHIvbTdPc2duMUNJL0F0cTkrWEFjODk1MGVxeTRwTFVQYkYKZkhFOFhVYWFzUU82MDJTeGpnOTZZaWJ3ZnFyTDF2Vjd1MitUYzJleUZ1N3oxUGRPZDQyWko5M2wvM3lOUW92egora0JuQVdObzZ3WnNKSitHNDZDODNYRVBLM0h1bGw1dFg2UDU4NUQ1b3o5U1oyZGlTd1FyVFN1THVSL0JCQUpVCmd1K2FITkJGRmVtUXNEL2QxMllud1h3d3FkZXVaMDVmQlFiWUREdldOM3daUjJJeHZpd1E0bjZjZWl3OUZ4QmcKbWlzMFBGY2NZOWl0SnJrYXlWQVVZUFZ3Sm5XSmZEK2pQNjJ3UWZJWmhhbFQrZDJpUzVQaDEwdWlMNHEvY1JuYgo1c1Mvc2o0Tm5QYmpxc1ZmZWlKTEh3PT0KLS0tLS1FTkQgRU5DUllQVEVEIFBSSVZBVEUgS0VZLS0tLS0K",
+			"-var=account_ec2_sydney_cert=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		foundResource := false
+			resourceName := "Test"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if machine.Endpoint.Host != "3.25.215.87" {
-					t.Fatal("The machine must have a Endpoint.Host of \"3.25.215.87\" (was \"" + machine.Endpoint.Host + "\")")
-				}
+					if machine.Endpoint.Host != "3.25.215.87" {
+						t.Fatal("The machine must have a Endpoint.Host of \"3.25.215.87\" (was \"" + machine.Endpoint.Host + "\")")
+					}
 
-				if machine.Endpoint.DotNetCorePlatform != "linux-x64" {
-					t.Fatal("The machine must have a Endpoint.DotNetCorePlatform of \"linux-x64\" (was \"" + machine.Endpoint.DotNetCorePlatform + "\")")
+					if machine.Endpoint.DotNetCorePlatform != "linux-x64" {
+						t.Fatal("The machine must have a Endpoint.DotNetCorePlatform of \"linux-x64\" (was \"" + machine.Endpoint.DotNetCorePlatform + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestListeningTargetExport verifies that a listening machine can be reimported with the correct settings
 func TestListeningTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/31-listeningtarget/space_creation", "../test/terraform/31-listeningtarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/31-listeningtarget/space_creation",
+		"../test/terraform/31-listeningtarget/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		foundResource := false
+			resourceName := "Test"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if machine.Uri != "https://tentacle/" {
-					t.Fatal("The machine must have a Uri of \"https://tentacle/\" (was \"" + machine.Uri + "\")")
-				}
+					if machine.Uri != "https://tentacle/" {
+						t.Fatal("The machine must have a Uri of \"https://tentacle/\" (was \"" + machine.Uri + "\")")
+					}
 
-				if machine.Thumbprint != "55E05FD1B0F76E60F6DA103988056CE695685FD1" {
-					t.Fatal("The machine must have a Thumbprint of \"55E05FD1B0F76E60F6DA103988056CE695685FD1\" (was \"" + machine.Thumbprint + "\")")
-				}
+					if machine.Thumbprint != "55E05FD1B0F76E60F6DA103988056CE695685FD1" {
+						t.Fatal("The machine must have a Thumbprint of \"55E05FD1B0F76E60F6DA103988056CE695685FD1\" (was \"" + machine.Thumbprint + "\")")
+					}
 
-				if len(machine.Roles) != 1 {
-					t.Fatal("The machine must have 1 role")
-				}
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
 
-				if machine.Roles[0] != "vm" {
-					t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
-				}
+					if machine.Roles[0] != "vm" {
+						t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
+					}
 
-				if machine.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestPollingTargetExport verifies that a polling machine can be reimported with the correct settings
 func TestPollingTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/32-pollingtarget/space_creation", "../test/terraform/32-pollingtarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/32-pollingtarget/space_creation",
+		"../test/terraform/32-pollingtarget/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		foundResource := false
+			resourceName := "Test"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if machine.Endpoint.Uri != "poll://abcdefghijklmnopqrst/" {
-					t.Fatal("The machine must have a Uri of \"poll://abcdefghijklmnopqrst/\" (was \"" + machine.Endpoint.Uri + "\")")
-				}
+					if machine.Endpoint.Uri != "poll://abcdefghijklmnopqrst/" {
+						t.Fatal("The machine must have a Uri of \"poll://abcdefghijklmnopqrst/\" (was \"" + machine.Endpoint.Uri + "\")")
+					}
 
-				if machine.Thumbprint != "1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86" {
-					t.Fatal("The machine must have a Thumbprint of \"1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86\" (was \"" + machine.Thumbprint + "\")")
-				}
+					if machine.Thumbprint != "1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86" {
+						t.Fatal("The machine must have a Thumbprint of \"1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86\" (was \"" + machine.Thumbprint + "\")")
+					}
 
-				if len(machine.Roles) != 1 {
-					t.Fatal("The machine must have 1 role")
-				}
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
 
-				if machine.Roles[0] != "vm" {
-					t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
-				}
+					if machine.Roles[0] != "vm" {
+						t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
+					}
 
-				if machine.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestCloudRegionTargetExport verifies that a cloud region can be reimported with the correct settings
 func TestCloudRegionTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/33-cloudregiontarget/space_creation", "../test/terraform/33-cloudregiontarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/33-cloudregiontarget/space_creation",
+		"../test/terraform/33-cloudregiontarget/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		foundResource := false
+			resourceName := "Test"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if len(machine.Roles) != 1 {
-					t.Fatal("The machine must have 1 role")
-				}
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
 
-				if machine.Roles[0] != "cloud" {
-					t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
-				}
+					if machine.Roles[0] != "cloud" {
+						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+					}
 
-				if machine.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestOfflineDropTargetExport verifies that an offline drop can be reimported with the correct settings
 func TestOfflineDropTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/34-offlinedroptarget/space_creation", "../test/terraform/34-offlinedroptarget/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/34-offlinedroptarget/space_creation",
+		"../test/terraform/34-offlinedroptarget/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		foundResource := false
+			resourceName := "Test"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if len(machine.Roles) != 1 {
-					t.Fatal("The machine must have 1 role")
-				}
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
 
-				if machine.Roles[0] != "offline" {
-					t.Fatal("The machine must have a role of \"offline\" (was \"" + machine.Roles[0] + "\")")
-				}
+					if machine.Roles[0] != "offline" {
+						t.Fatal("The machine must have a role of \"offline\" (was \"" + machine.Roles[0] + "\")")
+					}
 
-				if machine.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
-				}
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
 
-				if machine.Endpoint.ApplicationsDirectory != "c:\\temp" {
-					t.Fatal("The machine must have a Endpoint.ApplicationsDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.ApplicationsDirectory + "\")")
-				}
+					if machine.Endpoint.ApplicationsDirectory != "c:\\temp" {
+						t.Fatal("The machine must have a Endpoint.ApplicationsDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.ApplicationsDirectory + "\")")
+					}
 
-				if machine.Endpoint.OctopusWorkingDirectory != "c:\\temp" {
-					t.Fatal("The machine must have a Endpoint.OctopusWorkingDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.OctopusWorkingDirectory + "\")")
+					if machine.Endpoint.OctopusWorkingDirectory != "c:\\temp" {
+						t.Fatal("The machine must have a Endpoint.OctopusWorkingDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.OctopusWorkingDirectory + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestAzureCloudServiceTargetExport verifies that a azure cloud service target can be reimported with the correct settings
@@ -2598,7 +2778,9 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 		[]string{},
 		[]string{
 			"-var=account_subscription_cert=MIIQFgIBAzCCD9wGCSqGSIb3DQEHAaCCD80Egg/JMIIPxTCCBdcGCSqGSIb3DQEHBqCCBcgwggXEAgEAMIIFvQYJKoZIhvcNAQcBMBwGCiqGSIb3DQEMAQYwDgQID45832+aYFECAggAgIIFkIyL07gJLw9QA/WpRBhh+eDpKQ7/R4ZX7uOKch6UCl+JYs9BE2TkVHSrukZ8YeQY5aHRK6kB5fZSzyD+7+cNIEx1RU8owOdOl0uSIUvDuUu6MXgcCNwkZ+I9DV6eqU991RiO2B2kGAHKsr28z0voOXGP9JDG2kJMF+R1j8LQqRCkJUrEaX0BJ1zeuY05Cv3domuevKSq+Xg1VRGWZEc01Iprb2gTpMpFwusLGase4pyka9XCbDIkqUEjt65cOXzjyiZnKgX376wA6TfB+xrmC9g/839Rt6V2pZA84bDB0AcwHMyUjXN9mdB1mIfFRvOID8Pp019Oc7B+cfipZTubIZld6BPDFRiE8yd3ixkQSPTDv5eHYxtUEt969M6h1viE5xF1YvJ3RaxkZXIOTx5kel5XtOQbMaF8W+pzoY7ljl9bjN+0nPSJgApcTxCvYoILv9Ecy/Ry8CH91BTNTJr+rdLNtcMGFskrS2U+wUhuMtMeEkAPVX2BWYjWvnlDsXiwpzoV/fpzmZCqD8q03Tzt/gM/IaxX3Eb/MZdB60FepgxHu7oom5IQMCzgymUsq4jtKD4fQdBu+QVVggoB1hlrDomCfraThieBqTpQBSTW3TpQ2gPq2pFAIAqexXd7kQVouWDuQWa8vXU35SHKbE3l8yrVT3pK7EdBT4+YQfYYXUpGnnbUuFq26oTV1B1NmVg9bOMYOnEIMBo4ZfPhaMU+VqFiEHVTQ/khhqsPAvscaIArBwAuQGNNuaV0GWHR7qztGeJFMRoqmyKb+Pxzcue6Z5QVaCMg9t1kFaTMdiomA7W6VYww8euCx1kiMjiczC2DTxamp1B4+bQBJQsSGJjhbe1EOMYRRauYhWPUpbF5kGkp7HwRdT6W9dDvs987dLR90jwOuBfmshdVabVuQI8kxglS8SSYG4oSbhIOmz88ssjeQlNCU92DpHHW52+Rvyxp5vitFwpfs1niZRBSCTwMvA2kqaU7MlgDq+jjgPHLP0YL7K72zbYE5aVTT5C7tc8jwwJ1XiRNyO8aRClSN099rTfRxUrxekIP+hOYVfiMIBvtuG+BotIEGlykKjC21W0f4zFKMjmiz7MKnhSpcUO2FgjKZlXi8haGYNRKBmPXNF7Xs+dsT6zv1IUN8/ssrLITpVk6DRAAhBGHt64XHRQql4EqeCO4fPemUBQ1IQOFy17krSWfvqRgEi+lTBVh3JWRNBbQq2ZSF2LFFy0sdsEyAzRDgeg5p8zCTu1HuXV7WMZwkme2RnqaU9/6qF9SlGPtgagwDRxAjsljA531RG0s+Mo3z8tAoHLn66s7Di/VNho5WnlcfR0FAMCfG/JROjOCLPDyxNsuIHRah/V3g/jsNkmomXutDwBiiiV6Cfl6fMwf+xPNA5JvrYTyaGVdxxrLz0YyYbdmzbaFFSSN4Xtmi6TrotGzRdeHj6uFT24H7xonJtSzNi7+mWuU2/r4SNATVIJ9yHxAiGgrfVTMFi98zV9eor5mtWMf6exGE9Fs0iIdPDYb0le6/69jeH1mpGQ3HTyLQlaEo4OPeDsLYm7jyrk6jxTN/NEZEXO7ify/7AJIRK7Dv5hR5h2C2u70/VWtIB5kozDz53lmOMzSeKLvG0lvCm1jcvB12SVlnJjAnmy8vFLiLyLxTRftC0nlv14LB1pl+h5EIWWn0/kGCUk57rOYmzwVo59nck8pyQN/q6Nwnijw27tT2FG79Qjhxzeproe3U6i48elCU/mdUSBhqP4jTiacV+lU8tFGVESZpV/Pkxan+aNT73QeiqbMFW4eiyqpqPiYx1QiNRAoGy7qJOriaDgLkOnLtwpA+dVTs663abR1h868j+pt6g4CjiYBGcugALF0lrCR65fvBaRbs8PpthSmNUO7iAJLKkz+m56lMIIJ5gYJKoZIhvcNAQcBoIIJ1wSCCdMwggnPMIIJywYLKoZIhvcNAQwKAQKgggluMIIJajAcBgoqhkiG9w0BDAEDMA4ECEkD2RX/XiDvAgIIAASCCUjX1gBBLbSZDI0UnWXYGo+ro+gdXHzpueUbw4McGRMfofZqkb5+ksbDat1UY6PbtIunwvxP08mlRCfJWOqNg1XGNP7FYCuzmXv+sOeEwvRMsEf+0ufI0cGHTYneAFef94stFB5Q73zGtO60KvwcjVKRBJwnDbWM61x6KN9681sC3WTaS163VtUNmuntw+WU3DNKcvXuCUhOLjciqcwoa939TpL1UkK7VTIKMZTHmlylKPy5MQvSYM0JjHl/yuZeQ5IldwMH8Ts0JwBvaC47za5S2P+7c2dzl8kI0Wafqxd7a+uwf9DWmgVC0J6oaR+kmMeuTJG+ggiQ87i1+m16m+5nhVdlwtVKYABSlSPnlDgoel33QWzfy7RSug+YDk/8JEKS0slrNe94e20gyIeEzxaNaM+rjJ2MDgkNhb7NxGZdR1oOreAafpPZ1UansKhHqvUeWbQ/rUGdk/8TbehiiX2Jlh7F3NbbsYT/6zMvK/Zq8gS0FrGZxA1bFDApd+5m4qinzbedctac++8keijuISTq+t257hr3I4+4jDHhwoGN3qE1zlAQj5NDc4qb3QM47frEY6ENwyNWjrzeGGI3tphYwpIq2ocufqJjgYR9TcQPQEURA+35opmoHzy+68iPJoZT0bqFx/OSwQP0JC1OMNAtMjZTswVF/GX6GeRk6iF2FNTMIQ/DunvMTooVxupjaujFCxfnM2p8fuz/De4ciTVqg1B4bdk+upPzgAYFgKl9ynGbeHLQQq0ETSfmxxc7YIwrJ1UsWECIENe1ZZG4texjYE14nql7crx8rT4lqzcRAuyfJ8y/nCwXtPGGqT34AJfmGZEFKrX+i8c5jUTreSXdI4FoDIW8L2/o5zJv/wqQd0s0ly0DUCbqZ8DE2WXpN8iReM5u1GJP7xHbeJg3lkqSo2R4HTv1bV/E25aTdacwRsd5IkBZnAJejZKhwmVhga2cfnHuqxL1o6h+l6qygTtVdis1Pu7xg5RoeaVRsdzBpHKQ3mL/jfMnAccOIoCe45mMmN6ZOVWqVFNAyYbjwYoOG/zgyawsx/FTQB166+xZw0vH3Jj1Wd80wpQX47QMvRb1LOfe680p/mt5JrUkN8yuepOKCseJUEmZO+OxaNe0N1MnLdGLKtYncu25FOosMDRvw+DKQtDtfEGyKPJNWdrU7C9swQ29GarclrDwbqo0Ris93SWfx5tCJD6vHCAnV3u6A2eWFZfKqMDC6hkLlnMLoStehbfTzvSuyvK7vbq+VMmACx6EpP8PDxf5G5/RJFGHAOZWT1tEl2mPIQSvgMO/o23S8HKzCRelYuSdz3iqufYZphVuNKFyMNIc363lImgAqOMMo1JrFu3UBUlqjUllhqlKq6ZDcG6jfNipo1XEgt1gs824JsECHg8xsVKJ+bhY1yK92kh4u2rSRtahOFiU0z4CipkmtP9KvrQqnQX65+FLEJ7/DSKF82c5dUIBWw/NJlgsHTs4utL3+An2EwMYgRGtESOX0PQWH20GczzbFOxDYfdi0/AVtoKkwjo60PCIznOnPzTi527zNggfnXv6t15WDVPIC8yjn/4GJIEaeWpTNZL8Ff3R1BMD08QZEY1Ucal1adWUxKtBnmxvt/FlkkSPnbgGxWm0eWeU10+zNLnPL0Zr7jWNtmJFhONvmr4xbqZsvWzDJeHmKYMRs4l67Yt+/Pgh6p2U0uDlT7pCYi6KTsrOLeZOEB0BRwHXt1ks9cs1JDS4nfDA/9a6NOGErKRtvy0rMwshN3e/jj3g6GdRh2RSRNHIffCsf3QN3k3saLvnniK992898CrH4W47SysFUbiP+ukdX8pvarpN+aeKtxc7uvzcBJKBdW1jvpsJBDMRd6OrGnuei+LSNcCyVdrUQc7c1Gcnl8jkEl2wUcyDkZP4ZZuK2PFRPVIQJ0dgRdFvgjzridSzO4PPTNuTbX68Y4aNtE/pAKzJlAlE/xNHtJLXOwWUxmfC4crNEW0ihAByUaGGu8Owgm2mzAwKHQmAie90GN1ov9oHU+6tBPNIL6Xbcf6roqf3VFh6Z8lz1vAWci/qG7Pf+LCf+HTDqI6nba/ihbO2AxxAy8WdY+tNkJtc5giRjdE2Rha9y5aFznQM/AyiB+iiuA8i6tQWvu1v8uxdzbaCfckq/NvYp+E8wCTRsZ1KnK19g5e8ltAOmsokW4MU1femcOJNwJWXB7O41ihJNo3rYCxe+sQ2lmfVcOyONnuB/woxBEuoOQJGV50VCWBFCCTFQe9tlXEHqVqJSXoXZbpPDluMFGoVxogUCtcFpJy/uS8R/XqitBdcsIWcXMXOkQGLCdA+FYeiwdARUptIInl1pSaZNkn7CwOaIWc0/cXjTYrxFodkQ/sPU2AB8IW641AQjg2yiCDFx7penax8hvUEVK/jxwQZYqwCrkYme4t77EMwquCo0JUXkypy19fpuXm/qiin9oErJ2LZg5SEqhReskipKJIZRb1tRCFFZm5QWM0e6cOHI2nl16irUGbuojGpYVbdJdCW4XLz82rv1kCdYZGXXtKs8F8Uayz6b7Jklksx39bVtwQq7gF/1KfEyO3f3kn6ASOjG/IigBcvygERycx9rDOf0coGLNEaxSsX8UE3EDHKqqZCWYxXOPBotTMWxucYYq94dm6qrn/LuflFyDkuryU000r5Cw9ZnnnfwuK4TBSV+8wgJhLvwrqnixLbsg3r3iydFdRJcCqlbP4iCO9uV/Wx3ybUD6OttVfamsKXGE4546d/tbRPstI2yb2U+XfuC/7jMaDEn9mhZYZKMm4mU1SLy/Xd/QfzKrshd/fwo+4ytqzn5pUQsz1dwPnWqcAZ/rqdC2Sduu0DzV4JxCSdIqV3ly+ddmbHN8CqraVK6wVU6c/MAQWIJtHJGzyaFuTP5o6+NKU3bL7mn81K6ERRa26rrGJ1m4wcaZ2DQz7tPjGXvgyf4C/G0kHe044uugF5o/JbeTWIBS5MEN7LwzAHq+hRZtn3gS7CVa9RuKv83CXAxXKGyVWhhH1I1/1hg4D9g/SId5oKFoX/4uwHU3qL2TR5x2IudbAsM5aR07WkdH6AlYR39uHYJD0YbSetGpPwB8kE9UxUf3OapTPZ0H3BsK8e3gmPeeV5HZdNhLQyooSeZrBCBMrHZPWKBd5lyJ+A55eXlZ3Ipjvga7oxSjAjBgkqhkiG9w0BCRQxFh4UIBwAdABlAHMAdAAuAGMAbwBtIB0wIwYJKoZIhvcNAQkVMRYEFOMGhtI87uqZJdmGtKQ0ocH8zuq9MDEwITAJBgUrDgMCGgUABBT/J2cWVPSNRgxssWAizswpxhPtlgQI/Z6OnKgtwf4CAggA",
-		}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2653,120 +2835,132 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 
 // TestAzureServiceFabricTargetExport verifies that a service fabric target can be reimported with the correct settings
 func TestAzureServiceFabricTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/36-servicefabrictarget/space_creation", "../test/terraform/36-servicefabrictarget/space_population", []string{
-		"-var=target_service_fabric=whatever",
-	}, []string{
-		"-var=target_service_fabric=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/36-servicefabrictarget/space_creation",
+		"../test/terraform/36-servicefabrictarget/space_population", []string{
+			"-var=target_service_fabric=whatever",
+		}, []string{
+			"-var=target_service_fabric=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Service Fabric"
-		foundResource := false
+			resourceName := "Service Fabric"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if len(machine.Roles) != 1 {
-					t.Fatal("The machine must have 1 role")
-				}
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
 
-				if machine.Roles[0] != "cloud" {
-					t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
-				}
+					if machine.Roles[0] != "cloud" {
+						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+					}
 
-				if machine.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
-				}
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
 
-				if machine.Endpoint.ConnectionEndpoint != "http://endpoint" {
-					t.Fatal("The machine must have a Endpoint.ConnectionEndpoint of \"http://endpoint\" (was \"" + machine.Endpoint.ConnectionEndpoint + "\")")
-				}
+					if machine.Endpoint.ConnectionEndpoint != "http://endpoint" {
+						t.Fatal("The machine must have a Endpoint.ConnectionEndpoint of \"http://endpoint\" (was \"" + machine.Endpoint.ConnectionEndpoint + "\")")
+					}
 
-				if machine.Endpoint.AadCredentialType != "UserCredential" {
-					t.Fatal("The machine must have a Endpoint.AadCredentialType of \"UserCredential\" (was \"" + machine.Endpoint.AadCredentialType + "\")")
-				}
+					if machine.Endpoint.AadCredentialType != "UserCredential" {
+						t.Fatal("The machine must have a Endpoint.AadCredentialType of \"UserCredential\" (was \"" + machine.Endpoint.AadCredentialType + "\")")
+					}
 
-				if machine.Endpoint.AadUserCredentialUsername != "username" {
-					t.Fatal("The machine must have a Endpoint.AadUserCredentialUsername of \"username\" (was \"" + machine.Endpoint.AadUserCredentialUsername + "\")")
+					if machine.Endpoint.AadUserCredentialUsername != "username" {
+						t.Fatal("The machine must have a Endpoint.AadUserCredentialUsername of \"username\" (was \"" + machine.Endpoint.AadUserCredentialUsername + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestAzureWebAppTargetExport verifies that a web app target can be reimported with the correct settings
 func TestAzureWebAppTargetExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/37-webapptarget/space_creation", "../test/terraform/37-webapptarget/space_population", []string{
-		"-var=account_sales_account=whatever",
-	}, []string{
-		"-var=account_sales_account=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/37-webapptarget/space_creation",
+		"../test/terraform/37-webapptarget/space_population",
+		[]string{
+			"-var=account_sales_account=whatever",
+		},
+		[]string{
+			"-var=account_sales_account=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
-		err := octopusClient.GetAllResources("Machines", &collection)
+			collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Web App"
-		foundResource := false
+			resourceName := "Web App"
+			foundResource := false
 
-		for _, machine := range collection.Items {
-			if machine.Name == resourceName {
-				foundResource = true
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
 
-				if len(machine.Roles) != 1 {
-					t.Fatal("The machine must have 1 role")
-				}
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
 
-				if machine.Roles[0] != "cloud" {
-					t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
-				}
+					if machine.Roles[0] != "cloud" {
+						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+					}
 
-				if machine.TenantedDeploymentParticipation != "Untenanted" {
-					t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
-				}
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
 
-				if machine.Endpoint.ResourceGroupName != "mattc-webapp" {
-					t.Fatal("The machine must have a Endpoint.ResourceGroupName of \"mattc-webapp\" (was \"" + machine.Endpoint.ResourceGroupName + "\")")
-				}
+					if machine.Endpoint.ResourceGroupName != "mattc-webapp" {
+						t.Fatal("The machine must have a Endpoint.ResourceGroupName of \"mattc-webapp\" (was \"" + machine.Endpoint.ResourceGroupName + "\")")
+					}
 
-				if machine.Endpoint.WebAppName != "mattc-webapp" {
-					t.Fatal("The machine must have a Endpoint.WebAppName of \"mattc-webapp\" (was \"" + machine.Endpoint.WebAppName + "\")")
-				}
+					if machine.Endpoint.WebAppName != "mattc-webapp" {
+						t.Fatal("The machine must have a Endpoint.WebAppName of \"mattc-webapp\" (was \"" + machine.Endpoint.WebAppName + "\")")
+					}
 
-				if machine.Endpoint.WebAppSlotName != "slot1" {
-					t.Fatal("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
+					if machine.Endpoint.WebAppSlotName != "slot1" {
+						t.Fatal("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
+					}
 				}
 			}
-		}
 
-		if !foundResource {
-			t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestSingleProjectGroupExport verifies that a single project can be reimported with the correct settings.
@@ -3408,45 +3602,52 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 // TestProjectWithGitUsernameExport verifies that a project can be reimported with the correct git settings
 func TestProjectWithGitUsernameExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/39-projectgitusername/space_creation", "../test/terraform/39-projectgitusername/space_population", []string{
-		"-var=project_git_password=" + os.Getenv("GIT_CREDENTIAL"),
-	}, []string{
-		"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
-		"-var=project_test_git_base_path=.octopus/projectgitusername",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/39-projectgitusername/space_creation",
+		"../test/terraform/39-projectgitusername/space_population",
+		[]string{
+			"-var=project_git_password=" + os.Getenv("GIT_CREDENTIAL"),
+		},
+		[]string{
+			"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=project_test_git_base_path=.octopus/projectgitusername",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
 
-				if v.PersistenceSettings.Credentials.Type != "UsernamePassword" {
-					t.Fatal("The project must be have a git credential type of \"UsernamePassword\" (was \"" + v.PersistenceSettings.Credentials.Type + "\")")
-				}
+					if v.PersistenceSettings.Credentials.Type != "UsernamePassword" {
+						t.Fatal("The project must be have a git credential type of \"UsernamePassword\" (was \"" + v.PersistenceSettings.Credentials.Type + "\")")
+					}
 
-				if v.PersistenceSettings.Credentials.Username != "mcasperson" {
-					t.Fatal("The project must be have a git username of \"mcasperson\" (was \"" + v.PersistenceSettings.Credentials.Username + "\")")
+					if v.PersistenceSettings.Credentials.Username != "mcasperson" {
+						t.Fatal("The project must be have a git username of \"mcasperson\" (was \"" + v.PersistenceSettings.Credentials.Username + "\")")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestProjectWithDollarSignsExport verifies that a project can be reimported with terraform string interpolation
@@ -3457,6 +3658,7 @@ func TestProjectWithDollarSignsExport(t *testing.T) {
 		"../test/terraform/40-escapedollar/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3487,100 +3689,114 @@ func TestProjectWithDollarSignsExport(t *testing.T) {
 
 // TestProjectTerraformInlineScriptExport verifies that a project can be reimported with a terraform inline template step
 func TestProjectTerraformInlineScriptExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/41-terraforminlinescript/space_creation", "../test/terraform/41-terraforminlinescript/space_population", []string{}, []string{}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/41-terraforminlinescript/space_creation",
+		"../test/terraform/41-terraforminlinescript/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Project]{}
-		err := octopusClient.GetAllResources("Projects", &collection)
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
-		if err != nil {
-			return err
-		}
-
-		resourceName := "Test"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == resourceName {
-				found = true
+			if err != nil {
+				return err
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
-		}
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+				}
+			}
 
-		return nil
-	})
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
 }
 
 // TestGithubFeedExport verifies that a github feed can be reimported with the correct settings
 func TestGithubFeedExport(t *testing.T) {
-	exportSpaceImportAndTest(t, "../test/terraform/42-githubfeed/space_creation", "../test/terraform/42-githubfeed/space_population", []string{}, []string{
-		"-var=feed_github_password=whatever",
-	}, func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/42-githubfeed/space_creation",
+		"../test/terraform/42-githubfeed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_github_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
-		// Assert
-		octopusClient := createClient(container, recreatedSpaceId)
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
 
-		collection := octopus.GeneralCollection[octopus.Feed]{}
-		err := octopusClient.GetAllResources("Feeds", &collection)
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		feedName := "Github"
-		found := false
-		for _, v := range collection.Items {
-			if v.Name == feedName {
-				found = true
+			feedName := "Github"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
 
-				if strutil.EmptyIfNil(v.FeedType) != "GitHub" {
-					t.Fatal("The feed must have a type of \"GitHub\", was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
-				}
-
-				if strutil.EmptyIfNil(v.Username) != "test-username" {
-					t.Fatal("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
-				}
-
-				if intutil.ZeroIfNil(v.DownloadAttempts) != 1 {
-					t.Fatal("The feed must be have a downloads attempts set to \"1\"")
-				}
-
-				if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 30 {
-					t.Fatal("The feed must be have a downloads retry backoff set to \"30\"")
-				}
-
-				if strutil.EmptyIfNil(v.FeedUri) != "https://api.github.com" {
-					t.Fatal("The feed must be have a feed uri of \"https://api.github.com\", was \"" + strutil.EmptyIfNil(v.FeedUri) + "\"")
-				}
-
-				foundExecutionTarget := false
-				foundServer := false
-				for _, o := range v.PackageAcquisitionLocationOptions {
-					if o == "ExecutionTarget" {
-						foundExecutionTarget = true
+					if strutil.EmptyIfNil(v.FeedType) != "GitHub" {
+						t.Fatal("The feed must have a type of \"GitHub\", was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
 					}
 
-					if o == "Server" {
-						foundServer = true
+					if strutil.EmptyIfNil(v.Username) != "test-username" {
+						t.Fatal("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
 					}
-				}
 
-				if !(foundExecutionTarget && foundServer) {
-					t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+					if intutil.ZeroIfNil(v.DownloadAttempts) != 1 {
+						t.Fatal("The feed must be have a downloads attempts set to \"1\"")
+					}
+
+					if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 30 {
+						t.Fatal("The feed must be have a downloads retry backoff set to \"30\"")
+					}
+
+					if strutil.EmptyIfNil(v.FeedUri) != "https://api.github.com" {
+						t.Fatal("The feed must be have a feed uri of \"https://api.github.com\", was \"" + strutil.EmptyIfNil(v.FeedUri) + "\"")
+					}
+
+					foundExecutionTarget := false
+					foundServer := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "Server" {
+							foundServer = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundServer) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+					}
 				}
 			}
-		}
 
-		if !found {
-			t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
-		}
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
 
-		return nil
-	})
+			return nil
+		})
 }
 
 // TestRunbookExport verifies that a runbook can be reimported with the correct settings
@@ -3591,6 +3807,7 @@ func TestRunbookExport(t *testing.T) {
 		"../test/terraform/44-runbooks/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -3700,6 +3917,7 @@ func TestK8sTargetWithCertExport(t *testing.T) {
 			"-var=certificate_test_data=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",
 			"-var=certificate_test_password=Password01!",
 		},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -4328,6 +4546,7 @@ func TestTenantCommonVarsExport(t *testing.T) {
 		"../test/terraform/56-tenantcommonvars/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -4489,6 +4708,7 @@ func TestProjectWithScriptModuleExport(t *testing.T) {
 		"../test/terraform/58-scriptmodule/space_population",
 		[]string{},
 		[]string{},
+		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -4691,6 +4911,74 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 
 			if err != nil {
 				return err
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsWithExcludedProjectExport verifies that a tenant can be reimported with the correct settings after a project is excluded
+func TestTenantsWithExcludedProjectExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/61-tenantswithexcludedprojects/space_creation",
+		"../test/terraform/61-tenantswithexcludedprojects/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeProjects: []string{"Test2"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Team A"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					if len(v.TenantTags) != 2 {
+						t.Fatal("The tenant must have two tags")
+					}
+
+					if len(v.ProjectEnvironments) != 1 {
+						t.Fatal("The tenant must have one project environment")
+					}
+
+					for _, u := range v.ProjectEnvironments {
+						if len(u) != 3 {
+							t.Fatal("The tenant must have be linked to three environments")
+						}
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			projects := octopus.GeneralCollection[octopus.Project]{}
+			err = octopusClient.GetAllResources("Projects", &projects)
+
+			if err != nil {
+				return err
+			}
+
+			if len(projects.Items) != 1 {
+				t.Fatal("Only one project should have been exported, as the second was excluded.")
 			}
 
 			return nil

@@ -34,25 +34,6 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	return nil
 }
 
-func (c TagSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
-	if id == "" {
-		return nil
-	}
-
-	if dependencies.HasResource(id, c.GetResourceType()) {
-		return nil
-	}
-
-	tagSet := octopus2.TagSet{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &tagSet)
-
-	if err != nil {
-		return err
-	}
-
-	return c.ToHclByResource(tagSet, dependencies)
-}
-
 func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
