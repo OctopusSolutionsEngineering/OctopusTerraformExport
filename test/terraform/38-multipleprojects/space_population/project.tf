@@ -53,7 +53,7 @@ resource "octopusdeploy_variable" "string_variable2" {
   name      = "Test2"
   value     = "PlainText"
   scope {
-    environments = [octopusdeploy_environment.test_environment.id]
+    environments = [octopusdeploy_environment.development_environment.id]
   }
 }
 
@@ -64,6 +64,16 @@ resource "octopusdeploy_variable" "scoped_var" {
   value    = "test"
   scope {
     tenant_tags = ["tag1/a"]
+  }
+}
+
+resource "octopusdeploy_variable" "string_variable3" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "Test3"
+  value     = "PlainText"
+  scope {
+    environments = [octopusdeploy_environment.test_environment.id]
   }
 }
 
