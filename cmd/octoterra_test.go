@@ -4984,3 +4984,95 @@ func TestTenantsWithExcludedProjectExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestSingleProjectWithExcludedMachineScopedVarExport verifies that a single project with a variable referencing an
+// account scoped to a tenant can be reimported with the correct settings.
+func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
+	exportProjectImportAndTest(t,
+		"Test",
+		[]string{"Test"},
+		"../test/terraform/62-tokenaccountwithtenant/space_creation",
+		"../test/terraform/62-tokenaccountwithtenant/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{
+			"-var=account_token=blah",
+		},
+		args2.Arguments{ExcludeAllTargets: true},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			// Verify that the single project was exported
+			err := func() error {
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(projectCollection.Items) != 1 {
+					t.Fatalf("There must only be one project")
+				}
+
+				if projectCollection.Items[0].Name != "Test" {
+					t.Fatalf("The project must be called \"Test\"")
+				}
+
+				// Verify that the variable set was imported
+
+				if projectCollection.Items[0].VariableSetId == nil {
+					t.Fatalf("The project must have a variable set")
+				}
+
+				variableSet := octopus.VariableSet{}
+				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+
+				if err != nil {
+					return err
+				}
+
+				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
+				if len(scopedVar) == 0 {
+					t.Fatalf("The project must have 1 variable called \"test\"")
+				}
+
+				accounts := octopus.GeneralCollection[octopus.NameId]{}
+				err = octopusClient.GetAllResources("Accounts", &accounts)
+
+				if err != nil {
+					return err
+				}
+
+				if len(accounts.Items) != 1 {
+					t.Fatalf("One account should have been imported via the account variable")
+				}
+
+				tenants := octopus.GeneralCollection[octopus.Tenant]{}
+				err = octopusClient.GetAllResources("Tenants", &tenants)
+
+				if err != nil {
+					return err
+				}
+
+				if len(tenants.Items) != 1 {
+					t.Fatalf("One tenant should have been imported via the account variable")
+				}
+
+				if strutil.EmptyIfNil(scopedVar[0].Value) != accounts.Items[0].Id {
+					t.Fatalf("The variable should reference the new account id")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+}
