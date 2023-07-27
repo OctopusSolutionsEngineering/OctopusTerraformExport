@@ -80,7 +80,9 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 		return err
 	}
 
-	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
+	c.compileRegexes()
+
+	if c.libraryVariableSetIsExcluded(resource) {
 		return nil
 	}
 

@@ -228,7 +228,12 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 	}
-	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: &variableSetConverter}
+	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
+		Client:                          client,
+		VariableSetConverter:            &variableSetConverter,
+		Excluded:                        args.ExcludeLibraryVariableSets,
+		ExcludeLibraryVariableSetsRegex: args.ExcludeLibraryVariableSetsRegex,
+	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,

@@ -51,3 +51,13 @@ resource "octopusdeploy_variable" "tag_scoped" {
     tenant_tags = ["tag1/a"]
   }
 }
+
+resource "octopusdeploy_library_variable_set" "octopus_library_variable_set2" {
+  name = "Test2"
+  description = "Test variable set"
+}
+
+resource "octopusdeploy_library_variable_set" "octopus_library_variable_set3" {
+  name = "Test3"
+  description = "Test variable set"
+}

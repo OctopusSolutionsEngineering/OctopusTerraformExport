@@ -32,6 +32,18 @@ data "octopusdeploy_library_variable_sets" "variable" {
   take         = 1
 }
 
+data "octopusdeploy_library_variable_sets" "variable2" {
+  partial_name = "Test2"
+  skip         = 0
+  take         = 1
+}
+
+data "octopusdeploy_library_variable_sets" "variable3" {
+  partial_name = "Test3"
+  skip         = 0
+  take         = 1
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -45,7 +57,11 @@ resource "octopusdeploy_project" "project_1" {
   name                                 = "Test"
   project_group_id                     = data.octopusdeploy_project_groups.project_group.project_groups[0].id
   tenanted_deployment_participation    = "Untenanted"
-  included_library_variable_sets       = [data.octopusdeploy_library_variable_sets.variable.library_variable_sets[0].id]
+  included_library_variable_sets       = [
+    data.octopusdeploy_library_variable_sets.variable.library_variable_sets[0].id,
+    data.octopusdeploy_library_variable_sets.variable2.library_variable_sets[0].id,
+    data.octopusdeploy_library_variable_sets.variable3.library_variable_sets[0].id
+  ]
   versioning_strategy {
     template = "#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.LastPatch}.#{Octopus.Version.NextRevision}"
   }

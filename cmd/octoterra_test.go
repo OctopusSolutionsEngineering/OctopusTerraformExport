@@ -1399,7 +1399,10 @@ func TestVariableSetExport(t *testing.T) {
 		[]string{
 			"-var=library_variable_set_variables_test_test_secretvariable_1=blah",
 		},
-		args2.Arguments{},
+		args2.Arguments{
+			ExcludeLibraryVariableSets:      []string{"Test2"},
+			ExcludeLibraryVariableSetsRegex: []string{"^Test3$"},
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1410,6 +1413,10 @@ func TestVariableSetExport(t *testing.T) {
 
 			if err != nil {
 				return err
+			}
+
+			if len(collection.Items) != 1 {
+				t.Fatal("Only 1 library variable set must be reimported, as the others are excluded.")
 			}
 
 			resourceName := "Test"
@@ -3463,10 +3470,12 @@ func TestSingleProjectLookupExport(t *testing.T) {
 			"-var=project_test_git_base_path=.octopus/integrationtestimport",
 		},
 		args2.Arguments{
-			ExcludeTenants:           []string{"Team A"},
-			LookUpDefaultWorkerPools: false,
-			ExcludeRunbooksRegex:     []string{"^MyRunbook$"},
-			ExcludeRunbooks:          []string{"MyRunbook2"},
+			ExcludeTenants:                  []string{"Team A"},
+			LookUpDefaultWorkerPools:        false,
+			ExcludeRunbooksRegex:            []string{"^MyRunbook$"},
+			ExcludeRunbooks:                 []string{"MyRunbook2"},
+			ExcludeLibraryVariableSetsRegex: []string{"^Test2$"},
+			ExcludeLibraryVariableSets:      []string{"Test3"},
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -3511,6 +3520,10 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					t.Fatalf("The project must have 1 variable called \"Test\"")
 				}
 
+				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
+					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
+				}
+
 				return nil
 			}()
 
@@ -3536,6 +3549,34 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				if !foundChannel {
 					t.Fatalf("The space must have a channel called \"Test 1\"")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			// Verify that the single library variable sets were exported
+			err = func() error {
+				collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
+				err = octopusClient.GetAllResources("LibraryVariableSets", &collection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test" })) != 1 {
+					t.Fatalf("The space must have a library variable set called \"Test\"")
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test2" })) != 1 {
+					t.Fatalf("The space must have a library variable set called \"Test2\"")
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test3" })) != 1 {
+					t.Fatalf("The space must have a library variable set called \"Test3\"")
 				}
 
 				return nil

@@ -8,6 +8,11 @@ resource "octopusdeploy_library_variable_set" "octopus_library_variable_set2" {
   description = "Test variable set"
 }
 
+resource "octopusdeploy_library_variable_set" "octopus_library_variable_set3" {
+  name = "Test3"
+  description = "Test variable set"
+}
+
 resource "octopusdeploy_variable" "octopus_admin_api_key" {
   name = "Test.Variable"
   type = "String"
