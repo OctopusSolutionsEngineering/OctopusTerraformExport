@@ -85,12 +85,17 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 		terraformResource := terraform2.TerraformAccountData{
 			Type:        "octopusdeploy_accounts",
 			Name:        resourceName,
-			AccountType: resource.AccountType,
 			Ids:         nil,
 			PartialName: resource.Name,
 			Skip:        0,
 			Take:        1,
 		}
+
+		// Google account types are not defined in the data resource (this is a bug), so don't use it
+		if resource.AccountType != "GoogleCloudAccount" {
+			terraformResource.AccountType = resource.AccountType
+		}
+
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.accounts) != 0")
