@@ -167,7 +167,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 	}
-	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: variableSetConverter}
+	libraryVariableSetConverter := converters.LibraryVariableSetConverter{Client: client, VariableSetConverter: &variableSetConverter}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
@@ -201,7 +201,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
-		LibraryVariableSetConverter: libraryVariableSetConverter,
+		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
 			Client: client,
@@ -220,9 +220,9 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
-		VariableSetConverter:   variableSetConverter,
+		VariableSetConverter:   &variableSetConverter,
 		ChannelConverter:       channelConverter,
-		RunbookConverter:       runbookConverter,
+		RunbookConverter:       &runbookConverter,
 		IgnoreCacManagedValues: false,
 	}.ToHclLookupById(projectId, &dependencies)
 
