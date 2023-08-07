@@ -3,6 +3,7 @@
 // @namespace   Violentmonkey Scripts
 // @match       https://*.octopus.app/app
 // @match       http://localhost:18080/app
+// @match       https://*.testoctopus.app/app
 // @grant       none
 // @version     1.0
 // @author      -
