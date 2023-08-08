@@ -9,8 +9,8 @@ type ToHcl func() (string, error)
 
 // ResourceDetails is used to capture the dependencies required by the root resources that was
 // exported. The process works like this:
-// 1. The root resources is captured from the Octopus API.
-// 2. Any dependencies are captured in a ResourceDetails object.
+// 1. The root resources is captured in a ResourceDetails from the Octopus API.
+// 2. Any dependencies of the root object are captured in their own ResourceDetails objects.
 // 3. Repeat step 2 for dependencies of dependencies.
 // 4. Once all dependencies are captured, run ToHcl feeding in the collection of ResourceDetails built in steps 1 - 3.
 // 5. ToHcl converts the object to HCL, and uses the Lookup field in the appropriate ResourceDetails to reference a dependency.
@@ -26,6 +26,7 @@ type ResourceDetailsCollection struct {
 	Resources []ResourceDetails
 }
 
+// HasResource returns true if the resource with the id and resourceType exist in the collection, and false otherwise
 func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) bool {
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
