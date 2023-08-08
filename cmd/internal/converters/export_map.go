@@ -37,6 +37,7 @@ func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) 
 	return false
 }
 
+// AddResource adds a resource to the collection
 func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
 	if c.Resources == nil {
 		c.Resources = []ResourceDetails{}
@@ -45,6 +46,7 @@ func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
 	c.Resources = append(c.Resources, resource...)
 }
 
+// GetAllResource returns a slice of resources in the collection of type resourceType
 func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []ResourceDetails {
 	resources := make([]ResourceDetails, 0)
 	for _, r := range c.Resources {
@@ -56,6 +58,10 @@ func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []Resour
 	return resources
 }
 
+// GetResource returns the terraform references for a given resource type and id.
+// If the resource is not found, an empty string is returned. There is no valid reason to return an empty string,
+// but we treat a mostly valid output as a "graceful fallback" rather than failing hard, as the resulting text
+// can still be edited by hand.
 func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) string {
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
@@ -68,6 +74,7 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 	return ""
 }
 
+// GetResources returns the Terraform references for resources of the given type and with the supplied ids.
 func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...string) []string {
 	lookups := []string{}
 	for _, r := range c.Resources {
@@ -81,6 +88,7 @@ func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...str
 	return lookups
 }
 
+// GetResourcePointer returns the Terraform reference for a given resource type and id as a string pointer.
 func (c *ResourceDetailsCollection) GetResourcePointer(resourceType string, id *string) *string {
 	if id != nil {
 		for _, r := range c.Resources {

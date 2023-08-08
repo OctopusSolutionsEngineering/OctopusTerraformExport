@@ -11,6 +11,9 @@ import (
 	"syscall/js"
 )
 
+// This is the entrypoint of a WASM library that can be embedded in a web page to convert an
+// Octopus project to HCL in the browser. See the wasm/violentmonkey.js file for an example where
+// this WASM application is used.
 func main() {
 	c := make(chan bool)
 	js.Global().Set("convertProject", convertProject())
