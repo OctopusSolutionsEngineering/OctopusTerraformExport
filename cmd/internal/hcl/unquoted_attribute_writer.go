@@ -124,6 +124,7 @@ func anyToHcl(value any) string {
 	}
 }
 
+// mapToHclMap builds a nicely indented HCL map
 func mapToHclMap(jsonMap map[string]any) string {
 	output := "{"
 	for k, v := range jsonMap {
@@ -136,6 +137,7 @@ func mapToHclMap(jsonMap map[string]any) string {
 	return output
 }
 
+// arrayToHclMap builds a nicely indented HCL array
 func arrayToHclMap(jsonArray []any) string {
 	output := "["
 	for _, v := range jsonArray {
@@ -162,12 +164,15 @@ func IsInterpolation(value string) bool {
 	return strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}")
 }
 
+// RemoveInterpolation removes the Terraform 0.x style interpolations to produce a Terraform 1.x style
+// "naked" reference.
 func RemoveInterpolation(value string) string {
 	value = strings.Replace(value, "${", "", -1)
 	value = strings.Replace(value, "}", "", -1)
 	return value
 }
 
+// RemoveId removes the id suffix from a string.
 func RemoveId(value string) string {
 	regex := regexp.MustCompile(`\.id$`)
 	value = regex.ReplaceAllString(value, "")

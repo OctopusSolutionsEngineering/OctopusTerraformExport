@@ -308,10 +308,6 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	return true, nil
 }
 
-func (o OctopusClient) GetResourceByName(resourceType string, names string) {
-
-}
-
 func (o OctopusClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) error {
 	req, err := o.getCollectionRequest(resourceType, queryParams...)
 

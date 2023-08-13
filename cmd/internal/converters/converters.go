@@ -2,11 +2,17 @@ package converters
 
 // ConverterById converts an individual resource by its ID
 type ConverterById interface {
+	// ToHclById converts a single resource by its ID. This is used when converting a single project,
+	// and then converting anything that the project references (like feeds, accounts, environments etc).
 	ToHclById(id string, dependencies *ResourceDetailsCollection) error
 }
 
 // ConverterLookupById converts an individual resource by its ID to a data lookup
 type ConverterLookupById interface {
+	// ToHclLookupById is used to create a data resource that queries a space for an existing resource. This
+	// is used when converting a project with the -lookupProjectDependencies argument specified. It allows a project
+	// to reference existing resources like accounts, feeds, environments etc in the space in which the project
+	// is imported.
 	ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error
 }
 
@@ -121,5 +127,6 @@ type ConvertToHclLookupByResource[C any] interface {
 
 // Converter converts all objects in bulk
 type Converter interface {
+	// ToHcl converts all the resources of a given type to HCL. This is used when converting a space.
 	ToHcl(dependencies *ResourceDetailsCollection) error
 }
