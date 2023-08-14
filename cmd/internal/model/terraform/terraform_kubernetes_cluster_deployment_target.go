@@ -8,6 +8,7 @@ type TerraformKubernetesEndpointResource struct {
 	ResourceName                    string   `hcl:"name"`
 	Roles                           []string `hcl:"roles"`
 	ClusterCertificate              *string  `hcl:"cluster_certificate"`
+	ClusterCertificatePath          *string  `hcl:"cluster_certificate_path"`
 	DefaultWorkerPoolId             *string  `hcl:"default_worker_pool_id"`
 	HealthStatus                    *string  `hcl:"health_status"`
 	Id                              *string  `hcl:"id"`
@@ -35,6 +36,7 @@ type TerraformKubernetesEndpointResource struct {
 	Authentication                      *TerraformAccountAuthentication               `hcl:"authentication,block"`
 	AwsAccountAuthentication            *TerraformAwsAccountAuthentication            `hcl:"aws_account_authentication,block"`
 	AzureServicePrincipalAuthentication *TerraformAzureServicePrincipalAuthentication `hcl:"azure_service_principal_authentication,block"`
+	PodAuthentication                   *TerraformPodAuthentication                   `hcl:"pod_authentication,block"`
 	CertificateAuthentication           *TerraformCertificateAuthentication           `hcl:"certificate_authentication,block"`
 	GcpAccountAuthentication            *TerraformGcpAccountAuthentication            `hcl:"gcp_account_authentication,block"`
 }
@@ -58,6 +60,10 @@ type TerraformAzureServicePrincipalAuthentication struct {
 	AccountId            string `hcl:"account_id"`
 	ClusterName          string `hcl:"cluster_name"`
 	ClusterResourceGroup string `hcl:"cluster_resource_group"`
+}
+
+type TerraformPodAuthentication struct {
+	TokenPath string `hcl:"token_path"`
 }
 
 type TerraformCertificateAuthentication struct {

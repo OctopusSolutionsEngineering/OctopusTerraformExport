@@ -5117,3 +5117,56 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestK8sPodAuthExport verifies that a k8s target with pod authentication can be exported with the correct values.
+func TestK8sPodAuthExport(t *testing.T) {
+	exportSpaceImportAndTest(t,
+		"../test/terraform/63-k8stargetpodauth/space_creation",
+		"../test/terraform/63-k8stargetpodauth/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			foundResource := false
+
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
+
+					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
+						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + fmt.Sprint(machine.Endpoint.ClusterUrl) + "\")")
+					}
+
+					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesPodService" {
+						t.Fatal("The machine must have a Endpoint.Authentication.AuthenticationType of \"KubernetesPodService\" (was \"" + fmt.Sprint(machine.Endpoint.Authentication.AuthenticationType) + "\")")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.Authentication.TokenPath) != "/var/run/secrets/kubernetes.io/serviceaccount/token" {
+						t.Fatal("The machine must have a Endpoint.Authentication.TokenPath of \"/var/run/secrets/kubernetes.io/serviceaccount/token\" (was \"" + fmt.Sprint(machine.Endpoint.Authentication.TokenPath) + "\")")
+					}
+
+					if strutil.EmptyIfNil(machine.Endpoint.ClusterCertificatePath) != "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" {
+						t.Fatal("The machine must have a Endpoint.ClusterCertificatePath of \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" (was \"" + fmt.Sprint(machine.Endpoint.ClusterCertificatePath) + "\")")
+					}
+				}
+			}
+
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

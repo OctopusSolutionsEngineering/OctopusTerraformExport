@@ -143,6 +143,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
 				ClusterCertificate:              dependencies.GetResourcePointer("Certificates", target.Endpoint.ClusterCertificate),
+				ClusterCertificatePath:          target.Endpoint.ClusterCertificatePath,
 				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 				HealthStatus:                    nil,
 				Id:                              nil,
@@ -175,6 +176,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				AzureServicePrincipalAuthentication: c.getAzureAuth(&target, dependencies),
 				CertificateAuthentication:           c.getCertAuth(&target, dependencies),
 				GcpAccountAuthentication:            c.getGoogleAuth(&target, dependencies),
+				PodAuthentication:                   c.getPodAuth(&target, dependencies),
 			}
 			file := hclwrite.NewEmptyFile()
 
@@ -263,6 +265,16 @@ func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpoi
 			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
 			ClusterName:          strutil.EmptyIfNil(target.Endpoint.Authentication.ClusterName),
 			ClusterResourceGroup: strutil.EmptyIfNil(target.Endpoint.Authentication.ClusterResourceGroup),
+		}
+	}
+
+	return nil
+}
+
+func (c KubernetesTargetConverter) getPodAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformPodAuthentication {
+	if target.Endpoint.Authentication.AuthenticationType == "KubernetesPodService" {
+		return &terraform.TerraformPodAuthentication{
+			TokenPath: strutil.EmptyIfNil(target.Endpoint.Authentication.TokenPath),
 		}
 	}
 
