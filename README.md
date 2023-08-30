@@ -8,13 +8,6 @@ This app exports an Octopus space to the associated Terraform resources for use 
 
 Get the compiled binaries from the [releases](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/releases).
 
-## Support
-
-This tool is part of a pilot programme to support platform engineering teams.
-
-The Octopus support teams will make reasonable endeavours to support teams that wish to use this tool. However, existing support Service Level Agreements (SLAs) do not apply to `octoterra`,
-and should not be relied on for production deployments.
-
 ## Usage
 
 To export a complete space, use the following command:
