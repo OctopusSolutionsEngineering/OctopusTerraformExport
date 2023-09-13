@@ -238,7 +238,11 @@ jobs:
           CGO_ENABLED: 0
       - name: Build and push latest
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
-        run: docker buildx build --push --platform windows/amd64 . -f Dockerfile.windows -t octopussamples/octoterra-windows:latest
+        run: |
+          docker build --platform windows/amd64 . -f Dockerfile.windows -t octopussamples/octoterra-windows:latest
+          docker push octopussamples/octoterra-windows:latest
       - name: Build and push
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
-        run: docker buildx build --push --platform windows/amd64 . -f Dockerfile.windows -t octopussamples/octoterra-windows:${{ steps.determine_version.outputs.semVer }}
+        run: |
+          docker build --push --platform windows/amd64 . -f Dockerfile.windows -t octopussamples/octoterra-windows:${{ steps.determine_version.outputs.semVer }}
+          docker push octopussamples/octoterra-windows:${{ steps.determine_version.outputs.semVer }}
