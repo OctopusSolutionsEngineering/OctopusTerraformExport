@@ -191,12 +191,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push latest
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           push: true
+          platforms: linux/amd64
           tags: octopussamples/octoterra:latest
       - name: Build and push versioned image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           push: true
+          platforms: linux/amd64
           tags: octopussamples/octoterra:${{ steps.determine_version.outputs.semVer }}
