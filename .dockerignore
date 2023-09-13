@@ -26,3 +26,5 @@ octoterra.exe
 results.xml
 *.zip
 *.tar.gz
+
+!octoterra_windows_amd64.exe

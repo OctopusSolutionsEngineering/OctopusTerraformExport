@@ -3,11 +3,11 @@
 FROM golang:1.20 as build
 
 # Set destination for COPY
-WORKDIR C:\app
+WORKDIR C:/app
 
 # Download Go modules
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod download -x
 
 # Copy the source code. Note the slash at the end, as explained in
 # https://docs.docker.com/engine/reference/builder/#copy
@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=windows go build -o C:\octoterra cmd\octoterra.go
 # Create the execution image
 FROM mcr.microsoft.com/windows/nanoserver:ltsc2019
 
-COPY --from=build C:\octoterra C:\octoterra
+COPY --from=build C:/octoterra C:/octoterra
 
 # Run
-ENTRYPOINT ["C:\octoterra"]
+ENTRYPOINT ["C:/octoterra"]
