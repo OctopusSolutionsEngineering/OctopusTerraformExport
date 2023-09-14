@@ -13,12 +13,13 @@ import (
 // OctopusActionProcessor exposes a bunch of common functions for exporting the processes associated with
 // projects and runbooks.
 type OctopusActionProcessor struct {
-	FeedConverter          ConverterAndLookupById
-	AccountConverter       ConverterAndLookupById
-	WorkerPoolConverter    ConverterAndLookupById
-	EnvironmentConverter   ConverterAndLookupById
-	DetachProjectTemplates bool
-	WorkerPoolProcessor    OctopusWorkerPoolProcessor
+	FeedConverter           ConverterAndLookupById
+	AccountConverter        ConverterAndLookupById
+	WorkerPoolConverter     ConverterAndLookupById
+	EnvironmentConverter    ConverterAndLookupById
+	GitCredentialsConverter ConverterAndLookupById
+	DetachProjectTemplates  bool
+	WorkerPoolProcessor     OctopusWorkerPoolProcessor
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
@@ -93,6 +94,30 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 	return nil
 }
 
+func (c OctopusActionProcessor) ExportGitCredentials(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
+	accountRegex, _ := regexp.Compile("GitCredentials-\\d+")
+	for _, step := range steps {
+		for _, action := range step.Actions {
+			for _, prop := range action.Properties {
+				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
+					var err error
+					if recursive {
+						err = c.GitCredentialsConverter.ToHclById(account, dependencies)
+					} else if lookup {
+						err = c.GitCredentialsConverter.ToHclLookupById(account, dependencies)
+					}
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
@@ -135,6 +160,7 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 	properties = c.replaceAccountIds(properties, dependencies)
 	properties = c.replaceFeedIds(properties, dependencies)
 	properties = c.replaceProjectIds(properties, dependencies)
+	properties = c.replaceGitCredentialIds(properties, dependencies)
 	return properties
 }
 
@@ -242,6 +268,20 @@ func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, 
 func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Projects") {
+			if strings.Contains(v, v2.Id) {
+				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
+			}
+		}
+	}
+
+	return properties
+}
+
+// replaceGitCredentialIds looks for any property value that is a valid git credentials ID and replaces it with a resource ID lookup.
+// This also looks in the property values, for instance when you export a JSON blob that has feed references.
+func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+	for k, v := range properties {
+		for _, v2 := range dependencies.GetAllResource("Git-Credentials") {
 			if strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
