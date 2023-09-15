@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/writers"
@@ -16,7 +17,7 @@ import (
 )
 
 func main() {
-	zap.ReplaceGlobals(zap.Must(zap.NewDevelopment()))
+	logger.BuildLogger()
 
 	args, output, err := args.ParseArgs(os.Args[1:])
 
