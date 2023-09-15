@@ -44,8 +44,10 @@ func main() {
 	}
 
 	if args.ProjectId != "" {
+		fmt.Println("Exporting project " + args.ProjectId)
 		err = ConvertProjectToTerraform(args)
 	} else {
+		fmt.Println("Exporting space " + args.Space)
 		err = ConvertSpaceToTerraform(args)
 	}
 
