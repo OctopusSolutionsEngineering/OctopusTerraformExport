@@ -16,14 +16,16 @@ import (
 )
 
 func main() {
+	zap.ReplaceGlobals(zap.Must(zap.NewDevelopment()))
+
 	args, output, err := args.ParseArgs(os.Args[1:])
 
-	if err == flag.ErrHelp {
-		fmt.Println(output)
+	if errors.Is(err, flag.ErrHelp) {
+		zap.L().Error(output)
 		os.Exit(2)
 	} else if err != nil {
-		fmt.Println("got error:", err)
-		fmt.Println("output:\n", output)
+		zap.L().Error("got error: " + err.Error())
+		zap.L().Error("output:\n" + output)
 		os.Exit(1)
 	}
 
@@ -44,10 +46,10 @@ func main() {
 	}
 
 	if args.ProjectId != "" {
-		fmt.Println("Exporting project " + args.ProjectId)
+		zap.L().Debug("Exporting project " + args.ProjectId + " in space " + args.Space)
 		err = ConvertProjectToTerraform(args)
 	} else {
-		fmt.Println("Exporting space " + args.Space)
+		zap.L().Debug("Exporting space " + args.Space)
 		err = ConvertSpaceToTerraform(args)
 	}
 
@@ -72,7 +74,16 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	}
 
 	collection := octopus.GeneralCollection[octopus.Project]{}
-	client.GetAllResources("Projects", &collection, []string{"name", name})
+	err := client.GetAllResources("Projects", &collection, []string{"name", name})
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(collection.Items) == 0 {
+		return "", errors.New("failed to return any projects in space " + space +
+			" - check the API key has permission to list projects")
+	}
 
 	for _, p := range collection.Items {
 		if p.Name == name {
@@ -80,7 +91,7 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 		}
 	}
 
-	return "", errors.New("did not find project with name " + name)
+	return "", errors.New("did not find project with name " + name + " in space " + space)
 }
 
 func ConvertSpaceToTerraform(args args.Arguments) error {
