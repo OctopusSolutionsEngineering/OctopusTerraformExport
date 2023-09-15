@@ -55,6 +55,9 @@ func main() {
 }
 
 func errorExit(message string) {
+	if len(message) == 0 {
+		message = "No error message provided"
+	}
 	zap.L().Error(message)
 	os.Exit(1)
 }
