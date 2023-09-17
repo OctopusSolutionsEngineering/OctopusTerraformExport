@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type EnvironmentConverter struct {
@@ -24,6 +25,7 @@ func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Environment: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -43,14 +45,15 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 		return nil
 	}
 
-	environment := octopus2.Environment{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
+	resource := octopus2.Environment{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(environment, true, dependencies)
+	zap.L().Info("Environment: " + resource.Id)
+	return c.toHcl(resource, true, dependencies)
 }
 
 func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {

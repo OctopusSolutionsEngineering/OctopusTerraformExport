@@ -58,8 +58,8 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 		return nil
 	}
 
-	variables := octopus.VariableSet{}
-	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &variables)
+	resource := octopus.VariableSet{}
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &resource)
 
 	if err != nil {
 		return err
@@ -74,7 +74,8 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
-	return c.toHcl(variables, true, false, ignoreSecrets, parentName, parentLookup, dependencies)
+	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
+	return c.toHcl(resource, true, false, ignoreSecrets, parentName, parentLookup, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -82,8 +83,8 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 		return nil
 	}
 
-	variables := octopus.VariableSet{}
-	_, err := c.Client.GetResource(c.GetGroupResourceType(projectId), &variables)
+	resource := octopus.VariableSet{}
+	_, err := c.Client.GetResource(c.GetGroupResourceType(projectId), &resource)
 
 	if err != nil {
 		return err
@@ -98,7 +99,8 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
-	return c.toHcl(variables, false, true, ignoreSecrets, parentName, parentLookup, dependencies)
+	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
+	return c.toHcl(resource, false, true, ignoreSecrets, parentName, parentLookup, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -123,6 +125,7 @@ func (c *VariableSetConverter) ToHclByIdAndName(id string, parentName string, pa
 		return nil
 	}
 
+	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
 	return c.toHcl(resource, true, false, false, parentName, parentLookup, dependencies)
 }
 
@@ -150,6 +153,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 		return nil
 	}
 
+	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
 	return c.toHcl(resource, false, true, false, parentName, parentLookup, dependencies)
 }
 

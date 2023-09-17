@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type ListeningTargetConverter struct {
@@ -27,6 +28,7 @@ func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection)
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Listening Target: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -53,6 +55,7 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 		return err
 	}
 
+	zap.L().Info("Listening Target: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type DeploymentProcessConverter struct {
@@ -48,6 +49,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 		return err
 	}
 
+	zap.L().Info("Deployment Process: " + resource.Id)
 	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
 }
 

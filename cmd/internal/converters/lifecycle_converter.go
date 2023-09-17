@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type LifecycleConverter struct {
@@ -25,6 +26,7 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Lifecycle: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -45,14 +47,15 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return nil
 	}
 
-	lifecycle := octopus2.Lifecycle{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
+	resource := octopus2.Lifecycle{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(lifecycle, true, false, dependencies)
+	zap.L().Info("Lifecycle: " + resource.Id)
+	return c.toHcl(resource, true, false, dependencies)
 
 }
 

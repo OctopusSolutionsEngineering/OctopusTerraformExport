@@ -30,6 +30,7 @@ func (c FeedConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Feed: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -56,6 +57,7 @@ func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollect
 		return err
 	}
 
+	zap.L().Info("Feed: " + resource.Id)
 	return c.toHcl(resource, true, false, dependencies)
 }
 

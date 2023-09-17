@@ -47,10 +47,10 @@ func main() {
 	}
 
 	if args.ProjectId != "" {
-		zap.L().Debug("Exporting project " + args.ProjectId + " in space " + args.Space)
+		zap.L().Info("Exporting project " + args.ProjectId + " in space " + args.Space)
 		err = ConvertProjectToTerraform(args)
 	} else {
-		zap.L().Debug("Exporting space " + args.Space)
+		zap.L().Info("Exporting space " + args.Space)
 		err = ConvertSpaceToTerraform(args)
 	}
 

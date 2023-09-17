@@ -23,8 +23,9 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 		return err
 	}
 
-	for _, projectTrigger := range collection.Items {
-		err = c.toHcl(projectTrigger, false, projectId, projectName, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Project Trigger: " + resource.Id)
+		err = c.toHcl(resource, false, projectId, projectName, dependencies)
 		if err != nil {
 			return err
 		}

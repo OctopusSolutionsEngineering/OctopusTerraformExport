@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type TagSetConverter struct {
@@ -23,8 +24,9 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 		return err
 	}
 
-	for _, tagSet := range collection.Items {
-		err = c.ToHclByResource(tagSet, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Tagset: " + resource.Id)
+		err = c.ToHclByResource(resource, dependencies)
 
 		if err != nil {
 			return err

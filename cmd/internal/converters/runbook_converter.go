@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
 	"regexp"
 )
@@ -33,8 +34,9 @@ func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string
 		return err
 	}
 
-	for _, runbook := range collection.Items {
-		err = c.toHcl(runbook, projectName, true, false, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Runbook: " + resource.Id)
+		err = c.toHcl(resource, projectName, true, false, dependencies)
 
 		if err != nil {
 			return err
@@ -52,8 +54,9 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 		return err
 	}
 
-	for _, runbook := range collection.Items {
-		err = c.toHcl(runbook, projectName, false, true, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Runbook: " + resource.Id)
+		err = c.toHcl(resource, projectName, false, true, dependencies)
 
 		if err != nil {
 			return err

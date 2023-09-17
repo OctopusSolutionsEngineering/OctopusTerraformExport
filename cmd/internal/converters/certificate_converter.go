@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type CertificateConverter struct {
@@ -24,6 +25,7 @@ func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Certificate: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -43,14 +45,15 @@ func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetails
 		return nil
 	}
 
-	certificate := octopus2.Certificate{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
+	resource := octopus2.Certificate{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(certificate, true, dependencies)
+	zap.L().Info("Certificate: " + resource.Id)
+	return c.toHcl(resource, true, dependencies)
 }
 
 func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {

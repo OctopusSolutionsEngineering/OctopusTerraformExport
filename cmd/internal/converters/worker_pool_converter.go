@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type WorkerPoolConverter struct {
@@ -24,6 +25,7 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Worker Pool: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -43,14 +45,15 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsC
 		return nil
 	}
 
-	pool := octopus2.WorkerPool{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &pool)
+	resource := octopus2.WorkerPool{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(pool, true, false, dependencies)
+	zap.L().Info("Worker Pool: " + resource.Id)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
