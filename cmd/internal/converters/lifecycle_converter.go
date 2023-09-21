@@ -124,7 +124,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			}
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(data, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a lifecycle called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil

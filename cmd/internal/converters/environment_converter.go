@@ -91,7 +91,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceD
 		}
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+environment.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.environments) != 0")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an environment called \""+environment.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.environments) != 0")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil

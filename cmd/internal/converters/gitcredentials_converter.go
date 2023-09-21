@@ -108,7 +108,7 @@ func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredenti
 		}
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+gitCredentials.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.git_credentials) != 0")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a git credential called \""+gitCredentials.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.git_credentials) != 0")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
