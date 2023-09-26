@@ -115,9 +115,8 @@ func jsonStringToHcl(value string) string {
 }
 
 func anyToHcl(value any) string {
-	// Everything is a string in JSON returned to Octopus, so null is just an empty string
 	if value == nil {
-		return ""
+		return "null"
 	}
 
 	if mapItem, ok := value.(map[string]any); ok {
