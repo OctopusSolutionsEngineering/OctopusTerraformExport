@@ -5170,3 +5170,57 @@ func TestK8sPodAuthExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestTenantSensitiveVariablesExport verifies that sensitive tenant variables can be reimported with the correct settings
+func TestTenantSensitiveVariablesExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/64-projectvariabletemplate/space_creation",
+		"../test/terraform/64-projectvariabletemplate/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(project) != 1 {
+				t.Fatal("Must have a project called \"Test\"")
+			}
+
+			template := lo.Filter(project[0].Templates, func(item octopus.Template, index int) bool {
+				return strutil.EmptyIfNil(item.Name) == "Project Template Variable" &&
+					item.DisplaySettings["Octopus.ControlType"] == "Sensitive" &&
+					strutil.EmptyIfNil(item.Label) == "Test"
+			})
+
+			if len(template) != 1 {
+				t.Fatal("Must have found a sensitive template variable")
+			}
+
+			singleLineTemplate := lo.Filter(project[0].Templates, func(item octopus.Template, index int) bool {
+				return strutil.EmptyIfNil(item.Name) == "Project Template Variable 2" &&
+					item.DisplaySettings["Octopus.ControlType"] == "SingleLineText" &&
+					strutil.EmptyIfNil(item.Label) == "Test2" &&
+					strutil.EmptyIfNil(item.GetDefaultValueString()) == "Test2"
+			})
+
+			if len(singleLineTemplate) != 1 {
+				t.Fatal("Must have found a single line template variable")
+			}
+
+			return nil
+		})
+}

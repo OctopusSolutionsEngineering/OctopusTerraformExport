@@ -383,7 +383,7 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 			Name:            v.Name,
 			Label:           v.Label,
 			HelpText:        v.HelpText,
-			DefaultValue:    v.DefaultValue,
+			DefaultValue:    v.GetDefaultValueString(),
 			DisplaySettings: v.DisplaySettings,
 		})
 
