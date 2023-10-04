@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type KubernetesTargetConverter struct {
@@ -30,6 +31,7 @@ func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Kubernetes Target: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -56,6 +58,7 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 		return err
 	}
 
+	zap.L().Info("Kubernetes Target: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type RunbookProcessConverter struct {
@@ -41,6 +42,7 @@ func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string,
 		return nil
 	}
 
+	zap.L().Info("Runbook Process: " + resource.Id)
 	return c.toHcl(resource, true, false, runbookName, dependencies)
 }
 
@@ -66,6 +68,7 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 		return nil
 	}
 
+	zap.L().Info("Runbook Process: " + resource.Id)
 	return c.toHcl(resource, false, true, runbookName, dependencies)
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
 	"strings"
 )
@@ -46,6 +47,7 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Project: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -67,14 +69,15 @@ func (c ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 		return nil
 	}
 
-	project := octopus.Project{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+	resource := octopus.Project{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(project, false, true, dependencies)
+	zap.L().Info("Project: " + resource.Id)
+	return c.toHcl(resource, false, true, dependencies)
 }
 
 func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -380,7 +383,7 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 			Name:            v.Name,
 			Label:           v.Label,
 			HelpText:        v.HelpText,
-			DefaultValue:    v.DefaultValue,
+			DefaultValue:    v.GetDefaultValueString(),
 			DisplaySettings: v.DisplaySettings,
 		})
 

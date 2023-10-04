@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
 	"strings"
 )
@@ -36,6 +37,7 @@ func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Tenant: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -54,8 +56,9 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 		return nil
 	}
 
-	for _, tenant := range collection.Items {
-		err = c.toHcl(tenant, true, false, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Tenant: " + resource.Id)
+		err = c.toHcl(resource, true, false, dependencies)
 		if err != nil {
 			return nil
 		}
@@ -64,15 +67,16 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 }
 
 func (c TenantConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
-	tenant := octopus2.Tenant{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &tenant)
+	resource := octopus2.Tenant{}
+	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return nil
 	}
 
 	if found {
-		return c.toHcl(tenant, true, false, dependencies)
+		zap.L().Info("Tenant: " + resource.Id)
+		return c.toHcl(resource, true, false, dependencies)
 	}
 
 	return nil

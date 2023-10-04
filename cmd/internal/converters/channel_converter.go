@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 	"strings"
 )
 
@@ -32,9 +33,10 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 		return err
 	}
 
-	for _, channel := range collection.Items {
+	for _, resource := range collection.Items {
+		zap.L().Info("Channel: " + resource.Id)
 		project := octopus.Project{}
-		err = c.toHcl(channel, project, true, false, terraformDependencies, dependencies)
+		err = c.toHcl(resource, project, true, false, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -61,8 +63,9 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 		return err
 	}
 
-	for _, channel := range collection.Items {
-		err = c.toHcl(channel, project, false, true, terraformDependencies, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Channel: " + resource.Id)
+		err = c.toHcl(resource, project, false, true, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err

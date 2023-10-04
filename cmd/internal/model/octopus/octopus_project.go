@@ -11,8 +11,18 @@ type Template struct {
 	Name            *string
 	Label           *string
 	HelpText        *string
-	DefaultValue    *string
+	DefaultValue    any
 	DisplaySettings map[string]string
+}
+
+func (t Template) GetDefaultValueString() *string {
+	// Default value is either a string or an object defining the secret variable.
+	// We are only interested in defining the string value, as we can not get the secret value through the API.
+	defaultValue, ok := t.DefaultValue.(string)
+	if !ok {
+		return nil
+	}
+	return &defaultValue
 }
 
 type Project struct {

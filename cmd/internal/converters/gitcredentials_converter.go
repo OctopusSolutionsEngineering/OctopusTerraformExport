@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type GitCredentialsConverter struct {
@@ -25,8 +26,9 @@ func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 		return err
 	}
 
-	for _, gitCredentials := range collection.Items {
-		err = c.toHcl(gitCredentials, false, false, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Git Credentials: " + resource.Id)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -45,14 +47,15 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDeta
 		return nil
 	}
 
-	gitCredentials := octopus2.GitCredentials{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &gitCredentials)
+	resource := octopus2.GitCredentials{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(gitCredentials, true, false, dependencies)
+	zap.L().Info("Git Credentials: " + resource.Id)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -105,7 +108,7 @@ func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredenti
 		}
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+gitCredentials.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.git_credentials) != 0")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a git credential called \""+gitCredentials.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.git_credentials) != 0")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil

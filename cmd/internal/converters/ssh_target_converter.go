@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type SshTargetConverter struct {
@@ -28,6 +29,7 @@ func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("SSH Target: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -54,6 +56,7 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return err
 	}
 
+	zap.L().Info("SSH Target: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 

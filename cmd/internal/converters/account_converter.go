@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type AccountConverter struct {
@@ -28,6 +29,7 @@ func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Account: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -54,6 +56,7 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 		return err
 	}
 
+	zap.L().Info("Account: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 

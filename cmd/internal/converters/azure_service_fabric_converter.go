@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type AzureServiceFabricTargetConverter struct {
@@ -27,6 +28,7 @@ func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCo
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Azure Service Fabric Target: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -53,6 +55,7 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 		return err
 	}
 
+	zap.L().Info("Azure Service Fabric Target: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 

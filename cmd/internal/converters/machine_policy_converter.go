@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"time"
@@ -26,8 +27,9 @@ func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 		return err
 	}
 
-	for _, machinePolicy := range collection.Items {
-		err = c.toHcl(machinePolicy, false, dependencies)
+	for _, resource := range collection.Items {
+		zap.L().Info("Machine Policy: " + resource.Id)
+		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
 			return err
@@ -46,14 +48,15 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetai
 		return nil
 	}
 
-	machinePolicy := octopus2.MachinePolicy{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &machinePolicy)
+	resource := octopus2.MachinePolicy{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(machinePolicy, true, dependencies)
+	zap.L().Info("Machine Policy: " + resource.Id)
+	return c.toHcl(resource, true, dependencies)
 }
 
 func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, recursive bool, dependencies *ResourceDetailsCollection) error {

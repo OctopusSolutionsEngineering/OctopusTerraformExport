@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type ProjectGroupConverter struct {
@@ -24,6 +25,7 @@ func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) er
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Project Group: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -50,6 +52,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 		return err
 	}
 
+	zap.L().Info("Project Group: " + resource.Id)
 	return c.toHcl(resource, false, false, dependencies)
 }
 

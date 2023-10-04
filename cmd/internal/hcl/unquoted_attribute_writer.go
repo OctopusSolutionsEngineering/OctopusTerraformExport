@@ -115,6 +115,10 @@ func jsonStringToHcl(value string) string {
 }
 
 func anyToHcl(value any) string {
+	if value == nil {
+		return "null"
+	}
+
 	if mapItem, ok := value.(map[string]any); ok {
 		return mapToHclMap(mapItem)
 	} else if arrayItem, ok := value.([]any); ok {

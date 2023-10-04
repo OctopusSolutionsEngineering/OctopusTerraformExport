@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/writers"
@@ -16,14 +17,16 @@ import (
 )
 
 func main() {
+	logger.BuildLogger()
+
 	args, output, err := args.ParseArgs(os.Args[1:])
 
-	if err == flag.ErrHelp {
-		fmt.Println(output)
+	if errors.Is(err, flag.ErrHelp) {
+		zap.L().Error(output)
 		os.Exit(2)
 	} else if err != nil {
-		fmt.Println("got error:", err)
-		fmt.Println("output:\n", output)
+		zap.L().Error("got error: " + err.Error())
+		zap.L().Error("output:\n" + output)
 		os.Exit(1)
 	}
 
@@ -44,8 +47,10 @@ func main() {
 	}
 
 	if args.ProjectId != "" {
+		zap.L().Info("Exporting project " + args.ProjectId + " in space " + args.Space)
 		err = ConvertProjectToTerraform(args)
 	} else {
+		zap.L().Info("Exporting space " + args.Space)
 		err = ConvertSpaceToTerraform(args)
 	}
 
@@ -55,6 +60,9 @@ func main() {
 }
 
 func errorExit(message string) {
+	if len(message) == 0 {
+		message = "No error message provided"
+	}
 	zap.L().Error(message)
 	os.Exit(1)
 }
@@ -67,7 +75,16 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	}
 
 	collection := octopus.GeneralCollection[octopus.Project]{}
-	client.GetAllResources("Projects", &collection, []string{"name", name})
+	err := client.GetAllResources("Projects", &collection, []string{"name", name})
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(collection.Items) == 0 {
+		return "", errors.New("failed to return any projects in space " + space +
+			" - check the API key has permission to list projects")
+	}
 
 	for _, p := range collection.Items {
 		if p.Name == name {
@@ -75,7 +92,7 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 		}
 	}
 
-	return "", errors.New("did not find project with name " + name)
+	return "", errors.New("did not find project with name " + name + " in space " + space)
 }
 
 func ConvertSpaceToTerraform(args args.Arguments) error {

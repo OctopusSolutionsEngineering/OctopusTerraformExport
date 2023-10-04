@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"regexp"
 	"strings"
@@ -35,6 +36,7 @@ func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollect
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Library Variable Set: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -61,6 +63,7 @@ func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *Resourc
 		return err
 	}
 
+	zap.L().Info("Library Variable Set: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 
@@ -259,7 +262,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 			Name:            v.Name,
 			Label:           v.Label,
 			HelpText:        v.HelpText,
-			DefaultValue:    v.DefaultValue,
+			DefaultValue:    v.GetDefaultValueString(),
 			DisplaySettings: v.DisplaySettings,
 		})
 

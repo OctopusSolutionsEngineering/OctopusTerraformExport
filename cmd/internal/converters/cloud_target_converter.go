@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type CloudRegionTargetConverter struct {
@@ -27,6 +28,7 @@ func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Cloud Target: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -53,6 +55,7 @@ func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceD
 		return err
 	}
 
+	zap.L().Info("Cloud Target: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type LifecycleConverter struct {
@@ -25,6 +26,7 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Lifecycle: " + resource.Id)
 		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
@@ -45,14 +47,15 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 		return nil
 	}
 
-	lifecycle := octopus2.Lifecycle{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
+	resource := octopus2.Lifecycle{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
-	return c.toHcl(lifecycle, true, false, dependencies)
+	zap.L().Info("Lifecycle: " + resource.Id)
+	return c.toHcl(resource, true, false, dependencies)
 
 }
 
@@ -121,7 +124,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			}
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(data, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve an account called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a lifecycle called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil

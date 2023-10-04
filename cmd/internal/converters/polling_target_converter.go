@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"go.uber.org/zap"
 )
 
 type PollingTargetConverter struct {
@@ -26,6 +27,7 @@ func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 	}
 
 	for _, resource := range collection.Items {
+		zap.L().Info("Polling Target: " + resource.Id)
 		err = c.toHcl(resource, false, dependencies)
 
 		if err != nil {
@@ -52,6 +54,7 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 		return err
 	}
 
+	zap.L().Info("Polling Target: " + resource.Id)
 	return c.toHcl(resource, true, dependencies)
 }
 
