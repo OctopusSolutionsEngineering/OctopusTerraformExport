@@ -233,7 +233,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: go build -o octoterra_windows_amd64.exe cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
