@@ -1,0 +1,48 @@
+name: 🐞 Bug Report
+description: File a bug/issue
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Octoterra: Bug Report
+        Thanks for taking the time to fill out a bug/issue report!
+        
+        While the solutions engineering team will make a reasonable effort to respond to this issue, `octoterra`
+        has no Support Level Agreement (SLA).
+        
+        `octoterra` is subject to the limitations and issues found in the [Octopus Terraform provider](https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy).
+        If the issue is related to the provider, you may be requested to create an issue [here](https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues) instead.
+
+  - type: input
+    id: octopus-version
+    attributes:
+      label: Octopus version
+      description: Please provide what version of Octopus you are currently running.
+      placeholder: e.g., 2023.3.xxxx
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What actually happened?
+      placeholder: Tell us what is wrong
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction steps
+      description: If there are specific steps that you took when you encountered the problem, please outline them here.
+      placeholder: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: more-information
+    attributes:
+      label: More Information
+      description: Anything else that can help us solve the problem, logs, links, screenshots, suspicions, add them here.
+      placeholder: Tell us more
+    validations:
+      required: false
+
