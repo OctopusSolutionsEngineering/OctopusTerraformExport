@@ -20,7 +20,7 @@ body:
     validations:
       required: true
   - type: input
-    id: octopus-version
+    id: octoterra-version
     attributes:
       label: Octoterra version
       description: Run `octoterra --version` or `docker run octopussamples/octoterra --version`
