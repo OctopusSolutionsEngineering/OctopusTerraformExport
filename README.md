@@ -79,6 +79,10 @@ If your feature or bug is regarding CaC enabled projects that require valid Git 
 
 Create a pull request against `main`.
 
+## Tool Pack Documentation
+
+The Tool Pack documentation is found [here](https://docs.google.com/document/d/18CeeWZ_olJEy-87PIxFx7x2lhPWHTiYaQXvPBDxQFGA/edit) (internal access only).
+
 ## To Do
 
 The following resources have yet to be exported:
