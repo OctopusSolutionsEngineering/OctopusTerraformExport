@@ -18,6 +18,14 @@ body:
       description: Please provide what version of Octopus you are currently running.
       placeholder: e.g., 2023.3.xxxx
     validations:
+      required: true
+  - type: input
+    id: octopus-version
+    attributes:
+      label: Octoterra version
+      description: Run `octoterra --version` or `docker run octopussamples/octoterra --version`
+      placeholder: e.g., 0.1.203
+    validations:
       required: false
   - type: textarea
     id: what-happened

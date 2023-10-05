@@ -8,6 +8,7 @@ import (
 )
 
 type Arguments struct {
+	Version                          bool
 	Url                              string
 	ApiKey                           string
 	Space                            string
@@ -169,6 +170,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 
 	arguments := Arguments{}
 
+	flags.BoolVar(&arguments.Version, "version", false, "Print the version")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
 	flags.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
