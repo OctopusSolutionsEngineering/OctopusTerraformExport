@@ -59,6 +59,21 @@ so to build the HCL), the link displays the project's HCL representation in a po
 
 ![HCL Export link](hcl_export.png)
 
+## How to contribute
+
+* Ensure any new features or bugs have an associated test in [octoterra_test.go](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/blob/main/cmd/octoterra_test.go)
+* Tests can be run locally by setting the following environment variables:
+    * `ECR_ACCESS_KEY` and `ECR_SECRET_KEY` environment variables to an AWS access and secret key. These need to be valid AWS credentials but do not need any particular permissions.
+    * `LICENSE` to a base64 encoded Octopus license key.
+
+### Octopus engineers
+
+This project uses continuous integration, so push your changes to `main`.
+
+### External contributors
+
+Create a pull request against `main`.
+
 ## To Do
 
 The following resources have yet to be exported:
