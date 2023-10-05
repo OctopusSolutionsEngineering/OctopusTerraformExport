@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+var Version = "development"
+
 func main() {
 	logger.BuildLogger()
 
@@ -28,6 +30,11 @@ func main() {
 		zap.L().Error("got error: " + err.Error())
 		zap.L().Error("output:\n" + output)
 		os.Exit(1)
+	}
+
+	if args.Version {
+		zap.L().Info("Version: " + Version)
+		os.Exit(0)
 	}
 
 	if args.Url == "" {

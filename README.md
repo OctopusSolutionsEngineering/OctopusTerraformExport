@@ -59,6 +59,30 @@ so to build the HCL), the link displays the project's HCL representation in a po
 
 ![HCL Export link](hcl_export.png)
 
+## How to contribute
+
+* Ensure any new features or bugs have an associated test in [octoterra_test.go](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/blob/main/cmd/octoterra_test.go)
+* Tests can be run locally by setting the following environment variables:
+    * `ECR_ACCESS_KEY` and `ECR_SECRET_KEY` environment variables to an AWS access and secret key. These need to be valid AWS credentials but do not need any particular permissions.
+    * `LICENSE` to a base64 encoded Octopus license key.
+* Ignore tests that require the `GIT_CREDENTIAL` variable to be set, as these tests require specific credentials to GitHub repositories.
+
+### Octopus engineers
+
+If your feature or bug is regarding CaC enabled projects that require valid Git credentials to be tested, reach out in Slack in #se-tool-requests. Credentials for these tests will need to be added to the GitHub repo.
+
+This project uses continuous integration, so push your changes to `main`.
+
+### External contributors
+
+If your feature or bug is regarding CaC enabled projects that require valid Git credentials to be tested, allow the credentials and the Git repo to be configured via environment variables. Make a note of the environment variables in the pull requests so appropriate values can be defined as secrets in this repo.
+
+Create a pull request against `main`.
+
+## Tool Pack Documentation
+
+The Tool Pack documentation is found [here](https://docs.google.com/document/d/18CeeWZ_olJEy-87PIxFx7x2lhPWHTiYaQXvPBDxQFGA/edit) (internal access only).
+
 ## To Do
 
 The following resources have yet to be exported:

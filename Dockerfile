@@ -2,6 +2,8 @@
 
 FROM golang:1.20 as build
 
+ARG Version=development
+
 # Set destination for COPY
 WORKDIR /app
 
@@ -14,7 +16,7 @@ RUN go mod download
 COPY . /app
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /octoterra cmd/octoterra.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.Version=${Version}'" -o /octoterra cmd/octoterra.go
 
 # Create the execution image
 FROM alpine:latest

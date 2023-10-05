@@ -146,22 +146,22 @@ jobs:
           path: results.xml
           reporter: java-junit
           fail-on-error: 'false'
-      - run: go build -o octoterra_linux_amd64 cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_amd64 cmd/octoterra.go
         env:
           GOOS: linux
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: go build -o octoterra_windows_amd64.exe cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: go build -o octoterra_macos_amd64 cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_macos_amd64 cmd/octoterra.go
         env:
           GOOS: darwin
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: go build -o octoterra_macos_arm64 cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_macos_arm64 cmd/octoterra.go
         env:
           GOOS: darwin
           GOARCH: arm64
@@ -198,12 +198,14 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: octopussamples/octoterra:latest
+          build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push versioned image
         uses: docker/build-push-action@v4
         with:
           push: true
           platforms: linux/amd64
           tags: octopussamples/octoterra:${{ steps.determine_version.outputs.semVer }}
+          build-args: Version=${{ steps.determine_version.outputs.semVer }}
   build-windows:
     runs-on: windows-2019
     steps:
@@ -233,7 +235,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: go build -o octoterra_windows_amd64.exe cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
