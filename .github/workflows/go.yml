@@ -168,11 +168,13 @@ jobs:
           CGO_ENABLED: 0
       - name: Tag Release
         uses: mathieudutour/github-tag-action@v6.1
+        continue-on-error: true
         with:
           custom_tag: ${{ steps.determine_version.outputs.semVer }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
+        continue-on-error: true
         with:
           tag_name: ${{ steps.determine_version.outputs.semVer }}+run${{ github.run_number }}-attempt${{ github.run_attempt }}
           files: |
