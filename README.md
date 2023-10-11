@@ -47,6 +47,18 @@ To do so, use the following command:
     -dest /tmp/octoexport
 ```
 
+Octoterra is also able to be run as a Docker image:
+
+```
+docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -projectId Projects-1234 \
+    -lookupProjectDependencies \
+    -dest /tmp/octoexport
+```
+
 ## Browser usage
 
 Exporting projects to HCL can be embedded in the browser by using the [Violentmonkey](https://violentmonkey.github.io/)
