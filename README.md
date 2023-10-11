@@ -54,7 +54,7 @@ docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
     -url https://yourinstance.octopus.app \
     -space Spaces-## \
     -apiKey API-APIKEYGOESHERE \
-    -projectId Projects-1234 \
+    -projectName YourProject \
     -lookupProjectDependencies \
     -dest /tmp/octoexport
 ```
