@@ -270,10 +270,6 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			return err
 		}
 
-		if err != nil {
-			return err
-		}
-
 		// Placing sensitive variables in uniquely prefixed files allows us to target them for variable substitution
 		if v.IsSensitive {
 			thisResource.FileName = "space_population/project_variable_sensitive_" + resourceName + ".tf"
