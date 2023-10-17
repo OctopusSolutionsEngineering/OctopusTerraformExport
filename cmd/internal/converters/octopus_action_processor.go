@@ -240,7 +240,7 @@ func (c OctopusActionProcessor) GetRunOnServer(properties map[string]any) bool {
 func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Feeds") {
-			if strings.Contains(v, v2.Id) {
+			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
 		}
@@ -254,7 +254,7 @@ func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dep
 func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Accounts") {
-			if strings.Contains(v, v2.Id) {
+			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
 		}
@@ -268,7 +268,7 @@ func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, 
 func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Projects") {
-			if strings.Contains(v, v2.Id) {
+			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
 		}
@@ -282,7 +282,7 @@ func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, 
 func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Git-Credentials") {
-			if strings.Contains(v, v2.Id) {
+			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
 		}
