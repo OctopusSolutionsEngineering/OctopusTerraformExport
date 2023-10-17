@@ -650,6 +650,7 @@ function dumpToHcl() {
                                 })
                         })
                         .catch(function(err) {
+                            hclOutput.style.cursor = 'not-allowed';
                             console.log(err);
                         })
                 }
