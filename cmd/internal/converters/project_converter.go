@@ -15,27 +15,30 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
+	"regexp"
 	"strings"
 )
 
 type ProjectConverter struct {
-	Client                      client.OctopusClient
-	LifecycleConverter          ConverterAndLookupById
-	GitCredentialsConverter     ConverterAndLookupById
-	LibraryVariableSetConverter ConverterAndLookupById
-	ProjectGroupConverter       ConverterAndLookupById
-	DeploymentProcessConverter  ConverterAndLookupByIdAndName
-	TenantConverter             ConverterAndLookupByProjectId
-	ProjectTriggerConverter     ConverterByProjectIdWithName
-	VariableSetConverter        ConverterAndLookupByProjectIdAndName
-	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
-	RunbookConverter            ConverterAndLookupByIdAndName
-	IgnoreCacManagedValues      bool
-	ExcludeAllRunbooks          bool
-	IgnoreProjectChanges        bool
-	IgnoreProjectGroupChanges   bool
-	IgnoreProjectNameChanges    bool
-	ExcludeProjects             args.ExcludeProjects
+	Client                       client.OctopusClient
+	LifecycleConverter           ConverterAndLookupById
+	GitCredentialsConverter      ConverterAndLookupById
+	LibraryVariableSetConverter  ConverterAndLookupById
+	ProjectGroupConverter        ConverterAndLookupById
+	DeploymentProcessConverter   ConverterAndLookupByIdAndName
+	TenantConverter              ConverterAndLookupByProjectId
+	ProjectTriggerConverter      ConverterByProjectIdWithName
+	VariableSetConverter         ConverterAndLookupByProjectIdAndName
+	ChannelConverter             ConverterAndLookupByProjectIdWithTerraDependencies
+	RunbookConverter             ConverterAndLookupByIdAndName
+	IgnoreCacManagedValues       bool
+	ExcludeAllRunbooks           bool
+	IgnoreProjectChanges         bool
+	IgnoreProjectGroupChanges    bool
+	IgnoreProjectNameChanges     bool
+	ExcludeProjects              args.ExcludeProjects
+	ExcludeProjectsRegex         args.ExcludeProjectsRegex
+	excludeRunbooksRegexCompiled []*regexp.Regexp
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -100,7 +103,9 @@ func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 }
 
 func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
+	c.compileRegexes()
+
+	if c.projectIsExcluded(project) {
 		return nil
 	}
 
@@ -646,4 +651,30 @@ func (c ProjectConverter) exportDependencies(project octopus.Project, projectNam
 	}
 
 	return nil
+}
+
+func (c *ProjectConverter) compileRegexes() {
+	if c.ExcludeProjectsRegex != nil {
+		c.excludeRunbooksRegexCompiled = lo.FilterMap(c.ExcludeProjectsRegex, func(x string, index int) (*regexp.Regexp, bool) {
+			re, err := regexp.Compile(x)
+			if err != nil {
+				return nil, false
+			}
+			return re, true
+		})
+	}
+}
+
+func (c *ProjectConverter) projectIsExcluded(project octopus.Project) bool {
+	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
+		return true
+	}
+
+	if c.excludeRunbooksRegexCompiled != nil {
+		return lo.SomeBy(c.excludeRunbooksRegexCompiled, func(x *regexp.Regexp) bool {
+			return x.MatchString(project.Name)
+		})
+	}
+
+	return false
 }

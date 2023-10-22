@@ -41,6 +41,7 @@ type Arguments struct {
 	ExcludeTenantsExcept             ExcludeTenantsExcept
 	ExcludeAllTenants                bool
 	ExcludeProjects                  ExcludeProjects
+	ExcludeProjectsRegex             ExcludeProjectsRegex
 	ExcludeAllTargets                bool
 }
 
@@ -51,6 +52,23 @@ func (i *ExcludeProjects) String() string {
 }
 
 func (i *ExcludeProjects) Set(value string) error {
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
+	return nil
+}
+
+type ExcludeProjectsRegex []string
+
+func (i *ExcludeProjectsRegex) String() string {
+	return "excluded projects"
+}
+
+func (i *ExcludeProjectsRegex) Set(value string) error {
 	trimmed := strings.TrimSpace(value)
 
 	if len(trimmed) == 0 {
@@ -195,6 +213,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
 	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported.")
+	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported.")
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", false, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
 	flags.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")

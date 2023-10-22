@@ -11,21 +11,25 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
+	"regexp"
 	"strings"
 )
 
 type TenantConverter struct {
-	Client                  client.OctopusClient
-	TenantVariableConverter ConverterByTenantId
-	EnvironmentConverter    ConverterById
-	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
-	ExcludeTenants          args.ExcludeTenants
-	ExcludeTenantsExcept    args.ExcludeTenantsExcept
-	ExcludeAllTenants       bool
-	Excluder                ExcludeByName
-	ExcludeProjects         args.ExcludeProjects
+	Client                       client.OctopusClient
+	TenantVariableConverter      ConverterByTenantId
+	EnvironmentConverter         ConverterById
+	TagSetConverter              ConvertToHclByResource[octopus2.TagSet]
+	ExcludeTenants               args.ExcludeTenants
+	ExcludeTenantsExcept         args.ExcludeTenantsExcept
+	ExcludeAllTenants            bool
+	Excluder                     ExcludeByName
+	ExcludeProjects              args.ExcludeProjects
+	ExcludeProjectsRegex         args.ExcludeProjectsRegex
+	excludeRunbooksRegexCompiled []*regexp.Regexp
 }
 
 func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -100,6 +104,8 @@ func (c TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *
 }
 
 func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+
+	c.compileRegexes()
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
@@ -230,7 +236,7 @@ func (c TenantConverter) excludeProject(projectId string) (bool, error) {
 		return false, err
 	}
 
-	return slices.Index(c.ExcludeProjects, project.Name) != -1, nil
+	return c.projectIsExcluded(project), nil
 }
 
 func (c TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
@@ -300,4 +306,30 @@ func (c TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursive
 	}
 
 	return terraformDependencies, nil
+}
+
+func (c *TenantConverter) compileRegexes() {
+	if c.ExcludeProjectsRegex != nil {
+		c.excludeRunbooksRegexCompiled = lo.FilterMap(c.ExcludeProjectsRegex, func(x string, index int) (*regexp.Regexp, bool) {
+			re, err := regexp.Compile(x)
+			if err != nil {
+				return nil, false
+			}
+			return re, true
+		})
+	}
+}
+
+func (c *TenantConverter) projectIsExcluded(project octopus2.Project) bool {
+	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
+		return true
+	}
+
+	if c.excludeRunbooksRegexCompiled != nil {
+		return lo.SomeBy(c.excludeRunbooksRegexCompiled, func(x *regexp.Regexp) bool {
+			return x.MatchString(project.Name)
+		})
+	}
+
+	return false
 }
