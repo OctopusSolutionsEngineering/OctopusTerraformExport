@@ -29,6 +29,7 @@ type TenantConverter struct {
 	Excluder                     ExcludeByName
 	ExcludeProjects              args.ExcludeProjects
 	ExcludeProjectsRegex         args.ExcludeProjectsRegex
+	ExcludeAllProjects           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 }
 
@@ -321,6 +322,10 @@ func (c *TenantConverter) compileRegexes() {
 }
 
 func (c *TenantConverter) projectIsExcluded(project octopus2.Project) bool {
+	if c.ExcludeAllProjects {
+		return true
+	}
+
 	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
 		return true
 	}

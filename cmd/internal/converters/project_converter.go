@@ -38,6 +38,7 @@ type ProjectConverter struct {
 	IgnoreProjectNameChanges     bool
 	ExcludeProjects              args.ExcludeProjects
 	ExcludeProjectsRegex         args.ExcludeProjectsRegex
+	ExcludeAllProjects           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 }
 
@@ -666,6 +667,10 @@ func (c *ProjectConverter) compileRegexes() {
 }
 
 func (c *ProjectConverter) projectIsExcluded(project octopus.Project) bool {
+	if c.ExcludeAllProjects {
+		return true
+	}
+
 	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
 		return true
 	}
