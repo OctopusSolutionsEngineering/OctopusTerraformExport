@@ -47,6 +47,7 @@ type VariableSetConverter struct {
 	ExcludeProjectVariablesRegex         args.ExcludeVariables
 	excludeProjectVariablesRegexCompiled []*regexp.Regexp
 	IgnoreProjectChanges                 bool
+	DummySecretGenerator                 DummySecretGenerator
 	ExcludeVariableEnvironmentScopes     args.ExcludeVariableEnvironmentScopes
 	excludeVariableEnvironmentScopesIds  []string
 }
@@ -318,6 +319,10 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					Sensitive:   true,
 					Description: "The secret variable value associated with the variable " + v.Name,
 					Default:     defaultValue,
+				}
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 				}
 
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

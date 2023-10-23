@@ -16,6 +16,7 @@ import (
 type FeedConverter struct {
 	Client                    client.OctopusClient
 	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c FeedConverter) GetResourceType() string {
@@ -142,6 +143,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Description: "The password used by the feed " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -178,6 +183,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The password used by the feed " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -220,6 +229,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Description: "The password used by the feed " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -260,6 +273,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Description: "The password used by the feed " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -296,6 +313,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The password used by the feed " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -337,6 +358,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The password used by the feed " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()

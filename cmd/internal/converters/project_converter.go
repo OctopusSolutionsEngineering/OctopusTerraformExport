@@ -40,6 +40,8 @@ type ProjectConverter struct {
 	ExcludeProjectsRegex         args.ExcludeProjectsRegex
 	ExcludeAllProjects           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
+	DummySecretVariableValues    bool
+	DummySecretGenerator         DummySecretGenerator
 }
 
 func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -208,6 +210,10 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The git password for the project \"" + project.Name + "\"",
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

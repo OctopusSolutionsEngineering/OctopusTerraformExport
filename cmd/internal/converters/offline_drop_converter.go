@@ -17,6 +17,7 @@ type OfflineDropTargetConverter struct {
 	EnvironmentConverter      ConverterById
 	ExcludeAllTargets         bool
 	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

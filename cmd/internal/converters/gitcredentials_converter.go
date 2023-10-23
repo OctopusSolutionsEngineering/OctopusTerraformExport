@@ -17,6 +17,7 @@ type GitCredentialsConverter struct {
 	Client                    client.OctopusClient
 	SpaceResourceName         string
 	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -149,6 +150,10 @@ func (c GitCredentialsConverter) toHclResource(gitCredentials octopus2.GitCreden
 			Nullable:    false,
 			Sensitive:   true,
 			Description: "The secret variable value associated with the git credential \"" + gitCredentials.Name + "\"",
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 		}
 
 		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

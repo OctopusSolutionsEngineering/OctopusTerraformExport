@@ -13,10 +13,12 @@ import (
 )
 
 type AzureServiceFabricTargetConverter struct {
-	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	EnvironmentConverter   ConverterById
-	ExcludeAllTargets      bool
+	Client                    client.OctopusClient
+	MachinePolicyConverter    ConverterById
+	EnvironmentConverter      ConverterById
+	ExcludeAllTargets         bool
+	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -190,6 +192,10 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 				Nullable:    true,
 				Sensitive:   true,
 				Description: "The aad_user_credential_password value associated with the target \"" + target.Name + "\"",
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

@@ -143,7 +143,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 }
 
 func (c ProjectGroupConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectGroupResourceName string) {
-	secretVariableResource := terraform.TerraformVariable{
+	projectNameVariableResource := terraform.TerraformVariable{
 		Name:        projectName + "_name",
 		Type:        "string",
 		Nullable:    false,
@@ -152,7 +152,7 @@ func (c ProjectGroupConverter) writeProjectNameVariable(file *hclwrite.File, pro
 		Default:     &projectGroupResourceName,
 	}
 
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+	block := gohcl.EncodeAsBlock(projectNameVariableResource, "variable")
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
 }

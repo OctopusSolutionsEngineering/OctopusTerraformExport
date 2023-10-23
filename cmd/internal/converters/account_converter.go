@@ -19,6 +19,7 @@ type AccountConverter struct {
 	EnvironmentConverter      ConverterById
 	TenantConverter           ConverterById
 	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -165,6 +166,10 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Description: "The AWS secret key associated with the account " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -210,6 +215,10 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The Azure secret associated with the account " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -258,6 +267,10 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Description: "The Azure certificate associated with the account " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -298,6 +311,10 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The GCP JSON key associated with the account " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -342,6 +359,10 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Description: "The token associated with the account " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			file := hclwrite.NewEmptyFile()
 
 			// Add a comment with the import command
@@ -383,6 +404,10 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The password associated with the account " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -430,12 +455,20 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				Description: "The password associated with the certificate for account " + resource.Name,
 			}
 
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+
 			certFileVariableResource := terraform2.TerraformVariable{
 				Name:        resourceName + "_cert",
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
 				Description: "The certificate file for account " + resource.Name,
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()

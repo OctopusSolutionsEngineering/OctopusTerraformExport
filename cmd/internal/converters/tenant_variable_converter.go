@@ -18,6 +18,7 @@ type TenantVariableConverter struct {
 	ExcludeAllTenants         bool
 	Excluder                  ExcludeByName
 	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

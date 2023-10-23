@@ -15,6 +15,7 @@ import (
 type CertificateConverter struct {
 	Client                    client.OctopusClient
 	DummySecretVariableValues bool
+	DummySecretGenerator      DummySecretGenerator
 }
 
 func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -173,6 +174,10 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 			Default:     &defaultPassword,
 		}
 
+		if c.DummySecretVariableValues {
+			certificatePassword.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
 		block := gohcl.EncodeAsBlock(certificatePassword, "variable")
 		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
@@ -183,6 +188,10 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 			Nullable:    false,
 			Sensitive:   true,
 			Description: "The certificate data used by the certificate " + certificate.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			certificatePassword.Default = c.DummySecretGenerator.GetDummySecret()
 		}
 
 		block = gohcl.EncodeAsBlock(certificateData, "variable")

@@ -143,16 +143,16 @@ func (c *RunbookConverter) GetGroupResourceType(projectId string) string {
 }
 
 func (c *RunbookConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
-	secretVariableResource := terraform.TerraformVariable{
+	runbookNameVariableResource := terraform.TerraformVariable{
 		Name:        projectName + "_name",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
-		Description: "The name of the project exported from " + projectResourceName,
+		Description: "The name of the runbook exported from " + projectResourceName,
 		Default:     &projectResourceName,
 	}
 
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+	block := gohcl.EncodeAsBlock(runbookNameVariableResource, "variable")
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
 }

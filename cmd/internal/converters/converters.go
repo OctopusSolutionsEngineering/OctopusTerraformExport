@@ -1,5 +1,10 @@
 package converters
 
+// DummySecretGenerator defines the service used to generate dummy secret values
+type DummySecretGenerator interface {
+	GetDummySecret() *string
+}
+
 // ConverterById converts an individual resource by its ID
 type ConverterById interface {
 	// ToHclById converts a single resource by its ID. This is used when converting a single project,

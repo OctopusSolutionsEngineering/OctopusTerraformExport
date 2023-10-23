@@ -26,6 +26,7 @@ type LibraryVariableSetConverter struct {
 	ExcludeLibraryVariableSetsRegex         args.ExcludeLibraryVariableSets
 	excludeLibraryVariableSetsRegexCompiled []*regexp.Regexp
 	DummySecretVariableValues               bool
+	DummySecretGenerator                    DummySecretGenerator
 }
 
 func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
