@@ -63,7 +63,7 @@ type AuthenticationResource struct {
 	AssumeRole                       *bool
 	AssumedRoleArn                   *string
 	AssumedRoleSession               *string
-	AssumeRoleSessionDurationSeconds *string
+	AssumeRoleSessionDurationSeconds *int
 	AssumeRoleExternalId             *string
 
 	// KubernetesGoogleCloudAuthenticationResource

@@ -50,7 +50,7 @@ type TerraformAwsAccountAuthentication struct {
 	ClusterName               string  `hcl:"cluster_name"`
 	AssumeRole                *bool   `hcl:"assume_role"`
 	AssumeRoleExternalId      *string `hcl:"assume_role_external_id"`
-	AssumeRoleSessionDuration *string `hcl:"assume_role_session_duration"`
+	AssumeRoleSessionDuration *int    `hcl:"assume_role_session_duration"`
 	AssumedRoleArn            *string `hcl:"assumed_role_arn"`
 	AssumedRoleSession        *string `hcl:"assumed_role_session"`
 	UseInstanceRole           *bool   `hcl:"use_instance_role"`
