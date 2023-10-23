@@ -104,6 +104,10 @@ func exportSpaceImportAndTest(
 				ExcludeAllTenants:                arguments.ExcludeAllTenants,
 				ExcludeProjects:                  arguments.ExcludeProjects,
 				ExcludeAllTargets:                arguments.ExcludeAllTargets,
+				DummySecretVariableValues:        arguments.DummySecretVariableValues,
+				ExcludeAllProjects:               arguments.ExcludeAllProjects,
+				ExcludeProjectsRegex:             arguments.ExcludeProjectsRegex,
+				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
 			}
 
 			return ConvertSpaceToTerraform(args)
@@ -176,6 +180,10 @@ func exportProjectImportAndTest(
 				ExcludeAllTenants:                arguments.ExcludeAllTenants,
 				ExcludeProjects:                  arguments.ExcludeProjects,
 				ExcludeAllTargets:                arguments.ExcludeAllTargets,
+				DummySecretVariableValues:        arguments.DummySecretVariableValues,
+				ExcludeAllProjects:               arguments.ExcludeAllProjects,
+				ExcludeProjectsRegex:             arguments.ExcludeProjectsRegex,
+				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -917,6 +925,75 @@ func TestDockerFeedExport(t *testing.T) {
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
 						t.Fatal("The feed must have a username of \"username\"")
+					}
+
+					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
+						t.Fatal("The feed must be have a API version of \"v1\"")
+					}
+
+					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
+						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+					}
+
+					foundExecutionTarget := false
+					foundNotAcquired := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "NotAcquired" {
+							foundNotAcquired = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundNotAcquired) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestDockerFeedNoCredsExport verifies that a docker feed with no credentials can be reimported with the correct settings
+func TestDockerFeedNoCredsExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/65-dockerfeednocreds/space_creation",
+		"../test/terraform/65-dockerfeednocreds/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			feedName := "Docker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
+
+					if strutil.EmptyIfNil(v.FeedType) != "Docker" {
+						t.Fatal("The feed must have a type of \"Docker\"")
+					}
+
+					if strutil.EmptyIfNil(v.Username) != "" {
+						t.Fatal("The feed must have an empty username")
 					}
 
 					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
@@ -1970,6 +2047,70 @@ func TestCertificateExport(t *testing.T) {
 			"-var=certificate_test_password=Password01!",
 		},
 		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Certificate]{}
+			err := octopusClient.GetAllResources("Certificates", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if v.Notes != "A test certificate" {
+						t.Fatal("The tenant must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
+					}
+
+					if v.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The tenant must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
+					}
+
+					if v.SubjectDistinguishedName != "CN=test.com" {
+						t.Fatal("The tenant must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
+					}
+
+					if len(v.EnvironmentIds) != 0 {
+						t.Fatal("The tenant must have one project environment")
+					}
+
+					if len(v.TenantTags) != 0 {
+						t.Fatal("The tenant must have no tenant tags")
+					}
+
+					if len(v.TenantIds) != 0 {
+						t.Fatal("The tenant must have no tenants")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestCertificateExportWithDummyValues verifies that a certificate can be reimported with the correct settings, but
+// with dummy values for any secrets.
+func TestCertificateExportWithDummyValues(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/66-certificatesdummy/space_creation",
+		"../test/terraform/66-certificatesdummy/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			DummySecretVariableValues: true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert

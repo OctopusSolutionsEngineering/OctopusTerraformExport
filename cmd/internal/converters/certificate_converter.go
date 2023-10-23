@@ -191,7 +191,7 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 		}
 
 		if c.DummySecretVariableValues {
-			certificatePassword.Default = c.DummySecretGenerator.GetDummyCertificate()
+			certificateData.Default = c.DummySecretGenerator.GetDummyCertificate()
 		}
 
 		block = gohcl.EncodeAsBlock(certificateData, "variable")
