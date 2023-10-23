@@ -127,24 +127,11 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Type:                              "octopusdeploy_docker_container_registry",
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
-				Password:                          &password,
 				RegistryPath:                      resource.RegistryPath,
-				Username:                          resource.Username,
+				Username:                          strutil.NilIfEmptyPointer(resource.Username),
 				ApiVersion:                        resource.ApiVersion,
 				PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 				FeedUri:                           resource.FeedUri,
-			}
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        passwordName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The password used by the feed " + resource.Name,
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -161,9 +148,25 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			if resource.Password != nil && resource.Password.HasValue {
+				secretVariableResource := terraform2.TerraformVariable{
+					Name:        passwordName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The password used by the feed " + resource.Name,
+				}
+
+				terraformResource.Password = &password
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
@@ -175,18 +178,6 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SecretKey:                         &password,
 				Region:                            resource.Region,
 				PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
-			}
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        passwordName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The password used by the feed " + resource.Name,
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -203,9 +194,25 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			if resource.Password != nil && resource.Password.HasValue {
+				secretVariableResource := terraform2.TerraformVariable{
+					Name:        passwordName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The secret key used by the feed " + resource.Name,
+				}
+
+				terraformResource.SecretKey = &password
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
@@ -214,23 +221,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
-				Username:                          resource.Username,
-				Password:                          &password,
+				Username:                          strutil.NilIfEmptyPointer(resource.Username),
 				PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 				DownloadAttempts:                  resource.DownloadAttempts,
 				DownloadRetryBackoffSeconds:       resource.DownloadRetryBackoffSeconds,
-			}
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        passwordName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The password used by the feed " + resource.Name,
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -247,9 +241,25 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			if resource.Password != nil && resource.Password.HasValue {
+				secretVariableResource := terraform2.TerraformVariable{
+					Name:        passwordName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The password used by the feed " + resource.Name,
+				}
+
+				terraformResource.Password = &password
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
@@ -258,23 +268,10 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
-				Username:                          resource.Username,
-				Password:                          &password,
+				Username:                          strutil.NilIfEmptyPointer(resource.Username),
 				PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 				DownloadAttempts:                  resource.DownloadAttempts,
 				DownloadRetryBackoffSeconds:       resource.DownloadRetryBackoffSeconds,
-			}
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        passwordName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The password used by the feed " + resource.Name,
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -291,9 +288,25 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			if resource.Password != nil && resource.Password.HasValue {
+				secretVariableResource := terraform2.TerraformVariable{
+					Name:        passwordName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The password used by the feed " + resource.Name,
+				}
+
+				terraformResource.Password = &password
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
@@ -302,21 +315,8 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
-				Username:                          resource.Username,
-				Password:                          &password,
+				Username:                          strutil.NilIfEmptyPointer(resource.Username),
 				PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
-			}
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        passwordName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The password used by the feed " + resource.Name,
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -333,9 +333,25 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			if resource.Password != nil && resource.Password.HasValue {
+				secretVariableResource := terraform2.TerraformVariable{
+					Name:        passwordName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The password used by the feed " + resource.Name,
+				}
+
+				terraformResource.Password = &password
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
@@ -344,24 +360,11 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
-				Username:                          resource.Username,
-				Password:                          &password,
+				Username:                          strutil.NilIfEmptyPointer(resource.Username),
 				IsEnhancedMode:                    resource.EnhancedMode,
 				PackageAcquisitionLocationOptions: resource.PackageAcquisitionLocationOptions,
 				DownloadAttempts:                  resource.DownloadAttempts,
 				DownloadRetryBackoffSeconds:       resource.DownloadRetryBackoffSeconds,
-			}
-
-			secretVariableResource := terraform2.TerraformVariable{
-				Name:        passwordName,
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The password used by the feed " + resource.Name,
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 
 			file := hclwrite.NewEmptyFile()
@@ -378,9 +381,25 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
+			if resource.Password != nil && resource.Password.HasValue {
+				secretVariableResource := terraform2.TerraformVariable{
+					Name:        passwordName,
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The password used by the feed " + resource.Name,
+				}
+
+				terraformResource.Password = &password
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
+			}
 
 			return string(file.Bytes()), nil
 		} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {

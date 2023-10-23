@@ -7,6 +7,7 @@ type Feed struct {
 	FeedType                          *string
 	FeedUri                           *string
 	Username                          *string
+	Password                          *Secret
 	PackageAcquisitionLocationOptions []string
 	RetentionPolicyId                 *string
 	DownloadAttempts                  *int
