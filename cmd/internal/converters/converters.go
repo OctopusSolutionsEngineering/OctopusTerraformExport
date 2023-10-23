@@ -3,6 +3,8 @@ package converters
 // DummySecretGenerator defines the service used to generate dummy secret values
 type DummySecretGenerator interface {
 	GetDummySecret() *string
+	GetDummyCertificate() *string
+	GetDummyCertificatePassword() *string
 }
 
 // ConverterById converts an individual resource by its ID
