@@ -14,7 +14,8 @@ import (
 )
 
 type FeedConverter struct {
-	Client client.OctopusClient
+	Client                    client.OctopusClient
+	DummySecretVariableValues bool
 }
 
 func (c FeedConverter) GetResourceType() string {

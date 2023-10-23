@@ -15,9 +15,10 @@ import (
 )
 
 type AccountConverter struct {
-	Client               client.OctopusClient
-	EnvironmentConverter ConverterById
-	TenantConverter      ConverterById
+	Client                    client.OctopusClient
+	EnvironmentConverter      ConverterById
+	TenantConverter           ConverterById
+	DummySecretVariableValues bool
 }
 
 func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

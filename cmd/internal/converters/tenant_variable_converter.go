@@ -12,11 +12,12 @@ import (
 )
 
 type TenantVariableConverter struct {
-	Client               client.OctopusClient
-	ExcludeTenants       args.ExcludeTenants
-	ExcludeTenantsExcept args.ExcludeTenantsExcept
-	ExcludeAllTenants    bool
-	Excluder             ExcludeByName
+	Client                    client.OctopusClient
+	ExcludeTenants            args.ExcludeTenants
+	ExcludeTenantsExcept      args.ExcludeTenantsExcept
+	ExcludeAllTenants         bool
+	Excluder                  ExcludeByName
+	DummySecretVariableValues bool
 }
 
 func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

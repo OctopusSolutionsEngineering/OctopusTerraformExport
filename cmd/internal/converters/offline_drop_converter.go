@@ -12,10 +12,11 @@ import (
 )
 
 type OfflineDropTargetConverter struct {
-	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	EnvironmentConverter   ConverterById
-	ExcludeAllTargets      bool
+	Client                    client.OctopusClient
+	MachinePolicyConverter    ConverterById
+	EnvironmentConverter      ConverterById
+	ExcludeAllTargets         bool
+	DummySecretVariableValues bool
 }
 
 func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

@@ -42,6 +42,7 @@ type VariableSetConverter struct {
 	WorkerPoolConverter                  ConverterAndLookupById
 	IgnoreCacManagedValues               bool
 	DefaultSecretVariableValues          bool
+	DummySecretVariableValues            bool
 	ExcludeProjectVariables              args.ExcludeVariables
 	ExcludeProjectVariablesRegex         args.ExcludeVariables
 	excludeProjectVariablesRegexCompiled []*regexp.Regexp

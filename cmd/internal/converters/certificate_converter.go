@@ -13,7 +13,8 @@ import (
 )
 
 type CertificateConverter struct {
-	Client client.OctopusClient
+	Client                    client.OctopusClient
+	DummySecretVariableValues bool
 }
 
 func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

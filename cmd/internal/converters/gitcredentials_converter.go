@@ -14,8 +14,9 @@ import (
 )
 
 type GitCredentialsConverter struct {
-	Client            client.OctopusClient
-	SpaceResourceName string
+	Client                    client.OctopusClient
+	SpaceResourceName         string
+	DummySecretVariableValues bool
 }
 
 func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) error {

@@ -128,11 +128,12 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:               client,
-		ExcludeTenants:       args.ExcludeTenants,
-		ExcludeAllTenants:    args.ExcludeAllTenants,
-		ExcludeTenantsExcept: args.ExcludeTenantsExcept,
-		Excluder:             converters.DefaultExcluder{},
+		Client:                    client,
+		ExcludeTenants:            args.ExcludeTenants,
+		ExcludeAllTenants:         args.ExcludeAllTenants,
+		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
+		Excluder:                  converters.DefaultExcluder{},
+		DummySecretVariableValues: args.DummySecretVariableValues,
 	}
 	tagsetConverter := converters.TagSetConverter{Client: client}
 	tenantConverter := converters.TenantConverter{
@@ -149,12 +150,20 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeAllProjects:      args.ExcludeAllProjects,
 	}
 	accountConverter := converters.AccountConverter{
-		Client:               client,
-		EnvironmentConverter: machinePolicyConverter,
-		TenantConverter:      tenantConverter}
+		Client:                    client,
+		EnvironmentConverter:      machinePolicyConverter,
+		TenantConverter:           tenantConverter,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 
-	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
-	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
+	lifecycleConverter := converters.LifecycleConverter{
+		Client:               client,
+		EnvironmentConverter: environmentConverter,
+	}
+	gitCredentialsConverter := converters.GitCredentialsConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 	channelConverter := converters.ChannelConverter{
 		Client:             client,
 		LifecycleConverter: lifecycleConverter,
@@ -162,10 +171,16 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
 
-	certificateConverter := converters.CertificateConverter{Client: client}
+	certificateConverter := converters.CertificateConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
-	feedConverter := converters.FeedConverter{Client: client}
+	feedConverter := converters.FeedConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
 		Client:                 client,
@@ -206,10 +221,11 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
-		Client:                 client,
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeAllTargets:      args.ExcludeAllTargets,
+		Client:                    client,
+		MachinePolicyConverter:    machinePolicyConverter,
+		EnvironmentConverter:      environmentConverter,
+		ExcludeAllTargets:         args.ExcludeAllTargets,
+		DummySecretVariableValues: args.DummySecretVariableValues,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -253,12 +269,20 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		FeedConverter:                     feedConverter,
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
+		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
+		DefaultSecretVariableValues:       false,
+		ExcludeProjectVariables:           nil,
+		ExcludeProjectVariablesRegex:      nil,
+		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
+		ExcludeVariableEnvironmentScopes:  nil,
+		DummySecretVariableValues:         args.DummySecretVariableValues,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                          client,
 		VariableSetConverter:            &variableSetConverter,
 		Excluded:                        args.ExcludeLibraryVariableSets,
 		ExcludeLibraryVariableSetsRegex: args.ExcludeLibraryVariableSetsRegex,
+		DummySecretVariableValues:       args.DummySecretVariableValues,
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
@@ -387,7 +411,10 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
-	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
+	gitCredentialsConverter := converters.GitCredentialsConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 	tagsetConverter := converters.TagSetConverter{Client: client}
 	channelConverter := converters.ChannelConverter{
 		Client:             client,
@@ -396,11 +423,12 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:               client,
-		ExcludeTenants:       args.ExcludeTenants,
-		ExcludeAllTenants:    args.ExcludeAllTenants,
-		ExcludeTenantsExcept: args.ExcludeTenantsExcept,
-		Excluder:             converters.DefaultExcluder{},
+		Client:                    client,
+		ExcludeTenants:            args.ExcludeTenants,
+		ExcludeAllTenants:         args.ExcludeAllTenants,
+		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
+		Excluder:                  converters.DefaultExcluder{},
+		DummySecretVariableValues: args.DummySecretVariableValues,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
@@ -415,11 +443,15 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	accountConverter := converters.AccountConverter{
-		Client:               client,
-		EnvironmentConverter: environmentConverter,
-		TenantConverter:      tenantConverter,
+		Client:                    client,
+		EnvironmentConverter:      environmentConverter,
+		TenantConverter:           tenantConverter,
+		DummySecretVariableValues: args.DummySecretVariableValues,
 	}
-	certificateConverter := converters.CertificateConverter{Client: client}
+	certificateConverter := converters.CertificateConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
 		Client:                 client,
@@ -460,10 +492,11 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
-		Client:                 client,
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeAllTargets:      args.ExcludeAllTargets,
+		Client:                    client,
+		MachinePolicyConverter:    machinePolicyConverter,
+		EnvironmentConverter:      environmentConverter,
+		ExcludeAllTargets:         args.ExcludeAllTargets,
+		DummySecretVariableValues: args.DummySecretVariableValues,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -489,7 +522,10 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 	}
 
-	feedConverter := converters.FeedConverter{Client: client}
+	feedConverter := converters.FeedConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
 	variableSetConverter := converters.VariableSetConverter{
@@ -512,6 +548,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		WorkerPoolConverter:               workerPoolConverter,
 		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
 		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
+		DummySecretVariableValues:         args.DummySecretVariableValues,
 		ExcludeProjectVariables:           args.ExcludeProjectVariables,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
 		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
@@ -538,6 +575,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		WorkerPoolConverter:               workerPoolConverter,
 		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
 		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
+		DummySecretVariableValues:         args.DummySecretVariableValues,
 		ExcludeProjectVariables:           args.ExcludeProjectVariables,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
 		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
@@ -549,6 +587,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		VariableSetConverter:            &variableSetConverterForLibrary,
 		Excluded:                        args.ExcludeLibraryVariableSets,
 		ExcludeLibraryVariableSetsRegex: args.ExcludeLibraryVariableSetsRegex,
+		DummySecretVariableValues:       args.DummySecretVariableValues,
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
