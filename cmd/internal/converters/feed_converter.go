@@ -194,7 +194,7 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
-			if resource.Password != nil && resource.Password.HasValue {
+			if resource.SecretKey != nil && resource.SecretKey.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",

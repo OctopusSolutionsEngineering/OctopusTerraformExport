@@ -19,6 +19,7 @@ type Feed struct {
 
 	// ECR
 	AccessKey *string
+	SecretKey *Secret
 	Region    *string
 
 	// Nuget
