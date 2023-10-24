@@ -17,7 +17,7 @@ type TerraformProviderGenerator struct {
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
-	c.createProvider(directory, dependencies)
+	c.createProvider(directory, includeSpaceId, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, includeSpaceId, dependencies)
 	if c.IncludeOctopusOutputVars {
@@ -25,7 +25,7 @@ func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool,
 	}
 }
 
-func (c TerraformProviderGenerator) createProvider(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
@@ -36,12 +36,14 @@ func (c TerraformProviderGenerator) createProvider(directory string, dependencie
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		spaceId := "${var.octopus_space_id}"
 		terraformResource := terraform2.TerraformProvider{
 			Type:    "octopusdeploy",
 			Address: "${var.octopus_server}",
 			ApiKey:  "${var.octopus_apikey}",
-			SpaceId: &spaceId,
+		}
+		if includeSpaceId {
+			spaceId := "${var.octopus_space_id}"
+			terraformResource.SpaceId = &spaceId
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
