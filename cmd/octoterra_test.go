@@ -109,6 +109,7 @@ func exportSpaceImportAndTest(
 				ExcludeProjectsRegex:             arguments.ExcludeProjectsRegex,
 				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
 				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
+				ExcludeTenantTags:                arguments.ExcludeTenantTags,
 			}
 
 			return ConvertSpaceToTerraform(args)
@@ -186,6 +187,7 @@ func exportProjectImportAndTest(
 				ExcludeProjectsRegex:             arguments.ExcludeProjectsRegex,
 				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
 				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
+				ExcludeTenantTags:                arguments.ExcludeTenantTags,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -2013,7 +2015,7 @@ func TestTenantsExport(t *testing.T) {
 						t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
-					if len(v.TenantTags) != 2 {
+					if len(v.TenantTags) != 3 {
 						t.Fatal("The tenant must have two tags")
 					}
 
@@ -2023,6 +2025,10 @@ func TestTenantsExport(t *testing.T) {
 
 					if lo.IndexOf(v.TenantTags, "type/b") == -1 {
 						t.Fatal("The tenant must have a tag called \"type/b\"")
+					}
+
+					if lo.IndexOf(v.TenantTags, "type/ignored") == -1 {
+						t.Fatal("The tenant must have a tag called \"type/ignored\"")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
@@ -2045,7 +2051,8 @@ func TestTenantsExport(t *testing.T) {
 		})
 }
 
-// TestTenantsExcludeTagsExport verifies that a tenant with excluded tags is not exported
+// TestTenantsExcludeTagsExport verifies that a tenant with excluded tags is not exported, and also that exlcuded
+// tags are not exported
 func TestTenantsExcludeTagsExport(t *testing.T) {
 	exportSpaceImportAndTest(
 		t,
@@ -2055,6 +2062,7 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 		[]string{},
 		args2.Arguments{
 			ExcludeTenantsWithTags: []string{"type/excluded"},
+			ExcludeTenantTags:      []string{"type/ignorethis"},
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
@@ -2074,10 +2082,39 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 				t.Fatal("Space must have not tenant called \"Excluded\" in space " + recreatedSpaceId)
 			}
 
-			if !lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
+			teamA := lo.Filter(collection.Items, func(item octopus.Tenant, index int) bool {
 				return item.Name == "Team A"
-			}) {
+			})
+
+			if len(teamA) != 1 {
 				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
+			}
+
+			if lo.SomeBy(teamA[0].TenantTags, func(item string) bool {
+				return item == "type/ignorethis"
+			}) {
+				t.Fatal("Tenant must not have a tag called \"type/ignorethis\"")
+			}
+
+			tagSetCollection := octopus.GeneralCollection[octopus.TagSet]{}
+			err = octopusClient.GetAllResources("TagSets", &tagSetCollection)
+
+			if err != nil {
+				return err
+			}
+
+			typeTagSet := lo.Filter(tagSetCollection.Items, func(item octopus.TagSet, index int) bool {
+				return item.Name == "type"
+			})
+
+			if len(typeTagSet) != 1 {
+				t.Fatal("Space must have a tagset called \"type\"")
+			}
+
+			if lo.SomeBy(typeTagSet[0].Tags, func(item octopus.Tag) bool {
+				return item.Name == "ignorethis"
+			}) {
+				t.Fatal("Space must not have a tag called \"ignorethis\" in the tag set called \"type\"")
 			}
 
 			return nil

@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -13,7 +14,9 @@ import (
 )
 
 type TagSetConverter struct {
-	Client client.OctopusClient
+	Client            client.OctopusClient
+	ExcludeTenantTags args.ExcludeTenantTags
+	Excluder          ExcludeByName
 }
 
 func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -37,6 +40,7 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 }
 
 func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
+
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
 	thisResource := ResourceDetails{}
@@ -71,6 +75,10 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 	dependencies.AddResource(thisResource)
 
 	for _, tag := range tagSet.Tags {
+		if c.Excluder.IsResourceExcluded(tagSet.Name+"/"+tag.Name, false, c.ExcludeTenantTags, nil) {
+			continue
+		}
+
 		// capture the tag for the function literal below.
 		// https://go.dev/doc/faq#closures_and_goroutines
 		tag := tag

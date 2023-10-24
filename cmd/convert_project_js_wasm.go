@@ -72,6 +72,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	channelConverter := converters.ChannelConverter{
 		Client:             client,
 		LifecycleConverter: lifecycleConverter,
+		Excluder:           converters.DefaultExcluder{},
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}

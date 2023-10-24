@@ -38,6 +38,7 @@ type Arguments struct {
 	ExcludeProjectVariablesRegex     ExcludeVariables
 	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
 	LookUpDefaultWorkerPools         bool
+	ExcludeTenantTags                ExcludeTenantTags
 	ExcludeTenants                   ExcludeTenants
 	ExcludeTenantsWithTags           ExcludeTenantsWithTags
 	ExcludeTenantsExcept             ExcludeTenantsExcept
@@ -106,6 +107,23 @@ func (i *ExcludeTenants) String() string {
 }
 
 func (i *ExcludeTenants) Set(value string) error {
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
+	return nil
+}
+
+type ExcludeTenantTags []string
+
+func (i *ExcludeTenantTags) String() string {
+	return "excluded tenant tags"
+}
+
+func (i *ExcludeTenantTags) Set(value string) error {
 	trimmed := strings.TrimSpace(value)
 
 	if len(trimmed) == 0 {
@@ -231,6 +249,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flags.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
+	flags.Var(&arguments.ExcludeTenantTags, "excludeTenantTags", "Exclude a tenant tag from being exported. Tags are in the format \"taggroup/tagname\".")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
 	flags.Var(&arguments.ExcludeTenantsWithTags, "excludeTenantsWithTag", "Exclude any tenant with this tag from being exported. This is useful when using tags to separate tenants that can be exported with those that should not.")
 	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")

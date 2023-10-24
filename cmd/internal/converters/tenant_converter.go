@@ -23,6 +23,7 @@ type TenantConverter struct {
 	TenantVariableConverter      ConverterByTenantId
 	EnvironmentConverter         ConverterById
 	TagSetConverter              ConvertToHclByResource[octopus2.TagSet]
+	ExcludeTenantTags            args.ExcludeTenantTags
 	ExcludeTenants               args.ExcludeTenants
 	ExcludeTenantsWithTags       args.ExcludeTenantsWithTags
 	ExcludeTenantsExcept         args.ExcludeTenantsExcept
@@ -182,7 +183,7 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bo
 				Id:                 nil,
 				ClonedFromTenantId: nil,
 				Description:        strutil.NilIfEmptyPointer(tenant.Description),
-				TenantTags:         tenant.TenantTags,
+				TenantTags:         c.filteredTenantTags(tenant.TenantTags),
 			}
 
 			projectEnvironments, err := c.getProjects(tenant.ProjectEnvironments, dependencies)
@@ -300,6 +301,11 @@ func (c TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursive
 
 	for _, tagSet := range collection.Items {
 		for _, tag := range tagSet.Tags {
+
+			if c.Excluder.IsResourceExcluded(tag.CanonicalTagName, false, c.ExcludeTenantTags, nil) {
+				continue
+			}
+
 			for _, tenantTag := range tenant.TenantTags {
 				if tag.CanonicalTagName == tenantTag {
 
@@ -354,4 +360,14 @@ func (c *TenantConverter) projectIsExcluded(project octopus2.Project) bool {
 	}
 
 	return false
+}
+
+func (c *TenantConverter) filteredTenantTags(tenantTags []string) []string {
+	if tenantTags == nil {
+		return []string{}
+	}
+
+	return lo.Filter(tenantTags, func(item string, index int) bool {
+		return !c.Excluder.IsResourceExcluded(item, false, c.ExcludeTenantTags, nil)
+	})
 }

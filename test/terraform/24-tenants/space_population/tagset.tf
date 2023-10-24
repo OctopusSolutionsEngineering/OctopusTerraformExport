@@ -27,3 +27,11 @@ resource "octopusdeploy_tag" "tag_excluded" {
   sort_order  = 4
   tag_set_id = octopusdeploy_tag_set.tagset_tag1.id
 }
+
+resource "octopusdeploy_tag" "tag_ignore" {
+  name        = "ignorethis"
+  color       = "#333333"
+  description = "ignore this"
+  sort_order  = 4
+  tag_set_id = octopusdeploy_tag_set.tagset_tag1.id
+}
