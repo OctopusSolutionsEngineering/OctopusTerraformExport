@@ -245,9 +245,19 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 			//SpaceManagersTeamMembers: space.SpaceManagersTeamMembers,
 			//SpaceManagersTeams:       space.SpaceManagersTeams,
 			// TODO: import teams rather than defaulting to admins
-			SpaceManagersTeams: []string{"teams-administrators"},
+			SpaceManagersTeams: []string{"${var.octopus_space_managers}"},
 			ResourceName:       &spaceName,
 			Type:               "octopusdeploy_space",
+		}
+
+		defaultSpaceManagers := "teams-administrators"
+		spaceManagerTeams := terraform2.TerraformVariable{
+			Name:        "octopus_space_managers",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   false,
+			Description: "The space manager teams for the new space",
+			Default:     &defaultSpaceManagers,
 		}
 
 		spaceOutput := terraform2.TerraformOutput{
@@ -288,6 +298,10 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 		block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
 		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
+
+		spaceManagerTeamsBlock := gohcl.EncodeAsBlock(spaceManagerTeams, "variable")
+		hcl.WriteUnquotedAttribute(spaceManagerTeamsBlock, "type", "string")
+		file.Body().AppendBlock(spaceManagerTeamsBlock)
 
 		return string(file.Bytes()), nil
 	}
