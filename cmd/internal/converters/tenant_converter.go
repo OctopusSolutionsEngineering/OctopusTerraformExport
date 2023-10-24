@@ -230,6 +230,10 @@ func (c TenantConverter) excludeProject(projectId string) (bool, error) {
 		return false, nil
 	}
 
+	if c.ExcludeAllProjects {
+		return true, nil
+	}
+
 	project := octopus2.Project{}
 	_, err := c.Client.GetResourceById("Projects", projectId, &project)
 
@@ -253,10 +257,15 @@ func (c TenantConverter) getProjects(tags map[string][]string, dependencies *Res
 			continue
 		}
 
-		terraformProjectEnvironments = append(terraformProjectEnvironments, terraform.TerraformProjectEnvironment{
-			Environments: c.lookupEnvironments(v, dependencies),
-			ProjectId:    dependencies.GetResource("Projects", k),
-		})
+		projectId := dependencies.GetResource("Projects", k)
+
+		// This shouldn't be empty, but test defensively anyway just in case.
+		if projectId != "" {
+			terraformProjectEnvironments = append(terraformProjectEnvironments, terraform.TerraformProjectEnvironment{
+				Environments: c.lookupEnvironments(v, dependencies),
+				ProjectId:    dependencies.GetResource("Projects", k),
+			})
+		}
 	}
 	return terraformProjectEnvironments, nil
 }
