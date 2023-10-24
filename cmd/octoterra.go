@@ -118,14 +118,14 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ProviderVersion:          args.ProviderVersion,
 		ExcludeProvider:          args.ExcludeProvider,
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-	}.ToHcl("space_population", &dependencies)
+	}.ToHcl("space_population", true, &dependencies)
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,
 		ProviderVersion:          args.ProviderVersion,
 		ExcludeProvider:          args.ExcludeProvider,
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-	}.ToHcl("space_creation", &dependencies)
+	}.ToHcl("space_creation", false, &dependencies)
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
 	environmentConverter := converters.EnvironmentConverter{Client: client}
@@ -421,7 +421,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ProviderVersion:          args.ProviderVersion,
 		ExcludeProvider:          args.ExcludeProvider,
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-	}.ToHcl("space_population", &dependencies)
+	}.ToHcl("space_population", true, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}

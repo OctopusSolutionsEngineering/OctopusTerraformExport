@@ -16,12 +16,12 @@ type TerraformProviderGenerator struct {
 	IncludeOctopusOutputVars bool
 }
 
-func (c TerraformProviderGenerator) ToHcl(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
 	c.createProvider(directory, dependencies)
 	c.createTerraformConfig(directory, dependencies)
-	c.createVariables(directory, dependencies)
+	c.createVariables(directory, includeSpaceId, dependencies)
 	if c.IncludeOctopusOutputVars {
-		c.createOctopusOutputVars(directory, dependencies)
+		c.createOctopusOutputVars(directory, includeSpaceId, dependencies)
 	}
 }
 
@@ -65,7 +65,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	dependencies.AddResource(thisResource)
 }
 
-func (c TerraformProviderGenerator) createVariables(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createVariables(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
@@ -92,14 +92,6 @@ func (c TerraformProviderGenerator) createVariables(directory string, dependenci
 			Description: "The API key used to access the Octopus server. See https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for details on creating an API key.",
 		}
 
-		octopusSpaceId := terraform2.TerraformVariable{
-			Name:        "octopus_space_id",
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   false,
-			Description: "The ID of the Octopus space to populate.",
-		}
-
 		file := hclwrite.NewEmptyFile()
 
 		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "variable")
@@ -110,9 +102,19 @@ func (c TerraformProviderGenerator) createVariables(directory string, dependenci
 		hcl.WriteUnquotedAttribute(octopusApiKeyBlock, "type", "string")
 		file.Body().AppendBlock(octopusApiKeyBlock)
 
-		octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
-		hcl.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
-		file.Body().AppendBlock(octopusSpaceIdBlock)
+		if includeSpaceId {
+			octopusSpaceId := terraform2.TerraformVariable{
+				Name:        "octopus_space_id",
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   false,
+				Description: "The ID of the Octopus space to populate.",
+			}
+
+			octopusSpaceIdBlock := gohcl.EncodeAsBlock(octopusSpaceId, "variable")
+			hcl.WriteUnquotedAttribute(octopusSpaceIdBlock, "type", "string")
+			file.Body().AppendBlock(octopusSpaceIdBlock)
+		}
 
 		return string(file.Bytes()), nil
 	}
@@ -121,7 +123,7 @@ func (c TerraformProviderGenerator) createVariables(directory string, dependenci
 
 // createOctopusOutputVars captures the details of the octopus server as output variables. This is
 // useful when finding the created resources from the Terraform state.
-func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}

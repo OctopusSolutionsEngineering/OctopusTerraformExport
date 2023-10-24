@@ -63,7 +63,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 
 	dependencies := converters.ResourceDetailsCollection{}
 
-	converters.TerraformProviderGenerator{}.ToHcl("space_population", &dependencies)
+	converters.TerraformProviderGenerator{}.ToHcl("space_population", true, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{Client: client}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
