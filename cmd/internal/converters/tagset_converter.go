@@ -14,9 +14,10 @@ import (
 )
 
 type TagSetConverter struct {
-	Client            client.OctopusClient
-	ExcludeTenantTags args.ExcludeTenantTags
-	Excluder          ExcludeByName
+	Client               client.OctopusClient
+	ExcludeTenantTags    args.ExcludeTenantTags
+	ExcludeTenantTagSets args.ExcludeTenantTagSets
+	Excluder             ExcludeByName
 }
 
 func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -40,6 +41,10 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 }
 
 func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
+
+	if c.Excluder.IsResourceExcluded(tagSet.Name, false, c.ExcludeTenantTagSets, nil) {
+		return nil
+	}
 
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 

@@ -110,6 +110,7 @@ func exportSpaceImportAndTest(
 				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
 				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
 				ExcludeTenantTags:                arguments.ExcludeTenantTags,
+				ExcludeTenantTagSets:             arguments.ExcludeTenantTagSets,
 			}
 
 			return ConvertSpaceToTerraform(args)
@@ -188,6 +189,7 @@ func exportProjectImportAndTest(
 				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
 				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
 				ExcludeTenantTags:                arguments.ExcludeTenantTags,
+				ExcludeTenantTagSets:             arguments.ExcludeTenantTagSets,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -2115,6 +2117,66 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 				return item.Name == "ignorethis"
 			}) {
 				t.Fatal("Space must not have a tag called \"ignorethis\" in the tag set called \"type\"")
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsExcludeTagSetsExport verifies that excluded tag sets
+func TestTenantsExcludeTagSetsExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/24-tenants/space_creation",
+		"../test/terraform/24-tenants/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeTenantTagSets: []string{"type"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			if !lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
+				return item.Name == "Excluded"
+			}) {
+				t.Fatal("Space must have tenant called \"Excluded\" in space " + recreatedSpaceId)
+			}
+
+			teamA := lo.Filter(collection.Items, func(item octopus.Tenant, index int) bool {
+				return item.Name == "Team A"
+			})
+
+			if len(teamA) != 1 {
+				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
+			}
+
+			if len(teamA[0].TenantTags) != 0 {
+				t.Fatal("\"Team A\" must not have any tags")
+			}
+
+			tagSetCollection := octopus.GeneralCollection[octopus.TagSet]{}
+			err = octopusClient.GetAllResources("TagSets", &tagSetCollection)
+
+			if err != nil {
+				return err
+			}
+
+			typeTagSet := lo.Filter(tagSetCollection.Items, func(item octopus.TagSet, index int) bool {
+				return item.Name == "type"
+			})
+
+			if len(typeTagSet) != 0 {
+				t.Fatal("Space must not have a tagset called \"type\"")
 			}
 
 			return nil

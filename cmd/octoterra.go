@@ -140,9 +140,10 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		DummySecretGenerator:      dummySecretGenerator,
 	}
 	tagsetConverter := converters.TagSetConverter{
-		Client:            client,
-		Excluder:          converters.DefaultExcluder{},
-		ExcludeTenantTags: args.ExcludeTenantTags,
+		Client:               client,
+		Excluder:             converters.DefaultExcluder{},
+		ExcludeTenantTags:    args.ExcludeTenantTags,
+		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  client,
@@ -158,6 +159,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeProjectsRegex:    args.ExcludeProjectsRegex,
 		ExcludeAllProjects:      args.ExcludeAllProjects,
 		ExcludeTenantTags:       args.ExcludeTenantTags,
+		ExcludeTenantTagSets:    args.ExcludeTenantTagSets,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    client,
@@ -437,9 +439,10 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		DummySecretVariableValues: args.DummySecretVariableValues,
 	}
 	tagsetConverter := converters.TagSetConverter{
-		Client:            client,
-		Excluder:          converters.DefaultExcluder{},
-		ExcludeTenantTags: args.ExcludeTenantTags,
+		Client:               client,
+		Excluder:             converters.DefaultExcluder{},
+		ExcludeTenantTags:    args.ExcludeTenantTags,
+		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 	}
 	channelConverter := converters.ChannelConverter{
 		Client:             client,
@@ -467,6 +470,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantsWithTags:  args.ExcludeTenantsWithTags,
 		Excluder:                converters.DefaultExcluder{},
 		ExcludeTenantTags:       args.ExcludeTenantTags,
+		ExcludeTenantTagSets:    args.ExcludeTenantTagSets,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}

@@ -23,6 +23,7 @@ type TenantConverter struct {
 	TenantVariableConverter      ConverterByTenantId
 	EnvironmentConverter         ConverterById
 	TagSetConverter              ConvertToHclByResource[octopus2.TagSet]
+	ExcludeTenantTagSets         args.ExcludeTenantTagSets
 	ExcludeTenantTags            args.ExcludeTenantTags
 	ExcludeTenants               args.ExcludeTenants
 	ExcludeTenantsWithTags       args.ExcludeTenantsWithTags
@@ -300,6 +301,10 @@ func (c TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursive
 	terraformDependencies := map[string][]string{}
 
 	for _, tagSet := range collection.Items {
+		if c.Excluder.IsResourceExcluded(tagSet.Name, false, c.ExcludeTenantTagSets, nil) {
+			continue
+		}
+
 		for _, tag := range tagSet.Tags {
 
 			if c.Excluder.IsResourceExcluded(tag.CanonicalTagName, false, c.ExcludeTenantTags, nil) {
@@ -368,6 +373,13 @@ func (c *TenantConverter) filteredTenantTags(tenantTags []string) []string {
 	}
 
 	return lo.Filter(tenantTags, func(item string, index int) bool {
-		return !c.Excluder.IsResourceExcluded(item, false, c.ExcludeTenantTags, nil)
+		if c.Excluder.IsResourceExcluded(item, false, c.ExcludeTenantTags, nil) {
+			return false
+		}
+
+		split := strings.Split(item, "/")
+
+		// Exclude the tag if it is part of an excluded tag set
+		return !c.Excluder.IsResourceExcluded(split[0], false, c.ExcludeTenantTagSets, nil)
 	})
 }
