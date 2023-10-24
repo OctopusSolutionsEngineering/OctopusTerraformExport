@@ -250,11 +250,6 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 			Type:               "octopusdeploy_space",
 		}
 
-		spaceOutput := terraform2.TerraformOutput{
-			Name:  "octopus_space_id",
-			Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
-		}
-
 		spaceNameVar := terraform2.TerraformVariable{
 			Name:        "octopus_space_name",
 			Type:        "string",
@@ -277,7 +272,6 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 		}})
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
 
 		block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
 		hcl.WriteUnquotedAttribute(block, "type", "string")
