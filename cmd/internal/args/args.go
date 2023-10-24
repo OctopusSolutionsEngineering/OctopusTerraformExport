@@ -39,6 +39,7 @@ type Arguments struct {
 	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
 	LookUpDefaultWorkerPools         bool
 	ExcludeTenants                   ExcludeTenants
+	ExcludeTenantsWithTags           ExcludeTenantsWithTags
 	ExcludeTenantsExcept             ExcludeTenantsExcept
 	ExcludeAllTenants                bool
 	ExcludeProjects                  ExcludeProjects
@@ -105,6 +106,23 @@ func (i *ExcludeTenants) String() string {
 }
 
 func (i *ExcludeTenants) Set(value string) error {
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
+	return nil
+}
+
+type ExcludeTenantsWithTags []string
+
+func (i *ExcludeTenantsWithTags) String() string {
+	return "excluded tenantwith tag"
+}
+
+func (i *ExcludeTenantsWithTags) Set(value string) error {
 	trimmed := strings.TrimSpace(value)
 
 	if len(trimmed) == 0 {
@@ -214,6 +232,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flags.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
+	flags.Var(&arguments.ExcludeTenantsWithTags, "excludeTenantsWithTag", "Exclude any tenant with this tag from being exported. This is useful when using tags to separate tenants that can be exported with those that should not.")
 	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")

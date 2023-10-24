@@ -9,11 +9,13 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 )
 
 type TenantVariableConverter struct {
 	Client                    client.OctopusClient
 	ExcludeTenants            args.ExcludeTenants
+	ExcludeTenantsWithTags    args.ExcludeTenantsWithTags
 	ExcludeTenantsExcept      args.ExcludeTenantsExcept
 	ExcludeAllTenants         bool
 	Excluder                  ExcludeByName
@@ -55,6 +57,17 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.TenantName, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
+		return nil
+	}
+
+	// Ignore tenants with excluded tags
+	excluded, err := c.isTenantExcludedByTag(tenant.TenantId)
+
+	if err != nil {
+		return err
+	}
+
+	if excluded {
 		return nil
 	}
 
@@ -145,4 +158,22 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive 
 
 func (c TenantVariableConverter) GetResourceType() string {
 	return "TenantVariables/All"
+}
+
+func (c TenantVariableConverter) isTenantExcludedByTag(tenantId string) (bool, error) {
+	// Ignore tenants with excluded tags
+	resource := octopus.Tenant{}
+	found, err := c.Client.GetResourceById("Tenants", tenantId, &resource)
+
+	if err != nil {
+		return false, err
+	}
+
+	if found && resource.TenantTags != nil && c.ExcludeTenantsWithTags != nil {
+		return lo.SomeBy(resource.TenantTags, func(item string) bool {
+			return lo.IndexOf(c.ExcludeTenantsWithTags, item) != -1
+		}), nil
+	}
+
+	return false, nil
 }

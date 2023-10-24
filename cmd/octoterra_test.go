@@ -108,6 +108,7 @@ func exportSpaceImportAndTest(
 				ExcludeAllProjects:               arguments.ExcludeAllProjects,
 				ExcludeProjectsRegex:             arguments.ExcludeProjectsRegex,
 				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
+				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
 			}
 
 			return ConvertSpaceToTerraform(args)
@@ -184,6 +185,7 @@ func exportProjectImportAndTest(
 				ExcludeAllProjects:               arguments.ExcludeAllProjects,
 				ExcludeProjectsRegex:             arguments.ExcludeProjectsRegex,
 				ExcludeTenantsExcept:             arguments.ExcludeTenantsExcept,
+				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -2029,6 +2031,45 @@ func TestTenantsExport(t *testing.T) {
 
 			if !found {
 				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsExcludeTagsExport verifies that a tenant with excluded tags is not exported
+func TestTenantsExcludeTagsExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/24-tenants/space_creation",
+		"../test/terraform/24-tenants/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeTenantsWithTags: []string{"type/excluded"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			if lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
+				return item.Name == "Excluded"
+			}) {
+				t.Fatal("Space must have not tenant called \"Excluded\" in space " + recreatedSpaceId)
+			}
+
+			if !lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
+				return item.Name == "Team A"
+			}) {
+				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
 			}
 
 			return nil
