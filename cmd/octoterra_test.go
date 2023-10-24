@@ -2017,8 +2017,16 @@ func TestTenantsExport(t *testing.T) {
 						t.Fatal("The tenant must have two tags")
 					}
 
+					if lo.IndexOf(v.TenantTags, "type/a") == -1 {
+						t.Fatal("The tenant must have a tag called \"type/a\"")
+					}
+
+					if lo.IndexOf(v.TenantTags, "type/b") == -1 {
+						t.Fatal("The tenant must have a tag called \"type/b\"")
+					}
+
 					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must have one project environment")
+						t.Fatal("The tenant must be linked to one project")
 					}
 
 					for _, u := range v.ProjectEnvironments {
