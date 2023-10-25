@@ -59,7 +59,7 @@ func (c TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.
 	})
 
 	tagDependencies := lo.FilterMap(tags, func(item octopus.Tag, index int) (string, bool) {
-		dependency := dependencies.GetResource("Tag", item.Id)
+		dependency := dependencies.GetResource("Tags", item.Id)
 		return dependency, dependency != ""
 	})
 
