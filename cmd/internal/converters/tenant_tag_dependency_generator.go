@@ -53,12 +53,14 @@ func (c TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.Ta
 
 func (c TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.TagSet, tags []octopus.Tag, block *hclwrite.Block, dependencies *ResourceDetailsCollection) error {
 	// Explicitly describe the dependency between a variable and a tag set
-	tagSetDependencies := lo.Map(tagSets, func(item octopus.TagSet, index int) string {
-		return dependencies.GetResource("TagSets", item.Id)
+	tagSetDependencies := lo.FilterMap(tagSets, func(item octopus.TagSet, index int) (string, bool) {
+		dependencies := dependencies.GetResource("TagSets", item.Id)
+		return dependencies, dependencies != ""
 	})
 
-	tagDependencies := lo.Map(tags, func(item octopus.Tag, index int) string {
-		return dependencies.GetResource("Tag", item.Id)
+	tagDependencies := lo.FilterMap(tags, func(item octopus.Tag, index int) (string, bool) {
+		dependencies := dependencies.GetResource("Tag", item.Id)
+		return dependencies, dependencies != ""
 	})
 
 	allDependencies := lo.Map(append(tagSetDependencies, tagDependencies...), func(item string, index int) string {
