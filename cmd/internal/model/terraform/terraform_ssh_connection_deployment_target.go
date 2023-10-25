@@ -11,4 +11,5 @@ type TerraformSshConnectionDeploymentTarget struct {
 	Roles              []string `hcl:"roles"`
 	DotNetCorePlatform *string  `hcl:"dot_net_core_platform"`
 	MachinePolicyId    *string  `hcl:"machine_policy_id"`
+	TenantTags         []string `hcl:"tenant_tags"`
 }

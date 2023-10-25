@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -20,6 +21,9 @@ type KubernetesTargetConverter struct {
 	CertificateConverter   ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTenantTags      args.ExcludeTenantTags
+	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	Excluder               ExcludeByName
 }
 
 func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -162,7 +166,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				SpaceId:                         nil,
 				Status:                          nil,
 				StatusSummary:                   nil,
-				TenantTags:                      target.TenantTags,
+				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
 				Thumbprint:                      nil,

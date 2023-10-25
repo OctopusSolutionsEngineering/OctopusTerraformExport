@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -19,6 +20,9 @@ type AzureServiceFabricTargetConverter struct {
 	ExcludeAllTargets         bool
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
+	ExcludeTenantTags         args.ExcludeTenantTags
+	ExcludeTenantTagSets      args.ExcludeTenantTagSets
+	Excluder                  ExcludeByName
 }
 
 func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -165,7 +169,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 				SpaceId:                         nil,
 				Status:                          nil,
 				StatusSummary:                   nil,
-				TenantTags:                      target.TenantTags,
+				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
 				Thumbprint:                      &target.Thumbprint,

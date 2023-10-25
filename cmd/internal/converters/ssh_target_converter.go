@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -18,6 +19,9 @@ type SshTargetConverter struct {
 	AccountConverter       ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTenantTags      args.ExcludeTenantTags
+	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	Excluder               ExcludeByName
 }
 
 func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -147,6 +151,7 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 				Roles:              target.Roles,
 				DotNetCorePlatform: &target.Endpoint.DotNetCorePlatform,
 				MachinePolicyId:    c.getMachinePolicy(target.MachinePolicyId, dependencies),
+				TenantTags:         c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 			file := hclwrite.NewEmptyFile()
 

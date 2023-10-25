@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -14,8 +15,11 @@ import (
 )
 
 type ChannelConverter struct {
-	Client             client.OctopusClient
-	LifecycleConverter ConverterAndLookupById
+	Client               client.OctopusClient
+	LifecycleConverter   ConverterAndLookupById
+	ExcludeTenantTags    args.ExcludeTenantTags
+	ExcludeTenantTagSets args.ExcludeTenantTagSets
+	Excluder             ExcludeByName
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
@@ -128,7 +132,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				ProjectId:    dependencies.GetResource("Projects", channel.ProjectId),
 				IsDefault:    channel.IsDefault,
 				Rule:         c.convertRules(channel.Rules),
-				TenantTags:   channel.TenantTags,
+				TenantTags:   c.Excluder.FilteredTenantTags(channel.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 			file := hclwrite.NewEmptyFile()
 

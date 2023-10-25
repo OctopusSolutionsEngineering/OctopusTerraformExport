@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -18,6 +19,9 @@ type AzureCloudServiceTargetConverter struct {
 	AccountConverter       ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTenantTags      args.ExcludeTenantTags
+	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	Excluder               ExcludeByName
 }
 
 func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -157,7 +161,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 				Status:                          nil,
 				StatusSummary:                   nil,
 				SwapIfPossible:                  nil,
-				TenantTags:                      target.TenantTags,
+				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
 				Thumbprint:                      &target.Thumbprint,

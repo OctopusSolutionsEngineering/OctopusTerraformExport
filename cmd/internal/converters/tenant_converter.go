@@ -184,7 +184,7 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bo
 				Id:                 nil,
 				ClonedFromTenantId: nil,
 				Description:        strutil.NilIfEmptyPointer(tenant.Description),
-				TenantTags:         c.filteredTenantTags(tenant.TenantTags),
+				TenantTags:         c.Excluder.FilteredTenantTags(tenant.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 
 			projectEnvironments, err := c.getProjects(tenant.ProjectEnvironments, dependencies)
@@ -365,21 +365,4 @@ func (c *TenantConverter) projectIsExcluded(project octopus2.Project) bool {
 	}
 
 	return false
-}
-
-func (c *TenantConverter) filteredTenantTags(tenantTags []string) []string {
-	if tenantTags == nil {
-		return []string{}
-	}
-
-	return lo.Filter(tenantTags, func(item string, index int) bool {
-		if c.Excluder.IsResourceExcluded(item, false, c.ExcludeTenantTags, nil) {
-			return false
-		}
-
-		split := strings.Split(item, "/")
-
-		// Exclude the tag if it is part of an excluded tag set
-		return !c.Excluder.IsResourceExcluded(split[0], false, c.ExcludeTenantTagSets, nil)
-	})
 }

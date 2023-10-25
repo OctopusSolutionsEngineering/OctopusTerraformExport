@@ -10,9 +10,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"strings"
 )
 
 type CertificateConverter struct {
@@ -150,7 +148,7 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 			//SubjectCommonName:               certificate.SubjectCommonName,
 			//SubjectDistinguishedName:        certificate.SubjectDistinguishedName,
 			//SubjectOrganization:             certificate.SubjectOrganization,
-			TenantTags:                      c.filteredTenantTags(certificate.TenantTags),
+			TenantTags:                      c.Excluder.FilteredTenantTags(certificate.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			TenantedDeploymentParticipation: &certificate.TenantedDeploymentParticipation,
 			Tenants:                         c.lookupTenants(certificate.TenantIds, dependencies),
 			//Thumbprint:                      certificate.Thumbprint,
@@ -235,23 +233,4 @@ func (c CertificateConverter) lookupTenants(envs []string, dependencies *Resourc
 		}
 	}
 	return newTenants
-}
-
-func (c *CertificateConverter) filteredTenantTags(tenantTags []string) *[]string {
-	if tenantTags == nil {
-		return &[]string{}
-	}
-
-	tags := lo.Filter(tenantTags, func(item string, index int) bool {
-		if c.Excluder.IsResourceExcluded(item, false, c.ExcludeTenantTags, nil) {
-			return false
-		}
-
-		split := strings.Split(item, "/")
-
-		// Exclude the tag if it is part of an excluded tag set
-		return !c.Excluder.IsResourceExcluded(split[0], false, c.ExcludeTenantTagSets, nil)
-	})
-
-	return &tags
 }

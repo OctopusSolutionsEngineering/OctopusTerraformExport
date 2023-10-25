@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -16,6 +17,9 @@ type PollingTargetConverter struct {
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTenantTags      args.ExcludeTenantTags
+	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	Excluder               ExcludeByName
 }
 
 func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -149,7 +153,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 				SpaceId:                         nil,
 				Status:                          nil,
 				StatusSummary:                   nil,
-				TenantTags:                      target.TenantTags,
+				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
 				TentacleVersionDetails:          terraform.TerraformTentacleVersionDetails{},

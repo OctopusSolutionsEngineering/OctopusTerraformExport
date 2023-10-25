@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -18,6 +19,9 @@ type OfflineDropTargetConverter struct {
 	ExcludeAllTargets         bool
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
+	ExcludeTenantTags         args.ExcludeTenantTags
+	ExcludeTenantTagSets      args.ExcludeTenantTagSets
+	Excluder                  ExcludeByName
 }
 
 func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -151,7 +155,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 				SpaceId:                         nil,
 				Status:                          nil,
 				StatusSummary:                   nil,
-				TenantTags:                      target.TenantTags,
+				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
 				Thumbprint:                      nil,

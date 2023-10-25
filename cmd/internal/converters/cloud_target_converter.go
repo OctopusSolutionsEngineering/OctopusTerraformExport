@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -17,6 +18,9 @@ type CloudRegionTargetConverter struct {
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTenantTags      args.ExcludeTenantTags
+	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	Excluder               ExcludeByName
 }
 
 func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -151,7 +155,7 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 				SpaceId:                         nil,
 				Status:                          nil,
 				StatusSummary:                   nil,
-				TenantTags:                      target.TenantTags,
+				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
 				Tenants:                         target.TenantIds,
 				Uri:                             nil,

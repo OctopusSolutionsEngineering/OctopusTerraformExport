@@ -26,7 +26,7 @@ type TerraformCertificate struct {
 	SubjectCommonName               *string   `hcl:"subject_common_name"`
 	SubjectDistinguishedName        *string   `hcl:"subject_distinguished_name"`
 	SubjectOrganization             *string   `hcl:"subject_organization"`
-	TenantTags                      *[]string `hcl:"tenant_tags"`
+	TenantTags                      []string  `hcl:"tenant_tags"`
 	TenantedDeploymentParticipation *string   `hcl:"tenanted_deployment_participation"`
 	Tenants                         []string  `hcl:"tenants"`
 	Thumbprint                      *string   `hcl:"thumbprint"`

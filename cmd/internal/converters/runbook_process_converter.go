@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -18,6 +19,9 @@ type RunbookProcessConverter struct {
 	OctopusActionProcessor OctopusActionProcessor
 	IgnoreProjectChanges   bool
 	WorkerPoolProcessor    OctopusWorkerPoolProcessor
+	ExcludeTenantTags      args.ExcludeTenantTags
+	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	Excluder               ExcludeByName
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
@@ -135,7 +139,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 					Environments:                  dependencies.GetResources("Environments", a.Environments...),
 					ExcludedEnvironments:          a.ExcludedEnvironments,
 					Channels:                      a.Channels,
-					TenantTags:                    a.TenantTags,
+					TenantTags:                    c.Excluder.FilteredTenantTags(a.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 					Package:                       []terraform.TerraformPackage{},
 					Condition:                     a.Condition,
 					RunOnServer:                   c.OctopusActionProcessor.GetRunOnServer(a.Properties),
