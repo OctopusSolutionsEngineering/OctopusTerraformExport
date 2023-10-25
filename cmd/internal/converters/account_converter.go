@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -11,7 +12,9 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"strings"
 )
 
 type AccountConverter struct {
@@ -20,6 +23,9 @@ type AccountConverter struct {
 	TenantConverter           ConverterById
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
+	ExcludeTenantTags         args.ExcludeTenantTags
+	ExcludeTenantTagSets      args.ExcludeTenantTagSets
+	Excluder                  ExcludeByName
 }
 
 func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -151,7 +157,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				AccessKey:                       resource.AccessKey,
@@ -198,7 +204,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				ApplicationId:                   resource.ClientId,
@@ -249,7 +255,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				ManagementEndpoint:              strutil.EmptyIfNil(resource.ServiceManagementEndpointBaseUri),
@@ -299,7 +305,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				JsonKey:                         &secretVariable,
@@ -345,7 +351,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				Token:                           &secretVariable,
@@ -391,7 +397,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				Username:                        resource.Username,
@@ -439,7 +445,7 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				ResourceName:                    resource.Name,
 				Description:                     resource.Description,
 				Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-				TenantTags:                      resource.TenantTags,
+				TenantTags:                      c.filteredTenantTags(resource.TenantTags),
 				Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
 				TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
 				PrivateKeyFile:                  &certFileVariable,
@@ -527,4 +533,21 @@ func (c AccountConverter) exportDependencies(target octopus2.Account, dependenci
 	}
 
 	return nil
+}
+
+func (c *AccountConverter) filteredTenantTags(tenantTags []string) []string {
+	if tenantTags == nil {
+		return []string{}
+	}
+
+	return lo.Filter(tenantTags, func(item string, index int) bool {
+		if c.Excluder.IsResourceExcluded(item, false, c.ExcludeTenantTags, nil) {
+			return false
+		}
+
+		split := strings.Split(item, "/")
+
+		// Exclude the tag if it is part of an excluded tag set
+		return !c.Excluder.IsResourceExcluded(split[0], false, c.ExcludeTenantTagSets, nil)
+	})
 }

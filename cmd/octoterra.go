@@ -167,6 +167,9 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		TenantConverter:           tenantConverter,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
@@ -480,6 +483,9 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		TenantConverter:           tenantConverter,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 	certificateConverter := converters.CertificateConverter{
 		Client:                    client,
