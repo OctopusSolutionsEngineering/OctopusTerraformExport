@@ -11,6 +11,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +23,7 @@ type RunbookProcessConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
+	TagSetConverter        TagSetConverter
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
@@ -175,6 +177,18 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+		allTenantTags := lo.FlatMap(resource.Steps, func(item octopus.Step, index int) []string {
+			return lo.FlatMap(item.Actions, func(item octopus.Action, index int) []string {
+				if item.TenantTags != nil {
+					return item.TenantTags
+				}
+				return []string{}
+			})
+		})
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, allTenantTags, c.TagSetConverter, block, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
 
 		for _, s := range resource.Steps {
 			for _, a := range s.Actions {

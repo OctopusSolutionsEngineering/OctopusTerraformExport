@@ -24,6 +24,7 @@ type KubernetesTargetConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
+	TagSetConverter        TagSetConverter
 }
 
 func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -197,7 +198,12 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}

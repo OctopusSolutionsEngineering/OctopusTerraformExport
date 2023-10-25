@@ -218,6 +218,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -229,6 +230,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -239,6 +241,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -249,6 +252,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -259,6 +263,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
@@ -271,6 +276,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -282,6 +288,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -292,6 +299,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -303,6 +311,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	variableSetConverter := converters.VariableSetConverter{
@@ -365,6 +374,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 			ExcludeTenantTags:    args.ExcludeTenantTags,
 			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 			Excluder:             converters.DefaultExcluder{},
+			TagSetConverter:      tagsetConverter,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     nil,
@@ -404,6 +414,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 				ExcludeTenantTags:    args.ExcludeTenantTags,
 				ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 				Excluder:             converters.DefaultExcluder{},
+				TagSetConverter:      tagsetConverter,
 			},
 			TenantConverter: tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -550,6 +561,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -561,6 +573,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -571,6 +584,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -581,6 +595,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -591,6 +606,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
@@ -603,6 +619,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -614,6 +631,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -626,6 +644,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -637,6 +656,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
+		TagSetConverter:        tagsetConverter,
 	}
 
 	feedConverter := converters.FeedConverter{
@@ -735,6 +755,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 			ExcludeTenantTags:    args.ExcludeTenantTags,
 			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 			Excluder:             converters.DefaultExcluder{},
+			TagSetConverter:      tagsetConverter,
 		},
 		EnvironmentConverter: environmentConverter,
 		ExcludedRunbooks:     args.ExcludeRunbooks,
@@ -765,6 +786,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 			ExcludeTenantTags:    args.ExcludeTenantTags,
 			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 			Excluder:             converters.DefaultExcluder{},
+			TagSetConverter:      tagsetConverter,
 		},
 		TenantConverter: tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

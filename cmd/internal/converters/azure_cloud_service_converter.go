@@ -22,6 +22,7 @@ type AzureCloudServiceTargetConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
+	TagSetConverter        TagSetConverter
 }
 
 func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -184,7 +185,12 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

@@ -21,6 +21,7 @@ type CloudRegionTargetConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
+	TagSetConverter        TagSetConverter
 }
 
 func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -174,7 +175,12 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}

@@ -23,6 +23,7 @@ type AzureServiceFabricTargetConverter struct {
 	ExcludeTenantTags         args.ExcludeTenantTags
 	ExcludeTenantTagSets      args.ExcludeTenantTagSets
 	Excluder                  ExcludeByName
+	TagSetConverter           TagSetConverter
 }
 
 func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -188,7 +189,12 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(targetBlock)
 
 			secretVariableResource := terraform.TerraformVariable{
 				Name:        targetName,

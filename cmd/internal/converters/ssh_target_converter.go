@@ -22,6 +22,7 @@ type SshTargetConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
+	TagSetConverter        TagSetConverter
 }
 
 func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -165,7 +166,12 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

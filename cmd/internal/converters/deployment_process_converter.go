@@ -11,6 +11,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +23,7 @@ type DeploymentProcessConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
+	TagSetConverter        TagSetConverter
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -197,7 +199,19 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 			}
 		}
 
+		allTenantTags := lo.FlatMap(resource.Steps, func(item octopus.Step, index int) []string {
+			return lo.FlatMap(item.Actions, func(item octopus.Action, index int) []string {
+				if item.TenantTags != nil {
+					return item.TenantTags
+				}
+				return []string{}
+			})
+		})
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, allTenantTags, c.TagSetConverter, block, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
 
 		if c.IgnoreProjectChanges || cac {
 			hcl.WriteLifecycleAllAttribute(block)
