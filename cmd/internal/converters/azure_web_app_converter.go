@@ -161,7 +161,7 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 				StatusSummary:                   nil,
 				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         target.TenantIds,
+				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
 				Thumbprint:                      &target.Thumbprint,
 				Uri:                             nil,
 				WebAppSlotName:                  &target.Endpoint.WebAppSlotName,

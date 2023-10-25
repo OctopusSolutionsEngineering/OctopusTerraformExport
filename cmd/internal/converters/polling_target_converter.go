@@ -155,7 +155,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 				StatusSummary:                   nil,
 				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         target.TenantIds,
+				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
 				TentacleVersionDetails:          terraform.TerraformTentacleVersionDetails{},
 				Uri:                             nil,
 				Thumbprint:                      target.Thumbprint,

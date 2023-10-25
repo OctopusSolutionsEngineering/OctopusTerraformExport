@@ -162,7 +162,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 				StatusSummary:                   nil,
 				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         target.TenantIds,
+				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
 				TentacleVersionDetails:          terraform.TerraformTentacleVersionDetails{},
 				Uri:                             nil,
 			}

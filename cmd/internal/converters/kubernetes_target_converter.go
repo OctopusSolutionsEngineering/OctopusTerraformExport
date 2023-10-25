@@ -168,7 +168,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				StatusSummary:                   nil,
 				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: target.TenantedDeploymentParticipation,
-				Tenants:                         target.TenantIds,
+				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
 				Thumbprint:                      nil,
 				Uri:                             target.Uri,
 				Endpoint: terraform.TerraformKubernetesEndpoint{

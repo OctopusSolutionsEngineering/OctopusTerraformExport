@@ -157,7 +157,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 				StatusSummary:                   nil,
 				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         target.TenantIds,
+				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
 				Thumbprint:                      nil,
 				Uri:                             nil,
 			}

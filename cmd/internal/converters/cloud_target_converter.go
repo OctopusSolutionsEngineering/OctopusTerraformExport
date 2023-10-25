@@ -157,7 +157,7 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 				StatusSummary:                   nil,
 				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         target.TenantIds,
+				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
 				Uri:                             nil,
 				Thumbprint:                      &target.Thumbprint,
 				DefaultWorkerPoolId:             &target.Endpoint.DefaultWorkerPoolId,
