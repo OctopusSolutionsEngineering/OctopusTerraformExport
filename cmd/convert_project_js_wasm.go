@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -88,8 +89,20 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
-	accountConverter := converters.AccountConverter{Client: client, EnvironmentConverter: lifecycleConverter, TenantConverter: tenantConverter}
-	certificateConverter := converters.CertificateConverter{Client: client}
+	accountConverter := converters.AccountConverter{
+		Client:               client,
+		EnvironmentConverter: lifecycleConverter,
+		TenantConverter:      tenantConverter,
+		ExcludeTenantTags:    args.ExcludeTenantTags,
+		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		Excluder:             converters.DefaultExcluder{},
+	}
+	certificateConverter := converters.CertificateConverter{
+		Client:               client,
+		ExcludeTenantTags:    args.ExcludeTenantTags,
+		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		Excluder:             converters.DefaultExcluder{},
+	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 	feedConverter := converters.FeedConverter{Client: client}
 

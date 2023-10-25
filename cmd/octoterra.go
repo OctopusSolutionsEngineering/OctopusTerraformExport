@@ -192,6 +192,9 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		Client:                    client,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
@@ -491,6 +494,9 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		Client:                    client,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
