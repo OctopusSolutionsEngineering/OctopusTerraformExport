@@ -170,6 +170,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
@@ -528,6 +529,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 	certificateConverter := converters.CertificateConverter{
 		Client:                    client,

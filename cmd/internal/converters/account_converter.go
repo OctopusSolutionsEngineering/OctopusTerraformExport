@@ -24,6 +24,7 @@ type AccountConverter struct {
 	ExcludeTenantTags         args.ExcludeTenantTags
 	ExcludeTenantTagSets      args.ExcludeTenantTagSets
 	Excluder                  ExcludeByName
+	TagSetConverter           TagSetConverter
 }
 
 func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -186,7 +187,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
@@ -237,7 +244,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
@@ -287,7 +300,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
@@ -333,7 +352,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
@@ -379,7 +404,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
@@ -426,7 +457,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
@@ -487,7 +524,13 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+			if err != nil {
+				return "", err
+			}
+			file.Body().AppendBlock(accountBlock)
+
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 			hcl.WriteUnquotedAttribute(block, "type", "string")
 			file.Body().AppendBlock(block)
