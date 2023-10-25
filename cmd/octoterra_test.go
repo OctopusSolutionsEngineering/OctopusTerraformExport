@@ -2014,7 +2014,7 @@ func TestTenantsExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 3 {
@@ -2029,8 +2029,8 @@ func TestTenantsExport(t *testing.T) {
 						t.Fatal("The tenant must have a tag called \"type/b\"")
 					}
 
-					if lo.IndexOf(v.TenantTags, "type/ignored") == -1 {
-						t.Fatal("The tenant must have a tag called \"type/ignored\"")
+					if lo.IndexOf(v.TenantTags, "type/ignorethis") == -1 {
+						t.Fatal("The tenant must have a tag called \"type/ignorethis\"")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
