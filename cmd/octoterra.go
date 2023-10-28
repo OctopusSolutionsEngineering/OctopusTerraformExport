@@ -199,6 +199,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
 
@@ -549,6 +550,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{

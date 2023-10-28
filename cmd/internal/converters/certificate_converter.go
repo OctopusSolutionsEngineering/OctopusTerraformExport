@@ -20,6 +20,7 @@ type CertificateConverter struct {
 	ExcludeTenantTags         args.ExcludeTenantTags
 	ExcludeTenantTagSets      args.ExcludeTenantTagSets
 	Excluder                  ExcludeByName
+	TagSetConverter           TagSetConverter
 }
 
 func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -166,7 +167,12 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 			SpacesBefore: 0,
 		}})
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+		file.Body().AppendBlock(targetBlock)
 
 		defaultPassword := ""
 		certificatePassword := terraform2.TerraformVariable{
