@@ -123,101 +123,125 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_certificate." + certificateName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformCertificate{
-			Type:            "octopusdeploy_certificate",
-			Name:            certificateName,
-			SpaceId:         nil,
-			ResourceName:    certificate.Name,
-			Password:        "${var." + certificateName + "_password}",
-			CertificateData: "${var." + certificateName + "_data}",
-			Archived:        &certificate.Archived,
-			//CertificateDataFormat:           certificate.CertificateDataFormat,
-			Environments: c.lookupEnvironments(certificate.EnvironmentIds, dependencies),
-			//HasPrivateKey:                   certificate.HasPrivateKey,
-			//IsExpired:                       certificate.IsExpired,
-			//IssuerCommonName:                certificate.IssuerCommonName,
-			//IssuerDistinguishedName:         certificate.IssuerDistinguishedName,
-			//IssuerOrganization:              certificate.IssuerOrganization,
-			//NotAfter:                        certificate.NotAfter,
-			//NotBefore:                       certificate.NotBefore,
-			Notes: &certificate.Notes,
-			//ReplacedBy:                      nil, // ReplacedBy does not seem to be used
-			//SelfSigned:                      certificate.SelfSigned,
-			//SerialNumber:                    certificate.SerialNumber,
-			//SignatureAlgorithmName:          certificate.SignatureAlgorithmName,
-			//SubjectAlternativeNames:         certificate.SubjectAlternativeNames,
-			//SubjectCommonName:               certificate.SubjectCommonName,
-			//SubjectDistinguishedName:        certificate.SubjectDistinguishedName,
-			//SubjectOrganization:             certificate.SubjectOrganization,
-			TenantTags:                      c.Excluder.FilteredTenantTags(certificate.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-			TenantedDeploymentParticipation: &certificate.TenantedDeploymentParticipation,
-			Tenants:                         c.lookupTenants(certificate.TenantIds, dependencies),
-			//Thumbprint:                      certificate.Thumbprint,
-			//Version:                         certificate.Version,
-		}
+
 		file := hclwrite.NewEmptyFile()
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + certificate.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_certificate." + certificateName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
-
-		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
-
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(targetBlock, "[password, certificate_data]")
-		}
+		err := c.writeMainResource(file, certificateName, certificate, recursive, dependencies)
 
 		if err != nil {
 			return "", err
 		}
-		file.Body().AppendBlock(targetBlock)
 
-		defaultPassword := ""
-		certificatePassword := terraform2.TerraformVariable{
-			Name:        certificateName + "_password",
-			Type:        "string",
-			Nullable:    true,
-			Sensitive:   true,
-			Description: "The password used by the certificate " + certificate.Name,
-			Default:     &defaultPassword,
+		err = c.writeVariables(file, certificateName, certificate, recursive, dependencies)
+
+		if err != nil {
+			return "", err
 		}
-
-		if c.DummySecretVariableValues {
-			certificatePassword.Default = c.DummySecretGenerator.GetDummyCertificatePassword()
-		}
-
-		block := gohcl.EncodeAsBlock(certificatePassword, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
-
-		certificateData := terraform2.TerraformVariable{
-			Name:        certificateName + "_data",
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The certificate data used by the certificate " + certificate.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			certificateData.Default = c.DummySecretGenerator.GetDummyCertificate()
-		}
-
-		block = gohcl.EncodeAsBlock(certificateData, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}
 
 	dependencies.AddResource(thisResource)
+	return nil
+}
+
+func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus2.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
+
+	defaultPassword := ""
+	certificatePassword := terraform2.TerraformVariable{
+		Name:        certificateName + "_password",
+		Type:        "string",
+		Nullable:    true,
+		Sensitive:   true,
+		Description: "The password used by the certificate " + certificate.Name,
+		Default:     &defaultPassword,
+	}
+
+	if c.DummySecretVariableValues {
+		certificatePassword.Default = c.DummySecretGenerator.GetDummyCertificatePassword()
+	}
+
+	block := gohcl.EncodeAsBlock(certificatePassword, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+
+	certificateData := terraform2.TerraformVariable{
+		Name:        certificateName + "_data",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: "The certificate data used by the certificate " + certificate.Name,
+	}
+
+	if c.DummySecretVariableValues {
+		certificateData.Default = c.DummySecretGenerator.GetDummyCertificate()
+	}
+
+	block = gohcl.EncodeAsBlock(certificateData, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+
+	return nil
+}
+
+func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificateName string, certificate octopus2.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
+	terraformResource := terraform2.TerraformCertificate{
+		Type:            "octopusdeploy_certificate",
+		Name:            certificateName,
+		SpaceId:         nil,
+		ResourceName:    certificate.Name,
+		Password:        "${var." + certificateName + "_password}",
+		CertificateData: "${var." + certificateName + "_data}",
+		Archived:        &certificate.Archived,
+		//CertificateDataFormat:           certificate.CertificateDataFormat,
+		Environments: c.lookupEnvironments(certificate.EnvironmentIds, dependencies),
+		//HasPrivateKey:                   certificate.HasPrivateKey,
+		//IsExpired:                       certificate.IsExpired,
+		//IssuerCommonName:                certificate.IssuerCommonName,
+		//IssuerDistinguishedName:         certificate.IssuerDistinguishedName,
+		//IssuerOrganization:              certificate.IssuerOrganization,
+		//NotAfter:                        certificate.NotAfter,
+		//NotBefore:                       certificate.NotBefore,
+		Notes: &certificate.Notes,
+		//ReplacedBy:                      nil, // ReplacedBy does not seem to be used
+		//SelfSigned:                      certificate.SelfSigned,
+		//SerialNumber:                    certificate.SerialNumber,
+		//SignatureAlgorithmName:          certificate.SignatureAlgorithmName,
+		//SubjectAlternativeNames:         certificate.SubjectAlternativeNames,
+		//SubjectCommonName:               certificate.SubjectCommonName,
+		//SubjectDistinguishedName:        certificate.SubjectDistinguishedName,
+		//SubjectOrganization:             certificate.SubjectOrganization,
+		TenantTags:                      c.Excluder.FilteredTenantTags(certificate.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+		TenantedDeploymentParticipation: &certificate.TenantedDeploymentParticipation,
+		Tenants:                         c.lookupTenants(certificate.TenantIds, dependencies),
+		//Thumbprint:                      certificate.Thumbprint,
+		//Version:                         certificate.Version,
+	}
+
+	// Add a comment with the import command
+	baseUrl, _ := c.Client.GetSpaceBaseUrl()
+	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+		Type: hclsyntax.TokenComment,
+		Bytes: []byte("# Import existing resources with the following commands:\n" +
+			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + certificate.Name + "\") | .Id')\n" +
+			"# terraform import octopusdeploy_certificate." + certificateName + " ${RESOURCE_ID}\n"),
+		SpacesBefore: 0,
+	}})
+
+	targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+
+	// When using dummy values, we expect the secrets will be updated later
+	if c.DummySecretVariableValues {
+		hcl.WriteLifecycleAttribute(targetBlock, "[password, certificate_data]")
+	}
+
+	if err != nil {
+		return err
+	}
+
+	file.Body().AppendBlock(targetBlock)
+
 	return nil
 }
 
