@@ -60,15 +60,21 @@ func (c TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.Ta
 
 func (c TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.TagSet, tags []octopus.Tag, block *hclwrite.Block, dependencies *ResourceDetailsCollection) error {
 	// Explicitly describe the dependency between a variable and a tag set
-	tagSetDependencies := lo.FilterMap(tagSets, func(item octopus.TagSet, index int) (string, bool) {
-		dependency := dependencies.GetResource("TagSets", item.Id)
-		return dependency, dependency != ""
-	})
+	tagSetDependencies := []string{}
+	if tagSets != nil {
+		tagSetDependencies = lo.FilterMap(tagSets, func(item octopus.TagSet, index int) (string, bool) {
+			dependency := dependencies.GetResource("TagSets", item.Id)
+			return dependency, dependency != ""
+		})
+	}
 
-	tagDependencies := lo.FilterMap(tags, func(item octopus.Tag, index int) (string, bool) {
-		dependency := dependencies.GetResource("Tags", item.Id)
-		return dependency, dependency != ""
-	})
+	tagDependencies := []string{}
+	if tags != nil {
+		tagDependencies = lo.FilterMap(tags, func(item octopus.Tag, index int) (string, bool) {
+			dependency := dependencies.GetResource("Tags", item.Id)
+			return dependency, dependency != ""
+		})
+	}
 
 	allDependencies := lo.Map(append(tagSetDependencies, tagDependencies...), func(item string, index int) string {
 		return hcl.RemoveId(hcl.RemoveInterpolation(item))
@@ -84,6 +90,10 @@ func (t TenantTagDependencyGenerator) FindDependencies(tenantTags []string, coll
 
 	tagSets := []octopus.TagSet{}
 	tags := []octopus.Tag{}
+
+	if tenantTags == nil {
+		return tagSets, tags, nil
+	}
 
 	for _, tagSet := range collection.Items {
 		for _, tag := range tagSet.Tags {
@@ -107,5 +117,4 @@ func (t TenantTagDependencyGenerator) FindDependencies(tenantTags []string, coll
 	}
 
 	return tagSets, tags, nil
-
 }
