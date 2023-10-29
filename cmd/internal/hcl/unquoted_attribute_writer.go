@@ -160,7 +160,7 @@ func encodeString(value string) string {
 	if err != nil {
 		panic(err)
 	}
-	// Trim the beginning and trailing " character
+
 	return string(b)
 }
 
