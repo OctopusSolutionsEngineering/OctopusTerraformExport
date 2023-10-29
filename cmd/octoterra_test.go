@@ -5567,11 +5567,113 @@ func TestTenantedResources(t *testing.T) {
 			}
 
 			if certificate[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The tenant must be have a tenant participation of \"Tenanted\" (was \"" + certificate[0].TenantedDeploymentParticipation + "\")")
+				t.Fatal("The certificate must be have a tenant participation of \"Tenanted\" (was \"" + certificate[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(certificate[0].TenantTags) != 1 {
 				t.Fatal("The certificate must have one tenant tags")
+			}
+
+			err = octopusClient.GetAllResources("Accounts", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			awsAccount := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "AWS Account"
+			})
+
+			if len(awsAccount) != 1 {
+				t.Fatal("Space must have an account called \"AWS Account\" in space " + recreatedSpaceId)
+			}
+
+			if awsAccount[0].TenantedDeploymentParticipation != "Tenanted" {
+				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + awsAccount[0].TenantedDeploymentParticipation + "\")")
+			}
+
+			if len(awsAccount[0].TenantTags) != 1 {
+				t.Fatal("The account must have one tenant tags")
+			}
+
+			azureAccount := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "Azure"
+			})
+
+			if len(azureAccount) != 1 {
+				t.Fatal("Space must have an account called \"Azure\" in space " + recreatedSpaceId)
+			}
+
+			if azureAccount[0].TenantedDeploymentParticipation != "Tenanted" {
+				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + azureAccount[0].TenantedDeploymentParticipation + "\")")
+			}
+
+			if len(azureAccount[0].TenantTags) != 1 {
+				t.Fatal("The account must have one tenant tags")
+			}
+
+			google := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "Google"
+			})
+
+			if len(google) != 1 {
+				t.Fatal("Space must have an account called \"Google\" in space " + recreatedSpaceId)
+			}
+
+			if google[0].TenantedDeploymentParticipation != "Tenanted" {
+				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + google[0].TenantedDeploymentParticipation + "\")")
+			}
+
+			if len(google[0].TenantTags) != 1 {
+				t.Fatal("The account must have one tenant tags")
+			}
+
+			ssh := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "SSH"
+			})
+
+			if len(google) != 1 {
+				t.Fatal("Space must have an account called \"SSH\" in space " + recreatedSpaceId)
+			}
+
+			if ssh[0].TenantedDeploymentParticipation != "Tenanted" {
+				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + ssh[0].TenantedDeploymentParticipation + "\")")
+			}
+
+			if len(ssh[0].TenantTags) != 1 {
+				t.Fatal("The account must have one tenant tags")
+			}
+
+			token := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "Token"
+			})
+
+			if len(token) != 1 {
+				t.Fatal("Space must have an account called \"Token\" in space " + recreatedSpaceId)
+			}
+
+			if token[0].TenantedDeploymentParticipation != "Tenanted" {
+				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + token[0].TenantedDeploymentParticipation + "\")")
+			}
+
+			if len(token[0].TenantTags) != 1 {
+				t.Fatal("The account must have one tenant tags")
+			}
+
+			userPass := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "UsernamePasswordAccount"
+			})
+
+			if len(userPass) != 1 {
+				t.Fatal("Space must have an account called \"UsernamePasswordAccount\" in space " + recreatedSpaceId)
+			}
+
+			if userPass[0].TenantedDeploymentParticipation != "Tenanted" {
+				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + userPass[0].TenantedDeploymentParticipation + "\")")
+			}
+
+			if len(userPass[0].TenantTags) != 1 {
+				t.Fatal("The account must have one tenant tags")
 			}
 
 			return nil
