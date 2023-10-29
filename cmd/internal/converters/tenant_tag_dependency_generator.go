@@ -18,7 +18,14 @@ type TenantTagDependencyGenerator struct {
 // AddAndWriteTagSetDependencies writes a depends_on block to a terraform resource, and optionally recursively includes
 // the tagsets that the resource depends on.
 func (c TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client client.OctopusClient, tenantTags []string, tagSetConverter TagSetConverter, block *hclwrite.Block, dependencies *ResourceDetailsCollection, recursive bool) error {
-	tagSets, tags, err := c.FindDependencies(tenantTags, client)
+	collection := octopus.GeneralCollection[octopus.TagSet]{}
+	err := client.GetAllResources("TagSets", &collection)
+
+	if err != nil {
+		return err
+	}
+
+	tagSets, tags, err := c.FindDependencies(tenantTags, collection)
 
 	if err != nil {
 		return err
@@ -73,14 +80,7 @@ func (c TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.
 }
 
 // FindDependencies returns the tag sets and tags that are references by the tenant tags
-func (t TenantTagDependencyGenerator) FindDependencies(tenantTags []string, client client.OctopusClient) ([]octopus.TagSet, []octopus.Tag, error) {
-
-	collection := octopus.GeneralCollection[octopus.TagSet]{}
-	err := client.GetAllResources("TagSets", &collection)
-
-	if err != nil {
-		return nil, nil, err
-	}
+func (t TenantTagDependencyGenerator) FindDependencies(tenantTags []string, collection octopus.GeneralCollection[octopus.TagSet]) ([]octopus.TagSet, []octopus.Tag, error) {
 
 	tagSets := []octopus.TagSet{}
 	tags := []octopus.Tag{}
