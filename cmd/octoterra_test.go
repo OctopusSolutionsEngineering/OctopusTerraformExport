@@ -5690,6 +5690,42 @@ func TestTenantedResources(t *testing.T) {
 				t.Fatal("The account must have one tenant tags")
 			}
 
+			// Project
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			err = octopusClient.GetAllResources("Projects", &projectCollection)
+
+			if err != nil {
+				return err
+			}
+
+			project := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(project) != 1 {
+				t.Fatal("Space must have a project called \"Test\" in space " + recreatedSpaceId)
+			}
+
+			deploymentProcess := octopus.DeploymentProcess{}
+			_, err = octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project[0].DeploymentProcessId), &deploymentProcess)
+
+			if err != nil {
+				return err
+			}
+
+			if len(deploymentProcess.Steps) != 1 {
+				t.Fatal("Space must have a project called \"Test\" with a single step in space " + recreatedSpaceId)
+			}
+
+			if len(deploymentProcess.Steps[0].Actions) != 1 {
+				t.Fatal("Space must have a project called \"Test\" with a single step with a single action in space " + recreatedSpaceId)
+			}
+
+			if len(deploymentProcess.Steps[0].Actions[0].TenantTags) != 1 {
+				t.Fatal("Deployment process must have an action with 1 tenant tag")
+			}
+
 			return nil
 		})
 }
