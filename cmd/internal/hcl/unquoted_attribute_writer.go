@@ -110,7 +110,7 @@ func jsonStringToHcl(value string) string {
 	} else if jsonArrayError == nil {
 		return "jsonencode(" + arrayToHclMap(jsonArray) + ")"
 	} else {
-		return "\"" + encodeString(value) + "\""
+		return encodeString(value)
 	}
 }
 
@@ -124,7 +124,7 @@ func anyToHcl(value any) string {
 	} else if arrayItem, ok := value.([]any); ok {
 		return arrayToHclMap(arrayItem)
 	} else {
-		return "\"" + encodeString(fmt.Sprint(value)) + "\""
+		return encodeString(fmt.Sprint(value))
 	}
 }
 
@@ -161,7 +161,7 @@ func encodeString(value string) string {
 		panic(err)
 	}
 	// Trim the beginning and trailing " character
-	return string(b[1 : len(b)-1])
+	return string(b)
 }
 
 func IsInterpolation(value string) bool {
