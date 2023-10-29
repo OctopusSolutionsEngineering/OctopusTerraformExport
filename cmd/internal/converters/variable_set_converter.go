@@ -351,6 +351,11 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(block, "[sensitive_value]")
+			}
+
 			// If we are creating the tag sets (i.e. exporting a space or recursively exporting a project),
 			// ensure tag sets are create before the variable.
 			// If we are doing a lookup, the tag sets are expected to already be available, and so there is

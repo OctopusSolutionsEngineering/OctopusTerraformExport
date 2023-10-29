@@ -194,6 +194,12 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[aad_user_credential_password]")
+			}
+
 			file.Body().AppendBlock(targetBlock)
 
 			secretVariableResource := terraform.TerraformVariable{

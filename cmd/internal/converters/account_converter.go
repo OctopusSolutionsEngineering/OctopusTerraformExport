@@ -192,6 +192,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[secret_key]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -249,6 +255,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[password]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -305,6 +317,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[certificate]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -357,6 +375,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[json_key]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -409,6 +433,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[token]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -462,6 +492,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[password]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -529,6 +565,12 @@ func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, depen
 			if err != nil {
 				return "", err
 			}
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(accountBlock, "[private_key_passphrase, private_key_file]")
+			}
+
 			file.Body().AppendBlock(accountBlock)
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

@@ -183,6 +183,11 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 				ignoreList = append(ignoreList, "name")
 			}
 
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				ignoreList = append(ignoreList, "git_username_password_persistence_settings[0].password")
+			}
+
 			terraformResource.Lifecycle = &terraform.TerraformLifecycleMetaArgument{
 				IgnoreChanges: &ignoreList,
 			}

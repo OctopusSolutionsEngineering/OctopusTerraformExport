@@ -142,7 +142,14 @@ func (c GitCredentialsConverter) toHclResource(gitCredentials octopus2.GitCreden
 			SpacesBefore: 0,
 		}})
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+		}
+
+		file.Body().AppendBlock(targetBlock)
 
 		secretVariableResource := terraform2.TerraformVariable{
 			Name:        gitCredentialsName,

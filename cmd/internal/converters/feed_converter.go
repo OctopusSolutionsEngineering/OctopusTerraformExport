@@ -146,7 +146,14 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
@@ -192,7 +199,14 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			if resource.SecretKey != nil && resource.SecretKey.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
@@ -239,7 +253,14 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
@@ -286,7 +307,14 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
@@ -331,7 +359,14 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
@@ -379,7 +414,14 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 				SpacesBefore: 0,
 			}})
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{

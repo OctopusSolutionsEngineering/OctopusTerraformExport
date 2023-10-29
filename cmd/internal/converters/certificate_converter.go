@@ -169,6 +169,12 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(targetBlock, "[password, certificate_data]")
+		}
+
 		if err != nil {
 			return "", err
 		}
