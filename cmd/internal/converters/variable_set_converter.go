@@ -307,7 +307,10 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			if v.IsSensitive {
 				var defaultValue *string = nil
 
-				if c.DefaultSecretVariableValues {
+				// Dummy values take precedence over default values
+				if c.DummySecretVariableValues {
+					defaultValue = c.DummySecretGenerator.GetDummySecret()
+				} else if c.DefaultSecretVariableValues {
 					defaultValueLookup := "#{" + v.Name + "}"
 					defaultValue = &defaultValueLookup
 				}
@@ -319,10 +322,6 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					Sensitive:   true,
 					Description: "The secret variable value associated with the variable " + v.Name,
 					Default:     defaultValue,
-				}
-
-				if c.DummySecretVariableValues {
-					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 				}
 
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
