@@ -51,6 +51,13 @@ func TestParseFlagsCorrect(t *testing.T) {
 		"mytenant",
 		"-excludeTenantsExcept",
 		"  ",
+		"-excludeTenantsWithTag",
+		"tag/a",
+		"-excludeTenantTags",
+		"tag/a",
+		"-excludeTenantTagSets",
+		"tag",
+		"-dummySecretVariableValues",
 	})
 
 	if err != nil {
@@ -147,5 +154,33 @@ func TestParseFlagsCorrect(t *testing.T) {
 
 	if args.ExcludeTenantsExcept[0] != "mytenant" {
 		t.Fatalf("Tenants except mytenant should have been excluded")
+	}
+
+	if len(args.ExcludeTenantsWithTags) != 1 {
+		t.Fatalf("Only one tenent tag should be excluded")
+	}
+
+	if args.ExcludeTenantsWithTags[0] != "tag/a" {
+		t.Fatalf("Tenants except those with tag tag/a should have been excluded")
+	}
+
+	if len(args.ExcludeTenantTags) != 1 {
+		t.Fatalf("Only one tenent tag should be excluded")
+	}
+
+	if args.ExcludeTenantTags[0] != "tag/a" {
+		t.Fatalf("Tag tag/a should have been excluded")
+	}
+
+	if len(args.ExcludeTenantTagSets) != 1 {
+		t.Fatalf("Only one tag set should be excluded")
+	}
+
+	if args.ExcludeTenantTagSets[0] != "tag" {
+		t.Fatalf("TagSets tag should have been excluded")
+	}
+
+	if !args.DummySecretVariableValues {
+		t.Fatalf("dummy secret variables should have been set")
 	}
 }
