@@ -51,4 +51,4 @@ jobs:
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 1
+          GOMAXPROCS: 2
