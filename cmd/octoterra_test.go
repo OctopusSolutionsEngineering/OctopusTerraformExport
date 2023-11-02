@@ -1036,6 +1036,77 @@ func TestDockerFeedNoCredsExport(t *testing.T) {
 		})
 }
 
+// TestDummyCredsExport verifies that a docker feed with dummy credentials can be reimported with the correct settings
+func TestDummyCredsExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/68-dummycreds/space_creation",
+		"../test/terraform/68-dummycreds/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			DummySecretVariableValues: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			feedName := "Docker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
+
+					if strutil.EmptyIfNil(v.FeedType) != "Docker" {
+						t.Fatal("The feed must have a type of \"Docker\"")
+					}
+
+					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
+						t.Fatal("The feed must be have a API version of \"v1\"")
+					}
+
+					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
+						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+					}
+
+					if strutil.EmptyIfNil(v.Username) != "user" {
+						t.Fatal("The feed must be have a username of \"user\"")
+					}
+
+					foundExecutionTarget := false
+					foundNotAcquired := false
+					for _, o := range v.PackageAcquisitionLocationOptions {
+						if o == "ExecutionTarget" {
+							foundExecutionTarget = true
+						}
+
+						if o == "NotAcquired" {
+							foundNotAcquired = true
+						}
+					}
+
+					if !(foundExecutionTarget && foundNotAcquired) {
+						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
 // TestEcrFeedExport verifies that a ecr feed can be reimported with the correct settings
 func TestEcrFeedExport(t *testing.T) {
 
