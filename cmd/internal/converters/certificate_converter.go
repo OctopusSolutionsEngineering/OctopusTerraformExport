@@ -260,9 +260,9 @@ func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *Re
 	return newEnvs
 }
 
-func (c CertificateConverter) lookupTenants(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c CertificateConverter) lookupTenants(tenants []string, dependencies *ResourceDetailsCollection) []string {
 	newTenants := make([]string, 0)
-	for _, v := range envs {
+	for _, v := range tenants {
 		tenant := dependencies.GetResource("Tenants", v)
 		if tenant != "" {
 			newTenants = append(newTenants, tenant)
