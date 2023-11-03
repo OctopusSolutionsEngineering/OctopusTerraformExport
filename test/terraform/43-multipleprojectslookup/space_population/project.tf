@@ -92,6 +92,13 @@ output "octopus_project_1" {
   value = octopusdeploy_project.project_1.id
 }
 
+resource "octopusdeploy_variable" "feed_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "HelmFeed"
+  value    = data.octopusdeploy_feeds.helm_feed.feeds[0].id
+}
+
 resource "octopusdeploy_project" "project_2" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"

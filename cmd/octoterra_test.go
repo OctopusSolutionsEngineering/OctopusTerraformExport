@@ -3886,12 +3886,34 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					return err
 				}
 
-				if len(variableSet.Variables) != 1 {
+				if len(variableSet.Variables) != 2 {
 					t.Fatalf("The project must have 1 variable")
 				}
 
-				if variableSet.Variables[0].Name != "Test" {
+				if !lo.SomeBy(variableSet.Variables, func(item octopus.Variable) bool {
+					return item.Name == "Test"
+				}) {
 					t.Fatalf("The project must have 1 variable called \"Test\"")
+				}
+
+				// Ensure a variable that referenced a feed was correctly recreated
+				feedVar := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "HelmFeed"
+				})
+
+				if len(feedVar) != 1 {
+					t.Fatalf("The project must have 1 variable called \"HelmFeed\"")
+				}
+
+				feed := octopus.Feed{}
+				_, err = octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(feedVar[0].Value), &feed)
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if strutil.EmptyIfNil(feed.FeedType) != "Helm" {
+					t.Fatalf("The project must reference the helm feed as a variable")
 				}
 
 				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
