@@ -219,8 +219,6 @@ resource "octopusdeploy_runbook" "runbook3" {
 resource "octopusdeploy_runbook_process" "runbook" {
   runbook_id = octopusdeploy_runbook.runbook3.id
 
-
-
   step {
     condition           = "Success"
     name                = "Hello world (using PowerShell)"
@@ -301,6 +299,44 @@ resource "octopusdeploy_runbook_process" "runbook" {
         acquisition_location = "Server"
         feed_id              = data.octopusdeploy_feeds.built_in_feed.feeds[0].id
         properties           = { SelectionMode = "immediate" }
+      }
+    }
+
+    properties   = {}
+    target_roles = []
+  }
+
+  step {
+    condition           = "Success"
+    name                = "Run an Azure Script"
+    package_requirement = "LetOctopusDecide"
+    start_trigger       = "StartAfterPrevious"
+
+    action {
+      action_type                        = "Octopus.AzurePowerShell"
+      name                               = "Run an Azure Script"
+      condition                          = "Success"
+      run_on_server                      = true
+      is_disabled                        = false
+      can_be_used_for_project_versioning = false
+      is_required                        = false
+      worker_pool_id                     = ""
+      worker_pool_variable               = ""
+      properties                         = {
+        "Octopus.Action.Script.Syntax"       = "PowerShell"
+        "Octopus.Action.Azure.AccountId"     = data.octopusdeploy_accounts.azure.accounts[0].id
+        "Octopus.Action.Script.ScriptBody"   = "echo \"hi\""
+        "OctopusUseBundledTooling"           = "False"
+        "Octopus.Action.Script.ScriptSource" = "Inline"
+      }
+      environments          = []
+      excluded_environments = []
+      channels              = []
+      tenant_tags           = []
+      features              = []
+      container {
+        feed_id = data.octopusdeploy_feeds.docker_feed.feeds[0].id
+        image   = "octopusdeploy/worker-tools:6.0.0-ubuntu.22.04"
       }
     }
 
