@@ -44,6 +44,13 @@ data "octopusdeploy_library_variable_sets" "variable3" {
   take         = 1
 }
 
+data "octopusdeploy_worker_pools" "workerpool_default" {
+  name = "Default Worker Pool"
+  ids  = null
+  skip = 0
+  take = 1
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -97,6 +104,34 @@ resource "octopusdeploy_variable" "feed_variable" {
   type     = "String"
   name     = "HelmFeed"
   value    = data.octopusdeploy_feeds.helm_feed.feeds[0].id
+}
+
+resource "octopusdeploy_variable" "account_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "AwsAccount"
+  value    = data.octopusdeploy_accounts.example.accounts[0].id
+}
+
+resource "octopusdeploy_variable" "gitcred_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "GitCreds"
+  value    = data.octopusdeploy_git_credentials.git.git_credentials[0].id
+}
+
+resource "octopusdeploy_variable" "workerpool_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "WorkerPool"
+  value    = data.octopusdeploy_worker_pools.workerpool_default.worker_pools[0].id
+}
+
+resource "octopusdeploy_variable" "certificate_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "Certificate"
+  value    = data.octopusdeploy_certificates.example.certificates[0].id
 }
 
 resource "octopusdeploy_project" "project_2" {

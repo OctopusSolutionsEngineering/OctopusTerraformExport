@@ -3873,6 +3873,10 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					t.Fatalf("The project must be called \"Test\"")
 				}
 
+				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
+					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
+				}
+
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
@@ -3886,8 +3890,8 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					return err
 				}
 
-				if len(variableSet.Variables) != 2 {
-					t.Fatalf("The project must have 1 variable")
+				if len(variableSet.Variables) != 6 {
+					t.Fatalf("The project must have 6 variables")
 				}
 
 				if !lo.SomeBy(variableSet.Variables, func(item octopus.Variable) bool {
@@ -3895,6 +3899,9 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}) {
 					t.Fatalf("The project must have 1 variable called \"Test\"")
 				}
+
+				// The following tests ensure that variables referencing resources like feeds, accounts, worker pools,
+				// and git credentials were correctly reassigned to the appropriate values in the new space.
 
 				// Ensure a variable that referenced a feed was correctly recreated
 				feedVar := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
@@ -3918,6 +3925,66 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
 					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
+				}
+
+				// Ensure a variable that referenced an account was correctly recreated
+				accountVar := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "AwsAccount"
+				})
+
+				if len(accountVar) != 1 {
+					t.Fatalf("The project must have 1 variable called \"AwsAccount\"")
+				}
+
+				account := octopus.Account{}
+				_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(accountVar[0].Value), &account)
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if account.AccountType != "AmazonWebServicesAccount" {
+					t.Fatalf("The project must reference the aws account as a variable")
+				}
+
+				// Ensure a variable that referenced wokrer pools was correctly recreated
+				workerPoolVar := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "WorkerPool"
+				})
+
+				if len(workerPoolVar) != 1 {
+					t.Fatalf("The project must have 1 variable called \"WorkerPool\"")
+				}
+
+				workerPool := octopus.WorkerPool{}
+				_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPoolVar[0].Value), &workerPool)
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if workerPool.Name != "Default Worker Pool" {
+					t.Fatalf("The project must reference the default worker pool as a variable")
+				}
+
+				// Ensure a variable that referenced certificates was correctly recreated
+				certificateVar := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "Certificate"
+				})
+
+				if len(certificateVar) != 1 {
+					t.Fatalf("The project must have 1 variable called \"Certificate\"")
+				}
+
+				certificate := octopus.Certificate{}
+				_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificateVar[0].Value), &certificate)
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if certificate.Name != "Test" {
+					t.Fatalf("The project must reference the certificate called \"Test\"")
 				}
 
 				return nil
