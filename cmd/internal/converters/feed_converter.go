@@ -104,25 +104,31 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, lookup bool
 }
 
 func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) {
-	passwordName := resourceName + "_password"
-	password := "${var." + passwordName + "}"
+	if !(c.exportProjectFeed(resource, thisResource, resourceName) ||
+		c.exportDocker(resource, thisResource, resourceName) ||
+		c.exportAws(resource, thisResource, resourceName) ||
+		c.exportMaven(resource, thisResource, resourceName) ||
+		c.exportGithub(resource, thisResource, resourceName) ||
+		c.exportHelm(resource, thisResource, resourceName) ||
+		c.exportNuget(resource, thisResource, resourceName)) {
+		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
+	}
+}
 
+func (c FeedConverter) exportProjectFeed(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) exportDocker(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 		thisResource.Lookup = "${octopusdeploy_docker_container_registry." + resourceName + ".id}"
-	} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
-		thisResource.Lookup = "${octopusdeploy_aws_elastic_container_registry." + resourceName + ".id}"
-	} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
-		thisResource.Lookup = "${octopusdeploy_maven_feed." + resourceName + ".id}"
-	} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
-		thisResource.Lookup = "${octopusdeploy_github_repository_feed." + resourceName + ".id}"
-	} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
-		thisResource.Lookup = "${octopusdeploy_helm_feed." + resourceName + ".id}"
-	} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
-		thisResource.Lookup = "${octopusdeploy_nuget_feed." + resourceName + ".id}"
-	}
-	thisResource.ToHcl = func() (string, error) {
-
-		if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
+		thisResource.ToHcl = func() (string, error) {
+			passwordName := resourceName + "_password"
+			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformDockerFeed{
 				Type:                              "octopusdeploy_docker_container_registry",
 				Name:                              resourceName,
@@ -176,7 +182,20 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			}
 
 			return string(file.Bytes()), nil
-		} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) exportAws(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
+		thisResource.Lookup = "${octopusdeploy_aws_elastic_container_registry." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+			passwordName := resourceName + "_password"
+			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformEcrFeed{
 				Type:                              "octopusdeploy_aws_elastic_container_registry",
 				Name:                              resourceName,
@@ -229,7 +248,20 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			}
 
 			return string(file.Bytes()), nil
-		} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) exportMaven(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
+		thisResource.Lookup = "${octopusdeploy_maven_feed." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+			passwordName := resourceName + "_password"
+			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformMavenFeed{
 				Type:                              "octopusdeploy_maven_feed",
 				Name:                              resourceName,
@@ -283,7 +315,21 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			}
 
 			return string(file.Bytes()), nil
-		} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) exportGithub(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
+		thisResource.Lookup = "${octopusdeploy_github_repository_feed." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+			passwordName := resourceName + "_password"
+			password := "${var." + passwordName + "}"
+
 			terraformResource := terraform2.TerraformGitHubRepoFeed{
 				Type:                              "octopusdeploy_github_repository_feed",
 				Name:                              resourceName,
@@ -337,7 +383,21 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			}
 
 			return string(file.Bytes()), nil
-		} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) exportHelm(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
+		thisResource.Lookup = "${octopusdeploy_helm_feed." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+			passwordName := resourceName + "_password"
+			password := "${var." + passwordName + "}"
+
 			terraformResource := terraform2.TerraformHelmFeed{
 				Type:                              "octopusdeploy_helm_feed",
 				Name:                              resourceName,
@@ -389,7 +449,22 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			}
 
 			return string(file.Bytes()), nil
-		} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) exportNuget(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
+		thisResource.Lookup = "${octopusdeploy_nuget_feed." + resourceName + ".id}"
+		thisResource.ToHcl = func() (string, error) {
+
+			passwordName := resourceName + "_password"
+			password := "${var." + passwordName + "}"
+
 			terraformResource := terraform2.TerraformNuGetFeed{
 				Type:                              "octopusdeploy_nuget_feed",
 				Name:                              resourceName,
@@ -444,122 +519,55 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 			}
 
 			return string(file.Bytes()), nil
-		} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
-			// We don't do anything with this feed
-			return "", nil
-		} else {
-			zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
 		}
 
-		return "", nil
+		return true
 	}
+
+	return false
 }
 
 func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) {
 	thisResource.Lookup = "${data.octopusdeploy_feeds." + resourceName + ".feeds[0].id}"
 
-	if strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" {
+	if !(c.lookupBuiltIn(resource, thisResource, resourceName) ||
+		c.lookupDocker(resource, thisResource, resourceName) ||
+		c.lookupAws(resource, thisResource, resourceName) ||
+		c.lookupMaven(resource, thisResource, resourceName) ||
+		c.lookupGithub(resource, thisResource, resourceName) ||
+		c.lookupHelm(resource, thisResource, resourceName) ||
+		c.lookupNuget(resource, thisResource, resourceName) ||
+		c.lookupOctopusProject(resource, thisResource, resourceName)) {
+		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
+	}
+}
+
+func (c FeedConverter) lookupOctopusProject(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
 				Type:     "octopusdeploy_feeds",
 				Name:     resourceName,
-				FeedType: "BuiltIn",
+				FeedType: "OctopusProject",
 				Skip:     0,
 				Take:     1,
 			}
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(terraformResource, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \"BuiltIn\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
-			file.Body().AppendBlock(block)
-
-			return string(file.Bytes()), nil
-		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformFeedData{
-				Type:        "octopusdeploy_feeds",
-				Name:        resourceName,
-				PartialName: resource.Name,
-				FeedType:    "Docker",
-				Skip:        0,
-				Take:        1,
-			}
-			file := hclwrite.NewEmptyFile()
-			block := gohcl.EncodeAsBlock(terraformResource, "data")
 			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
 			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformFeedData{
-				Type:        "octopusdeploy_feeds",
-				Name:        resourceName,
-				PartialName: resource.Name,
-				FeedType:    "AwsElasticContainerRegistry",
-				Skip:        0,
-				Take:        1,
-			}
-			file := hclwrite.NewEmptyFile()
-			block := gohcl.EncodeAsBlock(terraformResource, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
-			file.Body().AppendBlock(block)
 
-			return string(file.Bytes()), nil
-		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformFeedData{
-				Type:        "octopusdeploy_feeds",
-				Name:        resourceName,
-				PartialName: resource.Name,
-				FeedType:    "Maven",
-				Skip:        0,
-				Take:        1,
-			}
-			file := hclwrite.NewEmptyFile()
-			block := gohcl.EncodeAsBlock(terraformResource, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
-			file.Body().AppendBlock(block)
+		return true
+	}
 
-			return string(file.Bytes()), nil
-		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformFeedData{
-				Type:        "octopusdeploy_feeds",
-				Name:        resourceName,
-				PartialName: resource.Name,
-				FeedType:    "GitHub",
-				Skip:        0,
-				Take:        1,
-			}
-			file := hclwrite.NewEmptyFile()
-			block := gohcl.EncodeAsBlock(terraformResource, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
-			file.Body().AppendBlock(block)
+	return false
+}
 
-			return string(file.Bytes()), nil
-		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
-		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform2.TerraformFeedData{
-				Type:        "octopusdeploy_feeds",
-				Name:        resourceName,
-				PartialName: resource.Name,
-				FeedType:    "Helm",
-				Skip:        0,
-				Take:        1,
-			}
-			file := hclwrite.NewEmptyFile()
-			block := gohcl.EncodeAsBlock(terraformResource, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
-			file.Body().AppendBlock(block)
-
-			return string(file.Bytes()), nil
-		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
+func (c FeedConverter) lookupNuget(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
 				Type:        "octopusdeploy_feeds",
@@ -576,14 +584,23 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 
 			return string(file.Bytes()), nil
 		}
-	} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) lookupHelm(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform2.TerraformFeedData{
-				Type:     "octopusdeploy_feeds",
-				Name:     resourceName,
-				FeedType: "OctopusProject",
-				Skip:     0,
-				Take:     1,
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "Helm",
+				Skip:        0,
+				Take:        1,
 			}
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(terraformResource, "data")
@@ -592,7 +609,133 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 
 			return string(file.Bytes()), nil
 		}
-	} else {
-		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
+
+		return true
 	}
+
+	return false
+}
+
+func (c FeedConverter) lookupGithub(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "GitHub",
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) lookupMaven(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "Maven",
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) lookupAws(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "AwsElasticContainerRegistry",
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) lookupDocker(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:        "octopusdeploy_feeds",
+				Name:        resourceName,
+				PartialName: resource.Name,
+				FeedType:    "Docker",
+				Skip:        0,
+				Take:        1,
+			}
+			file := hclwrite.NewEmptyFile()
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (c FeedConverter) lookupBuiltIn(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" {
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resourceName,
+				FeedType: "BuiltIn",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \"BuiltIn\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		return true
+	}
+
+	return false
 }
