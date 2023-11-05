@@ -577,7 +577,21 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 			return string(file.Bytes()), nil
 		}
 	} else if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
-		// We don't do anything with this feed
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform2.TerraformFeedData{
+				Type:     "octopusdeploy_feeds",
+				Name:     resourceName,
+				FeedType: "OctopusProject",
+				Skip:     0,
+				Take:     1,
+			}
+			file := hclwrite.NewEmptyFile()
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
 	} else {
 		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
 	}

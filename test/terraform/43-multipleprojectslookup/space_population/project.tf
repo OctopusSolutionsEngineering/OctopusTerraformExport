@@ -1,3 +1,9 @@
+data "octopusdeploy_feeds" "project_feed" {
+  feed_type    = "OctopusProject"
+  skip         = 0
+  take         = 1
+}
+
 data "octopusdeploy_lifecycles" "lifecycle_default_lifecycle" {
   ids          = null
   partial_name = "Default Lifecycle"
@@ -338,6 +344,45 @@ resource "octopusdeploy_runbook_process" "runbook" {
         feed_id = data.octopusdeploy_feeds.docker_feed.feeds[0].id
         image   = "octopusdeploy/worker-tools:6.0.0-ubuntu.22.04"
       }
+    }
+
+    properties   = {}
+    target_roles = []
+  }
+
+  step {
+    condition           = "Success"
+    name                = "Deploy a Release"
+    package_requirement = "LetOctopusDecide"
+    start_trigger       = "StartAfterPrevious"
+
+    action {
+      action_type                        = "Octopus.DeployRelease"
+      name                               = "Deploy a Release"
+      condition                          = "Success"
+      run_on_server                      = true
+      is_disabled                        = false
+      can_be_used_for_project_versioning = true
+      is_required                        = false
+      worker_pool_id                     = ""
+      worker_pool_variable               = ""
+      properties                         = {
+        "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
+        "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
+      }
+      environments                       = []
+      excluded_environments              = []
+      channels                           = []
+      tenant_tags                        = []
+
+      primary_package {
+        package_id           = data.octopusdeploy_projects.other.projects[0].id
+        acquisition_location = "NotAcquired"
+        feed_id              = data.octopusdeploy_feeds.project_feed.feeds[0].id
+        properties           = {}
+      }
+
+      features = []
     }
 
     properties   = {}

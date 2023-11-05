@@ -3865,26 +3865,30 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					return err
 				}
 
-				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+				if len(projectCollection.Items) != 2 {
+					t.Fatalf("There must only be two projects")
 				}
 
-				if projectCollection.Items[0].Name != "Test" {
+				testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Test"
+				})
+
+				if len(testProject) != 1 {
 					t.Fatalf("The project must be called \"Test\"")
 				}
 
-				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
+				if len(testProject[0].IncludedLibraryVariableSetIds) != 1 {
 					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
 				}
 
 				// Verify that the variable set was imported
 
-				if projectCollection.Items[0].VariableSetId == nil {
+				if testProject[0].VariableSetId == nil {
 					t.Fatalf("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetResourceById("Variables", *testProject[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -3923,7 +3927,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					t.Fatalf("The project must reference the helm feed as a variable")
 				}
 
-				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
+				if len(testProject[0].IncludedLibraryVariableSetIds) != 1 {
 					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
 				}
 

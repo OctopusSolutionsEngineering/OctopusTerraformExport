@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -74,8 +73,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:               client,
 		LifecycleConverter:   lifecycleConverter,
 		Excluder:             converters.DefaultExcluder{},
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		ExcludeTenantTags:    nil,
+		ExcludeTenantTagSets: nil,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
@@ -95,15 +94,15 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:               client,
 		EnvironmentConverter: lifecycleConverter,
 		TenantConverter:      tenantConverter,
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		ExcludeTenantTags:    nil,
+		ExcludeTenantTagSets: nil,
 		Excluder:             converters.DefaultExcluder{},
 		TagSetConverter:      tagsetConverter,
 	}
 	certificateConverter := converters.CertificateConverter{
 		Client:               client,
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		ExcludeTenantTags:    nil,
+		ExcludeTenantTagSets: nil,
 		Excluder:             converters.DefaultExcluder{},
 		TagSetConverter:      tagsetConverter,
 	}
@@ -116,8 +115,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -127,8 +126,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -137,8 +136,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -147,8 +146,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -157,8 +156,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -167,8 +166,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -178,8 +177,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -188,8 +187,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:                 client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -199,8 +198,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
+		ExcludeTenantTags:      nil,
+		ExcludeTenantTagSets:   nil,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        tagsetConverter,
 	}
@@ -246,8 +245,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			},
 			IgnoreProjectChanges: false,
 			WorkerPoolProcessor:  workerPoolProcessor,
-			ExcludeTenantTags:    args.ExcludeTenantTags,
-			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+			ExcludeTenantTags:    nil,
+			ExcludeTenantTagSets: nil,
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
@@ -276,8 +275,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			},
 			IgnoreProjectChanges: false,
 			WorkerPoolProcessor:  workerPoolProcessor,
-			ExcludeTenantTags:    args.ExcludeTenantTags,
-			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+			ExcludeTenantTags:    nil,
+			ExcludeTenantTagSets: nil,
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
