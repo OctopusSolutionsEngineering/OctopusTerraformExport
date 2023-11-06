@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -546,8 +547,7 @@ func (c *VariableSetConverter) exportAccounts(recursive bool, lookup bool, value
 		return nil
 	}
 
-	accountRegex := regexp.MustCompile("Accounts-\\d+")
-	for _, account := range accountRegex.FindAllString(*value, -1) {
+	for _, account := range regexes.AccountRegex.FindAllString(*value, -1) {
 		var err error
 		if recursive {
 			err = c.AccountConverter.ToHclById(account, dependencies)
@@ -569,8 +569,8 @@ func (c *VariableSetConverter) getAccount(value *string, dependencies *ResourceD
 	}
 
 	retValue := *value
-	accountRegex := regexp.MustCompile("Accounts-\\d+")
-	for _, account := range accountRegex.FindAllString(*value, -1) {
+
+	for _, account := range regexes.AccountRegex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Accounts", account))
 	}
 
@@ -582,8 +582,7 @@ func (c *VariableSetConverter) exportFeeds(recursive bool, lookup bool, value *s
 		return nil
 	}
 
-	feedRegex := regexp.MustCompile("Feeds-\\d+")
-	for _, feed := range feedRegex.FindAllString(*value, -1) {
+	for _, feed := range regexes.FeedRegex.FindAllString(*value, -1) {
 		var err error
 		if recursive {
 			err = c.FeedConverter.ToHclById(feed, dependencies)
@@ -605,8 +604,7 @@ func (c *VariableSetConverter) getFeeds(value *string, dependencies *ResourceDet
 	}
 
 	retValue := *value
-	regex := regexp.MustCompile("Feeds-\\d+")
-	for _, account := range regex.FindAllString(*value, -1) {
+	for _, account := range regexes.FeedRegex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, account, dependencies.GetResource("Feeds", account))
 	}
 
@@ -818,8 +816,7 @@ func (c *VariableSetConverter) exportCertificates(recursive bool, lookup bool, v
 		return nil
 	}
 
-	regex := regexp.MustCompile("Certificates-\\d+")
-	for _, cert := range regex.FindAllString(*value, -1) {
+	for _, cert := range regexes.CertificatesRegex.FindAllString(*value, -1) {
 		var err error
 		if recursive {
 			err = c.CertificateConverter.ToHclById(cert, dependencies)
@@ -841,8 +838,7 @@ func (c *VariableSetConverter) getCertificates(value *string, dependencies *Reso
 	}
 
 	retValue := *value
-	regex := regexp.MustCompile("Certificates-\\d+")
-	for _, cert := range regex.FindAllString(*value, -1) {
+	for _, cert := range regexes.CertificatesRegex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("Certificates", cert))
 	}
 
@@ -854,8 +850,7 @@ func (c *VariableSetConverter) exportWorkerPools(recursive bool, lookup bool, va
 		return nil
 	}
 
-	regex := regexp.MustCompile("WorkerPools-\\d+")
-	for _, pool := range regex.FindAllString(*value, -1) {
+	for _, pool := range regexes.WorkerPoolsRegex.FindAllString(*value, -1) {
 		var err error
 		if recursive {
 			err = c.WorkerPoolConverter.ToHclById(pool, dependencies)
@@ -877,8 +872,7 @@ func (c *VariableSetConverter) getWorkerPools(value *string, dependencies *Resou
 	}
 
 	retValue := *value
-	regex := regexp.MustCompile("WorkerPools-\\d+")
-	for _, cert := range regex.FindAllString(*value, -1) {
+	for _, cert := range regexes.WorkerPoolsRegex.FindAllString(*value, -1) {
 		retValue = strings.ReplaceAll(retValue, cert, dependencies.GetResource("WorkerPools", cert))
 	}
 

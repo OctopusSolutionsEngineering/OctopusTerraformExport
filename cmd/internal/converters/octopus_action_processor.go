@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"regexp"
 	"strings"
 )
 
@@ -23,7 +23,7 @@ type OctopusActionProcessor struct {
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
-	feedRegex, _ := regexp.Compile("Feeds-\\d+")
+
 	for _, step := range steps {
 		for _, action := range step.Actions {
 
@@ -36,7 +36,8 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 			}
 
 			for _, pack := range action.Packages {
-				if pack.FeedId != nil {
+				// We can have feed IDs that are octostache expressions. We don't process these further.
+				if pack.FeedId != nil && regexes.FeedRegex.MatchString(strutil.EmptyIfNil(pack.FeedId)) {
 					var err error
 					if recursive {
 						err = c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
@@ -51,7 +52,7 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 			}
 
 			for _, prop := range action.Properties {
-				for _, feed := range feedRegex.FindAllString(fmt.Sprint(prop), -1) {
+				for _, feed := range regexes.FeedRegex.FindAllString(fmt.Sprint(prop), -1) {
 					var err error
 					if recursive {
 						err = c.FeedConverter.ToHclById(feed, dependencies)
@@ -71,11 +72,11 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 }
 
 func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
-	accountRegex, _ := regexp.Compile("Accounts-\\d+")
+
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			for _, prop := range action.Properties {
-				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
+				for _, account := range regexes.AccountRegex.FindAllString(fmt.Sprint(prop), -1) {
 					var err error
 					if recursive {
 						err = c.AccountConverter.ToHclById(account, dependencies)
@@ -95,11 +96,11 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 }
 
 func (c OctopusActionProcessor) ExportGitCredentials(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
-	accountRegex, _ := regexp.Compile("GitCredentials-\\d+")
+
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			for _, prop := range action.Properties {
-				for _, account := range accountRegex.FindAllString(fmt.Sprint(prop), -1) {
+				for _, account := range regexes.GitCredentialsRegex.FindAllString(fmt.Sprint(prop), -1) {
 					var err error
 					if recursive {
 						err = c.GitCredentialsConverter.ToHclById(account, dependencies)
