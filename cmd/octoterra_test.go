@@ -4032,6 +4032,46 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				return err
 			}
 
+			err = func() error {
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				project := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Lookup project"
+				})
+
+				if len(project) != 1 {
+					t.Fatal("Should have created a project called \"Lookup project\"")
+				}
+
+				deploymentProcess := octopus.DeploymentProcess{}
+				found, err := octopusClient.GetResourceById("DeploymentProcesses",
+					strutil.EmptyIfNil(project[0].DeploymentProcessId),
+					&deploymentProcess)
+
+				if err != nil {
+					return err
+				}
+
+				if !found {
+					t.Fatal("Expected to find a deployment process")
+				}
+
+				if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
+					t.Fatal("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
 			// Verify that the single channel was exported
 			err = func() error {
 				channelsCollection := octopus.GeneralCollection[octopus.Channel]{}
