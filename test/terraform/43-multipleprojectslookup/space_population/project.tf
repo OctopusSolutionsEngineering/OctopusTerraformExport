@@ -256,7 +256,7 @@ resource "octopusdeploy_runbook_process" "runbook" {
         package_id                = "package1"
         acquisition_location      = "Server"
         extract_during_deployment = false
-        feed_id                   = data.octopusdeploy_feeds.built_in_feed.feeds[0].id
+        feed_id                   = "#{HelmFeed}"
         properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
       }
     }

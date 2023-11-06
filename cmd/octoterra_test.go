@@ -3998,6 +3998,40 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				return err
 			}
 
+			err = func() error {
+				runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+				err := octopusClient.GetAllResources("Runbooks", &runbookCollection)
+
+				if err != nil {
+					return err
+				}
+
+				runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+					return item.Name == "MyRunbook3"
+				})
+
+				if len(runbook) != 1 {
+					t.Fatal("Should have created a runbook called \"MyRunbook3\"")
+				}
+
+				runbookProcess := octopus.RunbookProcess{}
+				_, err = octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
+
+				if err != nil {
+					return err
+				}
+
+				if strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
+					t.Fatal("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
 			// Verify that the single channel was exported
 			err = func() error {
 				channelsCollection := octopus.GeneralCollection[octopus.Channel]{}

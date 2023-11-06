@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	sanitizer2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -150,6 +151,13 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 				}
 
 				for _, p := range a.Packages {
+
+					// Don't look up a feed id that is a variable reference
+					feedId := p.FeedId
+					if regexes.FeedRegex.MatchString(strutil.EmptyIfNil(feedId)) {
+						feedId = dependencies.GetResourcePointer("Feeds", p.FeedId)
+					}
+
 					if strutil.NilIfEmptyPointer(p.Name) != nil {
 						terraformResource.Step[i].Action[j].Package = append(
 							terraformResource.Step[i].Action[j].Package,
@@ -158,7 +166,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 								PackageID:               p.PackageId,
 								AcquisitionLocation:     p.AcquisitionLocation,
 								ExtractDuringDeployment: &p.ExtractDuringDeployment,
-								FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
+								FeedId:                  feedId,
 								Properties:              c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies),
 							})
 					} else {
@@ -167,7 +175,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 							PackageID:               p.PackageId,
 							AcquisitionLocation:     p.AcquisitionLocation,
 							ExtractDuringDeployment: nil,
-							FeedId:                  dependencies.GetResourcePointer("Feeds", p.FeedId),
+							FeedId:                  feedId,
 							Properties:              c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies),
 						}
 					}
