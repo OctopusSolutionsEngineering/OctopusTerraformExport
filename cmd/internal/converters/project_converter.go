@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -42,9 +43,15 @@ type ProjectConverter struct {
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 	DummySecretVariableValues    bool
 	DummySecretGenerator         DummySecretGenerator
+	// This is set to true when this converter is only to be used to call ToHclLookupById
+	LookupOnlyMode bool
 }
 
-func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+	if c.LookupOnlyMode {
+		return errors.New("this function can not be called whe LookupOnlyMode is true")
+	}
+
 	collection := octopus.GeneralCollection[octopus.Project]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -64,9 +71,58 @@ func (c ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	return nil
 }
 
-// ToHclLookupById exports a self-contained representation of the project where external resources like
+func (c *ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	project := octopus.Project{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+
+	if err != nil {
+		return err
+	}
+
+	thisResource := ResourceDetails{}
+
+	resourceName := "project_" + sanitizer.SanitizeName(project.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = project.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${data.octopusdeploy_projects." + resourceName + ".projects[0].id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformEnvironmentData{
+			Type:        "octopusdeploy_projects",
+			Name:        resourceName,
+			Ids:         nil,
+			PartialName: project.Name,
+			Skip:        0,
+			Take:        1,
+		}
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an project called \""+project.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.projects) != 0")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
+// ToHclByIdWithLookups exports a self-contained representation of the project where external resources like
 // environments, lifecycles, feeds, accounts etc are resolved with data lookups.
-func (c ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *ResourceDetailsCollection) error {
+	if c.LookupOnlyMode {
+		return errors.New("this function can not be called whe LookupOnlyMode is true")
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -86,7 +142,7 @@ func (c ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 	return c.toHcl(resource, false, true, dependencies)
 }
 
-func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -105,7 +161,7 @@ func (c ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 	return c.toHcl(project, true, false, dependencies)
 }
 
-func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	if c.projectIsExcluded(project) {
@@ -248,7 +304,7 @@ func (c ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups
 	return nil
 }
 
-func (c ProjectConverter) writeGitUrlVar(projectName string, project octopus.Project, file *hclwrite.File) {
+func (c *ProjectConverter) writeGitUrlVar(projectName string, project octopus.Project, file *hclwrite.File) {
 	variableResource := terraform.TerraformVariable{
 		Name:        projectName + "_git_url",
 		Type:        "string",
@@ -266,7 +322,7 @@ func (c ProjectConverter) writeGitUrlVar(projectName string, project octopus.Pro
 // Octopus has two places where protected branches are defined: the explicit list of branches and optionally the default branch.
 // The TF provider only has the explicit list. So getProtectedBranches builds a single list taking these two sources
 // into account.
-func (c ProjectConverter) getProtectedBranches(project octopus.Project) []string {
+func (c *ProjectConverter) getProtectedBranches(project octopus.Project) []string {
 	branches := lo.Map(project.PersistenceSettings.ProtectedBranchNamePatterns, func(x string, index int) string {
 		return strings.ReplaceAll(x, "\"", "\\\"")
 	})
@@ -278,7 +334,7 @@ func (c ProjectConverter) getProtectedBranches(project octopus.Project) []string
 	return branches
 }
 
-func (c ProjectConverter) writeProtectedBranchesVar(projectName string, project octopus.Project, file *hclwrite.File) {
+func (c *ProjectConverter) writeProtectedBranchesVar(projectName string, project octopus.Project, file *hclwrite.File) {
 
 	sanitizedList := c.getProtectedBranches(project)
 
@@ -309,7 +365,7 @@ func (c ProjectConverter) writeProtectedBranchesVar(projectName string, project 
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectConverter) writeGitPathVar(projectName string, project octopus.Project, file *hclwrite.File) {
+func (c *ProjectConverter) writeGitPathVar(projectName string, project octopus.Project, file *hclwrite.File) {
 	variableResource := terraform.TerraformVariable{
 		Name:        projectName + "_git_base_path",
 		Type:        "string",
@@ -324,11 +380,11 @@ func (c ProjectConverter) writeGitPathVar(projectName string, project octopus.Pr
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectConverter) GetResourceType() string {
+func (c *ProjectConverter) GetResourceType() string {
 	return "Projects"
 }
 
-func (c ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
+func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
 	sanitizedProjectName := sanitizer.SanitizeName(projectName)
 
 	secretVariableResource := terraform.TerraformVariable{
@@ -345,7 +401,7 @@ func (c ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectN
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) {
+func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) {
 	sanitizedProjectName := sanitizer.SanitizeName(projectResourceName)
 
 	descriptionPrefixVariable := terraform.TerraformVariable{
@@ -392,7 +448,7 @@ func (c ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, p
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
@@ -415,7 +471,7 @@ func (c ProjectConverter) convertTemplates(actionPackages []octopus.Template, pr
 	return collection, templateMap
 }
 
-func (c ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
+func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
 	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
 		return nil
 	}
@@ -427,7 +483,7 @@ func (c ProjectConverter) convertConnectivityPolicy(project octopus.Project) *te
 	}
 }
 
-func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *ResourceDetailsCollection) []string {
+func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *ResourceDetailsCollection) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
 		collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
@@ -435,7 +491,7 @@ func (c ProjectConverter) convertLibraryVariableSets(setIds []string, dependenci
 	return collection
 }
 
-func (c ProjectConverter) convertLibraryGitPersistence(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) *terraform.TerraformGitLibraryPersistenceSettings {
+func (c *ProjectConverter) convertLibraryGitPersistence(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) *terraform.TerraformGitLibraryPersistenceSettings {
 	if project.PersistenceSettings.Credentials.Type != "Reference" {
 		return nil
 	}
@@ -449,7 +505,7 @@ func (c ProjectConverter) convertLibraryGitPersistence(project octopus.Project, 
 	}
 }
 
-func (c ProjectConverter) convertAnonymousGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitAnonymousPersistenceSettings {
+func (c *ProjectConverter) convertAnonymousGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitAnonymousPersistenceSettings {
 	if project.PersistenceSettings.Credentials.Type != "Anonymous" {
 		return nil
 	}
@@ -462,7 +518,7 @@ func (c ProjectConverter) convertAnonymousGitPersistence(project octopus.Project
 	}
 }
 
-func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitUsernamePasswordPersistenceSettings {
+func (c *ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitUsernamePasswordPersistenceSettings {
 	if project.PersistenceSettings.Credentials.Type != "UsernamePassword" {
 		return nil
 	}
@@ -477,7 +533,7 @@ func (c ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.
 	}
 }
 
-func (c ProjectConverter) convertVersioningStrategy(project octopus.Project) *terraform.TerraformVersioningStrategy {
+func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *terraform.TerraformVersioningStrategy {
 	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
 		return nil
 	}
@@ -510,7 +566,7 @@ func (c ProjectConverter) convertVersioningStrategy(project octopus.Project) *te
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
-func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	var err error
 	if lookup {
 		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
@@ -579,7 +635,7 @@ func (c ProjectConverter) exportChildDependencies(recursive bool, lookup bool, p
 	return nil
 }
 
-func (c ProjectConverter) exportDependencyLookups(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	// Export the project group
 	err := c.ProjectGroupConverter.ToHclLookupById(project.ProjectGroupId, dependencies)
 
@@ -622,7 +678,7 @@ func (c ProjectConverter) exportDependencyLookups(project octopus.Project, proje
 	return nil
 }
 
-func (c ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	// Export the project group
 	err := c.ProjectGroupConverter.ToHclById(project.ProjectGroupId, dependencies)
 

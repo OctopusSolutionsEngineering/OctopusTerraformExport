@@ -45,6 +45,10 @@ func main() {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
+	if args.RunbookName != "" && args.ProjectName == "" && args.ProjectId == "" {
+		errorExit("runbookName requires either projectId or projectName to be set")
+	}
+
 	if args.ProjectName != "" {
 		args.ProjectId, err = ConvertProjectNameToId(args.Url, args.Space, args.ApiKey, args.ProjectName)
 
@@ -53,7 +57,18 @@ func main() {
 		}
 	}
 
-	if args.ProjectId != "" {
+	if args.RunbookName != "" {
+		args.RunbookId, err = ConvertRunbookNameToId(args.Url, args.Space, args.ApiKey, args.ProjectId, args.RunbookName)
+
+		if err != nil {
+			errorExit(err.Error())
+		}
+	}
+
+	if args.RunbookId != "" {
+		zap.L().Info("Exporting runbook " + args.RunbookId + " in space " + args.Space)
+		err = ConvertRunbookToTerraform(args)
+	} else if args.ProjectId != "" {
 		zap.L().Info("Exporting project " + args.ProjectId + " in space " + args.Space)
 		err = ConvertProjectToTerraform(args)
 	} else {
@@ -100,6 +115,34 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	}
 
 	return "", errors.New("did not find project with name " + name + " in space " + space)
+}
+
+func ConvertRunbookNameToId(url string, space string, apiKey string, projectId string, runbookName string) (string, error) {
+	client := client.OctopusClient{
+		Url:    url,
+		Space:  space,
+		ApiKey: apiKey,
+	}
+
+	collection := octopus.GeneralCollection[octopus.Runbook]{}
+	err := client.GetAllResources("Projects/"+projectId+"/runbooks", &collection)
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(collection.Items) == 0 {
+		return "", errors.New("failed to return any runbooks for the project " + projectId + " in space " + space +
+			" - check the API key has permission to list runbooks")
+	}
+
+	for _, p := range collection.Items {
+		if p.Name == runbookName {
+			return p.Id, nil
+		}
+	}
+
+	return "", errors.New("did not find runbook with name " + runbookName + " for the project " + projectId + " in space " + space)
 }
 
 func ConvertSpaceToTerraform(args args.Arguments) error {
@@ -393,7 +436,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		TagSetConverter:             tagsetConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
 		ProjectGroupConverter:       projectGroupConverter,
-		ProjectConverter: converters.ProjectConverter{
+		ProjectConverter: &converters.ProjectConverter{
 			Client:                      client,
 			LifecycleConverter:          lifecycleConverter,
 			GitCredentialsConverter:     gitCredentialsConverter,
@@ -452,6 +495,134 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 	}
 
 	err := spaceConverter.ToHcl(&dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	hcl, err := processResources(dependencies.Resources)
+
+	if err != nil {
+		return err
+	}
+
+	err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
+
+	return err
+}
+
+func ConvertRunbookToTerraform(args args.Arguments) error {
+
+	client := client.OctopusClient{
+		Url:    args.Url,
+		Space:  args.Space,
+		ApiKey: args.ApiKey,
+	}
+
+	dummySecretGenerator := converters.DummySecret{}
+
+	dependencies := converters.ResourceDetailsCollection{}
+
+	converters.TerraformProviderGenerator{
+		TerraformBackend:         args.BackendBlock,
+		ProviderVersion:          args.ProviderVersion,
+		ExcludeProvider:          args.ExcludeProvider,
+		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+	}.ToHcl("space_population", true, &dependencies)
+
+	environmentConverter := converters.EnvironmentConverter{Client: client}
+	gitCredentialsConverter := converters.GitCredentialsConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+	}
+	tagsetConverter := converters.TagSetConverter{
+		Client:               client,
+		Excluder:             converters.DefaultExcluder{},
+		ExcludeTenantTags:    args.ExcludeTenantTags,
+		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+	}
+
+	tenantVariableConverter := converters.TenantVariableConverter{
+		Client:                    client,
+		ExcludeTenants:            args.ExcludeTenants,
+		ExcludeAllTenants:         args.ExcludeAllTenants,
+		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
+		Excluder:                  converters.DefaultExcluder{},
+		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
+	}
+	tenantConverter := converters.TenantConverter{
+		Client:                  client,
+		TenantVariableConverter: tenantVariableConverter,
+		EnvironmentConverter:    environmentConverter,
+		TagSetConverter:         tagsetConverter,
+		ExcludeTenants:          args.ExcludeTenants,
+		ExcludeAllTenants:       args.ExcludeAllTenants,
+		ExcludeTenantsExcept:    args.ExcludeTenantsExcept,
+		ExcludeTenantsWithTags:  args.ExcludeTenantsWithTags,
+		Excluder:                converters.DefaultExcluder{},
+		ExcludeTenantTags:       args.ExcludeTenantTags,
+		ExcludeTenantTagSets:    args.ExcludeTenantTagSets,
+	}
+
+	accountConverter := converters.AccountConverter{
+		Client:                    client,
+		EnvironmentConverter:      environmentConverter,
+		TenantConverter:           tenantConverter,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
+	}
+
+	feedConverter := converters.FeedConverter{
+		Client:                    client,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
+	}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+
+	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
+		WorkerPoolConverter:     workerPoolConverter,
+		LookupDefaultWorkerPool: args.LookUpDefaultWorkerPools,
+		Client:                  client,
+	}
+
+	projectConverter := &converters.ProjectConverter{
+		LookupOnlyMode: true,
+		Client:         client,
+	}
+
+	runbookConverter := converters.RunbookConverter{
+		Client: client,
+		RunbookProcessConverter: converters.RunbookProcessConverter{
+			Client: client,
+			OctopusActionProcessor: converters.OctopusActionProcessor{
+				FeedConverter:           feedConverter,
+				AccountConverter:        accountConverter,
+				WorkerPoolConverter:     workerPoolConverter,
+				EnvironmentConverter:    environmentConverter,
+				DetachProjectTemplates:  args.DetachProjectTemplates,
+				WorkerPoolProcessor:     workerPoolProcessor,
+				GitCredentialsConverter: gitCredentialsConverter,
+			},
+			IgnoreProjectChanges: args.IgnoreProjectChanges,
+			WorkerPoolProcessor:  workerPoolProcessor,
+			ExcludeTenantTags:    args.ExcludeTenantTags,
+			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+			Excluder:             converters.DefaultExcluder{},
+			TagSetConverter:      tagsetConverter,
+		},
+		EnvironmentConverter: environmentConverter,
+		ExcludedRunbooks:     args.ExcludeRunbooks,
+		ExcludeRunbooksRegex: args.ExcludeRunbooksRegex,
+		IgnoreProjectChanges: args.IgnoreProjectChanges,
+		ProjectConverter:     projectConverter,
+	}
+
+	err := runbookConverter.ToHclByIdWithLookups(args.RunbookId, &dependencies)
 
 	if err != nil {
 		return err
@@ -808,7 +979,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 
 	var err error
 	if args.LookupProjectDependencies {
-		err = projectConverter.ToHclLookupById(args.ProjectId, &dependencies)
+		err = projectConverter.ToHclByIdWithLookups(args.ProjectId, &dependencies)
 	} else {
 		err = projectConverter.ToHclById(args.ProjectId, &dependencies)
 	}
