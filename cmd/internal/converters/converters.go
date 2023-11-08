@@ -14,6 +14,14 @@ type ConverterById interface {
 	ToHclById(id string, dependencies *ResourceDetailsCollection) error
 }
 
+// ConverterByIdWithLookups converts an individual resource by its ID, with all external resources referenced
+// as lookups
+type ConverterByIdWithLookups interface {
+	// ToHclByIdWithLookups converts a single resource by its ID. This is used when converting a single project,
+	// and then referencing all other resources by lookup (like feeds, accounts, environments etc).
+	ToHclByIdWithLookups(id string, dependencies *ResourceDetailsCollection) error
+}
+
 // ConverterLookupById converts an individual resource by its ID to a data lookup
 type ConverterLookupById interface {
 	// ToHclLookupById is used to create a data resource that queries a space for an existing resource. This
@@ -27,6 +35,14 @@ type ConverterLookupById interface {
 type ConverterAndLookupById interface {
 	ConverterById
 	ConverterLookupById
+}
+
+// ConverterAndWithLookupsById converts an individual resource by ID to HCL, either exporting all dependencies,
+// or looking up all dependencies
+type ConverterAndWithLookupsById interface {
+	ConverterById
+	ConverterLookupById
+	ConverterByIdWithLookups
 }
 
 // ConverterByIdWithName converts an individual resource by its ID, and uses the supplied name for the Terraform resource

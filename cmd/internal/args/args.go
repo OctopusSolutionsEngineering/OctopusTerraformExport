@@ -16,6 +16,8 @@ type Arguments struct {
 	Console                          bool
 	ProjectId                        string
 	ProjectName                      string
+	RunbookId                        string
+	RunbookName                      string
 	LookupProjectDependencies        bool
 	IgnoreCacManagedValues           bool
 	BackendBlock                     string
@@ -252,6 +254,8 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
 	flags.StringVar(&arguments.ProjectId, "projectId", "", "Limit the export to a single project")
 	flags.StringVar(&arguments.ProjectName, "projectName", "", "Limit the export to a single project")
+	flags.StringVar(&arguments.RunbookId, "runbookId", "", "Limit the export to a single runbook. Runbooks are exported referencing external resources as data sources.")
+	flags.StringVar(&arguments.RunbookName, "runbookName", "", "Limit the export to a single runbook. Requires projectName or projectId. Runbooks are exported referencing external resources as data sources.")
 	flags.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
 	flags.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", true, "Pass this to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings. This has no effect on projects that do not have CaC enabled.")
 	flags.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")

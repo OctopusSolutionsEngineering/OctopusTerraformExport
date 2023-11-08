@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -20,10 +21,74 @@ type RunbookConverter struct {
 	Client                       client.OctopusClient
 	RunbookProcessConverter      ConverterAndLookupByIdAndName
 	EnvironmentConverter         ConverterAndLookupById
+	ProjectConverter             ConverterAndLookupById
 	ExcludedRunbooks             args.ExcludeRunbooks
 	ExcludeRunbooksRegex         args.ExcludeRunbooks
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 	IgnoreProjectChanges         bool
+}
+
+// ToHclByIdWithLookups exports a self-contained representation of the runbook where external resources like
+// environments, lifecycles, feeds, accounts, projects etc are resolved with data lookups.
+func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.Runbook{}
+	foundRunbook, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	if !foundRunbook {
+		return errors.New("failed to find runbook with id " + id)
+	}
+
+	parentResource := octopus.Project{}
+	foundProject, err := c.Client.GetResourceById("Projects", resource.ProjectId, &parentResource)
+
+	if err != nil {
+		return err
+	}
+
+	if !foundProject {
+		return errors.New("failed to find project with id " + resource.ProjectId)
+	}
+
+	zap.L().Info("Runbook: " + resource.Id)
+	return c.toHcl(resource, parentResource.Name, false, true, dependencies)
+}
+
+func (c *RunbookConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.Runbook{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	parentResource := octopus.Project{}
+	_, err = c.Client.GetResourceById(c.GetResourceType(), id, &parentResource)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, parentResource.Name, true, false, dependencies)
 }
 
 func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -173,6 +238,24 @@ func (c *RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terr
 }
 
 func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *ResourceDetailsCollection) error {
+	// It is not valid to have lookup be false and recursive be true, as the only supported export of a runbook is
+	// with lookup being true.
+	if lookup && recursive {
+		return errors.New("exporting a runbook with dependencies is not supported")
+	}
+
+	// When lookup is true and recursive is false this runbook has been exported as a standalone resource
+	// that references its parent project by a lookup.
+	// If lookup is true and recursive is true, this runbook was exported with a project, and the project has already
+	// been resolved.
+	if lookup && !recursive && c.ProjectConverter != nil {
+		err := c.ProjectConverter.ToHclLookupById(runbook.ProjectId, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	// Export the deployment process
 	if runbook.RunbookProcessId != nil {
 		var err error
