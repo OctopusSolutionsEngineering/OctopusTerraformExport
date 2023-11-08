@@ -100,14 +100,29 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDeta
 			Type:        "octopusdeploy_projects",
 			Name:        resourceName,
 			Ids:         nil,
-			PartialName: project.Name,
+			PartialName: "${var.parent_project_name}",
 			Skip:        0,
 			Take:        1,
 		}
+
+		projectNameVariable := terraform.TerraformVariable{
+			Name:        "parent_project_name",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   false,
+			Description: "The name of the project to attach the runbook to",
+			Default:     &project.Name,
+		}
+
 		file := hclwrite.NewEmptyFile()
-		block := gohcl.EncodeAsBlock(terraformResource, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an project called \""+project.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.projects) != 0")
-		file.Body().AppendBlock(block)
+
+		variableBlock := gohcl.EncodeAsBlock(projectNameVariable, "variable")
+		hcl.WriteUnquotedAttribute(variableBlock, "type", "string")
+		file.Body().AppendBlock(variableBlock)
+
+		dataBlock := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(dataBlock, "Failed to resolve an project called \""+project.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.projects) != 0")
+		file.Body().AppendBlock(dataBlock)
 
 		return string(file.Bytes()), nil
 	}
