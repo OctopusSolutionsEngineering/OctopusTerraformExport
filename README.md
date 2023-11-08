@@ -47,7 +47,36 @@ To do so, use the following command:
     -dest /tmp/octoexport
 ```
 
-Octoterra is also able to be run as a Docker image:
+Individual runbooks can be exported using data lookups to reference their parent project (i.e. when exporting a runbook,
+`-lookupProjectDependencies` is implied).
+
+Note that when exporting an individual runbook, the project variables are not exported. These runbooks must be applied to
+projects with any required project variables or library variable sets already defined.
+
+The `-runbookName` argument requires either `-projectName` or `-projectId` because runbooks do not have a unique name:
+
+```bash
+./octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -projectId Projects-1234 \
+    -runbookName "Backup Database"
+    -dest /tmp/octoexport
+```
+
+The `-runbookId` argument does not need a project to be defined:
+
+```bash
+./octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -runbookId "Runbooks-123"
+    -dest /tmp/octoexport
+```
+
+Docker can also be used to run Octoterra:
 
 ```
 docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
