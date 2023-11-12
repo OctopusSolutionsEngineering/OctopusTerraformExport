@@ -7,7 +7,7 @@ import (
 func TestParseFlagsCorrect(t *testing.T) {
 	args, _, err := ParseArgs([]string{
 		"-url",
-		"http://example.org",
+		"https://example.org",
 		"-space",
 		"Spaces-1",
 		"-apiKey",
@@ -64,8 +64,8 @@ func TestParseFlagsCorrect(t *testing.T) {
 		t.Fatalf("Should not have returned an error")
 	}
 
-	if args.Url != "http://example.org" {
-		t.Fatalf("Url should have been http://example.org")
+	if args.Url != "https://example.org" {
+		t.Fatalf("Url should have been https://example.org")
 	}
 
 	if args.Space != "Spaces-1" {
