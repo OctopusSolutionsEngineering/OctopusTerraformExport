@@ -334,7 +334,7 @@ func exportImportAndTest(
 
 		tempDir := getTempDir()
 		defer func(name string) {
-			err := os.Remove(name)
+			err := os.RemoveAll(name)
 			if err != nil {
 				funcErr = errors.Join(funcErr, err)
 			}
