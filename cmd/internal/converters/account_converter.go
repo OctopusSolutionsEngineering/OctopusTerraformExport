@@ -120,7 +120,11 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 
 func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if recursive {
-		c.exportDependencies(resource, dependencies)
+		err := c.exportDependencies(resource, dependencies)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)

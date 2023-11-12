@@ -36,7 +36,7 @@ type TenantConverter struct {
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 }
 
-func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -56,7 +56,7 @@ func (c TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	return nil
 }
 
-func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
@@ -74,7 +74,7 @@ func (c TenantConverter) ToHclByProjectId(projectId string, dependencies *Resour
 	return nil
 }
 
-func (c TenantConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
 	resource := octopus2.Tenant{}
 	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -90,7 +90,7 @@ func (c TenantConverter) ToHclById(id string, dependencies *ResourceDetailsColle
 	return nil
 }
 
-func (c TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
@@ -107,7 +107,7 @@ func (c TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *
 	return nil
 }
 
-func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 
 	c.compileRegexes()
 
@@ -231,11 +231,11 @@ func (c TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bo
 	return nil
 }
 
-func (c TenantConverter) GetResourceType() string {
+func (c *TenantConverter) GetResourceType() string {
 	return "Tenants"
 }
 
-func (c TenantConverter) excludeProject(projectId string) (bool, error) {
+func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
 	if c.ExcludeProjects == nil {
 		return false, nil
 	}
@@ -254,7 +254,7 @@ func (c TenantConverter) excludeProject(projectId string) (bool, error) {
 	return c.projectIsExcluded(project), nil
 }
 
-func (c TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
+func (c *TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
 	terraformProjectEnvironments := []terraform.TerraformProjectEnvironment{}
 	for k, v := range tags {
 		exclude, err := c.excludeProject(k)
@@ -280,7 +280,7 @@ func (c TenantConverter) getProjects(tags map[string][]string, dependencies *Res
 	return terraformProjectEnvironments, nil
 }
 
-func (c TenantConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c *TenantConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -290,7 +290,7 @@ func (c TenantConverter) lookupEnvironments(envs []string, dependencies *Resourc
 
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
-func (c TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
+func (c *TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursive bool, dependencies *ResourceDetailsCollection) (map[string][]string, error) {
 	collection := octopus2.GeneralCollection[octopus2.TagSet]{}
 	err := c.Client.GetAllResources("TagSets", &collection)
 

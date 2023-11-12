@@ -29,9 +29,13 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 
 			if strutil.NilIfEmptyPointer(action.Container.FeedId) != nil {
 				if recursive {
-					c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies)
+					if err := c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies); err != nil {
+						return err
+					}
 				} else if lookup {
-					c.FeedConverter.ToHclLookupById(strutil.EmptyIfNil(action.Container.FeedId), dependencies)
+					if err := c.FeedConverter.ToHclLookupById(strutil.EmptyIfNil(action.Container.FeedId), dependencies); err != nil {
+						return err
+					}
 				}
 			}
 

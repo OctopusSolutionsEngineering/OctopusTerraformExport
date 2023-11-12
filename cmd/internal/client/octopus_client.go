@@ -43,7 +43,7 @@ func (o OctopusClient) lookupSpaceAsId() (bool, error) {
 	return res.StatusCode != 404, nil
 }
 
-func (o OctopusClient) lookupSpaceAsName() (string, error) {
+func (o OctopusClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("space can not be empty")
 	}
@@ -70,7 +70,12 @@ func (o OctopusClient) lookupSpaceAsName() (string, error) {
 	if res.StatusCode != 200 {
 		return "", nil
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
 
 	collection := octopus2.GeneralCollection[octopus2.Space]{}
 	err = json.NewDecoder(res.Body).Decode(&collection)
@@ -199,7 +204,7 @@ func (o OctopusClient) getCollectionRequest(resourceType string, queryParams ...
 	return req, nil
 }
 
-func (o OctopusClient) GetSpace(resources *octopus2.Space) error {
+func (o OctopusClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	req, err := o.getSpaceRequest()
 
 	if err != nil {
@@ -215,12 +220,17 @@ func (o OctopusClient) GetSpace(resources *octopus2.Space) error {
 	if res.StatusCode != 200 {
 		return nil
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
 
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
-func (o OctopusClient) GetResource(resourceType string, resources any) (bool, error) {
+func (o OctopusClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -252,7 +262,12 @@ func (o OctopusClient) GetResource(resourceType string, resources any) (bool, er
 	if res.StatusCode != 200 {
 		return false, errors.New("did not find the requested resource: " + resourceType)
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
 
 	body, err := io.ReadAll(res.Body)
 
@@ -270,7 +285,7 @@ func (o OctopusClient) GetResource(resourceType string, resources any) (bool, er
 	return true, nil
 }
 
-func (o OctopusClient) GetResourceById(resourceType string, id string, resources any) (bool, error) {
+func (o OctopusClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
 	req, err := o.getRequest(resourceType, id)
 
 	if err != nil {
@@ -290,7 +305,12 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	if res.StatusCode != 200 {
 		return false, errors.New("did not find the requested resource: " + resourceType + " " + id)
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
 
 	body, err := io.ReadAll(res.Body)
 
@@ -308,7 +328,7 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	return true, nil
 }
 
-func (o OctopusClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) error {
+func (o OctopusClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
 	req, err := o.getCollectionRequest(resourceType, queryParams...)
 
 	if err != nil {
@@ -324,7 +344,12 @@ func (o OctopusClient) GetAllResources(resourceType string, resources any, query
 	if res.StatusCode != 200 {
 		return nil
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
 
 	return json.NewDecoder(res.Body).Decode(resources)
 }

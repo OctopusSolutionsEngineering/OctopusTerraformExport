@@ -36,22 +36,29 @@ func (c FileWriter) Write(files map[string]string) (string, error) {
 	return c.dest, nil
 }
 
-func (c FileWriter) write(filename string, contents string) error {
+func (c FileWriter) write(filename string, contents string) (funcErr error) {
 	// create the directory
 	if err := os.MkdirAll(filepath.Dir(c.dest+filename), os.ModePerm); err != nil {
-		return nil
+		return err
 	}
 
 	// create the file
 	f, err := os.Create(c.dest + filename)
-
 	if err != nil {
 		return err
 	}
 
-	defer f.Close()
+	defer func(f *os.File) {
+		deferErr := f.Close()
+		if deferErr != nil && err == nil {
+			funcErr = deferErr
+		}
+	}(f)
 
-	f.Write([]byte(contents))
+	_, err = f.Write([]byte(contents))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
