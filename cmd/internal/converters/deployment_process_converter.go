@@ -27,7 +27,7 @@ type DeploymentProcessConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -60,7 +60,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, projectName stri
 	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}

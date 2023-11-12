@@ -79,7 +79,7 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *Resour
 	return c.toHcl(gitCredentials, false, true, dependencies)
 }
 
-func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 

@@ -75,7 +75,7 @@ func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *ResourceDe
 	return c.toHcl(pool, false, true, dependencies)
 }
 
-func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "workerpool_" + sanitizer.SanitizeNamePointer(&pool.Name)
 
 	thisResource := ResourceDetails{}

@@ -2680,7 +2680,7 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 
 	// need to fix this error:
 	// Error: json: cannot unmarshal string into Go struct field KubernetesAzureAuthentication.AdminLogin of type bool
-	return
+	t.Skip()
 
 	exportSpaceImportAndTest(t,
 		"../test/terraform/52-k8stargetazure/space_creation",

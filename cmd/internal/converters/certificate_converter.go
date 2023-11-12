@@ -132,7 +132,7 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 			return "", err
 		}
 
-		err = c.writeVariables(file, certificateName, certificate, recursive, dependencies)
+		err = c.writeVariables(file, certificateName, certificate)
 
 		if err != nil {
 			return "", err
@@ -145,7 +145,7 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 	return nil
 }
 
-func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus2.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus2.Certificate) error {
 
 	defaultPassword := ""
 	certificatePassword := terraform2.TerraformVariable{

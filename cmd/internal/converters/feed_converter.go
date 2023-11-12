@@ -82,7 +82,7 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *ResourceDetailsC
 	return c.toHcl(resource, false, true, dependencies)
 }
 
-func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 	forceLookup := lookup || strutil.EmptyIfNil(resource.FeedType) == "BuiltIn"
 
 	resourceName := "feed_" + sanitizer.SanitizeName(resource.Name)
@@ -104,7 +104,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, recursive bool, lookup bool
 }
 
 func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) {
-	if !(c.exportProjectFeed(resource, thisResource, resourceName) ||
+	if !(c.exportProjectFeed(resource) ||
 		c.exportDocker(resource, thisResource, resourceName) ||
 		c.exportAws(resource, thisResource, resourceName) ||
 		c.exportMaven(resource, thisResource, resourceName) ||
@@ -115,7 +115,7 @@ func (c FeedConverter) toHclResource(resource octopus2.Feed, thisResource *Resou
 	}
 }
 
-func (c FeedConverter) exportProjectFeed(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportProjectFeed(resource octopus2.Feed) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		return true
 	}

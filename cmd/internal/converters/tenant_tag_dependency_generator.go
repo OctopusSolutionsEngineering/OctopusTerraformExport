@@ -39,7 +39,7 @@ func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client clien
 
 	if recursive {
 
-		err = t.AddTagSetDependencies(tagSets, tags, tagSetConverter, dependencies)
+		err = t.AddTagSetDependencies(tagSets, tagSetConverter, dependencies)
 
 		return err
 	}
@@ -47,7 +47,7 @@ func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client clien
 	return nil
 }
 
-func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.TagSet, tags []octopus.Tag, tagSetConverter TagSetConverter, dependencies *ResourceDetailsCollection) error {
+func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.TagSet, tagSetConverter TagSetConverter, dependencies *ResourceDetailsCollection) error {
 	for _, tagSet := range tagSets {
 		err := tagSetConverter.ToHclByResource(tagSet, dependencies)
 		if err != nil {

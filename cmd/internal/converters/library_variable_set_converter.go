@@ -121,7 +121,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 	return nil
 }
 
-func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, _ bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	if c.libraryVariableSetIsExcluded(resource) {

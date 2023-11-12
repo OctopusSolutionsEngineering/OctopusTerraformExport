@@ -9,13 +9,13 @@ func TestTagSetDependencies(t *testing.T) {
 	tenantTagDependencyGenerator := TenantTagDependencyGenerator{}
 	tags := octopus.GeneralCollection[octopus.TagSet]{}
 	tags.Items = []octopus.TagSet{
-		octopus.TagSet{
+		{
 			Id:          "TagSet-1",
 			Name:        "tags",
 			Description: nil,
 			SortOrder:   0,
 			Tags: []octopus.Tag{
-				octopus.Tag{
+				{
 					Id:               "Tag-1",
 					Name:             "a",
 					CanonicalTagName: "tags/a",
@@ -23,7 +23,7 @@ func TestTagSetDependencies(t *testing.T) {
 					Description:      nil,
 					SortOrder:        0,
 				},
-				octopus.Tag{
+				{
 					Id:               "Tag-2",
 					Name:             "b",
 					CanonicalTagName: "tags/b",
@@ -33,13 +33,13 @@ func TestTagSetDependencies(t *testing.T) {
 				},
 			},
 		},
-		octopus.TagSet{
+		{
 			Id:          "TagSet-2",
 			Name:        "tags2",
 			Description: nil,
 			SortOrder:   0,
 			Tags: []octopus.Tag{
-				octopus.Tag{
+				{
 					Id:               "Tag-3",
 					Name:             "a",
 					CanonicalTagName: "tags2/a",
@@ -47,7 +47,7 @@ func TestTagSetDependencies(t *testing.T) {
 					Description:      nil,
 					SortOrder:        0,
 				},
-				octopus.Tag{
+				{
 					Id:               "Tag-4",
 					Name:             "b",
 					CanonicalTagName: "tags2/b",

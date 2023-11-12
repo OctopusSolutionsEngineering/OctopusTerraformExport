@@ -53,7 +53,7 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *Resour
 	return c.toHcl(resource, true, dependencies)
 }
 
-func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, dependencies *ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.TenantName, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {

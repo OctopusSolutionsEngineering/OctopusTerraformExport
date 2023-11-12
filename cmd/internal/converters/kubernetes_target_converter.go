@@ -184,7 +184,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				AzureServicePrincipalAuthentication: c.getAzureAuth(&target, dependencies),
 				CertificateAuthentication:           c.getCertAuth(&target, dependencies),
 				GcpAccountAuthentication:            c.getGoogleAuth(&target, dependencies),
-				PodAuthentication:                   c.getPodAuth(&target, dependencies),
+				PodAuthentication:                   c.getPodAuth(&target),
 			}
 			file := hclwrite.NewEmptyFile()
 
@@ -284,7 +284,7 @@ func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpoi
 	return nil
 }
 
-func (c KubernetesTargetConverter) getPodAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformPodAuthentication {
+func (c KubernetesTargetConverter) getPodAuth(target *octopus.KubernetesEndpointResource) *terraform.TerraformPodAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesPodService" {
 		return &terraform.TerraformPodAuthentication{
 			TokenPath: strutil.EmptyIfNil(target.Endpoint.Authentication.TokenPath),

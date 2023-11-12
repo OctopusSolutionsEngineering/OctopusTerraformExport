@@ -101,7 +101,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceD
 	return nil
 }
 
-func (c EnvironmentConverter) toHcl(environment octopus2.Environment, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
 	thisResource := ResourceDetails{}

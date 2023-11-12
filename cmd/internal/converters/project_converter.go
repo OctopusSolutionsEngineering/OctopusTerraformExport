@@ -186,13 +186,13 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	projectName := "project_" + sanitizer.SanitizeName(project.Name)
 
 	if recursive {
-		err := c.exportDependencies(project, projectName, dependencies)
+		err := c.exportDependencies(project, dependencies)
 
 		if err != nil {
 			return err
 		}
 	} else if lookups {
-		err := c.exportDependencyLookups(project, projectName, dependencies)
+		err := c.exportDependencyLookups(project, dependencies)
 
 		if err != nil {
 			return err
@@ -648,7 +648,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 	return nil
 }
 
-func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, dependencies *ResourceDetailsCollection) error {
 	// Export the project group
 	err := c.ProjectGroupConverter.ToHclLookupById(project.ProjectGroupId, dependencies)
 
@@ -691,7 +691,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, proj
 	return nil
 }
 
-func (c *ProjectConverter) exportDependencies(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencies(project octopus.Project, dependencies *ResourceDetailsCollection) error {
 	// Export the project group
 	err := c.ProjectGroupConverter.ToHclById(project.ProjectGroupId, dependencies)
 

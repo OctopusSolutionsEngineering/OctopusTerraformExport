@@ -59,7 +59,7 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetai
 	return c.toHcl(resource, true, dependencies)
 }
 
-func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, dependencies *ResourceDetailsCollection) error {
 
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
