@@ -207,7 +207,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 	accountConverter := converters.AccountConverter{
 		Client:                    client,
 		EnvironmentConverter:      machinePolicyConverter,
-		TenantConverter:           tenantConverter,
+		TenantConverter:           &tenantConverter,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
@@ -460,7 +460,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 				Excluder:             converters.DefaultExcluder{},
 				TagSetConverter:      tagsetConverter,
 			},
-			TenantConverter: tenantConverter,
+			TenantConverter: &tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
 				Client: client,
 			},
@@ -478,7 +478,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 			DummySecretVariableValues: args.DummySecretVariableValues,
 			DummySecretGenerator:      dummySecretGenerator,
 		},
-		TenantConverter:                   tenantConverter,
+		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,
 		TenantVariableConverter:           tenantVariableConverter,
 		MachinePolicyConverter:            machinePolicyConverter,
@@ -568,7 +568,7 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 	accountConverter := converters.AccountConverter{
 		Client:                    client,
 		EnvironmentConverter:      environmentConverter,
-		TenantConverter:           tenantConverter,
+		TenantConverter:           &tenantConverter,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
@@ -706,7 +706,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 	accountConverter := converters.AccountConverter{
 		Client:                    client,
 		EnvironmentConverter:      environmentConverter,
-		TenantConverter:           tenantConverter,
+		TenantConverter:           &tenantConverter,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
@@ -961,7 +961,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
-		TenantConverter: tenantConverter,
+		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
