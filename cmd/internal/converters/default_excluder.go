@@ -30,20 +30,20 @@ func (e DefaultExcluder) IsResourceExcluded(resourceName string, excludeAll bool
 	return false
 }
 
-func (c DefaultExcluder) FilteredTenantTags(tenantTags []string, excludeTenantTags args.ExcludeTenantTags, excludeTenantTagSets args.ExcludeTenantTagSets) []string {
+func (e DefaultExcluder) FilteredTenantTags(tenantTags []string, excludeTenantTags args.ExcludeTenantTags, excludeTenantTagSets args.ExcludeTenantTagSets) []string {
 	if tenantTags == nil {
 		return []string{}
 	}
 
 	tags := lo.Filter(tenantTags, func(item string, index int) bool {
-		if c.IsResourceExcluded(item, false, excludeTenantTags, nil) {
+		if e.IsResourceExcluded(item, false, excludeTenantTags, nil) {
 			return false
 		}
 
 		split := strings.Split(item, "/")
 
 		// Exclude the tag if it is part of an excluded tag set
-		return !c.IsResourceExcluded(split[0], false, excludeTenantTagSets, nil)
+		return !e.IsResourceExcluded(split[0], false, excludeTenantTagSets, nil)
 	})
 
 	return tags

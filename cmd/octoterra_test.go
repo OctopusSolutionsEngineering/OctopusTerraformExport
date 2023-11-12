@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
@@ -51,7 +52,12 @@ func exportSpaceImportAndTest(
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(dir)
 
 	err = cp.Copy("../test/terraform/z-createspace", dir)
 
@@ -312,7 +318,7 @@ func exportImportAndTest(
 	t.Parallel()
 
 	testFramework := test.OctopusContainerTest{}
-	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) error {
+	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) (funcErr error) {
 		// Act
 		newSpaceId, err := testFramework.ActWithCustomPrePopulatedSpace(
 			t,
@@ -327,7 +333,12 @@ func exportImportAndTest(
 		t.Log("EXPORTING TEST SPACE")
 
 		tempDir := getTempDir()
-		defer os.Remove(tempDir)
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+				funcErr = errors.Join(funcErr, err)
+			}
+		}(tempDir)
 
 		err = exportFunc(container.URI, newSpaceId, test.ApiKey, tempDir)
 

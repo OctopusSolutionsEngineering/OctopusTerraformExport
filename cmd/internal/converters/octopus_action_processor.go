@@ -169,6 +169,7 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 	return properties
 }
 
+// EscapeDollars escapes variable interpolation
 // https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
 func (c OctopusActionProcessor) EscapeDollars(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
@@ -178,6 +179,7 @@ func (c OctopusActionProcessor) EscapeDollars(properties map[string]string) map[
 	return sanitisedProperties
 }
 
+// EscapePercents escapes variable interpolation
 // https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
 func (c OctopusActionProcessor) EscapePercents(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}

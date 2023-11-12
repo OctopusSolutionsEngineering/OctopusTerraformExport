@@ -143,7 +143,7 @@ type ConvertToHclByResource[C any] interface {
 	ToHclByResource(resource C, dependencies *ResourceDetailsCollection) error
 }
 
-// ConvertToHclByResource creates a data lookup from the objects
+// ConvertToHclLookupByResource creates a data lookup from the objects
 type ConvertToHclLookupByResource[C any] interface {
 	ToHclLookupByResource(resource C, dependencies *ResourceDetailsCollection) error
 }
