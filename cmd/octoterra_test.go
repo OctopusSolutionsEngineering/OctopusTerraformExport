@@ -117,6 +117,8 @@ func exportSpaceImportAndTest(
 				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
 				ExcludeTenantTags:                arguments.ExcludeTenantTags,
 				ExcludeTenantTagSets:             arguments.ExcludeTenantTagSets,
+				RunbookId:                        arguments.RunbookId,
+				RunbookName:                      arguments.RunbookName,
 			}
 
 			return ConvertSpaceToTerraform(args)
@@ -196,6 +198,8 @@ func exportProjectImportAndTest(
 				ExcludeTenantsWithTags:           arguments.ExcludeTenantsWithTags,
 				ExcludeTenantTags:                arguments.ExcludeTenantTags,
 				ExcludeTenantTagSets:             arguments.ExcludeTenantTagSets,
+				RunbookId:                        arguments.RunbookId,
+				RunbookName:                      arguments.RunbookName,
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -236,9 +240,17 @@ func exportProjectLookupImportAndTest(
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
 			projectId, err := ConvertProjectNameToId(url, space, test.ApiKey, projectName)
-
 			if err != nil {
 				return err
+			}
+
+			runbookId := ""
+			if argumnets.RunbookName != "" {
+				runbookId, err = ConvertRunbookNameToId(url, space, test.ApiKey, projectId, argumnets.RunbookName)
+
+				if err != nil {
+					return err
+				}
 			}
 
 			args := args2.Arguments{
@@ -274,6 +286,12 @@ func exportProjectLookupImportAndTest(
 				ExcludeAllTenants:                argumnets.ExcludeAllTenants,
 				ExcludeProjects:                  argumnets.ExcludeProjects,
 				ExcludeAllTargets:                argumnets.ExcludeAllTargets,
+				RunbookId:                        runbookId,
+				RunbookName:                      "",
+			}
+
+			if args.RunbookId != "" {
+				return ConvertRunbookToTerraform(args)
 			}
 
 			return ConvertProjectToTerraform(args)
@@ -5987,6 +6005,58 @@ func TestTenantedResources(t *testing.T) {
 
 			if len(deploymentProcess.Steps[0].Actions[0].TenantTags) != 1 {
 				t.Fatal("Deployment process must have an action with 1 tenant tag")
+			}
+
+			return nil
+		})
+}
+
+// TestSingleRunbookExport verifies that a single runbook can be reimported with the correct settings.
+func TestSingleRunbookExport(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/69-runbookexport/space_creation",
+		"../test/terraform/69-runbookexport/space_prepopulation",
+		"../test/terraform/69-runbookexport/space_population",
+		"../test/terraform/69-runbookexport/space_creation",
+		"../test/terraform/69-runbookexport/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			RunbookName: "Runbook",
+			ProjectName: "Test",
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			// Verify that the single project was exported
+			err := func() error {
+				runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+				err := octopusClient.GetAllResources("Runbooks", &runbookCollection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(runbookCollection.Items) != 1 {
+					t.Fatalf("There must only be one runbook")
+				}
+
+				if runbookCollection.Items[0].Name != "Runbook" {
+					t.Fatalf("The runbook must be called \"Runbook\"")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
 			}
 
 			return nil
