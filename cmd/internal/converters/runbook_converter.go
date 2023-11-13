@@ -65,32 +65,6 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *Resourc
 	return c.toHcl(resource, parentResource.Name, false, true, dependencies)
 }
 
-func (c *RunbookConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
-	if id == "" {
-		return nil
-	}
-
-	if dependencies.HasResource(id, c.GetResourceType()) {
-		return nil
-	}
-
-	resource := octopus.Runbook{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
-
-	if err != nil {
-		return err
-	}
-
-	parentResource := octopus.Project{}
-	_, err = c.Client.GetResourceById(c.GetResourceType(), id, &parentResource)
-
-	if err != nil {
-		return err
-	}
-
-	return c.toHcl(resource, parentResource.Name, true, false, dependencies)
-}
-
 func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)

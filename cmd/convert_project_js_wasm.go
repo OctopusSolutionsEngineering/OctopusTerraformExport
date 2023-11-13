@@ -93,7 +93,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	accountConverter := converters.AccountConverter{
 		Client:               client,
 		EnvironmentConverter: lifecycleConverter,
-		TenantConverter:      tenantConverter,
+		TenantConverter:      &tenantConverter,
 		ExcludeTenantTags:    nil,
 		ExcludeTenantTagSets: nil,
 		Excluder:             converters.DefaultExcluder{},
@@ -256,7 +256,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		IgnoreProjectChanges: false,
 	}
 
-	err := converters.ProjectConverter{
+	err := (&converters.ProjectConverter{
 		ExcludeAllRunbooks:          false,
 		Client:                      client,
 		LifecycleConverter:          lifecycleConverter,
@@ -280,7 +280,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
-		TenantConverter: tenantConverter,
+		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
@@ -288,7 +288,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ChannelConverter:       channelConverter,
 		RunbookConverter:       &runbookConverter,
 		IgnoreCacManagedValues: false,
-	}.ToHclByIdWithLookups(projectId, &dependencies)
+	}).ToHclByIdWithLookups(projectId, &dependencies)
 
 	if err != nil {
 		return nil, err
