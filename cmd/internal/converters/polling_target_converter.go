@@ -17,6 +17,9 @@ type PollingTargetConverter struct {
 	MachinePolicyConverter ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTargets         args.ExcludeTargets
+	ExcludeTargetsRegex    args.ExcludeTargets
+	ExcludeTargetsExcept   args.ExcludeTargets
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
@@ -64,10 +67,6 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 }
 
 func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
-		return nil
-	}
-
 	if id == "" {
 		return nil
 	}
@@ -81,6 +80,11 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *Resourc
 
 	if err != nil {
 		return err
+	}
+
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+		return nil
 	}
 
 	if resource.Endpoint.CommunicationStyle != "TentacleActive" {
@@ -115,7 +119,8 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *Resourc
 }
 
 func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
 		return nil
 	}
 

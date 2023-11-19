@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"k8s.io/utils/strings/slices"
 	"regexp"
 	"strings"
 )
@@ -38,11 +37,13 @@ type ProjectConverter struct {
 	IgnoreProjectGroupChanges    bool
 	IgnoreProjectNameChanges     bool
 	ExcludeProjects              args.ExcludeProjects
+	ExcludeProjectsExcept        args.ExcludeProjects
 	ExcludeProjectsRegex         args.ExcludeProjectsRegex
 	ExcludeAllProjects           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 	DummySecretVariableValues    bool
 	DummySecretGenerator         DummySecretGenerator
+	Excluder                     ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
 	LookupOnlyMode bool
 }
@@ -175,9 +176,8 @@ func (c *ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCol
 }
 
 func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
-	c.compileRegexes()
-
-	if c.projectIsExcluded(project) {
+	// Ignore excluded projects
+	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
 		return nil
 	}
 
@@ -732,34 +732,4 @@ func (c *ProjectConverter) exportDependencies(project octopus.Project, dependenc
 	}
 
 	return nil
-}
-
-func (c *ProjectConverter) compileRegexes() {
-	if c.ExcludeProjectsRegex != nil {
-		c.excludeRunbooksRegexCompiled = lo.FilterMap(c.ExcludeProjectsRegex, func(x string, index int) (*regexp.Regexp, bool) {
-			re, err := regexp.Compile(x)
-			if err != nil {
-				return nil, false
-			}
-			return re, true
-		})
-	}
-}
-
-func (c *ProjectConverter) projectIsExcluded(project octopus.Project) bool {
-	if c.ExcludeAllProjects {
-		return true
-	}
-
-	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
-		return true
-	}
-
-	if c.excludeRunbooksRegexCompiled != nil {
-		return lo.SomeBy(c.excludeRunbooksRegexCompiled, func(x *regexp.Regexp) bool {
-			return x.MatchString(project.Name)
-		})
-	}
-
-	return false
 }

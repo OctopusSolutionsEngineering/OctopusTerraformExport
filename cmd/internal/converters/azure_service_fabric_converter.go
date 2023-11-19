@@ -18,6 +18,9 @@ type AzureServiceFabricTargetConverter struct {
 	MachinePolicyConverter    ConverterById
 	EnvironmentConverter      ConverterById
 	ExcludeAllTargets         bool
+	ExcludeTargets            args.ExcludeTargets
+	ExcludeTargetsRegex       args.ExcludeTargets
+	ExcludeTargetsExcept      args.ExcludeTargets
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
 	ExcludeTenantTags         args.ExcludeTenantTags
@@ -67,10 +70,6 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 }
 
 func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
-		return nil
-	}
-
 	if id == "" {
 		return nil
 	}
@@ -84,6 +83,11 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 
 	if err != nil {
 		return err
+	}
+
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+		return nil
 	}
 
 	if resource.Endpoint.CommunicationStyle != "AzureServiceFabricCluster" {
@@ -120,7 +124,8 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 }
 
 func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
 		return nil
 	}
 

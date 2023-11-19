@@ -19,6 +19,9 @@ type SshTargetConverter struct {
 	AccountConverter       ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTargets         args.ExcludeTargets
+	ExcludeTargetsRegex    args.ExcludeTargets
+	ExcludeTargetsExcept   args.ExcludeTargets
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
@@ -66,10 +69,6 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 }
 
 func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
-		return nil
-	}
-
 	if id == "" {
 		return nil
 	}
@@ -83,6 +82,11 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 
 	if err != nil {
 		return err
+	}
+
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+		return nil
 	}
 
 	if resource.Endpoint.CommunicationStyle != "Ssh" {
@@ -119,7 +123,8 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 }
 
 func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
 		return nil
 	}
 

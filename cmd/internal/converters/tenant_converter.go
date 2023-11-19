@@ -14,26 +14,26 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
-	"regexp"
 	"strings"
 )
 
 type TenantConverter struct {
-	Client                       client.OctopusClient
-	TenantVariableConverter      ConverterByTenantId
-	EnvironmentConverter         ConverterById
-	TagSetConverter              ConvertToHclByResource[octopus2.TagSet]
-	ExcludeTenantTagSets         args.ExcludeTenantTagSets
-	ExcludeTenantTags            args.ExcludeTenantTags
-	ExcludeTenants               args.ExcludeTenants
-	ExcludeTenantsWithTags       args.ExcludeTenantsWithTags
-	ExcludeTenantsExcept         args.ExcludeTenantsExcept
-	ExcludeAllTenants            bool
-	Excluder                     ExcludeByName
-	ExcludeProjects              args.ExcludeProjects
-	ExcludeProjectsRegex         args.ExcludeProjectsRegex
-	ExcludeAllProjects           bool
-	excludeRunbooksRegexCompiled []*regexp.Regexp
+	Client                  client.OctopusClient
+	TenantVariableConverter ConverterByTenantId
+	EnvironmentConverter    ConverterById
+	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
+	ExcludeTenantTagSets    args.ExcludeTenantTagSets
+	ExcludeTenantTags       args.ExcludeTenantTags
+	ExcludeTenants          args.ExcludeTenants
+	ExcludeTenantsRegex     args.ExcludeTenants
+	ExcludeTenantsWithTags  args.ExcludeTenantsWithTags
+	ExcludeTenantsExcept    args.ExcludeTenantsExcept
+	ExcludeAllTenants       bool
+	Excluder                ExcludeByName
+	ExcludeProjects         args.ExcludeProjects
+	ExcludeProjectsExcept   args.ExcludeProjects
+	ExcludeProjectsRegex    args.ExcludeProjectsRegex
+	ExcludeAllProjects      bool
 }
 
 func (c *TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -109,10 +109,13 @@ func (c *TenantConverter) ToHclLookupByProjectId(projectId string, dependencies 
 
 func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
 
-	c.compileRegexes()
-
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
+		return nil
+	}
+
+	// Ignore excluded runbooks
+	if c.Excluder.IsResourceExcludedWithRegex(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsRegex, c.ExcludeTenantsExcept) {
 		return nil
 	}
 
@@ -251,7 +254,7 @@ func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
 		return false, err
 	}
 
-	return c.projectIsExcluded(project), nil
+	return c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept), nil
 }
 
 func (c *TenantConverter) getProjects(tags map[string][]string, dependencies *ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
@@ -335,34 +338,4 @@ func (c *TenantConverter) addTagSetDependencies(tenant octopus2.Tenant, recursiv
 	}
 
 	return terraformDependencies, nil
-}
-
-func (c *TenantConverter) compileRegexes() {
-	if c.ExcludeProjectsRegex != nil {
-		c.excludeRunbooksRegexCompiled = lo.FilterMap(c.ExcludeProjectsRegex, func(x string, index int) (*regexp.Regexp, bool) {
-			re, err := regexp.Compile(x)
-			if err != nil {
-				return nil, false
-			}
-			return re, true
-		})
-	}
-}
-
-func (c *TenantConverter) projectIsExcluded(project octopus2.Project) bool {
-	if c.ExcludeAllProjects {
-		return true
-	}
-
-	if c.ExcludeProjects != nil && slices.Index(c.ExcludeProjects, project.Name) != -1 {
-		return true
-	}
-
-	if c.excludeRunbooksRegexCompiled != nil {
-		return lo.SomeBy(c.excludeRunbooksRegexCompiled, func(x *regexp.Regexp) bool {
-			return x.MatchString(project.Name)
-		})
-	}
-
-	return false
 }

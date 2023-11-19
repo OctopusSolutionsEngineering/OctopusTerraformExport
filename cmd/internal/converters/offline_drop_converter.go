@@ -17,6 +17,9 @@ type OfflineDropTargetConverter struct {
 	MachinePolicyConverter    ConverterById
 	EnvironmentConverter      ConverterById
 	ExcludeAllTargets         bool
+	ExcludeTargets            args.ExcludeTargets
+	ExcludeTargetsRegex       args.ExcludeTargets
+	ExcludeTargetsExcept      args.ExcludeTargets
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
 	ExcludeTenantTags         args.ExcludeTenantTags
@@ -66,10 +69,6 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceD
 }
 
 func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
-		return nil
-	}
-
 	if id == "" {
 		return nil
 	}
@@ -83,6 +82,11 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 
 	if err != nil {
 		return err
+	}
+
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+		return nil
 	}
 
 	if resource.Endpoint.CommunicationStyle != "OfflineDrop" {
@@ -117,7 +121,8 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 }
 
 func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
 		return nil
 	}
 

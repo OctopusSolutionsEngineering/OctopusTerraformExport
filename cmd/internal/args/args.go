@@ -46,13 +46,35 @@ type Arguments struct {
 	ExcludeTenantTags                ExcludeTenantTags
 	ExcludeTenantTagSets             ExcludeTenantTagSets
 	ExcludeTenants                   ExcludeTenants
+	ExcludeTenantsRegex              ExcludeTenants
 	ExcludeTenantsWithTags           ExcludeTenantsWithTags
 	ExcludeTenantsExcept             ExcludeTenantsExcept
 	ExcludeAllTenants                bool
 	ExcludeProjects                  ExcludeProjects
+	ExcludeProjectsExcept            ExcludeProjects
 	ExcludeProjectsRegex             ExcludeProjectsRegex
 	ExcludeAllProjects               bool
 	ExcludeAllTargets                bool
+	ExcludeTargets                   ExcludeTargets
+	ExcludeTargetsRegex              ExcludeTargets
+	ExcludeTargetsExcept             ExcludeTargets
+}
+
+type ExcludeTargets []string
+
+func (i *ExcludeTargets) String() string {
+	return "excluded targets"
+}
+
+func (i *ExcludeTargets) Set(value string) error {
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
+	return nil
 }
 
 type ExcludeProjects []string
@@ -275,7 +297,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.ExcludeAllLibraryVariableSets, "excludeAllLibraryVariableSets", false, "Exclude all library variable sets.")
 	flags.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project.")
 	flags.Var(&arguments.ExcludeLibraryVariableSetsRegex, "excludeLibraryVariableSetRegex", "A library variable set to be excluded when exporting a single project based on regex match.")
-	flags.Var(&arguments.ExcludeLibraryVariableSetsExcept, "excludeAllLibraryVariableSets", "All library variable sets except those defined with excludeRunbooksExcept are excluded.")
+	flags.Var(&arguments.ExcludeLibraryVariableSetsExcept, "excludeAllLibraryVariableSets", "All library variable sets except those defined with excludeAllLibraryVariableSets are excluded.")
 
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
@@ -289,17 +311,20 @@ func ParseArgs(args []string) (Arguments, string, error) {
 
 	flags.BoolVar(&arguments.ExcludeAllTenants, "excludeAllTenants", false, "Exclude all tenants from being exported.")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
+	flags.Var(&arguments.ExcludeTenantsRegex, "excludeTenantsRegex", "Exclude a tenant from being exported based on a regex.")
 	flags.Var(&arguments.ExcludeTenantsWithTags, "excludeTenantsWithTag", "Exclude any tenant with this tag from being exported. This is useful when using tags to separate tenants that can be exported with those that should not.")
-	// missing regex
 	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")
 
 	flags.BoolVar(&arguments.ExcludeAllTargets, "excludeAllTargets", false, "Exclude all targets from being exported.")
+	flags.Var(&arguments.ExcludeTargets, "excludeTargets", "Exclude targets from being exported.")
+	flags.Var(&arguments.ExcludeTargetsRegex, "excludeTargetsRegex", "Exclude targets from being exported based on a regex.")
+	flags.Var(&arguments.ExcludeTargetsExcept, "excludeTargetsExcept", "Exclude all targets except for those define in this list. The targets in excludeTargets take precedence, so a tenant define here and in excludeTargets is excluded.")
 	// missing some, regex, except
 
 	flags.BoolVar(&arguments.ExcludeAllProjects, "excludeAllProjects", false, "Exclude all projects from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")
-	// missing except
+	flags.Var(&arguments.ExcludeProjectsExcept, "excludeProjectsExcept", "All projects except those defined with excludeProjectsExcept are excluded. This is only used when exporting a space.")
 
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", true, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")

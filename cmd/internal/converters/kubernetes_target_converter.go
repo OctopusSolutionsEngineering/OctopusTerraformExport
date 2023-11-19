@@ -21,6 +21,9 @@ type KubernetesTargetConverter struct {
 	CertificateConverter   ConverterById
 	EnvironmentConverter   ConverterById
 	ExcludeAllTargets      bool
+	ExcludeTargets         args.ExcludeTargets
+	ExcludeTargetsRegex    args.ExcludeTargets
+	ExcludeTargetsExcept   args.ExcludeTargets
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
@@ -68,10 +71,6 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 }
 
 func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
-		return nil
-	}
-
 	if id == "" {
 		return nil
 	}
@@ -85,6 +84,11 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 
 	if err != nil {
 		return err
+	}
+
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+		return nil
 	}
 
 	if resource.Endpoint.CommunicationStyle != "Kubernetes" {
@@ -121,7 +125,8 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 }
 
 func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
-	if c.ExcludeAllTargets {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
 		return nil
 	}
 
