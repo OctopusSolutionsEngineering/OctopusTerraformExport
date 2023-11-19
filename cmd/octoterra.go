@@ -423,10 +423,14 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
-		EnvironmentConverter: environmentConverter,
-		ExcludedRunbooks:     nil,
-		ExcludeRunbooksRegex: nil,
-		IgnoreProjectChanges: false,
+		EnvironmentConverter:  environmentConverter,
+		ExcludedRunbooks:      nil,
+		ExcludeRunbooksRegex:  nil,
+		Excluder:              converters.DefaultExcluder{},
+		ExcludeRunbooksExcept: nil,
+		ExcludeAllRunbooks:    false,
+		ProjectConverter:      nil,
+		IgnoreProjectChanges:  false,
 	}
 
 	spaceConverter := converters.SpaceConverter{
@@ -618,11 +622,14 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
-		EnvironmentConverter: environmentConverter,
-		ExcludedRunbooks:     args.ExcludeRunbooks,
-		ExcludeRunbooksRegex: args.ExcludeRunbooksRegex,
-		IgnoreProjectChanges: args.IgnoreProjectChanges,
-		ProjectConverter:     projectConverter,
+		EnvironmentConverter:  environmentConverter,
+		ExcludedRunbooks:      nil,
+		ExcludeRunbooksRegex:  nil,
+		ExcludeRunbooksExcept: nil,
+		ExcludeAllRunbooks:    false,
+		Excluder:              converters.DefaultExcluder{},
+		IgnoreProjectChanges:  args.IgnoreProjectChanges,
+		ProjectConverter:      projectConverter,
 	}
 
 	err := runbookConverter.ToHclByIdWithLookups(args.RunbookId, &dependencies)
