@@ -94,6 +94,20 @@ resource "octopusdeploy_project" "project_1" {
   }
 }
 
+resource "octopusdeploy_variable" "excluded_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "Excluded"
+  value    = "PlainText"
+}
+
+resource "octopusdeploy_variable" "named_excluded_variable" {
+  owner_id = octopusdeploy_project.project_1.id
+  type     = "String"
+  name     = "NamedExcluded"
+  value    = "PlainText"
+}
+
 resource "octopusdeploy_variable" "string_variable" {
   owner_id = octopusdeploy_project.project_1.id
   type     = "String"
