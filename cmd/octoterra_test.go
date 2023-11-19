@@ -2256,7 +2256,7 @@ func TestScriptModuleExport(t *testing.T) {
 		})
 }
 
-// TestTenantsExport verifies that a git credential can be reimported with the correct settings
+// TestTenantsExport verifies that a tenant can be reimported with the correct settings
 func TestTenantsExport(t *testing.T) {
 	exportSpaceImportAndTest(
 		t,
@@ -2264,7 +2264,9 @@ func TestTenantsExport(t *testing.T) {
 		"../test/terraform/24-tenants/space_population",
 		[]string{},
 		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			ExcludeTenantsExcept: []string{"Team A"},
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -2317,6 +2319,37 @@ func TestTenantsExport(t *testing.T) {
 
 			if !found {
 				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsExcludeAllExport verifies that a tenant is excluded
+func TestTenantsExcludeAllExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/24-tenants/space_creation",
+		"../test/terraform/24-tenants/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeAllTenants: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			if len(collection.Items) != 0 {
+				t.Fatal("Space must not have any tenants in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2447,6 +2480,47 @@ func TestTenantsExcludeTagSetsExport(t *testing.T) {
 
 			if len(typeTagSet) != 0 {
 				t.Fatal("Space must not have a tagset called \"type\"")
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsExcludeRegexExport verifies that excluded tag sets
+func TestTenantsExcludeRegexExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/24-tenants/space_creation",
+		"../test/terraform/24-tenants/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeTenantsRegex: []string{"^Excluded$"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			if lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
+				return item.Name == "Excluded"
+			}) {
+				t.Fatal("Space must not have tenant called \"Excluded\" in space " + recreatedSpaceId)
+			}
+
+			teamA := lo.Filter(collection.Items, func(item octopus.Tenant, index int) bool {
+				return item.Name == "Team A"
+			})
+
+			if len(teamA) != 1 {
+				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4885,7 +4959,9 @@ func TestRunbookExport(t *testing.T) {
 		"../test/terraform/44-runbooks/space_population",
 		[]string{},
 		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			ExcludeRunbooksExcept: []string{"Runbook"},
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
