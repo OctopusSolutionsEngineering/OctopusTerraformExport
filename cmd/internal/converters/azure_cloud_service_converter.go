@@ -85,7 +85,7 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 	}
 
 	// Ignore excluded targets
-	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
 	}
 
@@ -124,7 +124,7 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 
 func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded targets
-	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsExcept, c.ExcludeTargetsRegex) {
+	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
 	}
 

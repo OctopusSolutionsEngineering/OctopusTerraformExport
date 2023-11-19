@@ -412,6 +412,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeVariableEnvironmentScopes:  nil,
 		DummySecretVariableValues:         args.DummySecretVariableValues,
 		DummySecretGenerator:              dummySecretGenerator,
+		Excluder:                          converters.DefaultExcluder{},
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           octopusClient,
