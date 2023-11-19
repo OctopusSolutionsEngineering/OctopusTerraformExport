@@ -4,6 +4,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
+	"regexp"
 	"strings"
 )
 
@@ -25,6 +26,42 @@ func (e DefaultExcluder) IsResourceExcluded(resourceName string, excludeAll bool
 
 	if excludeAllButThese != nil && len(excludeAllButThese) != 0 && slices.Index(excludeAllButThese, resourceName) == -1 {
 		return true
+	}
+
+	return false
+}
+
+func (e DefaultExcluder) IsResourceExcludedWithRegex(resourceName string, excludeAll bool, excludeThese []string, excludeTheseRegexes []string, excludeAllButThese []string) bool {
+	if strings.TrimSpace(resourceName) == "" {
+		return true
+	}
+
+	if excludeAll {
+		return true
+	}
+
+	if excludeThese != nil && slices.Index(excludeThese, resourceName) != -1 {
+		return true
+	}
+
+	if excludeAllButThese != nil && len(excludeAllButThese) != 0 && slices.Index(excludeAllButThese, resourceName) == -1 {
+		return true
+	}
+
+	if excludeTheseRegexes != nil {
+		matched := lo.ContainsBy(excludeTheseRegexes, func(item string) bool {
+			r, err := regexp.Compile(item)
+
+			if err != nil {
+				return false
+			}
+
+			return r.MatchString(resourceName)
+		})
+
+		if matched {
+			return true
+		}
 	}
 
 	return false

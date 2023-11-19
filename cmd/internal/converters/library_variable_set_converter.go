@@ -12,9 +12,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 	"regexp"
 	"strings"
 )
@@ -24,9 +22,12 @@ type LibraryVariableSetConverter struct {
 	VariableSetConverter                    ConverterByIdWithNameAndParent
 	Excluded                                args.ExcludeLibraryVariableSets
 	ExcludeLibraryVariableSetsRegex         args.ExcludeLibraryVariableSets
+	ExcludeLibraryVariableSetsExcept        args.ExcludeLibraryVariableSets
+	ExcludeAllLibraryVariableSets           bool
 	excludeLibraryVariableSetsRegexCompiled []*regexp.Regexp
 	DummySecretVariableValues               bool
 	DummySecretGenerator                    DummySecretGenerator
+	Excluder                                ExcludeByName
 }
 
 func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
@@ -85,9 +86,8 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 		return err
 	}
 
-	c.compileRegexes()
-
-	if c.libraryVariableSetIsExcluded(resource) {
+	// Ignore excluded runbooks
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
 		return nil
 	}
 
@@ -122,9 +122,8 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 }
 
 func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, _ bool, dependencies *ResourceDetailsCollection) error {
-	c.compileRegexes()
-
-	if c.libraryVariableSetIsExcluded(resource) {
+	// Ignore excluded runbooks
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
 		return nil
 	}
 
@@ -277,30 +276,4 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 		})
 	}
 	return collection, templateMap
-}
-
-func (c *LibraryVariableSetConverter) compileRegexes() {
-	if c.ExcludeLibraryVariableSetsRegex != nil {
-		c.excludeLibraryVariableSetsRegexCompiled = lo.FilterMap(c.ExcludeLibraryVariableSetsRegex, func(x string, index int) (*regexp.Regexp, bool) {
-			re, err := regexp.Compile(x)
-			if err != nil {
-				return nil, false
-			}
-			return re, true
-		})
-	}
-}
-
-func (c *LibraryVariableSetConverter) libraryVariableSetIsExcluded(resource octopus.LibraryVariableSet) bool {
-	if c.Excluded != nil && slices.Index(c.Excluded, resource.Name) != -1 {
-		return true
-	}
-
-	if c.excludeLibraryVariableSetsRegexCompiled != nil {
-		return lo.SomeBy(c.excludeLibraryVariableSetsRegexCompiled, func(x *regexp.Regexp) bool {
-			return x.MatchString(resource.Name)
-		})
-	}
-
-	return false
 }

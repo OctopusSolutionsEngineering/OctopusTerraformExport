@@ -24,7 +24,10 @@ type RunbookConverter struct {
 	ProjectConverter             ConverterAndLookupById
 	ExcludedRunbooks             args.ExcludeRunbooks
 	ExcludeRunbooksRegex         args.ExcludeRunbooks
+	ExcludeRunbooksExcept        args.ExcludeRunbooks
+	ExcludeAllRunbooks           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
+	Excluder                     ExcludeByName
 	IgnoreProjectChanges         bool
 }
 
@@ -107,6 +110,11 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 
 func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
+
+	// Ignore excluded runbooks
+	if c.Excluder.IsResourceExcludedWithRegex(runbook.Name, c.ExcludeAllRunbooks, c.ExcludedRunbooks, c.ExcludeRunbooksRegex, c.ExcludeRunbooksExcept) {
+		return nil
+	}
 
 	if c.runbookIsExcluded(runbook) {
 		return nil

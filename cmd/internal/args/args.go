@@ -28,10 +28,13 @@ type Arguments struct {
 	ExcludeAllRunbooks               bool
 	ExcludeRunbooks                  ExcludeRunbooks
 	ExcludeRunbooksRegex             ExcludeRunbooks
+	ExcludeRunbooksExcept            ExcludeRunbooks
 	ExcludeProvider                  bool
 	IncludeOctopusOutputVars         bool
 	ExcludeLibraryVariableSets       ExcludeLibraryVariableSets
 	ExcludeLibraryVariableSetsRegex  ExcludeLibraryVariableSets
+	ExcludeLibraryVariableSetsExcept ExcludeLibraryVariableSets
+	ExcludeAllLibraryVariableSets    bool
 	IgnoreProjectChanges             bool
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
@@ -263,22 +266,41 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flags.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
 	flags.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
+
 	flags.BoolVar(&arguments.ExcludeAllRunbooks, "excludeAllRunbooks", false, "Exclude all runbooks when exporting a project. This only takes effect when exporting a single project.")
 	flags.Var(&arguments.ExcludeRunbooks, "excludeRunbook", "A runbook to be excluded when exporting a single project.")
 	flags.Var(&arguments.ExcludeRunbooksRegex, "excludeRunbookRegex", "A runbook to be excluded when exporting a single project based on regex match.")
+	flags.Var(&arguments.ExcludeRunbooksExcept, "excludeRunbooksExcept", "All runbooks except those defined with excludeRunbooksExcept are excluded.")
+
+	flags.BoolVar(&arguments.ExcludeAllLibraryVariableSets, "excludeAllLibraryVariableSets", false, "Exclude all library variable sets.")
 	flags.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project.")
 	flags.Var(&arguments.ExcludeLibraryVariableSetsRegex, "excludeLibraryVariableSetRegex", "A library variable set to be excluded when exporting a single project based on regex match.")
+	flags.Var(&arguments.ExcludeLibraryVariableSetsExcept, "excludeAllLibraryVariableSets", "All library variable sets except those defined with excludeRunbooksExcept are excluded.")
+
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flags.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
+
+	// missing all, regex, except
 	flags.Var(&arguments.ExcludeTenantTags, "excludeTenantTags", "Exclude an individual tenant tag from being exported. Tags are in the format \"taggroup/tagname\".")
+
+	// missing all, regex, except
 	flags.Var(&arguments.ExcludeTenantTagSets, "excludeTenantTagSets", "Exclude a tenant tag set from being exported.")
+
+	flags.BoolVar(&arguments.ExcludeAllTenants, "excludeAllTenants", false, "Exclude all tenants from being exported.")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")
 	flags.Var(&arguments.ExcludeTenantsWithTags, "excludeTenantsWithTag", "Exclude any tenant with this tag from being exported. This is useful when using tags to separate tenants that can be exported with those that should not.")
+	// missing regex
 	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")
+
+	flags.BoolVar(&arguments.ExcludeAllTargets, "excludeAllTargets", false, "Exclude all targets from being exported.")
+	// missing some, regex, except
+
+	flags.BoolVar(&arguments.ExcludeAllProjects, "excludeAllProjects", false, "Exclude all projects from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")
-	flags.BoolVar(&arguments.ExcludeAllProjects, "excludeAllProjects", false, "Exclude all projects from being exported. This is only used when exporting a space.")
+	// missing except
+
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", true, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
 	flags.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
@@ -286,8 +308,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.IgnoreProjectGroupChanges, "ignoreProjectGroupChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's group.")
 	flags.BoolVar(&arguments.IgnoreProjectNameChanges, "ignoreProjectNameChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's name.")
 	flags.BoolVar(&arguments.LookUpDefaultWorkerPools, "lookUpDefaultWorkerPools", false, "Reference the worker pool by name when a step uses the default worker pool. This means exported projects do not inherit the default worker pool when they are applied in a new space.")
-	flags.BoolVar(&arguments.ExcludeAllTenants, "excludeAllTenants", false, "Exclude all tenants from being exported.")
-	flags.BoolVar(&arguments.ExcludeAllTargets, "excludeAllTargets", false, "Exclude all targets from being exported.")
+
 	err := flags.Parse(args)
 
 	if err != nil {

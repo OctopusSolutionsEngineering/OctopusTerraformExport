@@ -386,12 +386,15 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		DummySecretGenerator:              dummySecretGenerator,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
-		Client:                          octopusClient,
-		VariableSetConverter:            &variableSetConverter,
-		Excluded:                        args.ExcludeLibraryVariableSets,
-		ExcludeLibraryVariableSetsRegex: args.ExcludeLibraryVariableSetsRegex,
-		DummySecretVariableValues:       args.DummySecretVariableValues,
-		DummySecretGenerator:            dummySecretGenerator,
+		Client:                           octopusClient,
+		VariableSetConverter:             &variableSetConverter,
+		Excluded:                         args.ExcludeLibraryVariableSets,
+		ExcludeLibraryVariableSetsRegex:  args.ExcludeLibraryVariableSetsRegex,
+		ExcludeLibraryVariableSetsExcept: args.ExcludeLibraryVariableSetsExcept,
+		ExcludeAllLibraryVariableSets:    args.ExcludeAllLibraryVariableSets,
+		DummySecretVariableValues:        args.DummySecretVariableValues,
+		DummySecretGenerator:             dummySecretGenerator,
+		Excluder:                         converters.DefaultExcluder{},
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
@@ -896,12 +899,15 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
-		Client:                          octopusClient,
-		VariableSetConverter:            &variableSetConverterForLibrary,
-		Excluded:                        args.ExcludeLibraryVariableSets,
-		ExcludeLibraryVariableSetsRegex: args.ExcludeLibraryVariableSetsRegex,
-		DummySecretVariableValues:       args.DummySecretVariableValues,
-		DummySecretGenerator:            dummySecretGenerator,
+		Client:                           octopusClient,
+		VariableSetConverter:             &variableSetConverterForLibrary,
+		Excluded:                         args.ExcludeLibraryVariableSets,
+		ExcludeLibraryVariableSetsRegex:  args.ExcludeLibraryVariableSetsRegex,
+		ExcludeLibraryVariableSetsExcept: args.ExcludeLibraryVariableSetsExcept,
+		ExcludeAllLibraryVariableSets:    args.ExcludeAllLibraryVariableSets,
+		DummySecretVariableValues:        args.DummySecretVariableValues,
+		DummySecretGenerator:             dummySecretGenerator,
+		Excluder:                         converters.DefaultExcluder{},
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
@@ -930,10 +936,14 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      tagsetConverter,
 		},
-		EnvironmentConverter: environmentConverter,
-		ExcludedRunbooks:     args.ExcludeRunbooks,
-		ExcludeRunbooksRegex: args.ExcludeRunbooksRegex,
-		IgnoreProjectChanges: args.IgnoreProjectChanges,
+		EnvironmentConverter:  environmentConverter,
+		ProjectConverter:      nil,
+		ExcludedRunbooks:      args.ExcludeRunbooks,
+		ExcludeRunbooksRegex:  args.ExcludeRunbooksRegex,
+		ExcludeRunbooksExcept: args.ExcludeRunbooksExcept,
+		ExcludeAllRunbooks:    args.ExcludeAllRunbooks,
+		Excluder:              converters.DefaultExcluder{},
+		IgnoreProjectChanges:  args.IgnoreProjectChanges,
 	}
 
 	projectConverter := converters.ProjectConverter{
