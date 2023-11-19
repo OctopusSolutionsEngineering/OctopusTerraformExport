@@ -44,13 +44,16 @@ type VariableSetConverter struct {
 	IgnoreCacManagedValues               bool
 	DefaultSecretVariableValues          bool
 	DummySecretVariableValues            bool
+	ExcludeAllProjectVariables           bool
 	ExcludeProjectVariables              args.ExcludeVariables
+	ExcludeProjectVariablesExcept        args.ExcludeVariables
 	ExcludeProjectVariablesRegex         args.ExcludeVariables
 	excludeProjectVariablesRegexCompiled []*regexp.Regexp
 	IgnoreProjectChanges                 bool
 	DummySecretGenerator                 DummySecretGenerator
 	ExcludeVariableEnvironmentScopes     args.ExcludeVariableEnvironmentScopes
 	excludeVariableEnvironmentScopesIds  []string
+	Excluder                             ExcludeByName
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
@@ -161,7 +164,6 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 }
 
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
-	c.compileRegexes()
 	c.convertEnvironmentsToIds()
 
 	nameCount := map[string]int{}
@@ -172,7 +174,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		}
 
 		// Do not export excluded variables
-		if c.variableIsExcluded(v) {
+		if c.Excluder.IsResourceExcludedWithRegex(v.Name, c.ExcludeAllProjectVariables, c.ExcludeProjectVariables, c.ExcludeProjectVariablesRegex, c.ExcludeProjectVariablesExcept) {
 			continue
 		}
 
@@ -917,30 +919,4 @@ func (c *VariableSetConverter) addTagSetDependencies(variable octopus.Variable, 
 	}
 
 	return terraformDependencies, nil
-}
-
-func (c *VariableSetConverter) compileRegexes() {
-	if c.ExcludeProjectVariablesRegex != nil {
-		c.excludeProjectVariablesRegexCompiled = lo.FilterMap(c.ExcludeProjectVariablesRegex, func(x string, index int) (*regexp.Regexp, bool) {
-			re, err := regexp.Compile(x)
-			if err != nil {
-				return nil, false
-			}
-			return re, true
-		})
-	}
-}
-
-func (c *VariableSetConverter) variableIsExcluded(variable octopus.Variable) bool {
-	if c.ExcludeProjectVariables != nil && slices.Index(c.ExcludeProjectVariables, variable.Name) != -1 {
-		return true
-	}
-
-	if c.excludeProjectVariablesRegexCompiled != nil {
-		return lo.SomeBy(c.excludeProjectVariablesRegexCompiled, func(x *regexp.Regexp) bool {
-			return x.MatchString(variable.Name)
-		})
-	}
-
-	return false
 }

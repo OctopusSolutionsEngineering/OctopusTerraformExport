@@ -939,10 +939,13 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
 		DummySecretVariableValues:         args.DummySecretVariableValues,
 		DummySecretGenerator:              dummySecretGenerator,
+		ExcludeAllProjectVariables:        args.ExcludeAllProjectVariables,
 		ExcludeProjectVariables:           args.ExcludeProjectVariables,
+		ExcludeProjectVariablesExcept:     args.ExcludeProjectVariablesExcept,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
 		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
+		Excluder:                          converters.DefaultExcluder{},
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -967,10 +970,13 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
 		DummySecretVariableValues:         args.DummySecretVariableValues,
 		DummySecretGenerator:              dummySecretGenerator,
+		ExcludeAllProjectVariables:        args.ExcludeAllProjectVariables,
 		ExcludeProjectVariables:           args.ExcludeProjectVariables,
+		ExcludeProjectVariablesExcept:     args.ExcludeProjectVariablesExcept,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
 		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              false,
+		Excluder:                          converters.DefaultExcluder{},
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{

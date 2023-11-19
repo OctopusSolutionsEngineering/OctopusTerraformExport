@@ -39,7 +39,9 @@ type Arguments struct {
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
 	IgnoreProjectNameChanges         bool
+	ExcludeAllProjectVariables       bool
 	ExcludeProjectVariables          ExcludeVariables
+	ExcludeProjectVariablesExcept    ExcludeVariables
 	ExcludeProjectVariablesRegex     ExcludeVariables
 	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
 	LookUpDefaultWorkerPools         bool
@@ -299,10 +301,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeLibraryVariableSetsRegex, "excludeLibraryVariableSetRegex", "A library variable set to be excluded when exporting a single project based on regex match.")
 	flags.Var(&arguments.ExcludeLibraryVariableSetsExcept, "excludeAllLibraryVariableSets", "All library variable sets except those defined with excludeAllLibraryVariableSets are excluded.")
 
+	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeProjectVariable", false, "Exclude all project variables from being exported.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported.")
+	flags.Var(&arguments.ExcludeProjectVariablesExcept, "excludeProjectVariableExcept", "All project variables except those defined with excludeProjectVariableExcept are excluded.")
 	flags.Var(&arguments.ExcludeProjectVariablesRegex, "excludeProjectVariableRegex", "Exclude a project variable from being exported based on regex match.")
 	flags.Var(&arguments.ExcludeVariableEnvironmentScopes, "excludeVariableEnvironmentScopes", "Exclude a environment when it appears in a variable's environment scope. Use with caution, as this can lead to previously scoped variables becoming unscoped.")
-	// missing except
 
 	// missing all, regex, except
 	flags.Var(&arguments.ExcludeTenantTags, "excludeTenantTags", "Exclude an individual tenant tag from being exported. Tags are in the format \"taggroup/tagname\".")
