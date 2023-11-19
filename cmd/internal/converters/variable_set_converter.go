@@ -15,7 +15,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
-	"regexp"
 	"strings"
 )
 
@@ -24,36 +23,35 @@ import (
 // library variable sets. There is no global collection or all endpoint that we can use to dump variables
 // in bulk.
 type VariableSetConverter struct {
-	Client                               client.OctopusClient
-	ChannelConverter                     ConverterByProjectIdWithTerraDependencies
-	EnvironmentConverter                 ConverterAndLookupById
-	TagSetConverter                      TagSetConverter
-	AzureCloudServiceTargetConverter     ConverterAndLookupById
-	AzureServiceFabricTargetConverter    ConverterAndLookupById
-	AzureWebAppTargetConverter           ConverterAndLookupById
-	CloudRegionTargetConverter           ConverterAndLookupById
-	KubernetesTargetConverter            ConverterAndLookupById
-	ListeningTargetConverter             ConverterAndLookupById
-	OfflineDropTargetConverter           ConverterAndLookupById
-	PollingTargetConverter               ConverterAndLookupById
-	SshTargetConverter                   ConverterAndLookupById
-	AccountConverter                     ConverterAndLookupById
-	FeedConverter                        ConverterAndLookupById
-	CertificateConverter                 ConverterAndLookupById
-	WorkerPoolConverter                  ConverterAndLookupById
-	IgnoreCacManagedValues               bool
-	DefaultSecretVariableValues          bool
-	DummySecretVariableValues            bool
-	ExcludeAllProjectVariables           bool
-	ExcludeProjectVariables              args.ExcludeVariables
-	ExcludeProjectVariablesExcept        args.ExcludeVariables
-	ExcludeProjectVariablesRegex         args.ExcludeVariables
-	excludeProjectVariablesRegexCompiled []*regexp.Regexp
-	IgnoreProjectChanges                 bool
-	DummySecretGenerator                 DummySecretGenerator
-	ExcludeVariableEnvironmentScopes     args.ExcludeVariableEnvironmentScopes
-	excludeVariableEnvironmentScopesIds  []string
-	Excluder                             ExcludeByName
+	Client                              client.OctopusClient
+	ChannelConverter                    ConverterByProjectIdWithTerraDependencies
+	EnvironmentConverter                ConverterAndLookupById
+	TagSetConverter                     TagSetConverter
+	AzureCloudServiceTargetConverter    ConverterAndLookupById
+	AzureServiceFabricTargetConverter   ConverterAndLookupById
+	AzureWebAppTargetConverter          ConverterAndLookupById
+	CloudRegionTargetConverter          ConverterAndLookupById
+	KubernetesTargetConverter           ConverterAndLookupById
+	ListeningTargetConverter            ConverterAndLookupById
+	OfflineDropTargetConverter          ConverterAndLookupById
+	PollingTargetConverter              ConverterAndLookupById
+	SshTargetConverter                  ConverterAndLookupById
+	AccountConverter                    ConverterAndLookupById
+	FeedConverter                       ConverterAndLookupById
+	CertificateConverter                ConverterAndLookupById
+	WorkerPoolConverter                 ConverterAndLookupById
+	IgnoreCacManagedValues              bool
+	DefaultSecretVariableValues         bool
+	DummySecretVariableValues           bool
+	ExcludeAllProjectVariables          bool
+	ExcludeProjectVariables             args.ExcludeVariables
+	ExcludeProjectVariablesExcept       args.ExcludeVariables
+	ExcludeProjectVariablesRegex        args.ExcludeVariables
+	IgnoreProjectChanges                bool
+	DummySecretGenerator                DummySecretGenerator
+	ExcludeVariableEnvironmentScopes    args.ExcludeVariableEnvironmentScopes
+	excludeVariableEnvironmentScopesIds []string
+	Excluder                            ExcludeByName
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
