@@ -3544,6 +3544,66 @@ func TestListeningTargetExport(t *testing.T) {
 		})
 }
 
+// TestPollingTargetExport verifies that a polling machine can be reimported with the correct settings
+func TestPollingTargetExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/32-pollingtarget/space_creation",
+		"../test/terraform/32-pollingtarget/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeTargetsExcept: []string{"Test"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			foundResource := false
+
+			for _, machine := range collection.Items {
+				if machine.Name == resourceName {
+					foundResource = true
+
+					if machine.Endpoint.Uri != "poll://abcdefghijklmnopqrst/" {
+						t.Fatal("The machine must have a Uri of \"poll://abcdefghijklmnopqrst/\" (was \"" + machine.Endpoint.Uri + "\")")
+					}
+
+					if machine.Thumbprint != "1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86" {
+						t.Fatal("The machine must have a Thumbprint of \"1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86\" (was \"" + machine.Thumbprint + "\")")
+					}
+
+					if len(machine.Roles) != 1 {
+						t.Fatal("The machine must have 1 role")
+					}
+
+					if machine.Roles[0] != "vm" {
+						t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
+					}
+
+					if machine.TenantedDeploymentParticipation != "Untenanted" {
+						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+					}
+				}
+			}
+
+			if !foundResource {
+				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
 // TestPollingTargetExcludeAllExport verifies that a polling machine can be excluded
 func TestPollingTargetExcludeAllExport(t *testing.T) {
 	exportSpaceImportAndTest(
