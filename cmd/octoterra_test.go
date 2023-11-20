@@ -3615,7 +3615,7 @@ func TestPollingTargetExcludeExceptExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{
-			ExcludeTargets: []string{"DoesNotExist"},
+			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
