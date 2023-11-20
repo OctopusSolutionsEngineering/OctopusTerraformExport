@@ -7310,14 +7310,8 @@ func TestTenantsWithExcludedAllProjectExport(t *testing.T) {
 						t.Fatal("The tenant must have two tags")
 					}
 
-					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must have one project environment")
-					}
-
-					for _, u := range v.ProjectEnvironments {
-						if len(u) != 3 {
-							t.Fatal("The tenant must have be linked to three environments")
-						}
+					if len(v.ProjectEnvironments) != 0 {
+						t.Fatal("The tenant must have zero project environments")
 					}
 				}
 			}
