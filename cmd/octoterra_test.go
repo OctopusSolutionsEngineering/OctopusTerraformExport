@@ -5514,6 +5514,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		},
 		args2.Arguments{
 			ExcludeTenants:                  []string{"Team A"},
+			ExcludeTenantsRegex:             []string{"^Team C$"},
 			LookUpDefaultWorkerPools:        false,
 			ExcludeRunbooksRegex:            []string{"^MyRunbook$"},
 			ExcludeRunbooks:                 []string{"MyRunbook2"},
@@ -6156,6 +6157,39 @@ func TestRunbookExport(t *testing.T) {
 
 			if !found {
 				t.Fatal("Space must have an runbook called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestRunbookExcludeExceptExport verifies that a runbook can be excluded
+func TestRunbookExcludeExceptExport(t *testing.T) {
+	exportProjectImportAndTest(t,
+		"Test",
+		"../test/terraform/44-runbooks/space_creation",
+		"../test/terraform/44-runbooks/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeRunbooksExcept: []string{"DoesNotExist"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Runbook]{}
+			err := octopusClient.GetAllResources("Runbooks", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			if len(collection.Items) != 0 {
+				t.Fatal("Space must not have any runbooks in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -7181,6 +7215,210 @@ func TestTenantsWithExcludedProjectExport(t *testing.T) {
 		[]string{},
 		args2.Arguments{
 			ExcludeProjects: []string{"Test2"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Team A"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					if len(v.TenantTags) != 2 {
+						t.Fatal("The tenant must have two tags")
+					}
+
+					if len(v.ProjectEnvironments) != 1 {
+						t.Fatal("The tenant must have one project environment")
+					}
+
+					for _, u := range v.ProjectEnvironments {
+						if len(u) != 3 {
+							t.Fatal("The tenant must have be linked to three environments")
+						}
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			projects := octopus.GeneralCollection[octopus.Project]{}
+			err = octopusClient.GetAllResources("Projects", &projects)
+
+			if err != nil {
+				return err
+			}
+
+			if len(projects.Items) != 1 {
+				t.Fatal("Only one project should have been exported, as the second was excluded.")
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsWithExcludedAllProjectExport verifies that a tenant can be reimported with the correct settings after all projects are excluded
+func TestTenantsWithExcludedAllProjectExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/61-tenantswithexcludedprojects/space_creation",
+		"../test/terraform/61-tenantswithexcludedprojects/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeAllProjects: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Team A"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					if len(v.TenantTags) != 2 {
+						t.Fatal("The tenant must have two tags")
+					}
+
+					if len(v.ProjectEnvironments) != 1 {
+						t.Fatal("The tenant must have one project environment")
+					}
+
+					for _, u := range v.ProjectEnvironments {
+						if len(u) != 3 {
+							t.Fatal("The tenant must have be linked to three environments")
+						}
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			projects := octopus.GeneralCollection[octopus.Project]{}
+			err = octopusClient.GetAllResources("Projects", &projects)
+
+			if err != nil {
+				return err
+			}
+
+			if len(projects.Items) != 0 {
+				t.Fatal("No projects should have been exported, as they were all excluded.")
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsWithExcludedProjectRegexExport verifies that a tenant can be reimported with the correct settings after a project is excluded
+func TestTenantsWithExcludedProjectRegexExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/61-tenantswithexcludedprojects/space_creation",
+		"../test/terraform/61-tenantswithexcludedprojects/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeProjectsRegex: []string{"^Test2$"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Tenant]{}
+			err := octopusClient.GetAllResources("Tenants", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Team A"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
+						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					if len(v.TenantTags) != 2 {
+						t.Fatal("The tenant must have two tags")
+					}
+
+					if len(v.ProjectEnvironments) != 1 {
+						t.Fatal("The tenant must have one project environment")
+					}
+
+					for _, u := range v.ProjectEnvironments {
+						if len(u) != 3 {
+							t.Fatal("The tenant must have be linked to three environments")
+						}
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			projects := octopus.GeneralCollection[octopus.Project]{}
+			err = octopusClient.GetAllResources("Projects", &projects)
+
+			if err != nil {
+				return err
+			}
+
+			if len(projects.Items) != 1 {
+				t.Fatal("Only one project should have been exported, as the second was excluded.")
+			}
+
+			return nil
+		})
+}
+
+// TestTenantsWithExcludedProjectExceptExport verifies that a tenant can be reimported with the correct settings after a project is excluded
+func TestTenantsWithExcludedProjectExceptExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/61-tenantswithexcludedprojects/space_creation",
+		"../test/terraform/61-tenantswithexcludedprojects/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeProjectsExcept: []string{"Test"},
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 

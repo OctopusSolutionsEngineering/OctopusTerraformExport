@@ -28,3 +28,15 @@ resource "octopusdeploy_tenant" "tenant_team_b" {
     project_id   = octopusdeploy_project.project_2.id
   }
 }
+
+resource "octopusdeploy_tenant" "tenant_team_c" {
+  name        = "Team C"
+  description = "Test tenant"
+  tenant_tags = ["tag1/a", "tag1/b"]
+  depends_on = [octopusdeploy_tag.tag_a, octopusdeploy_tag.tag_b]
+
+  project_environment {
+    environments = [data.octopusdeploy_environments.test.environments[0].id]
+    project_id   = octopusdeploy_project.project_2.id
+  }
+}

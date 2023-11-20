@@ -58,6 +58,21 @@ func TestParseFlagsCorrect(t *testing.T) {
 		"-excludeTenantTagSets",
 		"tag",
 		"-dummySecretVariableValues",
+		"-excludeProjectsRegex",
+		".*",
+		"-excludeProjectsExcept",
+		"Test",
+		"-excludeAllProjects",
+		"-excludeTargets",
+		"Test",
+		"-excludeTargetsRegex",
+		".*",
+		"-excludeTargetsExcept",
+		"Test",
+		"-excludeTenantsRegex",
+		".*",
+		"-excludeLibraryVariableSetsExcept",
+		"Test",
 	})
 
 	if err != nil {
@@ -182,5 +197,37 @@ func TestParseFlagsCorrect(t *testing.T) {
 
 	if !args.DummySecretVariableValues {
 		t.Fatalf("dummy secret variables should have been set")
+	}
+
+	if args.ExcludeProjectsRegex[0] != ".*" {
+		t.Fatalf("exclude projects regex should have been set")
+	}
+
+	if args.ExcludeProjectsExcept[0] != "Test" {
+		t.Fatalf("exclude projects should have been set")
+	}
+
+	if !args.ExcludeAllProjects {
+		t.Fatalf("exclude all projects should have been set")
+	}
+
+	if args.ExcludeTargets[0] != "Test" {
+		t.Fatalf("exclude targets should have been set")
+	}
+
+	if args.ExcludeTargetsExcept[0] != "Test" {
+		t.Fatalf("exclude targets except should have been set")
+	}
+
+	if args.ExcludeTargetsRegex[0] != ".*" {
+		t.Fatalf("exclude targets regex should have been set")
+	}
+
+	if args.ExcludeTenantsRegex[0] != ".*" {
+		t.Fatalf("exclude tenants regex should have been set")
+	}
+
+	if args.ExcludeLibraryVariableSetsExcept[0] != "Test" {
+		t.Fatalf("exclude library variable sets except should have been set")
 	}
 }
