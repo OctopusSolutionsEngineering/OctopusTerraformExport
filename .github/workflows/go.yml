@@ -208,6 +208,8 @@ jobs:
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
   build-windows:
     runs-on: windows-latest
+    env:
+      DOCKER_BUILDKIT: 0
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
