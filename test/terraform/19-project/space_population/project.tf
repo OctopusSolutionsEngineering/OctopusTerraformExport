@@ -5,6 +5,12 @@ data "octopusdeploy_lifecycles" "lifecycle_default_lifecycle" {
   take         = 1
 }
 
+resource "octopusdeploy_variable" "string_variable" {
+  owner_id  = octopusdeploy_project.deploy_frontend_project.id
+  type      = "String"
+  name      = "Test"
+  value     = "PlainText"
+}
 
 resource "octopusdeploy_project" "deploy_frontend_project" {
   auto_create_release                  = false

@@ -1871,7 +1871,14 @@ func TestProjectExport(t *testing.T) {
 		"../test/terraform/19-project/space_population",
 		[]string{},
 		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			// None of these options are used when exporting a space.
+			// They are included here to verify they don't affect the exported project.
+			ExcludeProjectVariables:       []string{"Test"},
+			ExcludeProjectVariablesRegex:  []string{".*"},
+			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
+			ExcludeAllProjectVariables:    true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
 
 			// Assert
@@ -1889,6 +1896,13 @@ func TestProjectExport(t *testing.T) {
 			for _, v := range collection.Items {
 				if v.Name == resourceName {
 					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil || len(variables.Variables) != 1 {
+						t.Fatal("The project must have one variable")
+					}
 
 					if strutil.EmptyIfNil(v.Description) != "Test project" {
 						t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
@@ -1936,6 +1950,206 @@ func TestProjectExport(t *testing.T) {
 
 					if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
 						t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestProjectVarExcludedAllExport verifies that a project can be reimported with excluded variables
+func TestProjectVarExcludedAllExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/19-project/space_creation",
+		"../test/terraform/19-project/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeAllProjectVariables: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil || len(variables.Variables) != 0 {
+						t.Fatal("The project must not have any variables")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestProjectVarExcludedExport verifies that a project can be reimported with excluded variables
+func TestProjectVarExcludedExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/19-project/space_creation",
+		"../test/terraform/19-project/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeProjectVariables: []string{"Test"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil || len(variables.Variables) != 0 {
+						t.Fatal("The project must not have any variables")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestProjectVarExcludedRegexExport verifies that a project can be reimported with excluded variables
+func TestProjectVarExcludedRegexExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/19-project/space_creation",
+		"../test/terraform/19-project/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeProjectVariablesRegex: []string{".*"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil || len(variables.Variables) != 0 {
+						t.Fatal("The project must not have any variables")
+					}
+				}
+			}
+
+			if !found {
+				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestProjectVarExcludedExport verifies that a project can be reimported with excluded variables
+func TestProjectVarExcludedExceptExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		[]string{},
+		"../test/terraform/19-project/space_creation",
+		"../test/terraform/19-project/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil || len(variables.Variables) != 0 {
+						t.Fatal("The project must not have any variables")
 					}
 				}
 			}
