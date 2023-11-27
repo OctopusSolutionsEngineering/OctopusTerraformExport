@@ -4990,15 +4990,37 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 			"-var=account_sales_account=whatever",
 		},
 		args2.Arguments{
-			ExcludeAllTargets: true,
+			ExcludeAllTargets:        true,
+			IncludeOctopusOutputVars: true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
+			testFramework := test.OctopusContainerTest{}
+			serverUrl, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_server")
+
+			if err != nil {
+				return err
+			}
+
+			if serverUrl == "" {
+				t.Fatalf("The project must have created an output variable called octopus_server")
+			}
+
+			octopusSpaceName, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_space_name")
+
+			if err != nil {
+				return err
+			}
+
+			if octopusSpaceName == "" {
+				t.Fatalf("The project must have created an output variable called octopusSpaceName")
+			}
+
 			octopusClient := createClient(container, recreatedSpaceId)
 
 			collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
-			err := octopusClient.GetAllResources("Machines", &collection)
+			err = octopusClient.GetAllResources("Machines", &collection)
 
 			if err != nil {
 				return err
@@ -5040,36 +5062,14 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeVariableEnvironmentScopes: []string{"Test"},
 			ExcludeProjectVariables:          []string{"Test"},
-			IncludeOctopusOutputVars:         true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
-			testFramework := test.OctopusContainerTest{}
-			serverUrl, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_server")
-
-			if err != nil {
-				return err
-			}
-
-			if serverUrl == "" {
-				t.Fatalf("The project must have created an output variable called octopus_server")
-			}
-
-			octopusSpaceName, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_space_name")
-
-			if err != nil {
-				return err
-			}
-
-			if octopusSpaceName == "" {
-				t.Fatalf("The project must have created an output variable called octopusSpaceName")
-			}
-
 			octopusClient := createClient(container, recreatedSpaceId)
 
 			// Test that the project exported its project group
-			err = func() error {
+			err := func() error {
 				collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 				err := octopusClient.GetAllResources("ProjectGroups", &collection)
 
