@@ -5165,60 +5165,118 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					t.Fatalf("The project must have 1 variable called \"HelmFeed\"")
 				}
 
-				helmFeedResource := octopus.Feed{}
-				_, err := octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(helmFeed[0].Value), &helmFeedResource)
+				// check docker feed, used by a step, was exported
+				err = func() error {
+					collection := octopus.GeneralCollection[octopus.Feed]{}
+					err := octopusClient.GetAllResources("Feeds", &collection)
+
+					if err != nil {
+						return err
+					}
+
+					if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
+						return item.Name == "Docker"
+					})) == 0 {
+						t.Fatalf("The feed called \"Docker\" must have been exported")
+
+					}
+					return nil
+				}()
 
 				if err != nil {
 					return err
 				}
 
-				if helmFeedResource.Name != "Helm" {
-					t.Fatalf("The feed called \"Helm\" must have been exported")
+				// Check the helm feed, used by a variable, was exported
+				err = func() error {
+					helmFeedResource := octopus.Feed{}
+					_, err = octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(helmFeed[0].Value), &helmFeedResource)
+
+					if err != nil {
+						return err
+					}
+
+					if helmFeedResource.Name != "Helm" {
+						t.Fatalf("The feed called \"Helm\" must have been exported")
+					}
+
+					return nil
+				}()
+
+				if err != nil {
+					return err
 				}
 
 				if len(usernamePassword) != 1 {
 					t.Fatalf("The project must have 1 variable called \"UsernamePassword\"")
 				}
 
-				accountResource := octopus.Account{}
-				_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(usernamePassword[0].Value), &accountResource)
+				// check rge account, used by a variable, was exported
+				err = func() error {
+					accountResource := octopus.Account{}
+					_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(usernamePassword[0].Value), &accountResource)
+
+					if err != nil {
+						return err
+					}
+
+					if accountResource.Name != "GKE" {
+						t.Fatalf("The account called \"GKE\" must have been exported")
+					}
+
+					return nil
+				}()
 
 				if err != nil {
 					return err
-				}
-
-				if accountResource.Name != "GKE" {
-					t.Fatalf("The account called \"GKE\" must have been exported")
 				}
 
 				if len(workerPool) != 1 {
 					t.Fatalf("The project must have 1 variable called \"WorkerPool\"")
 				}
 
-				workerPoolResource := octopus.WorkerPool{}
-				_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPool[0].Value), &workerPoolResource)
+				// check rge worker pool, used by a variable, was exported
+				err = func() error {
+					workerPoolResource := octopus.WorkerPool{}
+					_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPool[0].Value), &workerPoolResource)
+
+					if err != nil {
+						return err
+					}
+
+					if workerPoolResource.Name != "Docker" {
+						t.Fatalf("The worker pool called \"Docker\" must have been exported")
+					}
+
+					return nil
+				}()
 
 				if err != nil {
 					return err
-				}
-
-				if workerPoolResource.Name != "Docker" {
-					t.Fatalf("The worker pool called \"Docker\" must have been exported")
 				}
 
 				if len(certificate) != 1 {
 					t.Fatalf("The project must have 1 variable called \"Certifcate\"")
 				}
 
-				certificateResource := octopus.Certificate{}
-				_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificate[0].Value), &certificateResource)
+				// check the certificate, used by a variable, was exported
+				err = func() error {
+					certificateResource := octopus.Certificate{}
+					_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificate[0].Value), &certificateResource)
+
+					if err != nil {
+						return err
+					}
+
+					if certificateResource.Name != "Test" {
+						t.Fatalf("The certificate called \"Test\" must have been exported")
+					}
+
+					return nil
+				}()
 
 				if err != nil {
 					return err
-				}
-
-				if certificateResource.Name != "Test" {
-					t.Fatalf("The certificate called \"Test\" must have been exported")
 				}
 
 				return nil
@@ -6131,6 +6189,10 @@ func TestRunbookExport(t *testing.T) {
 
 					if strutil.EmptyIfNil(process.Steps[0].Name) != "Hello world (using PowerShell)" {
 						t.Fatal("The runbook step must have a name of \"Hello world (using PowerShell)\", was \"" + strutil.EmptyIfNil(process.Steps[0].Name) + "\"")
+					}
+
+					if fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) != "Octopus.Features.JsonConfigurationVariables" {
+						t.Fatal("The runbook step must have the feature \"Octopus.Features.JsonConfigurationVariables\" enabled (was \"" + fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) + "\"")
 					}
 
 					if len(process.Steps[0].Actions[0].Packages) != 1 {
