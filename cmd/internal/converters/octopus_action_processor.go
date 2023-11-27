@@ -99,30 +99,6 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportGitCredentials(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
-
-	for _, step := range steps {
-		for _, action := range step.Actions {
-			for _, prop := range action.Properties {
-				for _, account := range regexes.GitCredentialsRegex.FindAllString(fmt.Sprint(prop), -1) {
-					var err error
-					if recursive {
-						err = c.GitCredentialsConverter.ToHclById(account, dependencies)
-					} else if lookup {
-						err = c.GitCredentialsConverter.ToHclLookupById(account, dependencies)
-					}
-
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
