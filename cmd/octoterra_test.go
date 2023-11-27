@@ -384,12 +384,14 @@ func exportImportAndTest(
 
 		t.Log("REIMPORTING TEST SPACE")
 
+		populateSpaceDir := filepath.Join(tempDir, "space_population")
+
 		err = testFramework.InitialiseOctopus(
 			t,
 			container,
 			createImportBlankSpaceModuleDir,
 			prepopulateImportSpaceModuleDir,
-			filepath.Join(tempDir, "space_population"),
+			populateSpaceDir,
 			"Test3",
 			createImportSpaceVars,
 			prePopulateSpaceVars,
@@ -413,7 +415,7 @@ func exportImportAndTest(
 			recreatedSpaceId = "Spaces-3"
 		}
 
-		err = testFunc(t, container, recreatedSpaceId, prepopulateImportSpaceModuleDir)
+		err = testFunc(t, container, recreatedSpaceId, populateSpaceDir)
 
 		return err
 	})
