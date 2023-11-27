@@ -87,7 +87,7 @@ resource "octopusdeploy_runbook_process" "runbook" {
       excluded_environments = []
       channels              = []
       tenant_tags           = []
-      features              = []
+      features              = ["Octopus.Features.JsonConfigurationVariables"]
 
       package {
         name                      = "package1"

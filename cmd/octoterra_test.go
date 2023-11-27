@@ -42,7 +42,7 @@ func exportSpaceImportAndTest(
 	createSourceSpaceVars []string,
 	importSpaceVars []string,
 	arguments args2.Arguments,
-	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
 	/*
 		The directory holding the module to create the space must be copied to allow for parallel
@@ -147,7 +147,7 @@ func exportProjectImportAndTest(
 	initializeSpaceVars []string,
 	importSpaceVars []string,
 	arguments args2.Arguments,
-	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
 	exportImportAndTest(
 		t,
@@ -243,7 +243,7 @@ func exportProjectLookupImportAndTest(
 	prepopulateSpaceVars []string,
 	importSpaceVars []string,
 	argumnets args2.Arguments,
-	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
 	exportImportAndTest(
 		t,
@@ -349,7 +349,7 @@ func exportImportAndTest(
 	prePopulateSpaceVars []string,
 	importSpaceVars []string,
 	exportFunc func(url string, space string, apiKey string, dest string) error,
-	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error) {
+	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
 	t.Parallel()
 
@@ -384,12 +384,14 @@ func exportImportAndTest(
 
 		t.Log("REIMPORTING TEST SPACE")
 
+		populateSpaceDir := filepath.Join(tempDir, "space_population")
+
 		err = testFramework.InitialiseOctopus(
 			t,
 			container,
 			createImportBlankSpaceModuleDir,
 			prepopulateImportSpaceModuleDir,
-			filepath.Join(tempDir, "space_population"),
+			populateSpaceDir,
 			"Test3",
 			createImportSpaceVars,
 			prePopulateSpaceVars,
@@ -413,7 +415,7 @@ func exportImportAndTest(
 			recreatedSpaceId = "Spaces-3"
 		}
 
-		err = testFunc(t, container, recreatedSpaceId)
+		err = testFunc(t, container, recreatedSpaceId, populateSpaceDir)
 
 		return err
 	})
@@ -428,7 +430,7 @@ func TestSpaceExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -472,7 +474,7 @@ func TestProjectGroupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -509,7 +511,7 @@ func TestAwsAccountExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=account_aws_account=secretgoeshere"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -547,7 +549,7 @@ func TestAzureAccountExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=account_azure=secretgoeshere"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -609,7 +611,7 @@ func TestUsernamePasswordAccountExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=account_gke=secretgoeshere"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -663,7 +665,7 @@ func TestGcpAccountExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=account_google=secretgoeshere"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -717,7 +719,7 @@ func TestSshAccountExport(t *testing.T) {
 			"-var=account_ssh=LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFRRUF5c25PVXhjN0tJK2pIRUc5RVEwQXFCMllGRWE5ZnpZakZOY1pqY1dwcjJQRkRza25oOUpTCm1NVjVuZ2VrbTRyNHJVQU5tU2dQMW1ZTGo5TFR0NUVZa0N3OUdyQ0paNitlQTkzTEowbEZUamFkWEJuQnNmbmZGTlFWYkcKZ2p3U1o4SWdWQ2oySXE0S1hGZm0vbG1ycEZQK2Jqa2V4dUxwcEh5dko2ZmxZVjZFMG13YVlneVNHTWdLYy9ubXJaMTY0WApKMStJL1M5NkwzRWdOT0hNZmo4QjM5eEhZQ0ZUTzZEQ0pLQ3B0ZUdRa0gwTURHam84d3VoUlF6c0IzVExsdXN6ZG0xNmRZCk16WXZBSWR3emZ3bzh1ajFBSFFOendDYkIwRmR6bnFNOEpLV2ZrQzdFeVVrZUl4UXZmLzJGd1ZyS0xEZC95ak5PUmNoa3EKb2owNncySXFad0FBQThpS0tqT3dpaW96c0FBQUFBZHpjMmd0Y25OaEFBQUJBUURLeWM1VEZ6c29qNk1jUWIwUkRRQ29IWgpnVVJyMS9OaU1VMXhtTnhhbXZZOFVPeVNlSDBsS1l4WG1lQjZTYml2aXRRQTJaS0EvV1pndVAwdE8za1JpUUxEMGFzSWxuCnI1NEQzY3NuU1VWT05wMWNHY0d4K2Q4VTFCVnNhQ1BCSm53aUJVS1BZaXJncGNWK2IrV2F1a1UvNXVPUjdHNHVta2ZLOG4KcCtWaFhvVFNiQnBpREpJWXlBcHorZWF0blhyaGNuWDRqOUwzb3ZjU0EwNGN4K1B3SGYzRWRnSVZNN29NSWtvS20xNFpDUQpmUXdNYU9qekM2RkZET3dIZE11VzZ6TjJiWHAxZ3pOaThBaDNETi9Dank2UFVBZEEzUEFKc0hRVjNPZW96d2twWitRTHNUCkpTUjRqRkM5Ly9ZWEJXc29zTjMvS00wNUZ5R1NxaVBUckRZaXBuQUFBQUF3RUFBUUFBQVFFQXdRZzRqbitlb0kyYUJsdk4KVFYzRE1rUjViMU9uTG1DcUpEeGM1c2N4THZNWnNXbHBaN0NkVHk4ckJYTGhEZTdMcUo5QVVub0FHV1lwdTA1RW1vaFRpVwptVEFNVHJCdmYwd2xsdCtJZVdvVXo3bmFBbThQT1psb29MbXBYRzh5VmZKRU05aUo4NWtYNDY4SkF6VDRYZ1JXUFRYQ1JpCi9abCtuWUVUZVE4WTYzWlJhTVE3SUNmK2FRRWxRenBYb21idkxYM1RaNmNzTHh5Z3Eza01aSXNJU0lUcEk3Y0tsQVJ0Rm4KcWxKRitCL2JlUEJkZ3hIRVpqZDhDV0NIR1ZRUDh3Z3B0d0Rrak9NTzh2b2N4YVpOT0hZZnBwSlBCTkVjMEVKbmduN1BXSgorMVZSTWZKUW5SemVubmE3VHdSUSsrclZmdkVaRmhqamdSUk85RitrMUZvSWdRQUFBSUVBbFFybXRiV2V0d3RlWlZLLys4CklCUDZkcy9MSWtPb3pXRS9Wckx6cElBeHEvV1lFTW1QK24wK1dXdWRHNWpPaTFlZEJSYVFnU0owdTRxcE5JMXFGYTRISFYKY2oxL3pzenZ4RUtSRElhQkJGaU81Y3QvRVQvUTdwanozTnJaZVdtK0dlUUJKQ0diTEhSTlQ0M1ZpWVlLVG82ZGlGVTJteApHWENlLzFRY2NqNjVZQUFBQ0JBUHZodmgzb2Q1MmY4SFVWWGoxeDNlL1ZFenJPeVloTi9UQzNMbWhHYnRtdHZ0L0J2SUhxCndxWFpTT0lWWkZiRnVKSCtORHNWZFFIN29yUW1VcGJxRllDd0IxNUZNRGw0NVhLRm0xYjFyS1c1emVQK3d0M1hyM1p0cWsKRkdlaUlRMklSZklBQjZneElvNTZGemdMUmx6QnB0bzhkTlhjMXhtWVgyU2Rhb3ZwSkRBQUFBZ1FET0dwVE9oOEFRMFoxUwpzUm9vVS9YRTRkYWtrSU5vMDdHNGI3M01maG9xbkV1T01LM0ZRVStRRWUwYWpvdWs5UU1QNWJzZU1CYnJNZVNNUjBRWVBCClQ4Z0Z2S2VISWN6ZUtJTjNPRkRaRUF4TEZNMG9LbjR2bmdHTUFtTXUva2QwNm1PZnJUNDRmUUh1ajdGNWx1QVJHejRwYUwKLzRCTUVkMnFTRnFBYzZ6L0RRQUFBQTF0WVhSMGFFQk5ZWFIwYUdWM0FRSURCQT09Ci0tLS0tRU5EIE9QRU5TU0ggUFJJVkFURSBLRVktLS0tLQo=",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -775,7 +777,7 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 			"-var=account_subscription_cert=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",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -829,7 +831,7 @@ func TestTokenAccountExport(t *testing.T) {
 			"-var=account_token=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -887,7 +889,7 @@ func TestHelmFeedExport(t *testing.T) {
 			"-var=feed_helm_password=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -954,7 +956,7 @@ func TestDockerFeedExport(t *testing.T) {
 			"-var=feed_docker_password=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1023,7 +1025,7 @@ func TestDockerFeedNoCredsExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1094,7 +1096,7 @@ func TestDummyCredsExport(t *testing.T) {
 		args2.Arguments{
 			DummySecretVariableValues: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1177,7 +1179,7 @@ func TestEcrFeedExport(t *testing.T) {
 			"-var=feed_ecr_password=" + os.Getenv("ECR_SECRET_KEY"),
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1244,7 +1246,7 @@ func TestMavenFeedExport(t *testing.T) {
 			"-var=feed_maven_password=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1319,7 +1321,7 @@ func TestNugetFeedExport(t *testing.T) {
 			"-var=feed_nuget_password=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1396,7 +1398,7 @@ func TestWorkerPoolExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1449,7 +1451,7 @@ func TestEnvironmentExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1534,7 +1536,7 @@ func TestLifecycleExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1604,7 +1606,7 @@ func TestVariableSetExport(t *testing.T) {
 			ExcludeLibraryVariableSets:      []string{"Test2"},
 			ExcludeLibraryVariableSetsRegex: []string{"^Test3$"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1724,7 +1726,7 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeLibraryVariableSetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1842,7 +1844,7 @@ func TestVariableSetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllLibraryVariableSets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1878,7 +1880,7 @@ func TestProjectExport(t *testing.T) {
 			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
 			ExcludeAllProjectVariables:    true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -1975,7 +1977,7 @@ func TestProjectVarExcludedAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllProjectVariables: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2024,7 +2026,7 @@ func TestProjectVarExcludedExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjectVariables: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2073,7 +2075,7 @@ func TestProjectVarExcludedRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjectVariablesRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2122,7 +2124,7 @@ func TestProjectVarExcludedExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2166,7 +2168,7 @@ func TestProjectChannelExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=project_test_step_test_package_test_packageid=test2"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2258,7 +2260,7 @@ func TestTagSetExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2328,7 +2330,7 @@ func TestGitCredentialsExport(t *testing.T) {
 			"-var=gitcredential_test=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2377,7 +2379,7 @@ func TestScriptModuleExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2476,7 +2478,7 @@ func TestTenantsExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTenantsExcept: []string{"Team A"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2545,7 +2547,7 @@ func TestTenantsExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTenants: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2578,7 +2580,7 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 			ExcludeTenantsWithTags: []string{"type/excluded"},
 			ExcludeTenantTags:      []string{"type/ignorethis"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2646,7 +2648,7 @@ func TestTenantsExcludeTagSetsExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTenantTagSets: []string{"type"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2706,7 +2708,7 @@ func TestTenantsExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTenantsRegex: []string{"^Excluded$"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2750,7 +2752,7 @@ func TestCertificateExport(t *testing.T) {
 			"-var=certificate_tenanted_password=Password01!",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2826,7 +2828,7 @@ func TestCertificateExportWithDummyValues(t *testing.T) {
 		args2.Arguments{
 			DummySecretVariableValues: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2887,7 +2889,7 @@ func TestTenantVariablesExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -2934,7 +2936,7 @@ func TestMachinePolicyExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3047,7 +3049,7 @@ func TestProjectTriggerExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3112,7 +3114,7 @@ func TestK8sTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -3161,7 +3163,7 @@ func TestK8sTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -3193,7 +3195,7 @@ func TestK8sTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -3225,7 +3227,7 @@ func TestK8sTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -3257,7 +3259,7 @@ func TestK8sTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
@@ -3289,7 +3291,7 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=account_azure=secretgoeshere"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3342,7 +3344,7 @@ func TestK8sTargetGcpAuthExport(t *testing.T) {
 		[]string{},
 		[]string{"-var=account_google=secretgoeshere"},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3401,7 +3403,7 @@ func TestK8sTargetTokenAuthExport(t *testing.T) {
 			"-var=account_token=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3449,7 +3451,7 @@ func TestK8sTargetCertAuthExport(t *testing.T) {
 			"-var=certificate_test_password=Password01!",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3504,7 +3506,7 @@ func TestSshTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3559,7 +3561,7 @@ func TestSshTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3597,7 +3599,7 @@ func TestSshTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3635,7 +3637,7 @@ func TestSshTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3673,7 +3675,7 @@ func TestSshTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3704,7 +3706,7 @@ func TestListeningTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3764,7 +3766,7 @@ func TestListeningTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3795,7 +3797,7 @@ func TestListeningTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3826,7 +3828,7 @@ func TestListeningTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3857,7 +3859,7 @@ func TestListeningTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3888,7 +3890,7 @@ func TestPollingTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3948,7 +3950,7 @@ func TestPollingTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -3979,7 +3981,7 @@ func TestPollingTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4010,7 +4012,7 @@ func TestPollingTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4041,7 +4043,7 @@ func TestPollingTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4072,7 +4074,7 @@ func TestCloudRegionTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4124,7 +4126,7 @@ func TestCloudRegionTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4155,7 +4157,7 @@ func TestCloudRegionTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4186,7 +4188,7 @@ func TestCloudRegionTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4217,7 +4219,7 @@ func TestCloudRegionTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4248,7 +4250,7 @@ func TestOfflineDropTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4308,7 +4310,7 @@ func TestOfflineDropTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4339,7 +4341,7 @@ func TestOfflineDropTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4370,7 +4372,7 @@ func TestOfflineDropTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4401,7 +4403,7 @@ func TestOfflineDropTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4433,7 +4435,7 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Azure"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4498,7 +4500,7 @@ func TestAzureCloudServiceTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Azure"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4530,7 +4532,7 @@ func TestAzureCloudServiceTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4562,7 +4564,7 @@ func TestAzureCloudServiceTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4594,7 +4596,7 @@ func TestAzureCloudServiceTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4627,7 +4629,7 @@ func TestAzureServiceFabricTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Service Fabric"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4691,7 +4693,7 @@ func TestAzureServiceFabricTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Service Fabric"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4722,7 +4724,7 @@ func TestAzureServiceFabricTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4753,7 +4755,7 @@ func TestAzureServiceFabricTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4784,7 +4786,7 @@ func TestAzureServiceFabricTargetExcludeAllExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllTargets: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4819,7 +4821,7 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"Web App"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4887,7 +4889,7 @@ func TestAzureWebAppTargetExcludeExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargets: []string{"Web App"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4922,7 +4924,7 @@ func TestAzureWebAppTargetExcludeRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsRegex: []string{".*"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4957,7 +4959,7 @@ func TestAzureWebAppTargetExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeTargetsExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -4990,15 +4992,37 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 			"-var=account_sales_account=whatever",
 		},
 		args2.Arguments{
-			ExcludeAllTargets: true,
+			ExcludeAllTargets:        true,
+			IncludeOctopusOutputVars: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
+			testFramework := test.OctopusContainerTest{}
+			serverUrl, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_server")
+
+			if err != nil {
+				return err
+			}
+
+			if serverUrl == "" {
+				t.Fatalf("The project must have created an output variable called octopus_server")
+			}
+
+			octopusSpaceName, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_space_name")
+
+			if err != nil {
+				return err
+			}
+
+			if octopusSpaceName == "" {
+				t.Fatalf("The project must have created an output variable called octopusSpaceName")
+			}
+
 			octopusClient := createClient(container, recreatedSpaceId)
 
 			collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
-			err := octopusClient.GetAllResources("Machines", &collection)
+			err = octopusClient.GetAllResources("Machines", &collection)
 
 			if err != nil {
 				return err
@@ -5041,7 +5065,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 			ExcludeVariableEnvironmentScopes: []string{"Test"},
 			ExcludeProjectVariables:          []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -5165,60 +5189,118 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					t.Fatalf("The project must have 1 variable called \"HelmFeed\"")
 				}
 
-				helmFeedResource := octopus.Feed{}
-				_, err := octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(helmFeed[0].Value), &helmFeedResource)
+				// check docker feed, used by a step, was exported
+				err = func() error {
+					collection := octopus.GeneralCollection[octopus.Feed]{}
+					err := octopusClient.GetAllResources("Feeds", &collection)
+
+					if err != nil {
+						return err
+					}
+
+					if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
+						return item.Name == "Docker"
+					})) == 0 {
+						t.Fatalf("The feed called \"Docker\" must have been exported")
+
+					}
+					return nil
+				}()
 
 				if err != nil {
 					return err
 				}
 
-				if helmFeedResource.Name != "Helm" {
-					t.Fatalf("The feed called \"Helm\" must have been exported")
+				// Check the helm feed, used by a variable, was exported
+				err = func() error {
+					helmFeedResource := octopus.Feed{}
+					_, err = octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(helmFeed[0].Value), &helmFeedResource)
+
+					if err != nil {
+						return err
+					}
+
+					if helmFeedResource.Name != "Helm" {
+						t.Fatalf("The feed called \"Helm\" must have been exported")
+					}
+
+					return nil
+				}()
+
+				if err != nil {
+					return err
 				}
 
 				if len(usernamePassword) != 1 {
 					t.Fatalf("The project must have 1 variable called \"UsernamePassword\"")
 				}
 
-				accountResource := octopus.Account{}
-				_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(usernamePassword[0].Value), &accountResource)
+				// check rge account, used by a variable, was exported
+				err = func() error {
+					accountResource := octopus.Account{}
+					_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(usernamePassword[0].Value), &accountResource)
+
+					if err != nil {
+						return err
+					}
+
+					if accountResource.Name != "GKE" {
+						t.Fatalf("The account called \"GKE\" must have been exported")
+					}
+
+					return nil
+				}()
 
 				if err != nil {
 					return err
-				}
-
-				if accountResource.Name != "GKE" {
-					t.Fatalf("The account called \"GKE\" must have been exported")
 				}
 
 				if len(workerPool) != 1 {
 					t.Fatalf("The project must have 1 variable called \"WorkerPool\"")
 				}
 
-				workerPoolResource := octopus.WorkerPool{}
-				_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPool[0].Value), &workerPoolResource)
+				// check rge worker pool, used by a variable, was exported
+				err = func() error {
+					workerPoolResource := octopus.WorkerPool{}
+					_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPool[0].Value), &workerPoolResource)
+
+					if err != nil {
+						return err
+					}
+
+					if workerPoolResource.Name != "Docker" {
+						t.Fatalf("The worker pool called \"Docker\" must have been exported")
+					}
+
+					return nil
+				}()
 
 				if err != nil {
 					return err
-				}
-
-				if workerPoolResource.Name != "Docker" {
-					t.Fatalf("The worker pool called \"Docker\" must have been exported")
 				}
 
 				if len(certificate) != 1 {
 					t.Fatalf("The project must have 1 variable called \"Certifcate\"")
 				}
 
-				certificateResource := octopus.Certificate{}
-				_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificate[0].Value), &certificateResource)
+				// check the certificate, used by a variable, was exported
+				err = func() error {
+					certificateResource := octopus.Certificate{}
+					_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificate[0].Value), &certificateResource)
+
+					if err != nil {
+						return err
+					}
+
+					if certificateResource.Name != "Test" {
+						t.Fatalf("The certificate called \"Test\" must have been exported")
+					}
+
+					return nil
+				}()
 
 				if err != nil {
 					return err
-				}
-
-				if certificateResource.Name != "Test" {
-					t.Fatalf("The certificate called \"Test\" must have been exported")
 				}
 
 				return nil
@@ -5523,7 +5605,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 			ExcludeProjectVariablesRegex:    []string{"Excluded.*"},
 			ExcludeProjectVariables:         []string{"NamedExcluded"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -5868,7 +5950,7 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 			"-var=project_test_git_base_path=.octopus/projectgitusername",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -5913,7 +5995,7 @@ func TestProjectWithDollarSignsExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -5950,7 +6032,7 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -5989,7 +6071,7 @@ func TestGithubFeedExport(t *testing.T) {
 			"-var=feed_github_password=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6064,7 +6146,7 @@ func TestRunbookExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeRunbooksExcept: []string{"Runbook"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6133,6 +6215,10 @@ func TestRunbookExport(t *testing.T) {
 						t.Fatal("The runbook step must have a name of \"Hello world (using PowerShell)\", was \"" + strutil.EmptyIfNil(process.Steps[0].Name) + "\"")
 					}
 
+					if fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) != "Octopus.Features.JsonConfigurationVariables" {
+						t.Fatal("The runbook step must have the feature \"Octopus.Features.JsonConfigurationVariables\" enabled (was \"" + fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) + "\"")
+					}
+
 					if len(process.Steps[0].Actions[0].Packages) != 1 {
 						t.Fatal("The runbook must have one package")
 					}
@@ -6176,7 +6262,7 @@ func TestRunbookExcludeExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeRunbooksExcept: []string{"DoesNotExist"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6207,7 +6293,7 @@ func TestK8sTargetWithCertExport(t *testing.T) {
 			"-var=certificate_test_password=Password01!",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6259,7 +6345,7 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6340,7 +6426,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6418,7 +6504,7 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjectVariables: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6514,7 +6600,7 @@ func TestSingleProjectWithExcludedMachineScopedVarExport(t *testing.T) {
 			ExcludeAllTargets:       true,
 			ExcludeProjectVariables: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6597,7 +6683,7 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6667,7 +6753,7 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6770,7 +6856,7 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 			LookUpDefaultWorkerPools: true,
 			ExcludeProjectVariables:  []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6838,7 +6924,7 @@ func TestTenantCommonVarsExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6942,7 +7028,7 @@ func TestSingleProjectWithScriptModuleLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -6999,7 +7085,7 @@ func TestProjectWithScriptModuleExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7058,7 +7144,7 @@ func TestSingleProjectWithTagsetScopedVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7128,7 +7214,7 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7216,7 +7302,7 @@ func TestTenantsWithExcludedProjectExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjects: []string{"Test2"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7284,7 +7370,7 @@ func TestTenantsWithExcludedAllProjectExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeAllProjects: true,
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7346,7 +7432,7 @@ func TestTenantsWithExcludedProjectRegexExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjectsRegex: []string{"^Test2$"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7414,7 +7500,7 @@ func TestTenantsWithExcludedProjectExceptExport(t *testing.T) {
 		args2.Arguments{
 			ExcludeProjectsExcept: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7488,7 +7574,7 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 			ExcludeAllTargets:       true,
 			ExcludeProjectVariables: []string{"Test"},
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7573,7 +7659,7 @@ func TestK8sPodAuthExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7627,7 +7713,7 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7704,7 +7790,7 @@ func TestTenantedResources(t *testing.T) {
 			"-var=account_sales_account=whatever",
 		},
 		args2.Arguments{},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -7906,7 +7992,7 @@ func TestSingleRunbookExport(t *testing.T) {
 			RunbookName: "Runbook",
 			ProjectName: "Test",
 		},
-		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string) error {
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
