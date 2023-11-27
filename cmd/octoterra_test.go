@@ -413,7 +413,7 @@ func exportImportAndTest(
 			recreatedSpaceId = "Spaces-3"
 		}
 
-		err = testFunc(t, container, recreatedSpaceId, createImportBlankSpaceModuleDir)
+		err = testFunc(t, container, recreatedSpaceId, prepopulateImportSpaceModuleDir)
 
 		return err
 	})
