@@ -25,7 +25,7 @@ name: Go Build
 jobs:
   build:
     runs-on:
-      labels: 8core-ubuntu-runner
+      labels: 16core-ubuntu-runner
     steps:
       - uses: actions/checkout@v3
         with:
@@ -105,7 +105,7 @@ jobs:
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 4
+          GOMAXPROCS: 10
       - name: Archive code coverage results
         if: always()
         uses: actions/upload-artifact@v3
