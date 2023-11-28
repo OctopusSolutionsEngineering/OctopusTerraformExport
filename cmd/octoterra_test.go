@@ -149,12 +149,29 @@ func exportProjectImportAndTest(
 	arguments args2.Arguments,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
+	/*
+		The directory holding the module to create the space must be copied to allow for parallel
+		test execution.
+	*/
+	dir, err := os.MkdirTemp("", "octoterra")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(dir)
+
+	err = cp.Copy(createImportBlankSpaceModuleDir, dir)
+
 	exportImportAndTest(
 		t,
 		createSourceBlankSpaceModuleDir,
 		"",
 		populateSourceSpaceModuleDir,
-		createImportBlankSpaceModuleDir,
+		dir,
 		"",
 		initialiseVars,
 		initializeSpaceVars,
