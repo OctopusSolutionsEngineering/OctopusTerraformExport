@@ -61,19 +61,19 @@ func exportSpaceImportAndTest(
 	createSpaceDirCopy, err := copyDir("../test/terraform/z-createspace")
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createSpaceDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf(err.Error())
 			}
 		}
 
@@ -170,24 +170,24 @@ func exportProjectImportAndTest(
 	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf(err.Error())
 			}
 		}
 
@@ -292,36 +292,36 @@ func exportProjectLookupImportAndTest(
 	prepopulateImportSpaceModuleDirCopy, err := copyDir(prepopulateImportSpaceModuleDir)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 	prepopulateSourceBlankSpaceModuleDirCopy, err := copyDir(prepopulateSourceBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy, prepopulateSourceBlankSpaceModuleDirCopy, prepopulateImportSpaceModuleDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf(err.Error())
 			}
 		}
 
@@ -819,11 +819,11 @@ func TestSshAccountExport(t *testing.T) {
 				if v.Name == accountName {
 					found = true
 					if v.AccountType != "SshKeyPair" {
-						t.Fatal("The account must be have a type of \"SshKeyPair\"")
+						return errors.New("The account must be have a type of \"SshKeyPair\"")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "admin" {
-						t.Fatal("The account must be have a username of \"admin\"")
+						return errors.New("The account must be have a username of \"admin\"")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "A test account" {
@@ -832,17 +832,17 @@ func TestSshAccountExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-						t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\"")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatal("The account must be have no tenant tags")
+						return errors.New("The account must be have no tenant tags")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -877,25 +877,25 @@ func TestAzureSubscriptionAccountExport(t *testing.T) {
 				if v.Name == accountName {
 					found = true
 					if v.AccountType != "AzureSubscription" {
-						t.Fatal("The account must be have a type of \"AzureSubscription\"")
+						return errors.New("The account must be have a type of \"AzureSubscription\"")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "A test account" {
-						t.Fatal("BUG: The account must be have a description of \"A test account\"")
+						return errors.New("BUG: The account must be have a description of \"A test account\"")
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-						t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\"")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatal("The account must be have no tenant tags")
+						return errors.New("The account must be have no tenant tags")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an account called \"" + accountName + "\"")
+				return errors.New("Space must have an account called \"" + accountName + "\"")
 			}
 
 			return nil
@@ -931,29 +931,29 @@ func TestTokenAccountExport(t *testing.T) {
 				if v.Name == accountName {
 					found = true
 					if v.AccountType != "Token" {
-						t.Fatal("The account must be have a type of \"Token\"")
+						return errors.New("The account must be have a type of \"Token\"")
 					}
 
 					if !v.Token.HasValue {
-						t.Fatal("The account must be have a token")
+						return errors.New("The account must be have a token")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "A test account" {
-						t.Fatal("The account must be have a description of \"A test account\"")
+						return errors.New("The account must be have a description of \"A test account\"")
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-						t.Fatal("The account must be have a tenanted deployment participation of \"Untenanted\"")
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\"")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatal("The account must be have no tenant tags")
+						return errors.New("The account must be have no tenant tags")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an account called \"" + accountName + "\"")
+				return errors.New("Space must have an account called \"" + accountName + "\"")
 			}
 
 			return nil
@@ -990,15 +990,15 @@ func TestHelmFeedExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "Helm" {
-						t.Fatal("The feed must have a type of \"Helm\"")
+						return errors.New("The feed must have a type of \"Helm\"")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
-						t.Fatal("The feed must have a username of \"username\"")
+						return errors.New("The feed must have a username of \"username\"")
 					}
 
 					if strutil.EmptyIfNil(v.FeedUri) != "https://charts.helm.sh/stable/" {
-						t.Fatal("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
+						return errors.New("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
 					}
 
 					foundExecutionTarget := false
@@ -1014,13 +1014,13 @@ func TestHelmFeedExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundNotAcquired) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1057,19 +1057,19 @@ func TestDockerFeedExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "Docker" {
-						t.Fatal("The feed must have a type of \"Docker\"")
+						return errors.New("The feed must have a type of \"Docker\"")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
-						t.Fatal("The feed must have a username of \"username\"")
+						return errors.New("The feed must have a username of \"username\"")
 					}
 
 					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
-						t.Fatal("The feed must be have a API version of \"v1\"")
+						return errors.New("The feed must be have a API version of \"v1\"")
 					}
 
 					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
-						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+						return errors.New("The feed must be have a feed uri of \"https://index.docker.io\"")
 					}
 
 					foundExecutionTarget := false
@@ -1085,13 +1085,13 @@ func TestDockerFeedExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundNotAcquired) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1126,19 +1126,19 @@ func TestDockerFeedNoCredsExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "Docker" {
-						t.Fatal("The feed must have a type of \"Docker\"")
+						return errors.New("The feed must have a type of \"Docker\"")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "" {
-						t.Fatal("The feed must have an empty username")
+						return errors.New("The feed must have an empty username")
 					}
 
 					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
-						t.Fatal("The feed must be have a API version of \"v1\"")
+						return errors.New("The feed must be have a API version of \"v1\"")
 					}
 
 					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
-						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+						return errors.New("The feed must be have a feed uri of \"https://index.docker.io\"")
 					}
 
 					foundExecutionTarget := false
@@ -1154,13 +1154,13 @@ func TestDockerFeedNoCredsExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundNotAcquired) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1196,7 +1196,7 @@ func TestDummyCredsExport(t *testing.T) {
 				if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
 					return item.Name == "Docker"
 				})) != 1 {
-					t.Fatal("Space must have an feed called \"Docker\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an feed called \"Docker\" in space " + recreatedSpaceId)
 				}
 
 				return nil
@@ -1217,7 +1217,7 @@ func TestDummyCredsExport(t *testing.T) {
 				if len(lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
 					return item.Name == "Test"
 				})) != 1 {
-					t.Fatal("Space must have a project called \"Test\" in space " + recreatedSpaceId)
+					return errors.New("Space must have a project called \"Test\" in space " + recreatedSpaceId)
 				}
 
 				return nil
@@ -1238,7 +1238,7 @@ func TestDummyCredsExport(t *testing.T) {
 				if len(lo.Filter(collection.Items, func(item octopus.GitCredentials, index int) bool {
 					return item.Name == "test"
 				})) != 1 {
-					t.Fatal("Space must have git credentials called \"test\" in space " + recreatedSpaceId)
+					return errors.New("Space must have git credentials called \"test\" in space " + recreatedSpaceId)
 				}
 
 				return nil
@@ -1259,37 +1259,37 @@ func TestDummyCredsExport(t *testing.T) {
 				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
 					return item.Name == "AWS Account"
 				})) != 1 {
-					t.Fatal("Space must have an account called \"AWS Account\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an account called \"AWS Account\" in space " + recreatedSpaceId)
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
 					return item.Name == "Azure"
 				})) != 1 {
-					t.Fatal("Space must have an account called \"Azure\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an account called \"Azure\" in space " + recreatedSpaceId)
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
 					return item.Name == "Subscription"
 				})) != 1 {
-					t.Fatal("Space must have an account called \"Subscription\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an account called \"Subscription\" in space " + recreatedSpaceId)
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
 					return item.Name == "Google"
 				})) != 1 {
-					t.Fatal("Space must have an account called \"Google\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an account called \"Google\" in space " + recreatedSpaceId)
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
 					return item.Name == "SSH"
 				})) != 1 {
-					t.Fatal("Space must have an account called \"SSH\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an account called \"SSH\" in space " + recreatedSpaceId)
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
 					return item.Name == "Token"
 				})) != 1 {
-					t.Fatal("Space must have an account called \"Token\" in space " + recreatedSpaceId)
+					return errors.New("Space must have an account called \"Token\" in space " + recreatedSpaceId)
 				}
 
 				return nil
@@ -1307,11 +1307,11 @@ func TestDummyCredsExport(t *testing.T) {
 func TestEcrFeedExport(t *testing.T) {
 
 	if os.Getenv("ECR_ACCESS_KEY") == "" {
-		t.Fatal("the ECR_ACCESS_KEY environment variable must be set a valid AWS access key")
+		t.Fatalf("the ECR_ACCESS_KEY environment variable must be set a valid AWS access key")
 	}
 
 	if os.Getenv("ECR_SECRET_KEY") == "" {
-		t.Fatal("the ECR_SECRET_KEY environment variable must be set a valid AWS secret key")
+		t.Fatalf("the ECR_SECRET_KEY environment variable must be set a valid AWS secret key")
 	}
 
 	exportSpaceImportAndTest(
@@ -1345,15 +1345,15 @@ func TestEcrFeedExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "AwsElasticContainerRegistry" {
-						t.Fatal("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
+						return errors.New("The feed must have a type of \"AwsElasticContainerRegistry\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.AccessKey) != os.Getenv("ECR_ACCESS_KEY") {
-						t.Fatal("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
+						return errors.New("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.Region) != "us-east-1" {
-						t.Fatal("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
+						return errors.New("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
 					}
 
 					foundExecutionTarget := false
@@ -1369,13 +1369,13 @@ func TestEcrFeedExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundNotAcquired) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1412,23 +1412,23 @@ func TestMavenFeedExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "Maven" {
-						t.Fatal("The feed must have a type of \"Maven\"")
+						return errors.New("The feed must have a type of \"Maven\"")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
-						t.Fatal("The feed must have a username of \"username\"")
+						return errors.New("The feed must have a username of \"username\"")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
-						t.Fatal("The feed must be have a downloads attempts set to \"5\"")
+						return errors.New("The feed must be have a downloads attempts set to \"5\"")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
-						t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
+						return errors.New("The feed must be have a downloads retry backoff set to \"10\"")
 					}
 
 					if strutil.EmptyIfNil(v.FeedUri) != "https://repo.maven.apache.org/maven2/" {
-						t.Fatal("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
+						return errors.New("The feed must be have a feed uri of \"https://repo.maven.apache.org/maven2/\"")
 					}
 
 					foundExecutionTarget := false
@@ -1444,13 +1444,13 @@ func TestMavenFeedExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundServer) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1487,27 +1487,27 @@ func TestNugetFeedExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "NuGet" {
-						t.Fatal("The feed must have a type of \"NuGet\"")
+						return errors.New("The feed must have a type of \"NuGet\"")
 					}
 
 					if !v.EnhancedMode {
-						t.Fatal("The feed must have enhanced mode set to true")
+						return errors.New("The feed must have enhanced mode set to true")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
-						t.Fatal("The feed must have a username of \"username\"")
+						return errors.New("The feed must have a username of \"username\"")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
-						t.Fatal("The feed must be have a downloads attempts set to \"5\"")
+						return errors.New("The feed must be have a downloads attempts set to \"5\"")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 10 {
-						t.Fatal("The feed must be have a downloads retry backoff set to \"10\"")
+						return errors.New("The feed must be have a downloads retry backoff set to \"10\"")
 					}
 
 					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
-						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
+						return errors.New("The feed must be have a feed uri of \"https://index.docker.io\"")
 					}
 
 					foundExecutionTarget := false
@@ -1523,13 +1523,13 @@ func TestNugetFeedExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundServer) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1564,25 +1564,25 @@ func TestWorkerPoolExport(t *testing.T) {
 					found = true
 
 					if v.WorkerPoolType != "StaticWorkerPool" {
-						t.Fatal("The worker pool must be have a type of \"StaticWorkerPool\" (was \"" + v.WorkerPoolType + "\"")
+						return errors.New("The worker pool must be have a type of \"StaticWorkerPool\" (was \"" + v.WorkerPoolType + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "A test worker pool" {
-						t.Fatal("The worker pool must be have a description of \"A test worker pool\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
+						return errors.New("The worker pool must be have a description of \"A test worker pool\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
 					}
 
 					if v.SortOrder != 3 {
-						t.Fatal("The worker pool must be have a sort order of \"3\" (was \"" + fmt.Sprint(v.SortOrder) + "\"")
+						return errors.New("The worker pool must be have a sort order of \"3\" (was \"" + fmt.Sprint(v.SortOrder) + "\"")
 					}
 
 					if v.IsDefault {
-						t.Fatal("The worker pool must be must not be the default")
+						return errors.New("The worker pool must be must not be the default")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an worker pool called \"" + workerPoolName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an worker pool called \"" + workerPoolName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1617,15 +1617,15 @@ func TestEnvironmentExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "A test environment" {
-						t.Fatal("The environment must be have a description of \"A test environment\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
+						return errors.New("The environment must be have a description of \"A test environment\" (was \"" + strutil.EmptyIfNil(v.Description) + "\"")
 					}
 
 					if !v.AllowDynamicInfrastructure {
-						t.Fatal("The environment must have dynamic infrastructure enabled.")
+						return errors.New("The environment must have dynamic infrastructure enabled.")
 					}
 
 					if v.UseGuidedFailure {
-						t.Fatal("The environment must not have guided failure enabled.")
+						return errors.New("The environment must not have guided failure enabled.")
 					}
 
 					jiraIntegration := lo.Filter(v.ExtensionSettings, func(item octopus.Extension, index int) bool {
@@ -1633,11 +1633,11 @@ func TestEnvironmentExport(t *testing.T) {
 					})
 
 					if len(jiraIntegration) != 1 {
-						t.Fatal("The environment must have Jira integration settings.")
+						return errors.New("The environment must have Jira integration settings.")
 					}
 
 					if jiraEnvironment, ok := jiraIntegration[0].Values["JiraEnvironmentType"]; !ok || jiraEnvironment != "unmapped" {
-						t.Fatal("The environment must have Jira environment type pf \"unmapped\".")
+						return errors.New("The environment must have Jira environment type pf \"unmapped\".")
 					}
 
 					jsmIntegration := lo.Filter(v.ExtensionSettings, func(item octopus.Extension, index int) bool {
@@ -1645,11 +1645,11 @@ func TestEnvironmentExport(t *testing.T) {
 					})
 
 					if len(jsmIntegration) != 1 {
-						t.Fatal("The environment must have JSM integration settings.")
+						return errors.New("The environment must have JSM integration settings.")
 					}
 
 					if jsmChangeControlled, ok := jsmIntegration[0].Values["JsmChangeControlled"]; !ok || !jsmChangeControlled.(bool) {
-						t.Fatal("The environment must have jsm integration enabled.")
+						return errors.New("The environment must have jsm integration enabled.")
 					}
 
 					serviceNowIntegration := lo.Filter(v.ExtensionSettings, func(item octopus.Extension, index int) bool {
@@ -1657,17 +1657,17 @@ func TestEnvironmentExport(t *testing.T) {
 					})
 
 					if len(serviceNowIntegration) != 1 {
-						t.Fatal("The environment must have service integration settings.")
+						return errors.New("The environment must have service integration settings.")
 					}
 
 					if snowChangeControlled, ok := serviceNowIntegration[0].Values["ServiceNowChangeControlled"]; !ok || !snowChangeControlled.(bool) {
-						t.Fatal("The environment must have service now integration enabled.")
+						return errors.New("The environment must have service now integration enabled.")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an environment called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an environment called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1702,23 +1702,23 @@ func TestLifecycleExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "A test lifecycle" {
-						t.Fatal("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
-						t.Fatal("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
+						return errors.New("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
 					}
 
 					if v.TentacleRetentionPolicy.ShouldKeepForever {
-						t.Fatal("The lifecycle must be have a tentacle retention not set to keep forever")
+						return errors.New("The lifecycle must be have a tentacle retention not set to keep forever")
 					}
 
 					if v.TentacleRetentionPolicy.Unit != "Items" {
-						t.Fatal("The lifecycle must be have a tentacle retention unit set to \"Items\" (was \"" + v.TentacleRetentionPolicy.Unit + "\")")
+						return errors.New("The lifecycle must be have a tentacle retention unit set to \"Items\" (was \"" + v.TentacleRetentionPolicy.Unit + "\")")
 					}
 
 					if v.ReleaseRetentionPolicy.QuantityToKeep != 1 {
-						t.Fatal("The lifecycle must be have a release retention policy of \"1\" (was \"" + fmt.Sprint(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
+						return errors.New("The lifecycle must be have a release retention policy of \"1\" (was \"" + fmt.Sprint(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
 					}
 
 					if !v.ReleaseRetentionPolicy.ShouldKeepForever {
@@ -1726,13 +1726,13 @@ func TestLifecycleExport(t *testing.T) {
 					}
 
 					if v.ReleaseRetentionPolicy.Unit != "Days" {
-						t.Fatal("The lifecycle must be have a release retention unit set to \"Days\" (was \"" + v.ReleaseRetentionPolicy.Unit + "\")")
+						return errors.New("The lifecycle must be have a release retention unit set to \"Days\" (was \"" + v.ReleaseRetentionPolicy.Unit + "\")")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an lifecycle called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an lifecycle called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1766,7 +1766,7 @@ func TestVariableSetExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 1 {
-				t.Fatal("Only 1 library variable set must be reimported, as the others are excluded.")
+				return errors.New("Only 1 library variable set must be reimported, as the others are excluded.")
 			}
 
 			resourceName := "Test"
@@ -1776,7 +1776,7 @@ func TestVariableSetExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test variable set" {
-						t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					resource := octopus.VariableSet{}
@@ -1787,73 +1787,73 @@ func TestVariableSetExport(t *testing.T) {
 					thirdVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.TagScopedVariable" })
 
 					if len(firstVar) != 1 {
-						t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
+						return errors.New("The library variable set variable must have a name of \"Test.Variable\"")
 					}
 
 					if len(secondVar) != 1 {
-						t.Fatal("The library variable set variable must have a name of \"Test.SecretVariable\"")
+						return errors.New("The library variable set variable must have a name of \"Test.SecretVariable\"")
 					}
 
 					if len(thirdVar) != 1 {
-						t.Fatal("The library variable set variable must have a name of \"Test.TagScopedVariable\"")
+						return errors.New("The library variable set variable must have a name of \"Test.TagScopedVariable\"")
 					}
 
 					if firstVar[0].Type != "String" {
-						t.Fatal("The library variable set variable must have a type of \"String\"")
+						return errors.New("The library variable set variable must have a type of \"String\"")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Description) != "Test variable" {
-						t.Fatal("The library variable set variable must have a description of \"Test variable\"")
+						return errors.New("The library variable set variable must have a description of \"Test variable\"")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Value) != "True" {
-						t.Fatal("The library variable set variable must have a value of \"True\"")
+						return errors.New("The library variable set variable must have a value of \"True\"")
 					}
 
 					if firstVar[0].IsSensitive {
-						t.Fatal("The library variable set variable must not be sensitive")
+						return errors.New("The library variable set variable must not be sensitive")
 					}
 
 					if !firstVar[0].IsEditable {
-						t.Fatal("The library variable set variable must be editable")
+						return errors.New("The library variable set variable must be editable")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Prompt.Description) != "test description" {
-						t.Fatal("The library variable set variable must have a prompt description of \"test description\"")
+						return errors.New("The library variable set variable must have a prompt description of \"test description\"")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Prompt.Label) != "test label" {
-						t.Fatal("The library variable set variable must have a prompt label of \"test label\"")
+						return errors.New("The library variable set variable must have a prompt label of \"test label\"")
 					}
 
 					if !firstVar[0].Prompt.Required {
-						t.Fatal("The library variable set variable must have a required prompt")
+						return errors.New("The library variable set variable must have a required prompt")
 					}
 
 					if firstVar[0].Prompt.DisplaySettings["Octopus.ControlType"] != "Select" {
-						t.Fatal("The library variable set variable must have a prompt control type of \"Select\"")
+						return errors.New("The library variable set variable must have a prompt control type of \"Select\"")
 					}
 
 					if firstVar[0].Prompt.DisplaySettings["Octopus.SelectOptions"] != "hi|there" {
-						t.Fatal("The library variable set variable must have a prompt select option of \"hi|there\"")
+						return errors.New("The library variable set variable must have a prompt select option of \"hi|there\"")
 					}
 
 					if !secondVar[0].IsSensitive {
-						t.Fatal("The library variable set variable \"Test.SecretVariable\" must be sensitive")
+						return errors.New("The library variable set variable \"Test.SecretVariable\" must be sensitive")
 					}
 
 					if len(thirdVar[0].Scope.TenantTag) != 1 {
-						t.Fatal("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scopes")
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scopes")
 					}
 
 					if thirdVar[0].Scope.TenantTag[0] != "tag1/a" {
-						t.Fatal("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scope of \"tag1/a\"")
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scope of \"tag1/a\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -1886,7 +1886,7 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 1 {
-				t.Fatal("Only 1 library variable set must be reimported, as the others are excluded.")
+				return errors.New("Only 1 library variable set must be reimported, as the others are excluded.")
 			}
 
 			resourceName := "Test"
@@ -1896,7 +1896,7 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test variable set" {
-						t.Fatal("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The library variable set must be have a description of \"Test variable set\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					resource := octopus.VariableSet{}
@@ -1907,73 +1907,73 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 					thirdVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.TagScopedVariable" })
 
 					if len(firstVar) != 1 {
-						t.Fatal("The library variable set variable must have a name of \"Test.Variable\"")
+						return errors.New("The library variable set variable must have a name of \"Test.Variable\"")
 					}
 
 					if len(secondVar) != 1 {
-						t.Fatal("The library variable set variable must have a name of \"Test.SecretVariable\"")
+						return errors.New("The library variable set variable must have a name of \"Test.SecretVariable\"")
 					}
 
 					if len(thirdVar) != 1 {
-						t.Fatal("The library variable set variable must have a name of \"Test.TagScopedVariable\"")
+						return errors.New("The library variable set variable must have a name of \"Test.TagScopedVariable\"")
 					}
 
 					if firstVar[0].Type != "String" {
-						t.Fatal("The library variable set variable must have a type of \"String\"")
+						return errors.New("The library variable set variable must have a type of \"String\"")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Description) != "Test variable" {
-						t.Fatal("The library variable set variable must have a description of \"Test variable\"")
+						return errors.New("The library variable set variable must have a description of \"Test variable\"")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Value) != "True" {
-						t.Fatal("The library variable set variable must have a value of \"True\"")
+						return errors.New("The library variable set variable must have a value of \"True\"")
 					}
 
 					if firstVar[0].IsSensitive {
-						t.Fatal("The library variable set variable must not be sensitive")
+						return errors.New("The library variable set variable must not be sensitive")
 					}
 
 					if !firstVar[0].IsEditable {
-						t.Fatal("The library variable set variable must be editable")
+						return errors.New("The library variable set variable must be editable")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Prompt.Description) != "test description" {
-						t.Fatal("The library variable set variable must have a prompt description of \"test description\"")
+						return errors.New("The library variable set variable must have a prompt description of \"test description\"")
 					}
 
 					if strutil.EmptyIfNil(firstVar[0].Prompt.Label) != "test label" {
-						t.Fatal("The library variable set variable must have a prompt label of \"test label\"")
+						return errors.New("The library variable set variable must have a prompt label of \"test label\"")
 					}
 
 					if !firstVar[0].Prompt.Required {
-						t.Fatal("The library variable set variable must have a required prompt")
+						return errors.New("The library variable set variable must have a required prompt")
 					}
 
 					if firstVar[0].Prompt.DisplaySettings["Octopus.ControlType"] != "Select" {
-						t.Fatal("The library variable set variable must have a prompt control type of \"Select\"")
+						return errors.New("The library variable set variable must have a prompt control type of \"Select\"")
 					}
 
 					if firstVar[0].Prompt.DisplaySettings["Octopus.SelectOptions"] != "hi|there" {
-						t.Fatal("The library variable set variable must have a prompt select option of \"hi|there\"")
+						return errors.New("The library variable set variable must have a prompt select option of \"hi|there\"")
 					}
 
 					if !secondVar[0].IsSensitive {
-						t.Fatal("The library variable set variable \"Test.SecretVariable\" must be sensitive")
+						return errors.New("The library variable set variable \"Test.SecretVariable\" must be sensitive")
 					}
 
 					if len(thirdVar[0].Scope.TenantTag) != 1 {
-						t.Fatal("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scopes")
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scopes")
 					}
 
 					if thirdVar[0].Scope.TenantTag[0] != "tag1/a" {
-						t.Fatal("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scope of \"tag1/a\"")
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scope of \"tag1/a\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2004,7 +2004,7 @@ func TestVariableSetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("All library variable sets must be excluded.")
+				return errors.New("All library variable sets must be excluded.")
 			}
 
 			return nil
@@ -2051,51 +2051,51 @@ func TestProjectExport(t *testing.T) {
 					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 1 {
-						t.Fatal("The project must have one variable")
+						return errors.New("the project must have one variable")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "Test project" {
-						t.Fatal("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if v.AutoCreateRelease {
-						t.Fatal("The project must not have auto release create enabled")
+						return errors.New("The project must not have auto release create enabled")
 					}
 
 					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
-						t.Fatal("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+						return errors.New("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
 					}
 
 					if v.DefaultToSkipIfAlreadyInstalled {
-						t.Fatal("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
+						return errors.New("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
 					}
 
 					if v.DiscreteChannelRelease {
-						t.Fatal("The project must not have DiscreteChannelRelease enabled")
+						return errors.New("The project must not have DiscreteChannelRelease enabled")
 					}
 
 					if v.IsDisabled {
-						t.Fatal("The project must not have IsDisabled enabled")
+						return errors.New("The project must not have IsDisabled enabled")
 					}
 
 					if v.IsVersionControlled {
-						t.Fatal("The project must not have IsVersionControlled enabled")
+						return errors.New("The project must not have IsVersionControlled enabled")
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
-						t.Fatal("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
+						return errors.New("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
 					}
 
 					if len(v.IncludedLibraryVariableSetIds) != 0 {
-						t.Fatal("The project must not have any library variable sets")
+						return errors.New("The project must not have any library variable sets")
 					}
 
 					if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
-						t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+						return errors.New("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
 					}
 
 					if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
-						t.Fatal("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+						return errors.New("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
 					}
 
 					if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
@@ -2105,7 +2105,7 @@ func TestProjectExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2150,13 +2150,13 @@ func TestProjectVarExcludedAllExport(t *testing.T) {
 					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
-						t.Fatal("The project must not have any variables")
+						return errors.New("The project must not have any variables")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			// check docker feed, used by a step, was exported
@@ -2218,13 +2218,13 @@ func TestProjectVarExcludedExport(t *testing.T) {
 					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
-						t.Fatal("The project must not have any variables")
+						return errors.New("The project must not have any variables")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2269,13 +2269,13 @@ func TestProjectVarExcludedRegexExport(t *testing.T) {
 					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
-						t.Fatal("The project must not have any variables")
+						return errors.New("The project must not have any variables")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2320,13 +2320,13 @@ func TestProjectVarExcludedExceptExport(t *testing.T) {
 					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
-						t.Fatal("The project must not have any variables")
+						return errors.New("The project must not have any variables")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2364,18 +2364,18 @@ func TestProjectChannelExport(t *testing.T) {
 					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
 
 					if err != nil {
-						t.Fatal(err.Error())
+						return err
 					}
 
 					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].PackageId) != "test2" {
-						t.Fatal("Deployment process should have renamed the package ID to test2")
+						return errors.New("Deployment process should have renamed the package ID to test2")
 					}
 
 					collection := octopus.GeneralCollection[octopus.Channel]{}
 					err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &collection)
 
 					if err != nil {
-						t.Fatal(err.Error())
+						return errors.New(err.Error())
 					}
 
 					channelName := "Test"
@@ -2386,39 +2386,39 @@ func TestProjectChannelExport(t *testing.T) {
 							foundChannel = true
 
 							if strutil.EmptyIfNil(c.Description) != "Test channel" {
-								t.Fatal("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
+								return errors.New("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
 							}
 
 							if !c.IsDefault {
-								t.Fatal("The channel must be be the default")
+								return errors.New("The channel must be be the default")
 							}
 
 							if len(c.Rules) != 1 {
-								t.Fatal("The channel must have one rule")
+								return errors.New("The channel must have one rule")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
-								t.Fatal("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
+								return errors.New("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
-								t.Fatal("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
+								return errors.New("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
-								t.Fatal("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+								return errors.New("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
 							}
 						}
 					}
 
 					if !foundChannel {
-						t.Fatal("Project must have an channel called \"" + channelName + "\"")
+						return errors.New("Project must have an channel called \"" + channelName + "\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2453,11 +2453,11 @@ func TestTagSetExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tagset" {
-						t.Fatal("The tag set must be have a description of \"Test tagset\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tag set must be have a description of \"Test tagset\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if v.SortOrder != 0 {
-						t.Fatal("The tag set must be have a sort order of \"0\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
+						return errors.New("The tag set must be have a sort order of \"0\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
 					}
 
 					tagAFound := false
@@ -2466,27 +2466,27 @@ func TestTagSetExport(t *testing.T) {
 							tagAFound = true
 
 							if strutil.EmptyIfNil(u.Description) != "tag a" {
-								t.Fatal("The tag a must be have a description of \"tag a\" (was \"" + strutil.EmptyIfNil(u.Description) + "\")")
+								return errors.New("The tag a must be have a description of \"tag a\" (was \"" + strutil.EmptyIfNil(u.Description) + "\")")
 							}
 
 							if u.Color != "#333333" {
-								t.Fatal("The tag a must be have a color of \"#333333\" (was \"" + u.Color + "\")")
+								return errors.New("The tag a must be have a color of \"#333333\" (was \"" + u.Color + "\")")
 							}
 
 							if u.SortOrder != 2 {
-								t.Fatal("The tag a must be have a sort order of \"2\" (was \"" + fmt.Sprint(u.SortOrder) + "\")")
+								return errors.New("The tag a must be have a sort order of \"2\" (was \"" + fmt.Sprint(u.SortOrder) + "\")")
 							}
 						}
 					}
 
 					if !tagAFound {
-						t.Fatal("Tag Set must have an tag called \"a\"")
+						return errors.New("Tag Set must have an tag called \"a\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tag set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tag set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2523,21 +2523,21 @@ func TestGitCredentialsExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "test git credential" {
-						t.Fatal("The git credential must be have a description of \"test git credential\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The git credential must be have a description of \"test git credential\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if v.Details.Username != "admin" {
-						t.Fatal("The git credential must be have a username of \"admin\" (was \"" + v.Details.Username + "\")")
+						return errors.New("The git credential must be have a username of \"admin\" (was \"" + v.Details.Username + "\")")
 					}
 
 					if v.Details.Type != "UsernamePassword" {
-						t.Fatal("The git credential must be have a credential type of \"UsernamePassword\" (was \"" + v.Details.Type + "\")")
+						return errors.New("The git credential must be have a credential type of \"UsernamePassword\" (was \"" + v.Details.Type + "\")")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an git credential called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an git credential called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2572,14 +2572,14 @@ func TestScriptModuleExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test script module" {
-						t.Fatal("The library variable set must be have a description of \"Test script module\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The library variable set must be have a description of \"Test script module\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					resource := octopus.VariableSet{}
 					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
 
 					if len(resource.Variables) != 2 {
-						t.Fatal("The library variable set must have two associated variables")
+						return errors.New("The library variable set must have two associated variables")
 					}
 
 					foundScript := false
@@ -2589,19 +2589,19 @@ func TestScriptModuleExport(t *testing.T) {
 							foundScript = true
 
 							if u.Type != "String" {
-								t.Fatal("The library variable set variable must have a type of \"String\"")
+								return errors.New("The library variable set variable must have a type of \"String\"")
 							}
 
 							if strutil.EmptyIfNil(u.Value) != "echo \"hi\"" {
-								t.Fatal("The library variable set variable must have a value of \"\"echo \\\"hi\\\"\"\"")
+								return errors.New("The library variable set variable must have a value of \"\"echo \\\"hi\\\"\"\"")
 							}
 
 							if u.IsSensitive {
-								t.Fatal("The library variable set variable must not be sensitive")
+								return errors.New("The library variable set variable must not be sensitive")
 							}
 
 							if !u.IsEditable {
-								t.Fatal("The library variable set variable must be editable")
+								return errors.New("The library variable set variable must be editable")
 							}
 						}
 
@@ -2609,32 +2609,32 @@ func TestScriptModuleExport(t *testing.T) {
 							foundLanguage = true
 
 							if u.Type != "String" {
-								t.Fatal("The library variable set variable must have a type of \"String\"")
+								return errors.New("The library variable set variable must have a type of \"String\"")
 							}
 
 							if strutil.EmptyIfNil(u.Value) != "PowerShell" {
-								t.Fatal("The library variable set variable must have a value of \"PowerShell\"")
+								return errors.New("The library variable set variable must have a value of \"PowerShell\"")
 							}
 
 							if u.IsSensitive {
-								t.Fatal("The library variable set variable must not be sensitive")
+								return errors.New("The library variable set variable must not be sensitive")
 							}
 
 							if !u.IsEditable {
-								t.Fatal("The library variable set variable must be editable")
+								return errors.New("The library variable set variable must be editable")
 							}
 						}
 					}
 
 					if !foundLanguage || !foundScript {
-						t.Fatal("Script module must create two variables for script and language")
+						return errors.New("Script module must create two variables for script and language")
 					}
 
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an library variable set called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2671,39 +2671,39 @@ func TestTenantsExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 3 {
-						t.Fatal("The tenant must have two tags")
+						return errors.New("The tenant must have two tags")
 					}
 
 					if lo.IndexOf(v.TenantTags, "type/a") == -1 {
-						t.Fatal("The tenant must have a tag called \"type/a\"")
+						return errors.New("The tenant must have a tag called \"type/a\"")
 					}
 
 					if lo.IndexOf(v.TenantTags, "type/b") == -1 {
-						t.Fatal("The tenant must have a tag called \"type/b\"")
+						return errors.New("The tenant must have a tag called \"type/b\"")
 					}
 
 					if lo.IndexOf(v.TenantTags, "type/ignorethis") == -1 {
-						t.Fatal("The tenant must have a tag called \"type/ignorethis\"")
+						return errors.New("The tenant must have a tag called \"type/ignorethis\"")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must be linked to one project")
+						return errors.New("The tenant must be linked to one project")
 					}
 
 					for _, u := range v.ProjectEnvironments {
 						if len(u) != 3 {
-							t.Fatal("The tenant must have be linked to three environments")
+							return errors.New("The tenant must have be linked to three environments")
 						}
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2734,7 +2734,7 @@ func TestTenantsExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have any tenants in space " + recreatedSpaceId)
+				return errors.New("Space must not have any tenants in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2769,7 +2769,7 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 			if lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
 				return item.Name == "Excluded"
 			}) {
-				t.Fatal("Space must have not tenant called \"Excluded\" in space " + recreatedSpaceId)
+				return errors.New("Space must have not tenant called \"Excluded\" in space " + recreatedSpaceId)
 			}
 
 			teamA := lo.Filter(collection.Items, func(item octopus.Tenant, index int) bool {
@@ -2777,13 +2777,13 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 			})
 
 			if len(teamA) != 1 {
-				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
+				return errors.New("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
 			}
 
 			if lo.SomeBy(teamA[0].TenantTags, func(item string) bool {
 				return item == "type/ignorethis"
 			}) {
-				t.Fatal("Tenant must not have a tag called \"type/ignorethis\"")
+				return errors.New("Tenant must not have a tag called \"type/ignorethis\"")
 			}
 
 			tagSetCollection := octopus.GeneralCollection[octopus.TagSet]{}
@@ -2798,13 +2798,13 @@ func TestTenantsExcludeTagsExport(t *testing.T) {
 			})
 
 			if len(typeTagSet) != 1 {
-				t.Fatal("Space must have a tagset called \"type\"")
+				return errors.New("Space must have a tagset called \"type\"")
 			}
 
 			if lo.SomeBy(typeTagSet[0].Tags, func(item octopus.Tag) bool {
 				return item.Name == "ignorethis"
 			}) {
-				t.Fatal("Space must not have a tag called \"ignorethis\" in the tag set called \"type\"")
+				return errors.New("Space must not have a tag called \"ignorethis\" in the tag set called \"type\"")
 			}
 
 			return nil
@@ -2837,7 +2837,7 @@ func TestTenantsExcludeTagSetsExport(t *testing.T) {
 			if !lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
 				return item.Name == "Excluded"
 			}) {
-				t.Fatal("Space must have tenant called \"Excluded\" in space " + recreatedSpaceId)
+				return errors.New("Space must have tenant called \"Excluded\" in space " + recreatedSpaceId)
 			}
 
 			teamA := lo.Filter(collection.Items, func(item octopus.Tenant, index int) bool {
@@ -2845,11 +2845,11 @@ func TestTenantsExcludeTagSetsExport(t *testing.T) {
 			})
 
 			if len(teamA) != 1 {
-				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
+				return errors.New("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
 			}
 
 			if len(teamA[0].TenantTags) != 0 {
-				t.Fatal("\"Team A\" must not have any tags")
+				return errors.New("\"Team A\" must not have any tags")
 			}
 
 			tagSetCollection := octopus.GeneralCollection[octopus.TagSet]{}
@@ -2864,7 +2864,7 @@ func TestTenantsExcludeTagSetsExport(t *testing.T) {
 			})
 
 			if len(typeTagSet) != 0 {
-				t.Fatal("Space must not have a tagset called \"type\"")
+				return errors.New("Space must not have a tagset called \"type\"")
 			}
 
 			return nil
@@ -2897,7 +2897,7 @@ func TestTenantsExcludeRegexExport(t *testing.T) {
 			if lo.SomeBy(collection.Items, func(item octopus.Tenant) bool {
 				return item.Name == "Excluded"
 			}) {
-				t.Fatal("Space must not have tenant called \"Excluded\" in space " + recreatedSpaceId)
+				return errors.New("Space must not have tenant called \"Excluded\" in space " + recreatedSpaceId)
 			}
 
 			teamA := lo.Filter(collection.Items, func(item octopus.Tenant, index int) bool {
@@ -2905,7 +2905,7 @@ func TestTenantsExcludeRegexExport(t *testing.T) {
 			})
 
 			if len(teamA) != 1 {
-				t.Fatal("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
+				return errors.New("Space must have tenant called \"Team A\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -2945,33 +2945,33 @@ func TestCertificateExport(t *testing.T) {
 					found = true
 
 					if v.Notes != "A test certificate" {
-						t.Fatal("The certificate must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
+						return errors.New("The certificate must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
 					}
 
 					if v.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The certificate must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
+						return errors.New("The certificate must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
 					}
 
 					if v.SubjectDistinguishedName != "CN=test.com" {
-						t.Fatal("The certificate must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
+						return errors.New("The certificate must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
 					}
 
 					if len(v.EnvironmentIds) != 0 {
-						t.Fatal("The certificate must have one project environment")
+						return errors.New("The certificate must have one project environment")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatal("The certificate must have no tenant tags")
+						return errors.New("The certificate must have no tenant tags")
 					}
 
 					if len(v.TenantIds) != 0 {
-						t.Fatal("The certificate must have no tenants")
+						return errors.New("The certificate must have no tenants")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			tenantedCertificate := lo.Filter(collection.Items, func(item octopus.Certificate, index int) bool {
@@ -2979,11 +2979,11 @@ func TestCertificateExport(t *testing.T) {
 			})
 
 			if len(tenantedCertificate) != 1 {
-				t.Fatal("Space must have an tenant called \"Tenanted\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"Tenanted\" in space " + recreatedSpaceId)
 			}
 
 			if len(tenantedCertificate[0].TenantIds) != 1 {
-				t.Fatal("The certificate must have one tenant")
+				return errors.New("The certificate must have one tenant")
 			}
 
 			return nil
@@ -3021,33 +3021,33 @@ func TestCertificateExportWithDummyValues(t *testing.T) {
 					found = true
 
 					if v.Notes != "A test certificate" {
-						t.Fatal("The tenant must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
+						return errors.New("The tenant must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
 					}
 
 					if v.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The tenant must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
+						return errors.New("The tenant must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
 					}
 
 					if v.SubjectDistinguishedName != "CN=test.com" {
-						t.Fatal("The tenant must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
+						return errors.New("The tenant must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
 					}
 
 					if len(v.EnvironmentIds) != 0 {
-						t.Fatal("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatal("The tenant must have no tenant tags")
+						return errors.New("The tenant must have no tenant tags")
 					}
 
 					if len(v.TenantIds) != 0 {
-						t.Fatal("The tenant must have no tenants")
+						return errors.New("The tenant must have no tenants")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3085,7 +3085,7 @@ func TestTenantVariablesExport(t *testing.T) {
 								// we expect one project variable to be defined
 								found = true
 								if value != "my value" {
-									t.Fatal("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
+									return errors.New("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
 								}
 							}
 						}
@@ -3094,7 +3094,7 @@ func TestTenantVariablesExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant project variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant project variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3129,85 +3129,85 @@ func TestMachinePolicyExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(machinePolicy.Description) != "test machine policy" {
-						t.Fatal("The machine policy must have a description of \"test machine policy\" (was \"" + strutil.EmptyIfNil(machinePolicy.Description) + "\")")
+						return errors.New("The machine policy must have a description of \"test machine policy\" (was \"" + strutil.EmptyIfNil(machinePolicy.Description) + "\")")
 					}
 
 					if machinePolicy.ConnectionConnectTimeout != "00:01:00" {
-						t.Fatal("The machine policy must have a ConnectionConnectTimeout of \"00:01:00\" (was \"" + machinePolicy.ConnectionConnectTimeout + "\")")
+						return errors.New("The machine policy must have a ConnectionConnectTimeout of \"00:01:00\" (was \"" + machinePolicy.ConnectionConnectTimeout + "\")")
 					}
 
 					if *machinePolicy.ConnectionRetryCountLimit != 5 {
-						t.Fatal("The machine policy must have a ConnectionRetryCountLimit of \"5\" (was \"" + fmt.Sprint(machinePolicy.ConnectionRetryCountLimit) + "\")")
+						return errors.New("The machine policy must have a ConnectionRetryCountLimit of \"5\" (was \"" + fmt.Sprint(machinePolicy.ConnectionRetryCountLimit) + "\")")
 					}
 
 					if machinePolicy.ConnectionRetrySleepInterval != "00:00:01" {
-						t.Fatal("The machine policy must have a ConnectionRetrySleepInterval of \"00:00:01\" (was \"" + machinePolicy.ConnectionRetrySleepInterval + "\")")
+						return errors.New("The machine policy must have a ConnectionRetrySleepInterval of \"00:00:01\" (was \"" + machinePolicy.ConnectionRetrySleepInterval + "\")")
 					}
 
 					if machinePolicy.ConnectionRetryTimeLimit != "00:05:00" {
-						t.Fatal("The machine policy must have a ConnectionRetryTimeLimit of \"00:05:00\" (was \"" + machinePolicy.ConnectionRetryTimeLimit + "\")")
+						return errors.New("The machine policy must have a ConnectionRetryTimeLimit of \"00:05:00\" (was \"" + machinePolicy.ConnectionRetryTimeLimit + "\")")
 					}
 
 					if machinePolicy.PollingRequestMaximumMessageProcessingTimeout != "00:10:00" {
-						t.Fatal("The machine policy must have a PollingRequestMaximumMessageProcessingTimeout of \"00:10:00\" (was \"" + machinePolicy.PollingRequestMaximumMessageProcessingTimeout + "\")")
+						return errors.New("The machine policy must have a PollingRequestMaximumMessageProcessingTimeout of \"00:10:00\" (was \"" + machinePolicy.PollingRequestMaximumMessageProcessingTimeout + "\")")
 					}
 
 					if machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan != "00:20:00" {
-						t.Fatal("The machine policy must have a DeleteMachinesElapsedTimeSpan of \"00:20:00\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan + "\")")
+						return errors.New("The machine policy must have a DeleteMachinesElapsedTimeSpan of \"00:20:00\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan + "\")")
 					}
 
 					if machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior != "DeleteUnavailableMachines" {
-						t.Fatal("The machine policy must have a MachineCleanupPolicy.DeleteMachinesBehavior of \"DeleteUnavailableMachines\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior + "\")")
+						return errors.New("The machine policy must have a MachineCleanupPolicy.DeleteMachinesBehavior of \"DeleteUnavailableMachines\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior + "\")")
 					}
 
 					if machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior != "ExpectedToBeOnline" {
-						t.Fatal("The machine policy must have a MachineConnectivityPolicy.MachineConnectivityBehavior of \"ExpectedToBeOnline\" (was \"" + machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior + "\")")
+						return errors.New("The machine policy must have a MachineConnectivityPolicy.MachineConnectivityBehavior of \"ExpectedToBeOnline\" (was \"" + machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior + "\")")
 					}
 
 					if machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType != "Inline" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType + "\")")
 					}
 
 					if machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody != "" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody of \"\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody of \"\" (was \"" + machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody + "\")")
 					}
 
 					if machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType != "Inline" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType of \"Inline\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType + "\")")
 					}
 
 					if strings.HasPrefix(machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody, "$freeDiskSpaceThreshold") {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody to start with \"$freeDiskSpaceThreshold\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody to start with \"$freeDiskSpaceThreshold\" (was \"" + machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody + "\")")
 					}
 
 					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) != "UTC" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCronTimezone of \"UTC\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCronTimezone of \"UTC\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCronTimezone) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) != "" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCron of \"\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.HealthCheckCron of \"\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckCron) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) != "RunScript" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckType of \"RunScript\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.HealthCheckType of \"RunScript\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckType) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) != "00:10:00" {
-						t.Fatal("The machine policy must have a MachineHealthCheckPolicy.HealthCheckInterval of \"00:10:00\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) + "\")")
+						return errors.New("The machine policy must have a MachineHealthCheckPolicy.HealthCheckInterval of \"00:10:00\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) != "UpdateOnDeployment" {
-						t.Fatal("The machine policy must have a MachineUpdatePolicy.CalamariUpdateBehavior of \"UpdateOnDeployment\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+						return errors.New("The machine policy must have a MachineUpdatePolicy.CalamariUpdateBehavior of \"UpdateOnDeployment\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior) != "NeverUpdate" {
-						t.Fatal("The machine policy must have a MachineUpdatePolicy.TentacleUpdateBehavior of \"NeverUpdate\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
+						return errors.New("The machine policy must have a MachineUpdatePolicy.TentacleUpdateBehavior of \"NeverUpdate\" (was \"" + strutil.EmptyIfNil(machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior) + "\")")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an machine policy for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an machine policy for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3249,26 +3249,26 @@ func TestProjectTriggerExport(t *testing.T) {
 						foundTrigger = true
 
 						if trigger.Name != "test" {
-							t.Fatal("The project must have a trigger called \"test\" (was \"" + trigger.Name + "\")")
+							return errors.New("The project must have a trigger called \"test\" (was \"" + trigger.Name + "\")")
 						}
 
 						if trigger.Filter.FilterType != "MachineFilter" {
-							t.Fatal("The project trigger must have Filter.FilterType set to \"MachineFilter\" (was \"" + trigger.Filter.FilterType + "\")")
+							return errors.New("The project trigger must have Filter.FilterType set to \"MachineFilter\" (was \"" + trigger.Filter.FilterType + "\")")
 						}
 
 						if trigger.Filter.EventGroups[0] != "MachineAvailableForDeployment" {
-							t.Fatal("The project trigger must have Filter.EventGroups[0] set to \"MachineFilter\" (was \"" + trigger.Filter.EventGroups[0] + "\")")
+							return errors.New("The project trigger must have Filter.EventGroups[0] set to \"MachineFilter\" (was \"" + trigger.Filter.EventGroups[0] + "\")")
 						}
 					}
 				}
 			}
 
 			if !foundProject {
-				t.Fatal("Space must have an project \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			if !foundTrigger {
-				t.Fatal("Project must have a trigger")
+				return errors.New("Project must have a trigger")
 			}
 
 			return nil
@@ -3307,7 +3307,7 @@ func TestK8sTargetExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.DefaultWorkerPoolId) == "" {
@@ -3317,7 +3317,7 @@ func TestK8sTargetExport(t *testing.T) {
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3349,7 +3349,7 @@ func TestK8sTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have an targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have an targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3381,7 +3381,7 @@ func TestK8sTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have an targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have an targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3413,7 +3413,7 @@ func TestK8sTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have an targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have an targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3445,7 +3445,7 @@ func TestK8sTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have an targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have an targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3485,7 +3485,7 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesAzure" {
@@ -3503,7 +3503,7 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3538,7 +3538,7 @@ func TestK8sTargetGcpAuthExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesGoogleCloud" {
@@ -3560,7 +3560,7 @@ func TestK8sTargetGcpAuthExport(t *testing.T) {
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3597,7 +3597,7 @@ func TestK8sTargetTokenAuthExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesStandard" {
@@ -3607,7 +3607,7 @@ func TestK8sTargetTokenAuthExport(t *testing.T) {
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3645,7 +3645,7 @@ func TestK8sTargetCertAuthExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesCertificate" {
@@ -3655,7 +3655,7 @@ func TestK8sTargetCertAuthExport(t *testing.T) {
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3700,17 +3700,17 @@ func TestSshTargetExport(t *testing.T) {
 					foundResource = true
 
 					if machine.Endpoint.Host != "3.25.215.87" {
-						t.Fatal("The machine must have a Endpoint.Host of \"3.25.215.87\" (was \"" + machine.Endpoint.Host + "\")")
+						return errors.New("The machine must have a Endpoint.Host of \"3.25.215.87\" (was \"" + machine.Endpoint.Host + "\")")
 					}
 
 					if machine.Endpoint.DotNetCorePlatform != "linux-x64" {
-						t.Fatal("The machine must have a Endpoint.DotNetCorePlatform of \"linux-x64\" (was \"" + machine.Endpoint.DotNetCorePlatform + "\")")
+						return errors.New("The machine must have a Endpoint.DotNetCorePlatform of \"linux-x64\" (was \"" + machine.Endpoint.DotNetCorePlatform + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3748,7 +3748,7 @@ func TestSshTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have any targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have any targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3786,7 +3786,7 @@ func TestSshTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have any targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have any targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3824,7 +3824,7 @@ func TestSshTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have any targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have any targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3862,7 +3862,7 @@ func TestSshTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have any targets in space " + recreatedSpaceId)
+				return errors.New("Space must not have any targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3900,29 +3900,29 @@ func TestListeningTargetExport(t *testing.T) {
 					foundResource = true
 
 					if machine.Uri != "https://tentacle/" {
-						t.Fatal("The machine must have a Uri of \"https://tentacle/\" (was \"" + machine.Uri + "\")")
+						return errors.New("The machine must have a Uri of \"https://tentacle/\" (was \"" + machine.Uri + "\")")
 					}
 
 					if machine.Thumbprint != "55E05FD1B0F76E60F6DA103988056CE695685FD1" {
-						t.Fatal("The machine must have a Thumbprint of \"55E05FD1B0F76E60F6DA103988056CE695685FD1\" (was \"" + machine.Thumbprint + "\")")
+						return errors.New("The machine must have a Thumbprint of \"55E05FD1B0F76E60F6DA103988056CE695685FD1\" (was \"" + machine.Thumbprint + "\")")
 					}
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "vm" {
-						t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3953,7 +3953,7 @@ func TestListeningTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -3984,7 +3984,7 @@ func TestListeningTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4015,7 +4015,7 @@ func TestListeningTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4046,7 +4046,7 @@ func TestListeningTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4084,29 +4084,29 @@ func TestPollingTargetExport(t *testing.T) {
 					foundResource = true
 
 					if machine.Endpoint.Uri != "poll://abcdefghijklmnopqrst/" {
-						t.Fatal("The machine must have a Uri of \"poll://abcdefghijklmnopqrst/\" (was \"" + machine.Endpoint.Uri + "\")")
+						return errors.New("The machine must have a Uri of \"poll://abcdefghijklmnopqrst/\" (was \"" + machine.Endpoint.Uri + "\")")
 					}
 
 					if machine.Thumbprint != "1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86" {
-						t.Fatal("The machine must have a Thumbprint of \"1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86\" (was \"" + machine.Thumbprint + "\")")
+						return errors.New("The machine must have a Thumbprint of \"1854A302E5D9EAC1CAA3DA1F5249F82C28BB2B86\" (was \"" + machine.Thumbprint + "\")")
 					}
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "vm" {
-						t.Fatal("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"vm\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4137,7 +4137,7 @@ func TestPollingTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4168,7 +4168,7 @@ func TestPollingTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4199,7 +4199,7 @@ func TestPollingTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4230,7 +4230,7 @@ func TestPollingTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4268,21 +4268,21 @@ func TestCloudRegionTargetExport(t *testing.T) {
 					foundResource = true
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "cloud" {
-						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4313,7 +4313,7 @@ func TestCloudRegionTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4344,7 +4344,7 @@ func TestCloudRegionTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4375,7 +4375,7 @@ func TestCloudRegionTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4406,7 +4406,7 @@ func TestCloudRegionTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4444,29 +4444,29 @@ func TestOfflineDropTargetExport(t *testing.T) {
 					foundResource = true
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "offline" {
-						t.Fatal("The machine must have a role of \"offline\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"offline\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 
 					if machine.Endpoint.ApplicationsDirectory != "c:\\temp" {
-						t.Fatal("The machine must have a Endpoint.ApplicationsDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.ApplicationsDirectory + "\")")
+						return errors.New("The machine must have a Endpoint.ApplicationsDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.ApplicationsDirectory + "\")")
 					}
 
 					if machine.Endpoint.OctopusWorkingDirectory != "c:\\temp" {
-						t.Fatal("The machine must have a Endpoint.OctopusWorkingDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.OctopusWorkingDirectory + "\")")
+						return errors.New("The machine must have a Endpoint.OctopusWorkingDirectory of \"c:\\temp\" (was \"" + machine.Endpoint.OctopusWorkingDirectory + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4497,7 +4497,7 @@ func TestOfflineDropTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4528,7 +4528,7 @@ func TestOfflineDropTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4559,7 +4559,7 @@ func TestOfflineDropTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4590,7 +4590,7 @@ func TestOfflineDropTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4629,33 +4629,33 @@ func TestAzureCloudServiceTargetExport(t *testing.T) {
 					foundResource = true
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "cloud" {
-						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 
 					if machine.Endpoint.CloudServiceName != "servicename" {
-						t.Fatal("The machine must have a Endpoint.CloudServiceName of \"c:\\temp\" (was \"" + machine.Endpoint.CloudServiceName + "\")")
+						return errors.New("The machine must have a Endpoint.CloudServiceName of \"c:\\temp\" (was \"" + machine.Endpoint.CloudServiceName + "\")")
 					}
 
 					if machine.Endpoint.StorageAccountName != "accountname" {
-						t.Fatal("The machine must have a Endpoint.StorageAccountName of \"accountname\" (was \"" + machine.Endpoint.StorageAccountName + "\")")
+						return errors.New("The machine must have a Endpoint.StorageAccountName of \"accountname\" (was \"" + machine.Endpoint.StorageAccountName + "\")")
 					}
 
 					if !machine.Endpoint.UseCurrentInstanceCount {
-						t.Fatal("The machine must have Endpoint.UseCurrentInstanceCount set")
+						return errors.New("The machine must have Endpoint.UseCurrentInstanceCount set")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4687,7 +4687,7 @@ func TestAzureCloudServiceTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4719,7 +4719,7 @@ func TestAzureCloudServiceTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4751,7 +4751,7 @@ func TestAzureCloudServiceTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4783,7 +4783,7 @@ func TestAzureCloudServiceTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4823,33 +4823,33 @@ func TestAzureServiceFabricTargetExport(t *testing.T) {
 					foundResource = true
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "cloud" {
-						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 
 					if machine.Endpoint.ConnectionEndpoint != "http://endpoint" {
-						t.Fatal("The machine must have a Endpoint.ConnectionEndpoint of \"http://endpoint\" (was \"" + machine.Endpoint.ConnectionEndpoint + "\")")
+						return errors.New("The machine must have a Endpoint.ConnectionEndpoint of \"http://endpoint\" (was \"" + machine.Endpoint.ConnectionEndpoint + "\")")
 					}
 
 					if machine.Endpoint.AadCredentialType != "UserCredential" {
-						t.Fatal("The machine must have a Endpoint.AadCredentialType of \"UserCredential\" (was \"" + machine.Endpoint.AadCredentialType + "\")")
+						return errors.New("The machine must have a Endpoint.AadCredentialType of \"UserCredential\" (was \"" + machine.Endpoint.AadCredentialType + "\")")
 					}
 
 					if machine.Endpoint.AadUserCredentialUsername != "username" {
-						t.Fatal("The machine must have a Endpoint.AadUserCredentialUsername of \"username\" (was \"" + machine.Endpoint.AadUserCredentialUsername + "\")")
+						return errors.New("The machine must have a Endpoint.AadUserCredentialUsername of \"username\" (was \"" + machine.Endpoint.AadUserCredentialUsername + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4880,7 +4880,7 @@ func TestAzureServiceFabricTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no target in space " + recreatedSpaceId)
+				return errors.New("Space must have no target in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4911,7 +4911,7 @@ func TestAzureServiceFabricTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no target in space " + recreatedSpaceId)
+				return errors.New("Space must have no target in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4942,7 +4942,7 @@ func TestAzureServiceFabricTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no target in space " + recreatedSpaceId)
+				return errors.New("Space must have no target in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -4973,7 +4973,7 @@ func TestAzureServiceFabricTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no target in space " + recreatedSpaceId)
+				return errors.New("Space must have no target in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5015,33 +5015,33 @@ func TestAzureWebAppTargetExport(t *testing.T) {
 					foundResource = true
 
 					if len(machine.Roles) != 1 {
-						t.Fatal("The machine must have 1 role")
+						return errors.New("The machine must have 1 role")
 					}
 
 					if machine.Roles[0] != "cloud" {
-						t.Fatal("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
+						return errors.New("The machine must have a role of \"cloud\" (was \"" + machine.Roles[0] + "\")")
 					}
 
 					if machine.TenantedDeploymentParticipation != "Untenanted" {
-						t.Fatal("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
+						return errors.New("The machine must have a TenantedDeploymentParticipation of \"Untenanted\" (was \"" + machine.TenantedDeploymentParticipation + "\")")
 					}
 
 					if machine.Endpoint.ResourceGroupName != "mattc-webapp" {
-						t.Fatal("The machine must have a Endpoint.ResourceGroupName of \"mattc-webapp\" (was \"" + machine.Endpoint.ResourceGroupName + "\")")
+						return errors.New("The machine must have a Endpoint.ResourceGroupName of \"mattc-webapp\" (was \"" + machine.Endpoint.ResourceGroupName + "\")")
 					}
 
 					if machine.Endpoint.WebAppName != "mattc-webapp" {
-						t.Fatal("The machine must have a Endpoint.WebAppName of \"mattc-webapp\" (was \"" + machine.Endpoint.WebAppName + "\")")
+						return errors.New("The machine must have a Endpoint.WebAppName of \"mattc-webapp\" (was \"" + machine.Endpoint.WebAppName + "\")")
 					}
 
 					if machine.Endpoint.WebAppSlotName != "slot1" {
-						t.Fatal("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
+						return errors.New("The machine must have a Endpoint.WebAppSlotName of \"slot1\" (was \"" + machine.Endpoint.WebAppSlotName + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5076,7 +5076,7 @@ func TestAzureWebAppTargetExcludeExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5111,7 +5111,7 @@ func TestAzureWebAppTargetExcludeRegexExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5146,7 +5146,7 @@ func TestAzureWebAppTargetExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5203,7 +5203,7 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must have no targets in space " + recreatedSpaceId)
+				return errors.New("Space must have no targets in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5830,7 +5830,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				_, err = octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(feedVar[0].Value), &feed)
 
 				if err != nil {
-					t.Fatal(err)
+					return err
 				}
 
 				if strutil.EmptyIfNil(feed.FeedType) != "Helm" {
@@ -5854,7 +5854,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(accountVar[0].Value), &account)
 
 				if err != nil {
-					t.Fatal(err)
+					return err
 				}
 
 				if account.AccountType != "AmazonWebServicesAccount" {
@@ -5874,7 +5874,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPoolVar[0].Value), &workerPool)
 
 				if err != nil {
-					t.Fatal(err)
+					return err
 				}
 
 				if workerPool.Name != "Default Worker Pool" {
@@ -5894,7 +5894,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificateVar[0].Value), &certificate)
 
 				if err != nil {
-					t.Fatal(err)
+					return err
 				}
 
 				if certificate.Name != "Test" {
@@ -5921,7 +5921,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(runbook) != 1 {
-					t.Fatal("Should have created a runbook called \"MyRunbook3\"")
+					return errors.New("Should have created a runbook called \"MyRunbook3\"")
 				}
 
 				runbookProcess := octopus.RunbookProcess{}
@@ -5932,7 +5932,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
-					t.Fatal("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
+					return errors.New("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
 				}
 
 				return nil
@@ -5955,7 +5955,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(project) != 1 {
-					t.Fatal("Should have created a project called \"Lookup project\"")
+					return errors.New("Should have created a project called \"Lookup project\"")
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
@@ -5968,11 +5968,11 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if !found {
-					t.Fatal("Expected to find a deployment process")
+					return errors.New("Expected to find a deployment process")
 				}
 
 				if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
-					t.Fatal("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
+					return errors.New("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
 				}
 
 				return nil
@@ -6125,17 +6125,17 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 					found = true
 
 					if v.PersistenceSettings.Credentials.Type != "UsernamePassword" {
-						t.Fatal("The project must be have a git credential type of \"UsernamePassword\" (was \"" + v.PersistenceSettings.Credentials.Type + "\")")
+						return errors.New("The project must be have a git credential type of \"UsernamePassword\" (was \"" + v.PersistenceSettings.Credentials.Type + "\")")
 					}
 
 					if v.PersistenceSettings.Credentials.Username != "mcasperson" {
-						t.Fatal("The project must be have a git username of \"mcasperson\" (was \"" + v.PersistenceSettings.Credentials.Username + "\")")
+						return errors.New("The project must be have a git username of \"mcasperson\" (was \"" + v.PersistenceSettings.Credentials.Username + "\")")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6172,7 +6172,7 @@ func TestProjectWithDollarSignsExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6209,7 +6209,7 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6246,23 +6246,23 @@ func TestGithubFeedExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.FeedType) != "GitHub" {
-						t.Fatal("The feed must have a type of \"GitHub\", was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
+						return errors.New("The feed must have a type of \"GitHub\", was \"" + strutil.EmptyIfNil(v.FeedType) + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.Username) != "test-username" {
-						t.Fatal("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
+						return errors.New("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadAttempts) != 1 {
-						t.Fatal("The feed must be have a downloads attempts set to \"1\"")
+						return errors.New("The feed must be have a downloads attempts set to \"1\"")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadRetryBackoffSeconds) != 30 {
-						t.Fatal("The feed must be have a downloads retry backoff set to \"30\"")
+						return errors.New("The feed must be have a downloads retry backoff set to \"30\"")
 					}
 
 					if strutil.EmptyIfNil(v.FeedUri) != "https://api.github.com" {
-						t.Fatal("The feed must be have a feed uri of \"https://api.github.com\", was \"" + strutil.EmptyIfNil(v.FeedUri) + "\"")
+						return errors.New("The feed must be have a feed uri of \"https://api.github.com\", was \"" + strutil.EmptyIfNil(v.FeedUri) + "\"")
 					}
 
 					foundExecutionTarget := false
@@ -6278,13 +6278,13 @@ func TestGithubFeedExport(t *testing.T) {
 					}
 
 					if !(foundExecutionTarget && foundServer) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
+						return errors.New("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"Server\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6321,19 +6321,19 @@ func TestRunbookExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test Runbook" {
-						t.Fatal("The runbook must have a description of \"GitHub\", was \"" + strutil.EmptyIfNil(v.Description) + "\"")
+						return errors.New("The runbook must have a description of \"GitHub\", was \"" + strutil.EmptyIfNil(v.Description) + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.MultiTenancyMode) != "Untenanted" {
-						t.Fatal("The runbook must have a MultiTenancyMode of \"Untenanted\", was \"" + strutil.EmptyIfNil(v.MultiTenancyMode) + "\"")
+						return errors.New("The runbook must have a MultiTenancyMode of \"Untenanted\", was \"" + strutil.EmptyIfNil(v.MultiTenancyMode) + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.EnvironmentScope) != "Specified" {
-						t.Fatal("The runbook must have a EnvironmentScope of \"Specified\", was \"" + strutil.EmptyIfNil(v.EnvironmentScope) + "\"")
+						return errors.New("The runbook must have a EnvironmentScope of \"Specified\", was \"" + strutil.EmptyIfNil(v.EnvironmentScope) + "\"")
 					}
 
 					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
-						t.Fatal("The runbook must have a DefaultGuidedFailureMode of \"EnvironmentDefault\", was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\"")
+						return errors.New("The runbook must have a DefaultGuidedFailureMode of \"EnvironmentDefault\", was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\"")
 					}
 
 					if !v.ForcePackageDownload {
@@ -6341,64 +6341,64 @@ func TestRunbookExport(t *testing.T) {
 					}
 
 					if len(v.Environments) != 1 {
-						t.Fatal("The runbook must have a 1 Environments, was \"" + fmt.Sprint(len(v.Environments)) + "\"")
+						return errors.New("The runbook must have a 1 Environments, was \"" + fmt.Sprint(len(v.Environments)) + "\"")
 					}
 
 					if v.ConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
-						t.Fatal("The runbook must have a ConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\", was \"" + v.ConnectivityPolicy.SkipMachineBehavior + "\"")
+						return errors.New("The runbook must have a ConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\", was \"" + v.ConnectivityPolicy.SkipMachineBehavior + "\"")
 					}
 
 					if v.ConnectivityPolicy.AllowDeploymentsToNoTargets {
-						t.Fatal("The runbook must have a ConnectivityPolicy.AllowDeploymentsToNoTargets of \"false\", was \"" + fmt.Sprint(v.ConnectivityPolicy.AllowDeploymentsToNoTargets) + "\"")
+						return errors.New("The runbook must have a ConnectivityPolicy.AllowDeploymentsToNoTargets of \"false\", was \"" + fmt.Sprint(v.ConnectivityPolicy.AllowDeploymentsToNoTargets) + "\"")
 					}
 
 					if v.ConnectivityPolicy.ExcludeUnhealthyTargets {
-						t.Fatal("The runbook must have a ConnectivityPolicy.ExcludeUnhealthyTargets of \"false\", was \"" + fmt.Sprint(v.ConnectivityPolicy.ExcludeUnhealthyTargets) + "\"")
+						return errors.New("The runbook must have a ConnectivityPolicy.ExcludeUnhealthyTargets of \"false\", was \"" + fmt.Sprint(v.ConnectivityPolicy.ExcludeUnhealthyTargets) + "\"")
 					}
 
 					process := octopus.RunbookProcess{}
 					_, err := octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(v.RunbookProcessId), &process)
 
 					if err != nil {
-						t.Fatal("Failed to retrieve the runbook process")
+						return errors.New("Failed to retrieve the runbook process")
 					}
 
 					if len(process.Steps) != 2 {
-						t.Fatal("The runbook must have a 2 steps, was \"" + fmt.Sprint(len(process.Steps)) + "\"")
+						return errors.New("The runbook must have a 2 steps, was \"" + fmt.Sprint(len(process.Steps)) + "\"")
 					}
 
 					if strutil.EmptyIfNil(process.Steps[0].Name) != "Hello world (using PowerShell)" {
-						t.Fatal("The runbook step must have a name of \"Hello world (using PowerShell)\", was \"" + strutil.EmptyIfNil(process.Steps[0].Name) + "\"")
+						return errors.New("The runbook step must have a name of \"Hello world (using PowerShell)\", was \"" + strutil.EmptyIfNil(process.Steps[0].Name) + "\"")
 					}
 
 					if fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) != "Octopus.Features.JsonConfigurationVariables" {
-						t.Fatal("The runbook step must have the feature \"Octopus.Features.JsonConfigurationVariables\" enabled (was \"" + fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) + "\"")
+						return errors.New("The runbook step must have the feature \"Octopus.Features.JsonConfigurationVariables\" enabled (was \"" + fmt.Sprint(process.Steps[0].Actions[0].Properties["Octopus.Action.EnabledFeatures"]) + "\"")
 					}
 
 					if len(process.Steps[0].Actions[0].Packages) != 1 {
-						t.Fatal("The runbook must have one package")
+						return errors.New("The runbook must have one package")
 					}
 
 					if strutil.EmptyIfNil(process.Steps[0].Actions[0].Packages[0].Name) != "package1" {
-						t.Fatal("The runbook must have one package called \"package1\", was \"" + strutil.EmptyIfNil(process.Steps[0].Actions[0].Packages[0].Name) + "\"")
+						return errors.New("The runbook must have one package called \"package1\", was \"" + strutil.EmptyIfNil(process.Steps[0].Actions[0].Packages[0].Name) + "\"")
 					}
 
 					if strutil.EmptyIfNil(process.Steps[1].Name) != "Test" {
-						t.Fatal("The runbook step must have a name of \"Test\", was \"" + strutil.EmptyIfNil(process.Steps[1].Name) + "\"")
+						return errors.New("The runbook step must have a name of \"Test\", was \"" + strutil.EmptyIfNil(process.Steps[1].Name) + "\"")
 					}
 
 					if len(process.Steps[1].Actions[0].Packages) != 1 {
-						t.Fatal("The runbook must have one package")
+						return errors.New("The runbook must have one package")
 					}
 
 					if strutil.EmptyIfNil(process.Steps[1].Actions[0].Packages[0].Name) != "" {
-						t.Fatal("The runbook must have one unnamed primary package, was \"" + strutil.EmptyIfNil(process.Steps[1].Actions[0].Packages[0].Name) + "\"")
+						return errors.New("The runbook must have one unnamed primary package, was \"" + strutil.EmptyIfNil(process.Steps[1].Actions[0].Packages[0].Name) + "\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an runbook called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an runbook called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6431,7 +6431,7 @@ func TestRunbookExcludeExceptExport(t *testing.T) {
 			}
 
 			if len(collection.Items) != 0 {
-				t.Fatal("Space must not have any runbooks in space " + recreatedSpaceId)
+				return errors.New("Space must not have any runbooks in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6469,17 +6469,17 @@ func TestK8sTargetWithCertExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesCertificate" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"KubernetesCertificate\" (was \"" + machine.Endpoint.Authentication.AuthenticationType + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"KubernetesCertificate\" (was \"" + machine.Endpoint.Authentication.AuthenticationType + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -6720,7 +6720,7 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 						foundK8sTarget = true
 
 						if strutil.EmptyIfNil(machine.Endpoint.ClusterCertificate) == "" {
-							t.Fatal("The k8s machine must have a cluster certificate")
+							return errors.New("The k8s machine must have a cluster certificate")
 						}
 					}
 				}
@@ -7099,20 +7099,20 @@ func TestTenantCommonVarsExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tenant must be have a description of \"tTest tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 2 {
-						t.Fatal("The tenant must have two tags")
+						return errors.New("The tenant must have two tags")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment")
 					}
 
 					for _, u := range v.ProjectEnvironments {
 						if len(u) != 3 {
-							t.Fatal("The tenant must have be linked to three environments")
+							return errors.New("The tenant must have be linked to three environments")
 						}
 					}
 
@@ -7162,7 +7162,7 @@ func TestTenantCommonVarsExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -7260,7 +7260,7 @@ func TestProjectWithScriptModuleExport(t *testing.T) {
 					found = true
 
 					if len(v.IncludedLibraryVariableSetIds) != 1 {
-						t.Fatal("The project must have a library variable set")
+						return errors.New("The project must have a library variable set")
 					}
 
 					resource := octopus.LibraryVariableSet{}
@@ -7278,7 +7278,7 @@ func TestProjectWithScriptModuleExport(t *testing.T) {
 			}
 
 			if !found {
-				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -7477,27 +7477,27 @@ func TestTenantsWithExcludedProjectExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 2 {
-						t.Fatal("The tenant must have two tags")
+						return errors.New("The tenant must have two tags")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment")
 					}
 
 					for _, u := range v.ProjectEnvironments {
 						if len(u) != 3 {
-							t.Fatal("The tenant must have be linked to three environments")
+							return errors.New("The tenant must have be linked to three environments")
 						}
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			projects := octopus.GeneralCollection[octopus.Project]{}
@@ -7508,7 +7508,7 @@ func TestTenantsWithExcludedProjectExport(t *testing.T) {
 			}
 
 			if len(projects.Items) != 1 {
-				t.Fatal("Only one project should have been exported, as the second was excluded.")
+				return errors.New("Only one project should have been exported, as the second was excluded.")
 			}
 
 			return nil
@@ -7545,21 +7545,21 @@ func TestTenantsWithExcludedAllProjectExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 2 {
-						t.Fatal("The tenant must have two tags")
+						return errors.New("The tenant must have two tags")
 					}
 
 					if len(v.ProjectEnvironments) != 0 {
-						t.Fatal("The tenant must have zero project environments")
+						return errors.New("The tenant must have zero project environments")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			projects := octopus.GeneralCollection[octopus.Project]{}
@@ -7570,7 +7570,7 @@ func TestTenantsWithExcludedAllProjectExport(t *testing.T) {
 			}
 
 			if len(projects.Items) != 0 {
-				t.Fatal("No projects should have been exported, as they were all excluded.")
+				return errors.New("No projects should have been exported, as they were all excluded.")
 			}
 
 			return nil
@@ -7607,27 +7607,27 @@ func TestTenantsWithExcludedProjectRegexExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 2 {
-						t.Fatal("The tenant must have two tags")
+						return errors.New("The tenant must have two tags")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment")
 					}
 
 					for _, u := range v.ProjectEnvironments {
 						if len(u) != 3 {
-							t.Fatal("The tenant must have be linked to three environments")
+							return errors.New("The tenant must have be linked to three environments")
 						}
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			projects := octopus.GeneralCollection[octopus.Project]{}
@@ -7638,7 +7638,7 @@ func TestTenantsWithExcludedProjectRegexExport(t *testing.T) {
 			}
 
 			if len(projects.Items) != 1 {
-				t.Fatal("Only one project should have been exported, as the second was excluded.")
+				return errors.New("Only one project should have been exported, as the second was excluded.")
 			}
 
 			return nil
@@ -7675,27 +7675,27 @@ func TestTenantsWithExcludedProjectExceptExport(t *testing.T) {
 					found = true
 
 					if strutil.EmptyIfNil(v.Description) != "Test tenant" {
-						t.Fatal("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+						return errors.New("The tenant must be have a description of \"Test tenant\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
 					if len(v.TenantTags) != 2 {
-						t.Fatal("The tenant must have two tags")
+						return errors.New("The tenant must have two tags")
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						t.Fatal("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment")
 					}
 
 					for _, u := range v.ProjectEnvironments {
 						if len(u) != 3 {
-							t.Fatal("The tenant must have be linked to three environments")
+							return errors.New("The tenant must have be linked to three environments")
 						}
 					}
 				}
 			}
 
 			if !found {
-				t.Fatal("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			projects := octopus.GeneralCollection[octopus.Project]{}
@@ -7706,7 +7706,7 @@ func TestTenantsWithExcludedProjectExceptExport(t *testing.T) {
 			}
 
 			if len(projects.Items) != 1 {
-				t.Fatal("Only one project should have been exported, as the second was excluded.")
+				return errors.New("Only one project should have been exported, as the second was excluded.")
 			}
 
 			return nil
@@ -7835,25 +7835,25 @@ func TestK8sPodAuthExport(t *testing.T) {
 					foundResource = true
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterUrl) != "https://cluster" {
-						t.Fatal("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + fmt.Sprint(machine.Endpoint.ClusterUrl) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterUrl of \"https://cluster\" (was \"" + fmt.Sprint(machine.Endpoint.ClusterUrl) + "\")")
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesPodService" {
-						t.Fatal("The machine must have a Endpoint.Authentication.AuthenticationType of \"KubernetesPodService\" (was \"" + fmt.Sprint(machine.Endpoint.Authentication.AuthenticationType) + "\")")
+						return errors.New("The machine must have a Endpoint.Authentication.AuthenticationType of \"KubernetesPodService\" (was \"" + fmt.Sprint(machine.Endpoint.Authentication.AuthenticationType) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.Authentication.TokenPath) != "/var/run/secrets/kubernetes.io/serviceaccount/token" {
-						t.Fatal("The machine must have a Endpoint.Authentication.TokenPath of \"/var/run/secrets/kubernetes.io/serviceaccount/token\" (was \"" + fmt.Sprint(machine.Endpoint.Authentication.TokenPath) + "\")")
+						return errors.New("The machine must have a Endpoint.Authentication.TokenPath of \"/var/run/secrets/kubernetes.io/serviceaccount/token\" (was \"" + fmt.Sprint(machine.Endpoint.Authentication.TokenPath) + "\")")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.ClusterCertificatePath) != "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" {
-						t.Fatal("The machine must have a Endpoint.ClusterCertificatePath of \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" (was \"" + fmt.Sprint(machine.Endpoint.ClusterCertificatePath) + "\")")
+						return errors.New("The machine must have a Endpoint.ClusterCertificatePath of \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" (was \"" + fmt.Sprint(machine.Endpoint.ClusterCertificatePath) + "\")")
 					}
 				}
 			}
 
 			if !foundResource {
-				t.Fatal("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -7886,7 +7886,7 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 			})
 
 			if len(project) != 1 {
-				t.Fatal("Must have a project called \"Test\"")
+				return errors.New("Must have a project called \"Test\"")
 			}
 
 			template := lo.Filter(project[0].Templates, func(item octopus.Template, index int) bool {
@@ -7896,7 +7896,7 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 			})
 
 			if len(template) != 1 {
-				t.Fatal("Must have found a sensitive template variable")
+				return errors.New("Must have found a sensitive template variable")
 			}
 
 			singleLineTemplate := lo.Filter(project[0].Templates, func(item octopus.Template, index int) bool {
@@ -7907,7 +7907,7 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 			})
 
 			if len(singleLineTemplate) != 1 {
-				t.Fatal("Must have found a single line template variable")
+				return errors.New("Must have found a single line template variable")
 			}
 
 			return nil
@@ -7965,15 +7965,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(certificate) != 1 {
-				t.Fatal("Space must have an tenant called \"Test\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an tenant called \"Test\" in space " + recreatedSpaceId)
 			}
 
 			if certificate[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The certificate must be have a tenant participation of \"Tenanted\" (was \"" + certificate[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The certificate must be have a tenant participation of \"Tenanted\" (was \"" + certificate[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(certificate[0].TenantTags) != 1 {
-				t.Fatal("The certificate must have one tenant tags")
+				return errors.New("The certificate must have one tenant tags")
 			}
 
 			err = octopusClient.GetAllResources("Accounts", &collection)
@@ -7989,15 +7989,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(awsAccount) != 1 {
-				t.Fatal("Space must have an account called \"AWS Account\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"AWS Account\" in space " + recreatedSpaceId)
 			}
 
 			if awsAccount[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + awsAccount[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The account must be have a tenant participation of \"Tenanted\" (was \"" + awsAccount[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(awsAccount[0].TenantTags) != 1 {
-				t.Fatal("The account must have one tenant tags")
+				return errors.New("The account must have one tenant tags")
 			}
 
 			// Azure
@@ -8007,15 +8007,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(azureAccount) != 1 {
-				t.Fatal("Space must have an account called \"Azure\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"Azure\" in space " + recreatedSpaceId)
 			}
 
 			if azureAccount[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + azureAccount[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The account must be have a tenant participation of \"Tenanted\" (was \"" + azureAccount[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(azureAccount[0].TenantTags) != 1 {
-				t.Fatal("The account must have one tenant tags")
+				return errors.New("The account must have one tenant tags")
 			}
 
 			// Google
@@ -8025,15 +8025,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(google) != 1 {
-				t.Fatal("Space must have an account called \"Google\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"Google\" in space " + recreatedSpaceId)
 			}
 
 			if google[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + google[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The account must be have a tenant participation of \"Tenanted\" (was \"" + google[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(google[0].TenantTags) != 1 {
-				t.Fatal("The account must have one tenant tags")
+				return errors.New("The account must have one tenant tags")
 			}
 
 			// SSH
@@ -8043,15 +8043,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(google) != 1 {
-				t.Fatal("Space must have an account called \"SSH\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"SSH\" in space " + recreatedSpaceId)
 			}
 
 			if ssh[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + ssh[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The account must be have a tenant participation of \"Tenanted\" (was \"" + ssh[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(ssh[0].TenantTags) != 1 {
-				t.Fatal("The account must have one tenant tags")
+				return errors.New("The account must have one tenant tags")
 			}
 
 			// Token
@@ -8061,15 +8061,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(token) != 1 {
-				t.Fatal("Space must have an account called \"Token\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"Token\" in space " + recreatedSpaceId)
 			}
 
 			if token[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + token[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The account must be have a tenant participation of \"Tenanted\" (was \"" + token[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(token[0].TenantTags) != 1 {
-				t.Fatal("The account must have one tenant tags")
+				return errors.New("The account must have one tenant tags")
 			}
 
 			// Username and Password
@@ -8079,15 +8079,15 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(userPass) != 1 {
-				t.Fatal("Space must have an account called \"UsernamePasswordAccount\" in space " + recreatedSpaceId)
+				return errors.New("Space must have an account called \"UsernamePasswordAccount\" in space " + recreatedSpaceId)
 			}
 
 			if userPass[0].TenantedDeploymentParticipation != "Tenanted" {
-				t.Fatal("The account must be have a tenant participation of \"Tenanted\" (was \"" + userPass[0].TenantedDeploymentParticipation + "\")")
+				return errors.New("The account must be have a tenant participation of \"Tenanted\" (was \"" + userPass[0].TenantedDeploymentParticipation + "\")")
 			}
 
 			if len(userPass[0].TenantTags) != 1 {
-				t.Fatal("The account must have one tenant tags")
+				return errors.New("The account must have one tenant tags")
 			}
 
 			// Project
@@ -8104,7 +8104,7 @@ func TestTenantedResources(t *testing.T) {
 			})
 
 			if len(project) != 1 {
-				t.Fatal("Space must have a project called \"Test\" in space " + recreatedSpaceId)
+				return errors.New("Space must have a project called \"Test\" in space " + recreatedSpaceId)
 			}
 
 			deploymentProcess := octopus.DeploymentProcess{}
@@ -8115,15 +8115,15 @@ func TestTenantedResources(t *testing.T) {
 			}
 
 			if len(deploymentProcess.Steps) != 1 {
-				t.Fatal("Space must have a project called \"Test\" with a single step in space " + recreatedSpaceId)
+				return errors.New("Space must have a project called \"Test\" with a single step in space " + recreatedSpaceId)
 			}
 
 			if len(deploymentProcess.Steps[0].Actions) != 1 {
-				t.Fatal("Space must have a project called \"Test\" with a single step with a single action in space " + recreatedSpaceId)
+				return errors.New("Space must have a project called \"Test\" with a single step with a single action in space " + recreatedSpaceId)
 			}
 
 			if len(deploymentProcess.Steps[0].Actions[0].TenantTags) != 1 {
-				t.Fatal("Deployment process must have an action with 1 tenant tag")
+				return errors.New("Deployment process must have an action with 1 tenant tag")
 			}
 
 			return nil
