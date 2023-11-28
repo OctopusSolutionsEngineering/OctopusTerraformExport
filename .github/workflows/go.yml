@@ -25,7 +25,7 @@ name: Go Build
 jobs:
   build:
     runs-on:
-      labels: 4core-ubuntu-runner
+      labels: 8core-ubuntu-runner
     steps:
       - uses: actions/checkout@v3
         with:
