@@ -46,8 +46,6 @@ resource "octopusdeploy_project" "project_1" {
   }
 }
 
-
-
 resource "octopusdeploy_variable" "string_variable" {
   owner_id  = octopusdeploy_project.project_1.id
   type      = "String"
