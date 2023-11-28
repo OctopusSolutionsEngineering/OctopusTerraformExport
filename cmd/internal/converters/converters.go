@@ -4,6 +4,8 @@ package converters
 type DummySecretGenerator interface {
 	GetDummySecret() *string
 	GetDummyCertificate() *string
+	GetDummyCertificateNoPass() *string
+	GetDummyCertificateBase64() *string
 	GetDummyCertificatePassword() *string
 }
 

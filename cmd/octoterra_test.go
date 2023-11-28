@@ -34,6 +34,16 @@ func createClient(container *test.OctopusContainer, space string) *client.Octopu
 	}
 }
 
+func copyDir(source string) (string, error) {
+	dest, err := os.MkdirTemp("", "octoterra")
+	if err != nil {
+		return "", err
+	}
+	err = cp.Copy(source, dest)
+
+	return dest, err
+}
+
 // exportSpaceImportAndTest creates a reference space, exports it, and reimports the export
 func exportSpaceImportAndTest(
 	t *testing.T,
@@ -48,29 +58,33 @@ func exportSpaceImportAndTest(
 		The directory holding the module to create the space must be copied to allow for parallel
 		test execution.
 	*/
-	dir, err := os.MkdirTemp("", "octoterra")
+	createSpaceDirCopy, err := copyDir("../test/terraform/z-createspace")
+
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
+
+	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createSpaceDirCopy} {
+			err := os.RemoveAll(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
-	}(dir)
 
-	err = cp.Copy("../test/terraform/z-createspace", dir)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	}()
 
 	exportImportAndTest(
 		t,
 		createSourceBlankSpaceModuleDir,
 		"",
-		populateSourceSpaceModuleDir,
-		dir,
+		populateSourceSpaceModuleDirCopy,
+		createSpaceDirCopy,
 		"",
 		createSourceSpaceVars,
 		[]string{},
@@ -153,25 +167,38 @@ func exportProjectImportAndTest(
 		The directory holding the module to create the space must be copied to allow for parallel
 		test execution.
 	*/
-	dir, err := os.MkdirTemp("", "octoterra")
+	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
+
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(dir)
+	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
 
-	err = cp.Copy(createImportBlankSpaceModuleDir, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy} {
+			err := os.RemoveAll(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+	}()
 
 	exportImportAndTest(
 		t,
-		createSourceBlankSpaceModuleDir,
+		createSourceBlankSpaceModuleDirCopy,
 		"",
-		populateSourceSpaceModuleDir,
-		dir,
+		populateSourceSpaceModuleDirCopy,
+		createImportBlankSpaceModuleDirCopy,
 		"",
 		initialiseVars,
 		initializeSpaceVars,
@@ -262,13 +289,51 @@ func exportProjectLookupImportAndTest(
 	argumnets args2.Arguments,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
+	prepopulateImportSpaceModuleDirCopy, err := copyDir(prepopulateImportSpaceModuleDir)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	prepopulateSourceBlankSpaceModuleDirCopy, err := copyDir(prepopulateSourceBlankSpaceModuleDir)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy, prepopulateSourceBlankSpaceModuleDirCopy, prepopulateImportSpaceModuleDirCopy} {
+			err := os.RemoveAll(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+	}()
+
 	exportImportAndTest(
 		t,
-		createSourceBlankSpaceModuleDir,
-		prepopulateSourceBlankSpaceModuleDir,
-		populateSourceSpaceModuleDir,
-		createImportBlankSpaceModuleDir,
-		prepopulateImportSpaceModuleDir,
+		createSourceBlankSpaceModuleDirCopy,
+		prepopulateSourceBlankSpaceModuleDirCopy,
+		populateSourceSpaceModuleDirCopy,
+		createImportBlankSpaceModuleDirCopy,
+		prepopulateImportSpaceModuleDirCopy,
 		createSourceSpaceVars,
 		createImportSpaceVars,
 		prepopulateSpaceVars,
@@ -1102,7 +1167,9 @@ func TestDockerFeedNoCredsExport(t *testing.T) {
 		})
 }
 
-// TestDummyCredsExport verifies that a docker feed with dummy credentials can be reimported with the correct settings
+// TestDummyCredsExport verifies that a docker feed with dummy credentials can be reimported with the correct settings.
+// Note that there are no variables defined to supply sensitive values during the reapply step. This validates that
+// sensitive values have defaults.
 func TestDummyCredsExport(t *testing.T) {
 	exportSpaceImportAndTest(
 		t,
@@ -1118,55 +1185,118 @@ func TestDummyCredsExport(t *testing.T) {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
-			collection := octopus.GeneralCollection[octopus.Feed]{}
-			err := octopusClient.GetAllResources("Feeds", &collection)
+			err := func() error {
+				collection := octopus.GeneralCollection[octopus.Feed]{}
+				err := octopusClient.GetAllResources("Feeds", &collection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
+					return item.Name == "Docker"
+				})) != 1 {
+					t.Fatal("Space must have an feed called \"Docker\" in space " + recreatedSpaceId)
+				}
+
+				return nil
+			}()
 
 			if err != nil {
 				return err
 			}
 
-			feedName := "Docker"
-			found := false
-			for _, v := range collection.Items {
-				if v.Name == feedName {
-					found = true
+			err = func() error {
+				collection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &collection)
 
-					if strutil.EmptyIfNil(v.FeedType) != "Docker" {
-						t.Fatal("The feed must have a type of \"Docker\"")
-					}
-
-					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
-						t.Fatal("The feed must be have a API version of \"v1\"")
-					}
-
-					if strutil.EmptyIfNil(v.FeedUri) != "https://index.docker.io" {
-						t.Fatal("The feed must be have a feed uri of \"https://index.docker.io\"")
-					}
-
-					if strutil.EmptyIfNil(v.Username) != "user" {
-						t.Fatal("The feed must be have a username of \"user\"")
-					}
-
-					foundExecutionTarget := false
-					foundNotAcquired := false
-					for _, o := range v.PackageAcquisitionLocationOptions {
-						if o == "ExecutionTarget" {
-							foundExecutionTarget = true
-						}
-
-						if o == "NotAcquired" {
-							foundNotAcquired = true
-						}
-					}
-
-					if !(foundExecutionTarget && foundNotAcquired) {
-						t.Fatal("The feed must be have a PackageAcquisitionLocationOptions including \"ExecutionTarget\" and \"NotAcquired\"")
-					}
+				if err != nil {
+					return err
 				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Test"
+				})) != 1 {
+					t.Fatal("Space must have a project called \"Test\" in space " + recreatedSpaceId)
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
 			}
 
-			if !found {
-				t.Fatal("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			err = func() error {
+				collection := octopus.GeneralCollection[octopus.GitCredentials]{}
+				err := octopusClient.GetAllResources("Git-Credentials", &collection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.GitCredentials, index int) bool {
+					return item.Name == "test"
+				})) != 1 {
+					t.Fatal("Space must have git credentials called \"test\" in space " + recreatedSpaceId)
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			err = func() error {
+				collection := octopus.GeneralCollection[octopus.Account]{}
+				err := octopusClient.GetAllResources("Accounts", &collection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "AWS Account"
+				})) != 1 {
+					t.Fatal("Space must have an account called \"AWS Account\" in space " + recreatedSpaceId)
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "Azure"
+				})) != 1 {
+					t.Fatal("Space must have an account called \"Azure\" in space " + recreatedSpaceId)
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "Subscription"
+				})) != 1 {
+					t.Fatal("Space must have an account called \"Subscription\" in space " + recreatedSpaceId)
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "Google"
+				})) != 1 {
+					t.Fatal("Space must have an account called \"Google\" in space " + recreatedSpaceId)
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "SSH"
+				})) != 1 {
+					t.Fatal("Space must have an account called \"SSH\" in space " + recreatedSpaceId)
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "Token"
+				})) != 1 {
+					t.Fatal("Space must have an account called \"Token\" in space " + recreatedSpaceId)
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
 			}
 
 			return nil

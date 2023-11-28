@@ -341,7 +341,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resourceName string, res
 	}
 
 	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateNoPass()
 	}
 
 	file := hclwrite.NewEmptyFile()
@@ -577,7 +577,8 @@ func (c AccountConverter) writeSshAccount(resourceName string, resource octopus2
 	}
 
 	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
+		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
 	}
 
 	certFileVariableResource := terraform2.TerraformVariable{
@@ -589,7 +590,7 @@ func (c AccountConverter) writeSshAccount(resourceName string, resource octopus2
 	}
 
 	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		certFileVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
 	}
 
 	file := hclwrite.NewEmptyFile()
