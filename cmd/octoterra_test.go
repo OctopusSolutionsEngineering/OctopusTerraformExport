@@ -1871,7 +1871,9 @@ func TestProjectExport(t *testing.T) {
 		"../test/terraform/19-project/space_creation",
 		"../test/terraform/19-project/space_population",
 		[]string{},
-		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
 		args2.Arguments{
 			// None of these options are used when exporting a space.
 			// They are included here to verify they don't affect the exported project.
@@ -1973,7 +1975,9 @@ func TestProjectVarExcludedAllExport(t *testing.T) {
 		"../test/terraform/z-createspace",
 		[]string{},
 		[]string{},
-		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
 		args2.Arguments{
 			ExcludeAllProjectVariables: true,
 		},
@@ -2008,6 +2012,23 @@ func TestProjectVarExcludedAllExport(t *testing.T) {
 				t.Fatal("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
+			// check docker feed, used by a step, was exported
+			err = func() error {
+				collection := octopus.GeneralCollection[octopus.Feed]{}
+				err := octopusClient.GetAllResources("Feeds", &collection)
+
+				if err != nil {
+					return err
+				}
+
+				if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
+					return item.Name == "Docker"
+				})) == 0 {
+					t.Fatalf("The feed called \"Docker\" must have been exported")
+				}
+				return nil
+			}()
+
 			return nil
 		})
 }
@@ -2022,7 +2043,9 @@ func TestProjectVarExcludedExport(t *testing.T) {
 		"../test/terraform/z-createspace",
 		[]string{},
 		[]string{},
-		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
 		args2.Arguments{
 			ExcludeProjectVariables: []string{"Test"},
 		},
@@ -2071,7 +2094,9 @@ func TestProjectVarExcludedRegexExport(t *testing.T) {
 		"../test/terraform/z-createspace",
 		[]string{},
 		[]string{},
-		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
 		args2.Arguments{
 			ExcludeProjectVariablesRegex: []string{".*"},
 		},
@@ -2120,7 +2145,9 @@ func TestProjectVarExcludedExceptExport(t *testing.T) {
 		"../test/terraform/z-createspace",
 		[]string{},
 		[]string{},
-		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
 		args2.Arguments{
 			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
 		},
@@ -5188,24 +5215,6 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				if len(helmFeed) != 1 {
 					t.Fatalf("The project must have 1 variable called \"HelmFeed\"")
 				}
-
-				// check docker feed, used by a step, was exported
-				err = func() error {
-					collection := octopus.GeneralCollection[octopus.Feed]{}
-					err := octopusClient.GetAllResources("Feeds", &collection)
-
-					if err != nil {
-						return err
-					}
-
-					if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
-						return item.Name == "Docker"
-					})) == 0 {
-						t.Fatalf("The feed called \"Docker\" must have been exported")
-
-					}
-					return nil
-				}()
 
 				if err != nil {
 					return err
