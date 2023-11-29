@@ -524,23 +524,23 @@ func TestSpaceExport(t *testing.T) {
 			}
 
 			if space.Name != "Test3" {
-				t.Fatalf("New space must have the name \"Test3\"")
+				return errors.New("New space must have the name \"Test3\"")
 			}
 
 			if *space.Description != "My test space" {
-				t.Fatalf("New space must have the name \"My test space\"")
+				return errors.New("New space must have the name \"My test space\"")
 			}
 
 			if space.IsDefault {
-				t.Fatalf("New space must not be the default one")
+				return errors.New("New space must not be the default one")
 			}
 
 			if space.TaskQueueStopped {
-				t.Fatalf("New space must not have the task queue stopped")
+				return errors.New("New space must not have the task queue stopped")
 			}
 
 			if slices.Index(space.SpaceManagersTeams, "teams-administrators") == -1 {
-				t.Fatalf("New space must have teams-administrators as a manager team")
+				return errors.New("New space must have teams-administrators as a manager team")
 			}
 
 			return nil
@@ -572,13 +572,13 @@ func TestProjectGroupExport(t *testing.T) {
 				if v.Name == "Test" {
 					found = true
 					if strutil.EmptyIfNil(v.Description) != "Test Description" {
-						t.Fatalf("The project group must be have a description of \"Test Description\"")
+						return errors.New("The project group must be have a description of \"Test Description\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatalf("Space must have a project group called \"Test\"")
+				return errors.New("Space must have a project group called \"Test\"")
 			}
 
 			return nil
@@ -609,13 +609,13 @@ func TestAwsAccountExport(t *testing.T) {
 				if v.Name == "AWS Account" {
 					found = true
 					if strutil.EmptyIfNil(v.AccessKey) != "ABCDEFGHIJKLMNOPQRST" {
-						t.Fatalf("The account must be have an access key of \"ABCDEFGHIJKLMNOPQRST\"")
+						return errors.New("The account must be have an access key of \"ABCDEFGHIJKLMNOPQRST\"")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatalf("Space must have an account called \"AWS Account\"")
+				return errors.New("Space must have an account called \"AWS Account\"")
 			}
 
 			return nil
@@ -647,37 +647,37 @@ func TestAzureAccountExport(t *testing.T) {
 				if v.Name == "Azure" {
 					found = true
 					if strutil.EmptyIfNil(v.ClientId) != "2eb8bd13-661e-489c-beb9-4103efb9dbdd" {
-						t.Fatalf("The account must be have a client ID of \"2eb8bd13-661e-489c-beb9-4103efb9dbdd\"")
+						return errors.New("The account must be have a client ID of \"2eb8bd13-661e-489c-beb9-4103efb9dbdd\"")
 					}
 
 					if strutil.EmptyIfNil(v.SubscriptionNumber) != "95bf77d2-64b1-4ed2-9de1-b5451e3881f5" {
-						t.Fatalf("The account must be have a client ID of \"95bf77d2-64b1-4ed2-9de1-b5451e3881f5\"")
+						return errors.New("The account must be have a client ID of \"95bf77d2-64b1-4ed2-9de1-b5451e3881f5\"")
 					}
 
 					if strutil.EmptyIfNil(v.TenantId) != "18eb006b-c3c8-4a72-93cd-fe4b293f82ee" {
-						t.Fatalf("The account must be have a client ID of \"18eb006b-c3c8-4a72-93cd-fe4b293f82ee\"")
+						return errors.New("The account must be have a client ID of \"18eb006b-c3c8-4a72-93cd-fe4b293f82ee\"")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "Azure Account" {
-						t.Fatalf("The account must be have a description of \"Azure Account\"")
+						return errors.New("The account must be have a description of \"Azure Account\"")
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Tenanted" {
-						t.Fatalf("The account must be have a tenanted deployment participation of \"Tenanted\"")
+						return errors.New("The account must be have a tenanted deployment participation of \"Tenanted\"")
 					}
 
 					if len(v.EnvironmentIds) != 1 {
-						t.Fatalf("The account must be scoped to an environment")
+						return errors.New("The account must be scoped to an environment")
 					}
 
 					if len(v.TenantIds) != 1 {
-						t.Fatalf("The account must be scoped to an tenant")
+						return errors.New("The account must be scoped to an tenant")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatalf("Space must have an Azure account called \"Azure\"")
+				return errors.New("Space must have an Azure account called \"Azure\"")
 			}
 
 			return nil
@@ -709,29 +709,29 @@ func TestUsernamePasswordAccountExport(t *testing.T) {
 				if v.Name == "GKE" {
 					found = true
 					if strutil.EmptyIfNil(v.Username) != "admin" {
-						t.Fatalf("The account must be have a username of \"admin\"")
+						return errors.New("The account must be have a username of \"admin\"")
 					}
 
 					if !v.Password.HasValue {
-						t.Fatalf("The account must be have a password")
+						return errors.New("The account must be have a password")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "A test account" {
-						t.Fatalf("The account must be have a description of \"A test account\"")
+						return errors.New("The account must be have a description of \"A test account\"")
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-						t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\"")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatalf("The account must be have no tenant tags")
+						return errors.New("The account must be have no tenant tags")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatalf("Space must have an account called \"GKE\"")
+				return errors.New("Space must have an account called \"GKE\"")
 			}
 
 			return nil
@@ -763,25 +763,25 @@ func TestGcpAccountExport(t *testing.T) {
 				if v.Name == "Google" {
 					found = true
 					if !v.JsonKey.HasValue {
-						t.Fatalf("The account must be have a JSON key")
+						return errors.New("The account must be have a JSON key")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "A test account" {
-						t.Fatalf("The account must be have a description of \"A test account\"")
+						return errors.New("The account must be have a description of \"A test account\"")
 					}
 
 					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
-						t.Fatalf("The account must be have a tenanted deployment participation of \"Untenanted\"")
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\"")
 					}
 
 					if len(v.TenantTags) != 0 {
-						t.Fatalf("The account must be have no tenant tags")
+						return errors.New("The account must be have no tenant tags")
 					}
 				}
 			}
 
 			if !found {
-				t.Fatalf("Space must have an account called \"Google\"")
+				return errors.New("Space must have an account called \"Google\"")
 			}
 
 			return nil
@@ -2177,7 +2177,7 @@ func TestProjectVarExcludedAllExport(t *testing.T) {
 				if len(lo.Filter(collection.Items, func(item octopus.Feed, index int) bool {
 					return item.Name == "Docker"
 				})) == 0 {
-					t.Fatalf("The feed called \"Docker\" must have been exported")
+					return errors.New("The feed called \"Docker\" must have been exported")
 				}
 				return nil
 			}()
@@ -3317,7 +3317,7 @@ func TestK8sTargetExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.DefaultWorkerPoolId) == "" {
-						t.Fatalf("The machine must specify a default worker pool")
+						return errors.New("The machine must specify a default worker pool")
 					}
 				}
 			}
@@ -3495,15 +3495,15 @@ func TestK8sTargetAzureAuthExport(t *testing.T) {
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesAzure" {
-						t.Fatalf("Target must use Azure authentication")
+						return errors.New("Target must use Azure authentication")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.Authentication.ClusterResourceGroup) != "myresourcegroup" {
-						t.Fatalf("Target must set the resource group to myresourcegroup")
+						return errors.New("Target must set the resource group to myresourcegroup")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.Authentication.ClusterName) != "mycluster" {
-						t.Fatalf("Target must set the cluster name to mycluster")
+						return errors.New("Target must set the cluster name to mycluster")
 					}
 				}
 			}
@@ -3548,19 +3548,19 @@ func TestK8sTargetGcpAuthExport(t *testing.T) {
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesGoogleCloud" {
-						t.Fatalf("Target must use GCP authentication")
+						return errors.New("Target must use GCP authentication")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.Authentication.Project) != "myproject" {
-						t.Fatalf("Target must set the project to myproject")
+						return errors.New("Target must set the project to myproject")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.Authentication.ClusterName) != "mycluster" {
-						t.Fatalf("Target must set the cluster name to mycluster")
+						return errors.New("Target must set the cluster name to mycluster")
 					}
 
 					if strutil.EmptyIfNil(machine.Endpoint.Authentication.Region) != "region" {
-						t.Fatalf("Target must set the region to region")
+						return errors.New("Target must set the region to region")
 					}
 				}
 			}
@@ -3607,7 +3607,7 @@ func TestK8sTargetTokenAuthExport(t *testing.T) {
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesStandard" {
-						t.Fatalf("Target must use token authentication")
+						return errors.New("Target must use token authentication")
 					}
 				}
 			}
@@ -3655,7 +3655,7 @@ func TestK8sTargetCertAuthExport(t *testing.T) {
 					}
 
 					if machine.Endpoint.Authentication.AuthenticationType != "KubernetesCertificate" {
-						t.Fatalf("Target must use certificate authentication")
+						return errors.New("Target must use certificate authentication")
 					}
 				}
 			}
@@ -5186,7 +5186,7 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if serverUrl == "" {
-				t.Fatalf("The project must have created an output variable called octopus_server")
+				return errors.New("The project must have created an output variable called octopus_server")
 			}
 
 			octopusSpaceName, err := testFramework.GetOutputVariable(t, terraformStateDir, "octopus_space_name")
@@ -5196,7 +5196,7 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 			}
 
 			if octopusSpaceName == "" {
-				t.Fatalf("The project must have created an output variable called octopusSpaceName")
+				return errors.New("The project must have created an output variable called octopusSpaceName")
 			}
 
 			octopusClient := createClient(container, recreatedSpaceId)
@@ -5264,13 +5264,13 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					if v.Name == "Test" {
 						found = true
 						if strutil.EmptyIfNil(v.Description) != "Test Description" {
-							t.Fatalf("The project group must be have a description of \"Test Description\"")
+							return errors.New("The project group must be have a description of \"Test Description\"")
 						}
 					}
 				}
 
 				if !found {
-					t.Fatalf("Space must have a project group called \"Test\"")
+					return errors.New("Space must have a project group called \"Test\"")
 				}
 				return nil
 			}()
@@ -5289,17 +5289,17 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -5314,7 +5314,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				})
 
 				if len(excluded) != 0 {
-					t.Fatalf("The variable called Test shoudl be excluded)")
+					return errors.New("The variable called Test shoudl be excluded)")
 				}
 
 				envScoped := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
@@ -5346,27 +5346,27 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				})
 
 				if len(envScoped) == 0 {
-					t.Fatalf("The project must have 1 variable called \"Test2\"")
+					return errors.New("The project must have 1 variable called \"Test2\"")
 				}
 
 				if len(tenantScoped) == 0 {
-					t.Fatalf("The project must have 1 variable called \"tenantscoped\"")
+					return errors.New("The project must have 1 variable called \"tenantscoped\"")
 				}
 
 				if len(envScoped[0].Scope.Environment) != 1 {
-					t.Fatalf("The project must have 1 variable called \"Test2\" scoped to an environment")
+					return errors.New("The project must have 1 variable called \"Test2\" scoped to an environment")
 				}
 
 				if len(environmentScopedButRemoved[0].Scope.Environment) != 0 {
-					t.Fatalf("The project must have 1 variable called \"Test3\" with the environment scope removed due to the ExcludeVariableEnvironmentScopes setting")
+					return errors.New("The project must have 1 variable called \"Test3\" with the environment scope removed due to the ExcludeVariableEnvironmentScopes setting")
 				}
 
 				if len(tenantScoped[0].Scope.TenantTag) != 1 {
-					t.Fatalf("The project must have 1 variable called \"tenantscoped\" scoped to an tagset")
+					return errors.New("The project must have 1 variable called \"tenantscoped\" scoped to an tagset")
 				}
 
 				if len(helmFeed) != 1 {
-					t.Fatalf("The project must have 1 variable called \"HelmFeed\"")
+					return errors.New("The project must have 1 variable called \"HelmFeed\"")
 				}
 
 				if err != nil {
@@ -5383,7 +5383,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if helmFeedResource.Name != "Helm" {
-						t.Fatalf("The feed called \"Helm\" must have been exported")
+						return errors.New("The feed called \"Helm\" must have been exported")
 					}
 
 					return nil
@@ -5394,7 +5394,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if len(usernamePassword) != 1 {
-					t.Fatalf("The project must have 1 variable called \"UsernamePassword\"")
+					return errors.New("The project must have 1 variable called \"UsernamePassword\"")
 				}
 
 				// check rge account, used by a variable, was exported
@@ -5407,7 +5407,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if accountResource.Name != "GKE" {
-						t.Fatalf("The account called \"GKE\" must have been exported")
+						return errors.New("The account called \"GKE\" must have been exported")
 					}
 
 					return nil
@@ -5418,7 +5418,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if len(workerPool) != 1 {
-					t.Fatalf("The project must have 1 variable called \"WorkerPool\"")
+					return errors.New("The project must have 1 variable called \"WorkerPool\"")
 				}
 
 				// check rge worker pool, used by a variable, was exported
@@ -5431,7 +5431,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if workerPoolResource.Name != "Docker" {
-						t.Fatalf("The worker pool called \"Docker\" must have been exported")
+						return errors.New("The worker pool called \"Docker\" must have been exported")
 					}
 
 					return nil
@@ -5442,7 +5442,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if len(certificate) != 1 {
-					t.Fatalf("The project must have 1 variable called \"Certifcate\"")
+					return errors.New("The project must have 1 variable called \"Certifcate\"")
 				}
 
 				// check the certificate, used by a variable, was exported
@@ -5455,7 +5455,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if certificateResource.Name != "Test" {
-						t.Fatalf("The certificate called \"Test\" must have been exported")
+						return errors.New("The certificate called \"Test\" must have been exported")
 					}
 
 					return nil
@@ -5488,12 +5488,12 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "Test 2" {
-						t.Fatalf("The second channel must not have been exported")
+						return errors.New("The second channel must not have been exported")
 					}
 				}
 
 				if !foundChannel {
-					t.Fatalf("The space must have a channel called \"Test 1\"")
+					return errors.New("The space must have a channel called \"Test 1\"")
 				}
 
 				return nil
@@ -5519,12 +5519,12 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "Test 2" {
-						t.Fatalf("The second trigger must not have been exported")
+						return errors.New("The second trigger must not have been exported")
 					}
 				}
 
 				if !foundTrigger {
-					t.Fatalf("The space must have a trigger called \"Test 1\"")
+					return errors.New("The space must have a trigger called \"Test 1\"")
 				}
 
 				return nil
@@ -5550,12 +5550,12 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "Team B" {
-						t.Fatalf("The second tenant must not have been exported")
+						return errors.New("The second tenant must not have been exported")
 					}
 				}
 
 				if !foundTenant {
-					t.Fatalf("The space must have a tenant called \"Team A\"")
+					return errors.New("The space must have a tenant called \"Team A\"")
 				}
 				return nil
 			}()
@@ -5580,12 +5580,12 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "tag2" {
-						t.Fatalf("The space must not have a tagset called \"tag2\"")
+						return errors.New("The space must not have a tagset called \"tag2\"")
 					}
 				}
 
 				if !foundTag {
-					t.Fatalf("The space must have a tagset called \"tag1\"")
+					return errors.New("The space must have a tagset called \"tag1\"")
 				}
 				return nil
 			}()
@@ -5620,20 +5620,20 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "Blah" {
-						t.Fatalf("The environment called \"Blah\" must not been exported")
+						return errors.New("The environment called \"Blah\" must not been exported")
 					}
 				}
 
 				if !foundEnvironmentDev {
-					t.Fatalf("The space must have a space called \"Deveopment\"")
+					return errors.New("The space must have a space called \"Deveopment\"")
 				}
 
 				if !foundEnvironmentTest {
-					t.Fatalf("The space must have a space called \"Test\"")
+					return errors.New("The space must have a space called \"Test\"")
 				}
 
 				if !foundEnvironmentProduction {
-					t.Fatalf("The space must have a space called \"Production\"")
+					return errors.New("The space must have a space called \"Production\"")
 				}
 
 				return nil
@@ -5659,12 +5659,12 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "Test2" {
-						t.Fatalf("The library variable set called \"Test2\" must not been exported")
+						return errors.New("The library variable set called \"Test2\" must not been exported")
 					}
 				}
 
 				if !foundLibraryVariableSet {
-					t.Fatalf("The space must have a library variable called \"Test\"")
+					return errors.New("The space must have a library variable called \"Test\"")
 				}
 
 				return nil
@@ -5690,12 +5690,12 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					}
 
 					if v.Name == "Simple2" {
-						t.Fatalf("The lifecycle called \"Simple2\" must not been exported")
+						return errors.New("The lifecycle called \"Simple2\" must not been exported")
 					}
 				}
 
 				if !found {
-					t.Fatalf("The space must have a lifecycle called \"Simple\"")
+					return errors.New("The space must have a lifecycle called \"Simple\"")
 				}
 
 				return nil
@@ -5718,7 +5718,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				if !found {
-					t.Fatalf("The space must have a git credential called \"matt\"")
+					return errors.New("The space must have a git credential called \"matt\"")
 				}
 
 				return nil
@@ -5782,7 +5782,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 2 {
-					t.Fatalf("There must only be two projects")
+					return errors.New("There must only be two projects")
 				}
 
 				testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
@@ -5790,17 +5790,17 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(testProject) != 1 {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				if len(testProject[0].IncludedLibraryVariableSetIds) != 1 {
-					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
+					return errors.New("The project must link to only 1 variable set (as the others were excluded)")
 				}
 
 				// Verify that the variable set was imported
 
 				if testProject[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -5811,13 +5811,13 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(variableSet.Variables) != 6 {
-					t.Fatalf("The project must have 6 variables")
+					return errors.New("The project must have 6 variables")
 				}
 
 				if !lo.SomeBy(variableSet.Variables, func(item octopus.Variable) bool {
 					return item.Name == "Test"
 				}) {
-					t.Fatalf("The project must have 1 variable called \"Test\"")
+					return errors.New("The project must have 1 variable called \"Test\"")
 				}
 
 				// The following tests ensure that variables referencing resources like feeds, accounts, worker pools,
@@ -5829,7 +5829,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(feedVar) != 1 {
-					t.Fatalf("The project must have 1 variable called \"HelmFeed\"")
+					return errors.New("The project must have 1 variable called \"HelmFeed\"")
 				}
 
 				feed := octopus.Feed{}
@@ -5840,11 +5840,11 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if strutil.EmptyIfNil(feed.FeedType) != "Helm" {
-					t.Fatalf("The project must reference the helm feed as a variable")
+					return errors.New("The project must reference the helm feed as a variable")
 				}
 
 				if len(testProject[0].IncludedLibraryVariableSetIds) != 1 {
-					t.Fatalf("The project must link to only 1 variable set (as the others were excluded)")
+					return errors.New("The project must link to only 1 variable set (as the others were excluded)")
 				}
 
 				// Ensure a variable that referenced an account was correctly recreated
@@ -5853,7 +5853,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(accountVar) != 1 {
-					t.Fatalf("The project must have 1 variable called \"AwsAccount\"")
+					return errors.New("The project must have 1 variable called \"AwsAccount\"")
 				}
 
 				account := octopus.Account{}
@@ -5864,7 +5864,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if account.AccountType != "AmazonWebServicesAccount" {
-					t.Fatalf("The project must reference the aws account as a variable")
+					return errors.New("The project must reference the aws account as a variable")
 				}
 
 				// Ensure a variable that referenced wokrer pools was correctly recreated
@@ -5873,7 +5873,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(workerPoolVar) != 1 {
-					t.Fatalf("The project must have 1 variable called \"WorkerPool\"")
+					return errors.New("The project must have 1 variable called \"WorkerPool\"")
 				}
 
 				workerPool := octopus.WorkerPool{}
@@ -5884,7 +5884,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if workerPool.Name != "Default Worker Pool" {
-					t.Fatalf("The project must reference the default worker pool as a variable")
+					return errors.New("The project must reference the default worker pool as a variable")
 				}
 
 				// Ensure a variable that referenced certificates was correctly recreated
@@ -5893,7 +5893,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(certificateVar) != 1 {
-					t.Fatalf("The project must have 1 variable called \"Certificate\"")
+					return errors.New("The project must have 1 variable called \"Certificate\"")
 				}
 
 				certificate := octopus.Certificate{}
@@ -5904,7 +5904,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if certificate.Name != "Test" {
-					t.Fatalf("The project must reference the certificate called \"Test\"")
+					return errors.New("The project must reference the certificate called \"Test\"")
 				}
 
 				return nil
@@ -6005,7 +6005,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if !foundChannel {
-					t.Fatalf("The space must have a channel called \"Test 1\"")
+					return errors.New("The space must have a channel called \"Test 1\"")
 				}
 
 				return nil
@@ -6025,15 +6025,15 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test" })) != 1 {
-					t.Fatalf("The space must have a library variable set called \"Test\"")
+					return errors.New("The space must have a library variable set called \"Test\"")
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test2" })) != 1 {
-					t.Fatalf("The space must have a library variable set called \"Test2\"")
+					return errors.New("The space must have a library variable set called \"Test2\"")
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test3" })) != 1 {
-					t.Fatalf("The space must have a library variable set called \"Test3\"")
+					return errors.New("The space must have a library variable set called \"Test3\"")
 				}
 
 				return nil
@@ -6060,7 +6060,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if !foundTrigger {
-					t.Fatalf("The space must have a trigger called \"Test 1\"")
+					return errors.New("The space must have a trigger called \"Test 1\"")
 				}
 
 				return nil
@@ -6080,11 +6080,11 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(collection.Items) != 1 {
-					t.Fatalf("One runbook should have been exported")
+					return errors.New("One runbook should have been exported")
 				}
 
 				if collection.Items[0].Name != "MyRunbook3" {
-					t.Fatalf("The runbook should be called MyRunbook3")
+					return errors.New("The runbook should be called MyRunbook3")
 				}
 
 				return nil
@@ -6522,17 +6522,17 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -6545,21 +6545,21 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 				awsVars := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "AWS" })
 
 				if len(awsVars) == 0 {
-					t.Fatalf("The project must have 1 variable called \"AWS\"")
+					return errors.New("The project must have 1 variable called \"AWS\"")
 				}
 
 				if len(awsVars[0].Scope.Environment) != 1 {
-					t.Fatalf("The project must have 1 variable called \"AWS\" scoped to an environment")
+					return errors.New("The project must have 1 variable called \"AWS\" scoped to an environment")
 				}
 
 				azureVars := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Azure" })
 
 				if len(azureVars) == 0 {
-					t.Fatalf("The project must have 1 variable called \"Azure\"")
+					return errors.New("The project must have 1 variable called \"Azure\"")
 				}
 
 				if len(azureVars[0].Scope.Environment) != 1 {
-					t.Fatalf("The project must have 1 variable called \"Azure\" scoped to an environment")
+					return errors.New("The project must have 1 variable called \"Azure\" scoped to an environment")
 				}
 
 				return nil
@@ -6603,17 +6603,17 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -6625,11 +6625,11 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 9 {
-					t.Fatalf("The project must have 1 variable called \"test\" scoped to nine machines")
+					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines")
 				}
 
 				return nil
@@ -6681,17 +6681,17 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -6703,11 +6703,11 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 9 {
-					t.Fatalf("The project must have 1 variable called \"test\" scoped to nine machines")
+					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines")
 				}
 
 				// Validate the k8s target
@@ -6732,7 +6732,7 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 				}
 
 				if !foundK8sTarget {
-					t.Fatalf("Must have imported a k8s target called \"Test\"")
+					return errors.New("Must have imported a k8s target called \"Test\"")
 				}
 
 				return nil
@@ -6777,17 +6777,17 @@ func TestSingleProjectWithExcludedMachineScopedVarExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -6799,11 +6799,11 @@ func TestSingleProjectWithExcludedMachineScopedVarExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 0 {
-					t.Fatalf("The project must have 1 variable called \"test\" scoped to no machines because they were excluded")
+					return errors.New("The project must have 1 variable called \"test\" scoped to no machines because they were excluded")
 				}
 
 				collection := octopus.GeneralCollection[octopus.NameId]{}
@@ -6814,7 +6814,7 @@ func TestSingleProjectWithExcludedMachineScopedVarExport(t *testing.T) {
 				}
 
 				if len(collection.Items) != 0 {
-					t.Fatalf("No machines should have been exported, but found " + strings.Join(lo.Map(collection.Items, func(item octopus.NameId, index int) string {
+					return errors.New("No machines should have been exported, but found " + strings.Join(lo.Map(collection.Items, func(item octopus.NameId, index int) string {
 						return item.Name
 					}), ", "))
 				}
@@ -6860,17 +6860,17 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -6882,11 +6882,11 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				if scopedVar[0].Type != "Certificate" {
-					t.Fatalf("The project must have 1 variable called \"test\" of type certificate")
+					return errors.New("The project must have 1 variable called \"test\" of type certificate")
 				}
 
 				return nil
@@ -6930,17 +6930,17 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].DeploymentProcessId == nil {
-					t.Fatalf("The project must have a deployment process set")
+					return errors.New("The project must have a deployment process set")
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
@@ -6951,15 +6951,15 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 				}
 
 				if len(deploymentProcess.Steps) != 1 {
-					t.Fatalf("The project must have a deployment process with one step")
+					return errors.New("The project must have a deployment process with one step")
 				}
 
 				if len(deploymentProcess.Steps[0].Actions) != 1 {
-					t.Fatalf("The project must have a deployment process with one step and one action")
+					return errors.New("The project must have a deployment process with one step and one action")
 				}
 
 				if len(deploymentProcess.Steps[0].Actions[0].Packages) != 5 {
-					t.Fatalf("The project must have a step with 5 packages")
+					return errors.New("The project must have a step with 5 packages")
 				}
 
 				for _, stepPackage := range deploymentProcess.Steps[0].Actions[0].Packages {
@@ -6971,23 +6971,23 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(stepPackage.PackageId) == "package1" && strutil.EmptyIfNil(feed.FeedType) != "Docker" {
-						t.Fatalf("package1 must come from a Docker feed")
+						return errors.New("package1 must come from a Docker feed")
 					}
 
 					if strutil.EmptyIfNil(stepPackage.PackageId) == "package2" && strutil.EmptyIfNil(feed.FeedType) != "Helm" {
-						t.Fatalf("package2 must come from a Helm feed")
+						return errors.New("package2 must come from a Helm feed")
 					}
 
 					if strutil.EmptyIfNil(stepPackage.PackageId) == "package3" && strutil.EmptyIfNil(feed.FeedType) != "Maven" {
-						t.Fatalf("package3 must come from a Maven feed")
+						return errors.New("package3 must come from a Maven feed")
 					}
 
 					if strutil.EmptyIfNil(stepPackage.PackageId) == "package4" && strutil.EmptyIfNil(feed.FeedType) != "NuGet" {
-						t.Fatalf("package4 must come from a NuGet feed")
+						return errors.New("package4 must come from a NuGet feed")
 					}
 
 					if strutil.EmptyIfNil(stepPackage.PackageId) == "package5" && strutil.EmptyIfNil(feed.FeedType) != "GitHub" {
-						t.Fatalf("package5 must come from a GitHub feed")
+						return errors.New("package5 must come from a GitHub feed")
 					}
 				}
 
@@ -7033,11 +7033,11 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
@@ -7048,11 +7048,11 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 				}
 
 				if len(deploymentProcess.Steps) != 1 {
-					t.Fatalf("The project must has a step")
+					return errors.New("The project must has a step")
 				}
 
 				if len(deploymentProcess.Steps[0].Actions) != 1 {
-					t.Fatalf("The project step must have an action")
+					return errors.New("The project step must have an action")
 				}
 
 				workerPool := octopus.WorkerPool{}
@@ -7063,7 +7063,7 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 				}
 
 				if workerPool.Name != "Docker" {
-					t.Fatalf("Imported project must have explicitly imported the default worker pool")
+					return errors.New("Imported project must have explicitly imported the default worker pool")
 				}
 
 				return nil
@@ -7138,7 +7138,7 @@ func TestTenantCommonVarsExport(t *testing.T) {
 							})
 
 							if len(template) != 1 {
-								t.Fatalf("Expected to find one template that matched the variable value")
+								return errors.New("Expected to find one template that matched the variable value")
 							}
 
 							variableValueString, ok := variableValue.(string)
@@ -7147,14 +7147,14 @@ func TestTenantCommonVarsExport(t *testing.T) {
 								if strutil.EmptyIfNil(template[0].Name) == "VariableA" {
 									foundCount++
 									if variableValueString != "Override Variable A" {
-										t.Fatalf("Tenant variable must be Override Variable A (was " + variableValueString + ")")
+										return errors.New("Tenant variable must be Override Variable A (was " + variableValueString + ")")
 									}
 								}
 
 								if strutil.EmptyIfNil(template[0].Name) == "VariableB" {
 									foundCount++
 									if variableValueString != "Override Variable B" {
-										t.Fatalf("Tenant variable must be Override Variable B (was " + variableValueString + ")")
+										return errors.New("Tenant variable must be Override Variable B (was " + variableValueString + ")")
 									}
 								}
 							}
@@ -7162,7 +7162,7 @@ func TestTenantCommonVarsExport(t *testing.T) {
 					}
 
 					if foundCount != 2 {
-						t.Fatalf("Should have found two regular variables")
+						return errors.New("Should have found two regular variables")
 					}
 				}
 			}
@@ -7205,15 +7205,15 @@ func TestSingleProjectWithScriptModuleLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				if len(projectCollection.Items[0].IncludedLibraryVariableSetIds) != 1 {
-					t.Fatalf("The project must link to 1 library variable set")
+					return errors.New("The project must link to 1 library variable set")
 				}
 
 				resource := octopus.LibraryVariableSet{}
@@ -7224,7 +7224,7 @@ func TestSingleProjectWithScriptModuleLookupExport(t *testing.T) {
 				}
 
 				if resource.Name != "Script Module" {
-					t.Fatalf("The project must link to 1 library variable set called \"Script Module\"")
+					return errors.New("The project must link to 1 library variable set called \"Script Module\"")
 				}
 
 				return nil
@@ -7277,7 +7277,7 @@ func TestProjectWithScriptModuleExport(t *testing.T) {
 					}
 
 					if resource.Name != "Script Module" {
-						t.Fatalf("The project must link to 1 library variable set called \"Script Module\"")
+						return errors.New("The project must link to 1 library variable set called \"Script Module\"")
 					}
 
 				}
@@ -7321,17 +7321,17 @@ func TestSingleProjectWithTagsetScopedVarLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -7343,11 +7343,11 @@ func TestSingleProjectWithTagsetScopedVarLookupExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				if len(scopedVar[0].Scope.TenantTag) != 1 {
-					t.Fatalf("The project must have 1 variable called \"test\" scoped to 1 tagset")
+					return errors.New("The project must have 1 variable called \"test\" scoped to 1 tagset")
 				}
 
 				return nil
@@ -7391,17 +7391,17 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -7413,11 +7413,11 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 1 {
-					t.Fatalf("The project must have 1 variable called \"test\" scoped to 1 machines")
+					return errors.New("The project must have 1 variable called \"test\" scoped to 1 machines")
 				}
 
 				machine := octopus.CloudRegionResource{}
@@ -7428,18 +7428,18 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				if machine.Name != "CloudRegion" {
-					t.Fatalf("The machine called CloudRegion must have been exported")
+					return errors.New("The machine called CloudRegion must have been exported")
 				}
 
 				if len(machine.TenantIds) != 1 {
-					t.Fatalf("The machine called CloudRegion needs to be assigned to 1 tenant")
+					return errors.New("The machine called CloudRegion needs to be assigned to 1 tenant")
 				}
 
 				tenant := octopus.Tenant{}
 				_, err = octopusClient.GetResourceById("Tenants", machine.TenantIds[0], &tenant)
 
 				if tenant.Name != "Team A" {
-					t.Fatalf("The tenant called Team A must have been exported")
+					return errors.New("The tenant called Team A must have been exported")
 				}
 
 				return nil
@@ -7751,17 +7751,17 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					t.Fatalf("There must only be one project")
+					return errors.New("There must only be one project")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
-					t.Fatalf("The project must be called \"Test\"")
+					return errors.New("The project must be called \"Test\"")
 				}
 
 				// Verify that the variable set was imported
 
 				if projectCollection.Items[0].VariableSetId == nil {
-					t.Fatalf("The project must have a variable set")
+					return errors.New("The project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -7773,7 +7773,7 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 
 				scopedVar := lo.Filter(variableSet.Variables, func(x octopus.Variable, index int) bool { return x.Name == "test" })
 				if len(scopedVar) == 0 {
-					t.Fatalf("The project must have 1 variable called \"test\"")
+					return errors.New("The project must have 1 variable called \"test\"")
 				}
 
 				accounts := octopus.GeneralCollection[octopus.NameId]{}
@@ -7784,7 +7784,7 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 				}
 
 				if len(accounts.Items) != 1 {
-					t.Fatalf("One account should have been imported via the account variable")
+					return errors.New("One account should have been imported via the account variable")
 				}
 
 				tenants := octopus.GeneralCollection[octopus.Tenant]{}
@@ -7795,11 +7795,11 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 				}
 
 				if len(tenants.Items) != 1 {
-					t.Fatalf("One tenant should have been imported via the account variable")
+					return errors.New("One tenant should have been imported via the account variable")
 				}
 
 				if strutil.EmptyIfNil(scopedVar[0].Value) != accounts.Items[0].Id {
-					t.Fatalf("The variable should reference the new account id")
+					return errors.New("The variable should reference the new account id")
 				}
 
 				return nil
@@ -8169,11 +8169,11 @@ func TestSingleRunbookExport(t *testing.T) {
 				}
 
 				if len(runbookCollection.Items) != 1 {
-					t.Fatalf("There must only be one runbook")
+					return errors.New("There must only be one runbook")
 				}
 
 				if runbookCollection.Items[0].Name != "Runbook" {
-					t.Fatalf("The runbook must be called \"Runbook\"")
+					return errors.New("The runbook must be called \"Runbook\"")
 				}
 
 				return nil
