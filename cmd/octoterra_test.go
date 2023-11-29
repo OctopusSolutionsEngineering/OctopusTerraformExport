@@ -1292,6 +1292,12 @@ func TestDummyCredsExport(t *testing.T) {
 					return errors.New("Space must have an account called \"Token\" in space " + recreatedSpaceId)
 				}
 
+				if len(lo.Filter(collection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == "UserPass"
+				})) != 1 {
+					return errors.New("Space must have an account called \"UserPass\" in space " + recreatedSpaceId)
+				}
+
 				return nil
 			}()
 

@@ -88,6 +88,10 @@ docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
     -dest /tmp/octoexport
 ```
 
+## Octopus integration
+
+The documentation in [platform engineering](https://octopus.com/docs/platform-engineering) allow octoterra to be used directly in Octopus via native steps.
+
 ## Browser usage
 
 Exporting projects to HCL can be embedded in the browser by using the [Violentmonkey](https://violentmonkey.github.io/)
