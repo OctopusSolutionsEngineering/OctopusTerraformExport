@@ -524,7 +524,7 @@ func exportImportAndTest(
 
 		recreatedSpaceId, err := testFramework.GetOutputVariable(t, createImportBlankSpaceModuleDir, "octopus_space_id")
 
-		if err != nil {
+		if err != nil || len(strings.TrimSpace(recreatedSpaceId)) == 0 {
 			/*
 					There is an intermittent bug where the state saved by Terraform is this empty JSON, despite
 					everything appearing to work as expected:
