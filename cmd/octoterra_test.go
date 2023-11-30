@@ -35,6 +35,10 @@ func createClient(container *test.OctopusContainer, space string) *client.Octopu
 }
 
 func copyDir(source string) (string, error) {
+	if source == "" {
+		return "", nil
+	}
+
 	dest, err := os.MkdirTemp("", "octoterra")
 	if err != nil {
 		return "", err
@@ -435,15 +439,50 @@ func exportImportAndTest(
 
 	t.Parallel()
 
+	prepopulateImportSpaceModuleDirCopy, err := copyDir(prepopulateImportSpaceModuleDir)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	prepopulateSourceSpaceModuleDirCopy, err := copyDir(prepopulateSourceSpaceModuleDir)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	defer func() {
+		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy, prepopulateImportSpaceModuleDirCopy, prepopulateSourceSpaceModuleDirCopy} {
+			err := os.RemoveAll(dir)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+		}
+
+	}()
+
 	testFramework := test.OctopusContainerTest{}
 	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) (funcErr error) {
 		// Act
 		newSpaceId, err := testFramework.ActWithCustomPrePopulatedSpace(
 			t,
 			container,
-			createSourceBlankSpaceModuleDir,
-			prepopulateSourceSpaceModuleDir,
-			populateSourceSpaceModuleDir,
+			createSourceBlankSpaceModuleDirCopy,
+			prepopulateSourceSpaceModuleDirCopy,
+			populateSourceSpaceModuleDirCopy,
 			createImportSpaceVars,
 			prePopulateSpaceVars,
 			createSourceSpaceVars)
@@ -471,8 +510,8 @@ func exportImportAndTest(
 		err = testFramework.InitialiseOctopus(
 			t,
 			container,
-			createImportBlankSpaceModuleDir,
-			prepopulateImportSpaceModuleDir,
+			createImportBlankSpaceModuleDirCopy,
+			prepopulateImportSpaceModuleDirCopy,
 			populateSpaceDir,
 			"Test3",
 			createImportSpaceVars,
