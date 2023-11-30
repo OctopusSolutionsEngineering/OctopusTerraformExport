@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.33.3
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231129231720-15b3504d4f88
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231130040625-e6c48800a753
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
 	github.com/otiai10/copy v1.12.0
