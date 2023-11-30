@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/avast/retry-go/v4"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type OctopusClient struct {
@@ -95,38 +97,44 @@ func (o OctopusClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 
 func (o OctopusClient) getSpaceUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
-		return "", errors.New("space can not be empty")
+		return "", errors.New("getSpaceUrl - space can not be empty")
 	}
 
-	spaceId, err := o.lookupSpaceAsName()
-	if err == nil {
-		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId), nil
-	}
+	// Sometimes looking up a space that was just created failed, so add a retry
+	return retry.DoWithData(func() (string, error) {
+		spaceId, err := o.lookupSpaceAsName()
+		if err == nil {
+			return fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId), nil
+		}
 
-	spaceIdValid, err := o.lookupSpaceAsId()
-	if spaceIdValid && err == nil {
-		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space), nil
-	}
+		spaceIdValid, err := o.lookupSpaceAsId()
+		if spaceIdValid && err == nil {
+			return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space), nil
+		}
 
-	return "", errors.New("did not find space with name or id '" + o.Space + "'")
+		return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
+	}, retry.Attempts(3), retry.Delay(1*time.Second))
 }
 
 func (o OctopusClient) GetSpaceBaseUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
-		return "", errors.New("space can not be empty")
+		return "", errors.New("GetSpaceBaseUrl - space can not be empty")
 	}
 
-	spaceId, err := o.lookupSpaceAsName()
-	if err == nil {
-		return fmt.Sprintf("%s/api/%s", o.Url, spaceId), nil
-	}
+	// Sometimes looking up a space that was just created failed, so add a retry
+	return retry.DoWithData(func() (string, error) {
+		spaceId, err := o.lookupSpaceAsName()
+		if err == nil {
+			return fmt.Sprintf("%s/api/%s", o.Url, spaceId), nil
+		}
 
-	spaceIdValid, err := o.lookupSpaceAsId()
-	if spaceIdValid && err == nil {
-		return fmt.Sprintf("%s/api/%s", o.Url, o.Space), nil
-	}
+		spaceIdValid, err := o.lookupSpaceAsId()
+		if spaceIdValid && err == nil {
+			return fmt.Sprintf("%s/api/%s", o.Url, o.Space), nil
+		}
 
-	return "", errors.New("did not find space with name or id '" + o.Space + "'")
+		return "", errors.New("GetSpaceBaseUrl did not find space with name or id '" + o.Space + "'")
+	}, retry.Attempts(3), retry.Delay(1*time.Second))
 }
 
 func (o OctopusClient) getSpaceRequest() (*http.Request, error) {
