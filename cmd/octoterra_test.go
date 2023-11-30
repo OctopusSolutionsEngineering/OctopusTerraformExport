@@ -487,6 +487,10 @@ func exportImportAndTest(
 			prePopulateSpaceVars,
 			createSourceSpaceVars)
 
+		if err != nil {
+			return err
+		}
+
 		t.Log("EXPORTING TEST SPACE \"" + newSpaceId + "\" (" + container.URI + ")")
 
 		tempDir := getTempDir()
@@ -519,6 +523,20 @@ func exportImportAndTest(
 			importSpaceVars)
 
 		if err != nil {
+			// There are some odd errors where Terraform thinks "Test3" is an existing space.
+			// So dump the existing spaces if we get an error just to confirm.
+			octopusClient := createClient(container, "")
+			spaces, spacesErr := octopusClient.GetSpaces()
+
+			t.Log("Existing spaces")
+			if spacesErr == nil {
+				for _, space := range spaces {
+					t.Log("ID: " + space.Id + " Name: " + space.Name)
+				}
+			} else {
+				t.Log(spacesErr.Error())
+			}
+
 			return err
 		}
 

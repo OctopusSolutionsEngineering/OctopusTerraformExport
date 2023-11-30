@@ -100,20 +100,17 @@ func (o OctopusClient) getSpaceUrl() (string, error) {
 		return "", errors.New("getSpaceUrl - space can not be empty")
 	}
 
-	// Sometimes looking up a space that was just created failed, so add a retry
-	return retry.DoWithData(func() (string, error) {
-		spaceId, err := o.lookupSpaceAsName()
-		if err == nil {
-			return fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId), nil
-		}
+	spaceId, err := o.lookupSpaceAsName()
+	if err == nil {
+		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId), nil
+	}
 
-		spaceIdValid, err := o.lookupSpaceAsId()
-		if spaceIdValid && err == nil {
-			return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space), nil
-		}
+	spaceIdValid, err := o.lookupSpaceAsId()
+	if spaceIdValid && err == nil {
+		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space), nil
+	}
 
-		return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
-	}, retry.Attempts(3), retry.Delay(1*time.Second))
+	return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
 }
 
 func (o OctopusClient) GetSpaceBaseUrl() (string, error) {
@@ -236,6 +233,46 @@ func (o OctopusClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	}(res.Body)
 
 	return json.NewDecoder(res.Body).Decode(resources)
+}
+
+func (o OctopusClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
+	requestURL := fmt.Sprintf("%s/api/Spaces", o.Url)
+
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if o.ApiKey != "" {
+		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		zap.L().Error(err.Error())
+		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		return nil, errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
+
+	collection := octopus2.GeneralCollection[octopus2.Space]{}
+	err = json.NewDecoder(res.Body).Decode(&collection)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return collection.Items, nil
 }
 
 func (o OctopusClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
