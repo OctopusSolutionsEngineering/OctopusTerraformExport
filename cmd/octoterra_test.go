@@ -487,7 +487,7 @@ func exportImportAndTest(
 			prePopulateSpaceVars,
 			createSourceSpaceVars)
 
-		t.Log("EXPORTING TEST SPACE")
+		t.Log("EXPORTING TEST SPACE \"" + newSpaceId + "\" (" + container.URI + ")")
 
 		tempDir := getTempDir()
 		defer func(name string) {
@@ -503,7 +503,7 @@ func exportImportAndTest(
 			return err
 		}
 
-		t.Log("REIMPORTING TEST SPACE")
+		t.Log("REIMPORTING TEST SPACE (" + container.URI + ")")
 
 		populateSpaceDir := filepath.Join(tempDir, "space_population")
 
