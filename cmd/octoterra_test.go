@@ -522,7 +522,7 @@ func exportImportAndTest(
 			return err
 		}
 
-		recreatedSpaceId, err := testFramework.GetOutputVariable(t, createImportBlankSpaceModuleDir, "octopus_space_id")
+		recreatedSpaceId, err := testFramework.GetOutputVariable(t, createImportBlankSpaceModuleDirCopy, "octopus_space_id")
 
 		if err != nil || len(strings.TrimSpace(recreatedSpaceId)) == 0 {
 			/*
