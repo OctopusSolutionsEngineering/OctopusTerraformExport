@@ -296,6 +296,13 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		return err
 	}
 
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(getRes.Body)
+
 	// If the space doesn't exist, there is nothing left to do
 	if getRes.StatusCode == 404 {
 		return nil
@@ -304,13 +311,6 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	if getRes.StatusCode != 200 {
 		return errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + ".")
 	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			funcErr = errors.Join(funcErr, err)
-		}
-	}(getRes.Body)
 
 	space := octopus2.Space{}
 	err = json.NewDecoder(getRes.Body).Decode(&space)
@@ -343,16 +343,16 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		return err
 	}
 
-	if putRes.StatusCode != 200 {
-		return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + ".")
-	}
-
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			funcErr = errors.Join(funcErr, err)
 		}
 	}(putRes.Body)
+
+	if putRes.StatusCode != 200 {
+		return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + ".")
+	}
 
 	// Delete the space
 	req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
@@ -371,15 +371,16 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		return err
 	}
 
-	if res.StatusCode != 200 {
-		return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
-	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			funcErr = errors.Join(funcErr, err)
 		}
 	}(res.Body)
+
+	if res.StatusCode != 200 {
+		return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
+	}
 
 	collection := octopus2.GeneralCollection[octopus2.Space]{}
 	err = json.NewDecoder(res.Body).Decode(&collection)
