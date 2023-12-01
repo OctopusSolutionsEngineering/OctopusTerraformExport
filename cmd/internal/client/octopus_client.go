@@ -310,7 +310,8 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		}
 
 		if getRes.StatusCode != 200 {
-			return nil, errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + ".")
+			body, _ := o.bodyToString(getRes.Body)
+			return nil, errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + " with body " + body)
 		}
 
 		space := octopus2.Space{}
@@ -364,7 +365,8 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		}(putRes.Body)
 
 		if putRes.StatusCode != 200 {
-			return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + ".")
+			body, _ := o.bodyToString(putRes.Body)
+			return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + " with body " + body)
 		}
 
 		return nil
@@ -400,13 +402,23 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		}(res.Body)
 
 		if res.StatusCode != 200 {
-			return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
+			body, _ := o.bodyToString(res.Body)
+			return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + " with body " + body)
 		}
 
 		return nil
 	}()
 
 	return err
+}
+
+func (o OctopusClient) bodyToString(body io.Reader) (string, error) {
+	buf := new(strings.Builder)
+	_, err := io.Copy(buf, body)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func (o OctopusClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
