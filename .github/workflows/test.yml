@@ -40,7 +40,9 @@ jobs:
       - name: Test
         run: |-
           go install gotest.tools/gotestsum@latest
-          gotestsum --junitfile results.xml -- -v -timeout 0 -json ./...
+          gotestsum --junitfile results.xml -- -v -coverprofile=coverage.out -coverpkg=github.com/OctopusSolutionsEngineering/OctopusTerraformExport/... -timeout 0 -json ./...
+          go tool cover -html=coverage.out -o=coverage.html
+          go tool cover -func=coverage.out -o=coverage.out
         shell: bash
         env:
           LICENSE: ${{ secrets.LICENSE }}
@@ -52,3 +54,36 @@ jobs:
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
           GOMAXPROCS: 2
+      - name: Archive code coverage results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: coverage.html
+      - name: Go Coverage Badge
+        if: always()
+        uses: tj-actions/coverage-badge-go@v2
+        with:
+          filename: coverage.out
+      - name: Verify Changed files
+        if: always()
+        uses: tj-actions/verify-changed-files@v12
+        id: verify-changed-files
+        with:
+          files: README.md
+      - name: Commit changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "chore: Updated coverage badge."
+      - name: Push changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: ad-m/github-push-action@master
+        # This step fails if anything was pushed before the step was run.
+        # It is not critical that the coverage badge be updated, so allow this step to fail.
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          branch: ${{ github.head_ref }}
