@@ -31,6 +31,8 @@ github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-2023
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231130204025-2d6384c47cef/go.mod h1:3MSsqrumt39nMyg9039r1J294ESis3+jwZEI6Gj6Ku8=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231130225144-cad2d9f80d8e h1:OBtbsH8Tw5dz8D2RxRw/7Xw2GLG6LRwTNAJxhM7wO98=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231130225144-cad2d9f80d8e/go.mod h1:3MSsqrumt39nMyg9039r1J294ESis3+jwZEI6Gj6Ku8=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231201030317-a7a103176e47 h1:7j8qstkI8r8gZQFGYdAc0pKQhBDCFudcypfOIR4h9Ak=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231201030317-a7a103176e47/go.mod h1:3MSsqrumt39nMyg9039r1J294ESis3+jwZEI6Gj6Ku8=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
 github.com/agext/levenshtein v1.2.3/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

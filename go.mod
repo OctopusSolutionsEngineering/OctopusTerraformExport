@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.33.3
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231130225144-cad2d9f80d8e
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231201030317-a7a103176e47
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
