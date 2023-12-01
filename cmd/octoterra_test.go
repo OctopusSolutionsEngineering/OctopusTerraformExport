@@ -476,6 +476,14 @@ func exportImportAndTest(
 
 	testFramework := test.OctopusContainerTest{}
 	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) (funcErr error) {
+		// There appears to be a bug in test containers where containers are reused instead of being recreated under heavy load.
+		// To catch these scenarios, we delete a bunch of spaces before running tests again to create a "clean" Octopus instance.
+		octopusClient := createClient(container, "")
+		for x := 2; x < 10; x++ {
+			// Unhandled error is on purpose here - we delete and hope for the best
+			octopusClient.DeleteSpace("Spaces-" + fmt.Sprint(x))
+		}
+
 		// Act
 		newSpaceId, err := testFramework.ActWithCustomPrePopulatedSpace(
 			t,
@@ -525,7 +533,6 @@ func exportImportAndTest(
 		if err != nil {
 			// There are some odd errors where Terraform thinks "Test3" is an existing space.
 			// So dump the existing spaces if we get an error just to confirm.
-			octopusClient := createClient(container, "")
 			spaces, spacesErr := octopusClient.GetSpaces()
 
 			t.Log("Existing spaces")

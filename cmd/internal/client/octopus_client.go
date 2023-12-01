@@ -275,6 +275,46 @@ func (o OctopusClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 	return collection.Items, nil
 }
 
+func (o OctopusClient) DeleteSpace(spaceId string) (funcErr error) {
+	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
+
+	req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if o.ApiKey != "" {
+		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		zap.L().Error(err.Error())
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
+
+	collection := octopus2.GeneralCollection[octopus2.Space]{}
+	err = json.NewDecoder(res.Body).Decode(&collection)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (o OctopusClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
