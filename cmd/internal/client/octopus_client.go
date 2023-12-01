@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -278,6 +279,77 @@ func (o OctopusClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 func (o OctopusClient) DeleteSpace(spaceId string) (funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
+	// Get the details of the space
+	getReq, err := http.NewRequest(http.MethodGet, requestURL, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if o.ApiKey != "" {
+		getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	}
+
+	getRes, err := http.DefaultClient.Do(getReq)
+
+	if err != nil {
+		return err
+	}
+
+	if getRes.StatusCode != 200 {
+		return errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + ".")
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(getRes.Body)
+
+	space := octopus2.Space{}
+	err = json.NewDecoder(getRes.Body).Decode(&space)
+
+	if err != nil {
+		return err
+	}
+
+	// disable task processing
+	space.TaskQueueStopped = true
+	spaceJson, err := json.Marshal(space)
+
+	if err != nil {
+		return err
+	}
+
+	putReq, err := http.NewRequest(http.MethodPut, requestURL, bytes.NewReader(spaceJson))
+
+	if err != nil {
+		return err
+	}
+
+	if o.ApiKey != "" {
+		getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	}
+
+	putRes, err := http.DefaultClient.Do(putReq)
+
+	if err != nil {
+		return err
+	}
+
+	if putRes.StatusCode != 200 {
+		return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + ".")
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(putRes.Body)
+
+	// Delete the space
 	req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
 
 	if err != nil {
@@ -291,7 +363,6 @@ func (o OctopusClient) DeleteSpace(spaceId string) (funcErr error) {
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		zap.L().Error(err.Error())
 		return err
 	}
 
