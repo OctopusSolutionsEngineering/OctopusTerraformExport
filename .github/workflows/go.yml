@@ -29,8 +29,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parallel: [4]
-        index: [0, 1, 2, 3]
+        parallel: [10]
+        index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     steps:
       - name: Checkout code
@@ -119,7 +119,18 @@ jobs:
         run: npm install -g junit-report-merger
 
       - name: Merge reports
-        run: jrm ./junit-test-summary.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml"
+        run: >
+          jrm ./junit-test-summary.xml 
+          "junit-test-summary-0/*.xml" 
+          "junit-test-summary-1/*.xml" 
+          "junit-test-summary-2/*.xml" 
+          "junit-test-summary-3/*.xml" 
+          "junit-test-summary-4/*.xml" 
+          "junit-test-summary-5/*.xml" 
+          "junit-test-summary-6/*.xml" 
+          "junit-test-summary-7/*.xml" 
+          "junit-test-summary-8/*.xml" 
+          "junit-test-summary-9/*.xml"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v3
