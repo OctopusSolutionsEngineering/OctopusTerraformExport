@@ -280,116 +280,133 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
 	// Get the details of the space
-	getReq, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	space, err := func() (*octopus2.Space, error) {
+		getReq, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
-	if err != nil {
-		return err
-	}
-
-	if o.ApiKey != "" {
-		getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	}
-
-	getRes, err := http.DefaultClient.Do(getReq)
-
-	if err != nil {
-		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
 		if err != nil {
-			funcErr = errors.Join(funcErr, err)
+			return nil, err
 		}
-	}(getRes.Body)
 
-	// If the space doesn't exist, there is nothing left to do
-	if getRes.StatusCode == 404 {
+		if o.ApiKey != "" {
+			getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+		}
+
+		getRes, err := http.DefaultClient.Do(getReq)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				funcErr = errors.Join(funcErr, err)
+			}
+		}(getRes.Body)
+
+		// If the space doesn't exist, there is nothing left to do
+		if getRes.StatusCode == 404 {
+			return nil, nil
+		}
+
+		if getRes.StatusCode != 200 {
+			return nil, errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + ".")
+		}
+
+		space := octopus2.Space{}
+		err = json.NewDecoder(getRes.Body).Decode(&space)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &space, nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	if space == nil {
 		return nil
 	}
 
-	if getRes.StatusCode != 200 {
-		return errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + ".")
-	}
-
-	space := octopus2.Space{}
-	err = json.NewDecoder(getRes.Body).Decode(&space)
-
-	if err != nil {
-		return err
-	}
-
 	// disable task processing
-	space.TaskQueueStopped = true
-	spaceJson, err := json.Marshal(space)
+	err = func() error {
+		space.TaskQueueStopped = true
+		spaceJson, err := json.Marshal(&space)
 
-	if err != nil {
-		return err
-	}
-
-	putReq, err := http.NewRequest(http.MethodPut, requestURL, bytes.NewReader(spaceJson))
-
-	if err != nil {
-		return err
-	}
-
-	if o.ApiKey != "" {
-		getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	}
-
-	putRes, err := http.DefaultClient.Do(putReq)
-
-	if err != nil {
-		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
 		if err != nil {
-			funcErr = errors.Join(funcErr, err)
+			return err
 		}
-	}(putRes.Body)
 
-	if putRes.StatusCode != 200 {
-		return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + ".")
+		putReq, err := http.NewRequest(http.MethodPut, requestURL, bytes.NewReader(spaceJson))
+
+		if err != nil {
+			return err
+		}
+
+		if o.ApiKey != "" {
+			putReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+		}
+
+		putRes, err := http.DefaultClient.Do(putReq)
+
+		if err != nil {
+			return err
+		}
+
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				funcErr = errors.Join(funcErr, err)
+			}
+		}(putRes.Body)
+
+		if putRes.StatusCode != 200 {
+			return errors.New("Status code was " + fmt.Sprint(putRes.StatusCode) + ".")
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
 	}
 
 	// Delete the space
-	req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
+	err = func() error {
+		req, err := http.NewRequest(http.MethodDelete, requestURL, nil)
 
-	if err != nil {
-		return err
-	}
-
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	}
-
-	res, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
 		if err != nil {
-			funcErr = errors.Join(funcErr, err)
+			return err
 		}
-	}(res.Body)
 
-	if res.StatusCode != 200 {
-		return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
-	}
+		if o.ApiKey != "" {
+			req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+		}
 
-	collection := octopus2.GeneralCollection[octopus2.Space]{}
-	err = json.NewDecoder(res.Body).Decode(&collection)
+		res, err := http.DefaultClient.Do(req)
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	return nil
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				funcErr = errors.Join(funcErr, err)
+			}
+		}(res.Body)
+
+		if res.StatusCode != 200 {
+			return errors.New("Status code was " + fmt.Sprint(res.StatusCode) + ".")
+		}
+
+		return nil
+	}()
+
+	return err
 }
 
 func (o OctopusClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
