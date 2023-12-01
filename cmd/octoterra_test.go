@@ -26,7 +26,7 @@ func getTempDir() string {
 }
 
 // createClient creates a client used to access the Octopus API
-func createClient(container *test.OctopusContainer, space string) *client.OctopusApiClient {
+func createClient(container *test.OctopusContainer, space string) client.OctopusClient {
 	return &client.OctopusApiClient{
 		Url:    container.URI,
 		Space:  space,
