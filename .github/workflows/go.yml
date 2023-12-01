@@ -94,7 +94,7 @@ jobs:
           GOMAXPROCS: 1
         run: |
           sudo apt install gotestsum
-          gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0
+          gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0 ./...
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v3
