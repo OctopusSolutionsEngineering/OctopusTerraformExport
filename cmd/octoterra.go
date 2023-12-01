@@ -90,7 +90,7 @@ func errorExit(message string) {
 }
 
 func ConvertProjectNameToId(url string, space string, apiKey string, name string) (string, error) {
-	octopusClient := client.OctopusClient{
+	octopusClient := client.OctopusApiClient{
 		Url:    url,
 		Space:  space,
 		ApiKey: apiKey,
@@ -118,7 +118,7 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 }
 
 func ConvertRunbookNameToId(url string, space string, apiKey string, projectId string, runbookName string) (string, error) {
-	octopusClient := client.OctopusClient{
+	octopusClient := client.OctopusApiClient{
 		Url:    url,
 		Space:  space,
 		ApiKey: apiKey,
@@ -146,7 +146,7 @@ func ConvertRunbookNameToId(url string, space string, apiKey string, projectId s
 }
 
 func ConvertSpaceToTerraform(args args.Arguments) error {
-	octopusClient := client.OctopusClient{
+	octopusClient := client.OctopusApiClient{
 		Url:    args.Url,
 		Space:  args.Space,
 		ApiKey: args.ApiKey,
@@ -551,7 +551,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 
 func ConvertRunbookToTerraform(args args.Arguments) error {
 
-	octopusClient := client.OctopusClient{
+	octopusClient := client.OctopusApiClient{
 		Url:    args.Url,
 		Space:  args.Space,
 		ApiKey: args.ApiKey,
@@ -688,7 +688,7 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 
 func ConvertProjectToTerraform(args args.Arguments) error {
 
-	octopusClient := client.OctopusClient{
+	octopusClient := client.OctopusApiClient{
 		Url:    args.Url,
 		Space:  args.Space,
 		ApiKey: args.ApiKey,

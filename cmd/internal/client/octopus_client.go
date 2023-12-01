@@ -15,13 +15,23 @@ import (
 	"time"
 )
 
-type OctopusClient struct {
+type OctopusClient interface {
+	GetSpaceBaseUrl() (string, error)
+	GetSpace(resources *octopus2.Space) error
+	GetSpaces() ([]octopus2.Space, error)
+	EnsureSpaceDeleted(spaceId string) (funcErr error)
+	GetResource(resourceType string, resources any) (exists bool, funcErr error)
+	GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
+	GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error)
+}
+
+type OctopusApiClient struct {
 	Url    string
 	ApiKey string
 	Space  string
 }
 
-func (o OctopusClient) lookupSpaceAsId() (bool, error) {
+func (o OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return false, errors.New("space can not be empty")
 	}
@@ -46,7 +56,7 @@ func (o OctopusClient) lookupSpaceAsId() (bool, error) {
 	return res.StatusCode != 404, nil
 }
 
-func (o OctopusClient) lookupSpaceAsName() (spaceName string, funcErr error) {
+func (o OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("space can not be empty")
 	}
@@ -96,7 +106,7 @@ func (o OctopusClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 	return "", errors.New("did not find space with name " + o.Space)
 }
 
-func (o OctopusClient) getSpaceUrl() (string, error) {
+func (o OctopusApiClient) getSpaceUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("getSpaceUrl - space can not be empty")
 	}
@@ -114,7 +124,7 @@ func (o OctopusClient) getSpaceUrl() (string, error) {
 	return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
 }
 
-func (o OctopusClient) GetSpaceBaseUrl() (string, error) {
+func (o OctopusApiClient) GetSpaceBaseUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("GetSpaceBaseUrl - space can not be empty")
 	}
@@ -135,7 +145,7 @@ func (o OctopusClient) GetSpaceBaseUrl() (string, error) {
 	}, retry.Attempts(3), retry.Delay(1*time.Second))
 }
 
-func (o OctopusClient) getSpaceRequest() (*http.Request, error) {
+func (o OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 	spaceUrl, err := o.getSpaceUrl()
 
 	if err != nil {
@@ -155,7 +165,7 @@ func (o OctopusClient) getSpaceRequest() (*http.Request, error) {
 	return req, nil
 }
 
-func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request, error) {
+func (o OctopusApiClient) getRequest(resourceType string, id string) (*http.Request, error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -177,7 +187,7 @@ func (o OctopusClient) getRequest(resourceType string, id string) (*http.Request
 	return req, nil
 }
 
-func (o OctopusClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
+func (o OctopusApiClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -210,7 +220,7 @@ func (o OctopusClient) getCollectionRequest(resourceType string, queryParams ...
 	return req, nil
 }
 
-func (o OctopusClient) GetSpace(resources *octopus2.Space) (funcErr error) {
+func (o OctopusApiClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	req, err := o.getSpaceRequest()
 
 	if err != nil {
@@ -236,7 +246,7 @@ func (o OctopusClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
-func (o OctopusClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
+func (o OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces", o.Url)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -276,7 +286,7 @@ func (o OctopusClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 	return collection.Items, nil
 }
 
-func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
+func (o OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
 	// Get the details of the space
@@ -412,7 +422,7 @@ func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	return err
 }
 
-func (o OctopusClient) bodyToString(body io.Reader) (string, error) {
+func (o OctopusApiClient) bodyToString(body io.Reader) (string, error) {
 	buf := new(strings.Builder)
 	_, err := io.Copy(buf, body)
 	if err != nil {
@@ -421,7 +431,7 @@ func (o OctopusClient) bodyToString(body io.Reader) (string, error) {
 	return buf.String(), nil
 }
 
-func (o OctopusClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
+func (o OctopusApiClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -476,7 +486,7 @@ func (o OctopusClient) GetResource(resourceType string, resources any) (exists b
 	return true, nil
 }
 
-func (o OctopusClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
+func (o OctopusApiClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
 	req, err := o.getRequest(resourceType, id)
 
 	if err != nil {
@@ -519,7 +529,7 @@ func (o OctopusClient) GetResourceById(resourceType string, id string, resources
 	return true, nil
 }
 
-func (o OctopusClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
+func (o OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
 	req, err := o.getCollectionRequest(resourceType, queryParams...)
 
 	if err != nil {

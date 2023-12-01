@@ -56,7 +56,7 @@ func convertProject() js.Func {
 }
 
 func convertProjectToTerraform(url string, space string, projectId string) (map[string]string, error) {
-	client := client.OctopusClient{
+	client := client.OctopusApiClient{
 		Url:   url,
 		Space: space,
 	}
