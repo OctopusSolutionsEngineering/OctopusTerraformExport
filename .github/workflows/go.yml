@@ -91,7 +91,7 @@ jobs:
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 1
+          GOMAXPROCS: 2
         run: |
           sudo apt install gotestsum
           gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0 ./...
@@ -155,6 +155,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
       - name: Get branch name
         id: branch-name
         uses: tj-actions/branch-names@v7
