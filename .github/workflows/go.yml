@@ -23,24 +23,121 @@ name: Go Build
     paths-ignore:
       - '**/*.md'
 jobs:
-  build:
-    runs-on:
-      labels: 16core-ubuntu-runner
+  tests:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        parallel: [4]
+        index: [0, 1, 2, 3]
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Download JUnit Summary from Previous Workflow
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
         with:
-          fetch-depth: '0'
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v7
+          workflow_conclusion: success
+          name: junit-test-summary
+          if_no_artifact_found: warn
+          branch: main
+
+      - name: Split integration tests
+        id: test_split
+        uses: hashicorp-forge/go-test-split-action@v1
+        with:
+          index: ${{ matrix.index }}
+          total: ${{ matrix.parallel }}
+          junit-summary: ./junit-test-summary.xml
+
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_wrapper: false
+
+      - name: Clone the Terraform provider source
+        run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
+        shell: bash
+
+      - name: Build the Terraform provider from source
+        run: go build -o terraform-provider-octopusdeploy
+        working-directory: terraform-provider-octopusdeploy
+
+      - name: Override the location used by Terraform provider
+        run: |-
+          cat <<EOT >> ~/.terraformrc
+          provider_installation {
+              dev_overrides {
+              "octopusdeploylabs/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
+            }
+            direct {}
+          }
+          EOT
+
+      - name: Go test
+        env:
+          GOMAXPROCS: 1
+        run: gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-test-summary-${{ matrix.index }}
+          path: node-summary.xml
+          retention-days: 1
+
+  tests-combine-summaries:
+    name: Combine Test Reports
+    needs: [ tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Install junit-report-merger
+        run: npm install -g junit-report-merger
+
+      - name: Merge reports
+        run: jrm ./junit-test-summary.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-test-summary
+          path: ./junit-test-summary.xml
+
+      - name: Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: Go Tests
+          path: junit-test-summary.xml
+          reporter: java-junit
+          fail-on-error: 'true'
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [ tests-combine-summaries ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v7
       - name: Set up Go
         uses: actions/setup-go@v3
-        with:
-          go-version: 1.21.4
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v0.9.15
         with:
@@ -73,80 +170,6 @@ jobs:
         with:
           name: Dependencies Updates
           path: dependencyUpdates.txt
-      - name: Clone the Terraform provider source
-        run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
-        shell: bash
-      - name: Build the Terraform provider from source
-        run: go build -o terraform-provider-octopusdeploy
-        working-directory: terraform-provider-octopusdeploy
-      - name: Override the location used by Terraform provider
-        run: |-
-          cat <<EOT >> ~/.terraformrc
-          provider_installation {
-              dev_overrides {
-              "octopusdeploylabs/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
-            }
-            direct {}
-          }
-          EOT
-      - name: Test
-        run: |-
-          go install gotest.tools/gotestsum@latest
-          gotestsum --junitfile results.xml -- -v -coverprofile=coverage.out -coverpkg=github.com/OctopusSolutionsEngineering/OctopusTerraformExport/... -timeout 0 -json ./...
-          go tool cover -html=coverage.out -o=coverage.html
-          go tool cover -func=coverage.out -o=coverage.out
-        shell: bash
-        env:
-          LICENSE: ${{ secrets.LICENSE }}
-          ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
-          ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
-          GIT_CREDENTIAL: ${{ secrets.GIT_CREDENTIAL }}
-          OCTOTESTSKIPINIT: false
-          OCTODISABLEOCTOCONTAINERLOGGING: true
-          OCTOTESTDUMPSTATE: true
-          OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 16
-      - name: Archive code coverage results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: coverage.html
-      - name: Go Coverage Badge
-        if: always()
-        uses: tj-actions/coverage-badge-go@v2
-        with:
-          filename: coverage.out
-      - name: Verify Changed files
-        if: always()
-        uses: tj-actions/verify-changed-files@v12
-        id: verify-changed-files
-        with:
-          files: README.md
-      - name: Commit changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README.md
-          git commit -m "chore: Updated coverage badge."
-      - name: Push changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        uses: ad-m/github-push-action@master
-        # This step fails if anything was pushed before the step was run.
-        # It is not critical that the coverage badge be updated, so allow this step to fail.
-        continue-on-error: true
-        with:
-          github_token: ${{ github.token }}
-          branch: ${{ github.head_ref }}
-      - if: always()
-        name: Report
-        uses: dorny/test-reporter@v1
-        with:
-          name: Go Tests
-          path: results.xml
-          reporter: java-junit
-          fail-on-error: 'false'
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_amd64 cmd/octoterra.go
         env:
           GOOS: linux
