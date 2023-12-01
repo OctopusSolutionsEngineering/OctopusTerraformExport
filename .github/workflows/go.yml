@@ -81,7 +81,16 @@ jobs:
           EOT
 
       - name: Go test
+        shell: bash
         env:
+          LICENSE: ${{ secrets.LICENSE }}
+          ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
+          ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
+          GIT_CREDENTIAL: ${{ secrets.GIT_CREDENTIAL }}
+          OCTOTESTSKIPINIT: false
+          OCTODISABLEOCTOCONTAINERLOGGING: true
+          OCTOTESTDUMPSTATE: true
+          OCTOTESTDEFAULTSPACEID: Spaces-2
           GOMAXPROCS: 1
         run: |
           go install gotest.tools/gotestsum@latest
