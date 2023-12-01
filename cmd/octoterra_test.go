@@ -481,7 +481,7 @@ func exportImportAndTest(
 		octopusClient := createClient(container, "")
 		for x := 2; x < 10; x++ {
 			// Unhandled error is on purpose here - we delete and hope for the best
-			octopusClient.DeleteSpace("Spaces-" + fmt.Sprint(x))
+			octopusClient.EnsureSpaceDeleted("Spaces-" + fmt.Sprint(x))
 		}
 
 		// Act

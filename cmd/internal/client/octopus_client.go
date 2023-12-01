@@ -276,7 +276,7 @@ func (o OctopusClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 	return collection.Items, nil
 }
 
-func (o OctopusClient) DeleteSpace(spaceId string) (funcErr error) {
+func (o OctopusClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
 	// Get the details of the space
@@ -294,6 +294,11 @@ func (o OctopusClient) DeleteSpace(spaceId string) (funcErr error) {
 
 	if err != nil {
 		return err
+	}
+
+	// If the space doesn't exist, there is nothing left to do
+	if getRes.StatusCode == 404 {
+		return nil
 	}
 
 	if getRes.StatusCode != 200 {
