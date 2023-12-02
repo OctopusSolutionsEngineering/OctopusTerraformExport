@@ -134,19 +134,19 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, depende
 	thisResource.Id = account.Id
 	thisResource.ResourceType = c.GetResourceType()
 	if account.AccountType == "AmazonWebServicesAccount" {
-		c.writeAwsAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeAwsAccount(&thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "AzureServicePrincipal" {
-		c.writeAzureServicePrincipalAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeAzureServicePrincipalAccount(&thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "AzureSubscription" {
-		c.writeAzureSubscriptionAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeAzureSubscriptionAccount(&thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "GoogleCloudAccount" {
-		c.writeGoogleCloudAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeGoogleCloudAccount(&thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "Token" {
-		c.writeTokenAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeTokenAccount(&thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "UsernamePassword" {
-		c.writeUsernamePasswordAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeUsernamePasswordAccount(&thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "SshKeyPair" {
-		c.writeSshAccount(thisResource, resourceName, account, recursive, dependencies)
+		c.writeSshAccount(&thisResource, resourceName, account, recursive, dependencies)
 	}
 
 	dependencies.AddResource(thisResource)
@@ -157,7 +157,7 @@ func (c AccountConverter) GetResourceType() string {
 	return "Accounts"
 }
 
-func (c AccountConverter) writeAwsAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
@@ -219,7 +219,7 @@ func (c AccountConverter) writeAwsAccount(resource ResourceDetails, resourceName
 	}
 }
 
-func (c AccountConverter) writeAzureServicePrincipalAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
@@ -285,7 +285,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource ResourceDet
 	}
 }
 
-func (c AccountConverter) writeAzureSubscriptionAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		certVariable := "${var." + resourceName + "_cert}"
@@ -350,7 +350,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource ResourceDetails
 	}
 }
 
-func (c AccountConverter) writeGoogleCloudAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
@@ -411,7 +411,7 @@ func (c AccountConverter) writeGoogleCloudAccount(resource ResourceDetails, reso
 	}
 }
 
-func (c AccountConverter) writeTokenAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
@@ -472,7 +472,7 @@ func (c AccountConverter) writeTokenAccount(resource ResourceDetails, resourceNa
 	}
 }
 
-func (c AccountConverter) writeUsernamePasswordAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
@@ -534,7 +534,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource ResourceDetails,
 	}
 }
 
-func (c AccountConverter) writeSshAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
