@@ -198,7 +198,7 @@ func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceNam
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -264,7 +264,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDe
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -329,7 +329,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetail
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -390,7 +390,7 @@ func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, res
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -451,7 +451,7 @@ func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceN
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -513,7 +513,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -590,7 +590,7 @@ func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceNam
 			SpacesBefore: 0,
 		}})
 
-		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
