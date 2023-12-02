@@ -98,7 +98,7 @@ jobs:
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 1
+          GOMAXPROCS: 2
           OCTOTESTRETRYCOUNT: 5
           # This avoids errors like
           # Error response from daemon: No such container: d7447146fc04ed2253f9f73644b59ca856c255c603099414e6f50b800719b05b: creating network reaper failed: failed to create network
