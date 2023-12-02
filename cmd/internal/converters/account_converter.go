@@ -1,12 +1,11 @@
 package converters
 
 import (
-	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -28,7 +27,7 @@ type AccountConverter struct {
 }
 
 func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.Account]{}
+	collection := octopus.GeneralCollection[octopus.Account]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -56,7 +55,7 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 		return nil
 	}
 
-	resource := octopus2.Account{}
+	resource := octopus.Account{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -76,7 +75,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 		return nil
 	}
 
-	resource := octopus2.Account{}
+	resource := octopus.Account{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -92,7 +91,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data.octopusdeploy_accounts." + resourceName + ".accounts[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformAccountData{
+		terraformResource := terraform.TerraformAccountData{
 			Type:        "octopusdeploy_accounts",
 			Name:        resourceName,
 			Ids:         nil,
@@ -118,69 +117,36 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 	return nil
 }
 
-func (c AccountConverter) toHcl(resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) toHcl(account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
 	if recursive {
-		err := c.exportDependencies(resource, dependencies)
+		err := c.exportDependencies(account, dependencies)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)
+	resourceName := "account_" + sanitizer.SanitizeName(account.Name)
 
 	thisResource := ResourceDetails{}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
-	thisResource.Id = resource.Id
+	thisResource.Id = account.Id
 	thisResource.ResourceType = c.GetResourceType()
-	if resource.AccountType == "AmazonWebServicesAccount" {
-		thisResource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
-	} else if resource.AccountType == "AzureServicePrincipal" {
-		thisResource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
-	} else if resource.AccountType == "AzureSubscription" {
-		thisResource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
-	} else if resource.AccountType == "GoogleCloudAccount" {
-		thisResource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
-	} else if resource.AccountType == "Token" {
-		thisResource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
-	} else if resource.AccountType == "UsernamePassword" {
-		thisResource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
-	} else if resource.AccountType == "SshKeyPair" {
-		thisResource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
-	}
-	thisResource.ToHcl = func() (string, error) {
-
-		// Assume the default lifecycle already exists
-		if resource.AccountType == "AmazonWebServicesAccount" {
-			return c.writeAwsAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		if resource.AccountType == "AzureServicePrincipal" {
-			return c.writeAzureServicePrincipalAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		if resource.AccountType == "AzureSubscription" {
-			return c.writeAzureSubscriptionAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		if resource.AccountType == "GoogleCloudAccount" {
-			return c.writeGoogleCloudAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		if resource.AccountType == "Token" {
-			return c.writeTokenAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		if resource.AccountType == "UsernamePassword" {
-			return c.writeUsernamePasswordAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		if resource.AccountType == "SshKeyPair" {
-			return c.writeSshAccount(resourceName, resource, recursive, dependencies)
-		}
-
-		return "", errors.New("found unsupported account type: " + resource.AccountType)
+	if account.AccountType == "AmazonWebServicesAccount" {
+		c.writeAwsAccount(thisResource, resourceName, account, recursive, dependencies)
+	} else if account.AccountType == "AzureServicePrincipal" {
+		c.writeAzureServicePrincipalAccount(thisResource, resourceName, account, recursive, dependencies)
+	} else if account.AccountType == "AzureSubscription" {
+		c.writeAzureSubscriptionAccount(thisResource, resourceName, account, recursive, dependencies)
+	} else if account.AccountType == "GoogleCloudAccount" {
+		c.writeGoogleCloudAccount(thisResource, resourceName, account, recursive, dependencies)
+	} else if account.AccountType == "Token" {
+		c.writeTokenAccount(thisResource, resourceName, account, recursive, dependencies)
+	} else if account.AccountType == "UsernamePassword" {
+		c.writeUsernamePasswordAccount(thisResource, resourceName, account, recursive, dependencies)
+	} else if account.AccountType == "SshKeyPair" {
+		c.writeSshAccount(thisResource, resourceName, account, recursive, dependencies)
 	}
 
 	dependencies.AddResource(thisResource)
@@ -191,445 +157,465 @@ func (c AccountConverter) GetResourceType() string {
 	return "Accounts"
 }
 
-func (c AccountConverter) writeAwsAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	secretVariable := "${var." + resourceName + "}"
-	terraformResource := terraform2.TerraformAwsAccount{
-		Type:                            "octopusdeploy_aws_account",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		AccessKey:                       resource.AccessKey,
-		SecretKey:                       &secretVariable,
+func (c AccountConverter) writeAwsAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		secretVariable := "${var." + resourceName + "}"
+		terraformResource := terraform.TerraformAwsAccount{
+			Type:                            "octopusdeploy_aws_account",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			AccessKey:                       account.AccessKey,
+			SecretKey:                       &secretVariable,
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The AWS secret key associated with the account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_aws_account." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[secret_key]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName,
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The AWS secret key associated with the account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_aws_account." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[secret_key]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return string(file.Bytes()), nil
-
 }
 
-func (c AccountConverter) writeAzureServicePrincipalAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	secretVariable := "${var." + resourceName + "}"
-	terraformResource := terraform2.TerraformAzureServicePrincipal{
-		Type:                            "octopusdeploy_azure_service_principal",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		ApplicationId:                   resource.ClientId,
-		Password:                        &secretVariable,
-		SubscriptionId:                  resource.SubscriptionNumber,
-		TenantId:                        resource.TenantId,
-		AzureEnvironment:                strutil.NilIfEmptyPointer(resource.AzureEnvironment),
-		ResourceManagerEndpoint:         strutil.NilIfEmptyPointer(resource.ResourceManagementEndpointBaseUri),
+func (c AccountConverter) writeAzureServicePrincipalAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		secretVariable := "${var." + resourceName + "}"
+		terraformResource := terraform.TerraformAzureServicePrincipal{
+			Type:                            "octopusdeploy_azure_service_principal",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			ApplicationId:                   account.ClientId,
+			Password:                        &secretVariable,
+			SubscriptionId:                  account.SubscriptionNumber,
+			TenantId:                        account.TenantId,
+			AzureEnvironment:                strutil.NilIfEmptyPointer(account.AzureEnvironment),
+			ResourceManagerEndpoint:         strutil.NilIfEmptyPointer(account.ResourceManagementEndpointBaseUri),
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The Azure secret associated with the account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_azure_service_principal." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[password]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName,
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The Azure secret associated with the account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_azure_service_principal." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[password]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return string(file.Bytes()), nil
 }
 
-func (c AccountConverter) writeAzureSubscriptionAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	certVariable := "${var." + resourceName + "_cert}"
-	terraformResource := terraform2.TerraformAzureSubscription{
-		Type:                            "octopusdeploy_azure_subscription_account",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		ManagementEndpoint:              strutil.EmptyIfNil(resource.ServiceManagementEndpointBaseUri),
-		StorageEndpointSuffix:           strutil.EmptyIfNil(resource.ServiceManagementEndpointSuffix),
-		SubscriptionId:                  resource.SubscriptionNumber,
-		AzureEnvironment:                strutil.NilIfEmptyPointer(resource.AzureEnvironment),
-		Certificate:                     &certVariable,
+func (c AccountConverter) writeAzureSubscriptionAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		certVariable := "${var." + resourceName + "_cert}"
+		terraformResource := terraform.TerraformAzureSubscription{
+			Type:                            "octopusdeploy_azure_subscription_account",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			ManagementEndpoint:              strutil.EmptyIfNil(account.ServiceManagementEndpointBaseUri),
+			StorageEndpointSuffix:           strutil.EmptyIfNil(account.ServiceManagementEndpointSuffix),
+			SubscriptionId:                  account.SubscriptionNumber,
+			AzureEnvironment:                strutil.NilIfEmptyPointer(account.AzureEnvironment),
+			Certificate:                     &certVariable,
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName + "_cert",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The Azure certificate associated with the account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateNoPass()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_azure_subscription_account." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[certificate]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName + "_cert",
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The Azure certificate associated with the account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateNoPass()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_azure_subscription_account." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[certificate]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return string(file.Bytes()), nil
 }
 
-func (c AccountConverter) writeGoogleCloudAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	secretVariable := "${var." + resourceName + "}"
-	terraformResource := terraform2.TerraformGcpAccount{
-		Type:                            "octopusdeploy_gcp_account",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		JsonKey:                         &secretVariable,
+func (c AccountConverter) writeGoogleCloudAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		secretVariable := "${var." + resourceName + "}"
+		terraformResource := terraform.TerraformGcpAccount{
+			Type:                            "octopusdeploy_gcp_account",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			JsonKey:                         &secretVariable,
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The GCP JSON key associated with the account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_gcp_account." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[json_key]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName,
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The GCP JSON key associated with the account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_gcp_account." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[json_key]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return string(file.Bytes()), nil
 }
 
-func (c AccountConverter) writeTokenAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	secretVariable := "${var." + resourceName + "}"
-	terraformResource := terraform2.TerraformTokenAccount{
-		Type:                            "octopusdeploy_token_account",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		Token:                           &secretVariable,
+func (c AccountConverter) writeTokenAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		secretVariable := "${var." + resourceName + "}"
+		terraformResource := terraform.TerraformTokenAccount{
+			Type:                            "octopusdeploy_token_account",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			Token:                           &secretVariable,
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The token associated with the account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_token_account." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[token]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName,
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The token associated with the account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_token_account." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[token]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return string(file.Bytes()), nil
 }
 
-func (c AccountConverter) writeUsernamePasswordAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	secretVariable := "${var." + resourceName + "}"
-	terraformResource := terraform2.TerraformUsernamePasswordAccount{
-		Type:                            "octopusdeploy_username_password_account",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		Username:                        resource.Username,
-		Password:                        &secretVariable,
+func (c AccountConverter) writeUsernamePasswordAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		secretVariable := "${var." + resourceName + "}"
+		terraformResource := terraform.TerraformUsernamePasswordAccount{
+			Type:                            "octopusdeploy_username_password_account",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			Username:                        account.Username,
+			Password:                        &secretVariable,
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password associated with the account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_username_password_account." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[password]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName,
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The password associated with the account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_username_password_account." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[password]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	return string(file.Bytes()), nil
 }
 
-func (c AccountConverter) writeSshAccount(resourceName string, resource octopus2.Account, recursive bool, dependencies *ResourceDetailsCollection) (string, error) {
-	secretVariable := "${var." + resourceName + "}"
-	certFileVariable := "${var." + resourceName + "_cert}"
-	terraformResource := terraform2.TerraformSshAccount{
-		Type:                            "octopusdeploy_ssh_key_account",
-		Name:                            resourceName,
-		ResourceName:                    resource.Name,
-		Description:                     resource.Description,
-		Environments:                    dependencies.GetResources("Environments", resource.EnvironmentIds...),
-		TenantTags:                      c.Excluder.FilteredTenantTags(resource.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-		Tenants:                         dependencies.GetResources("Tenants", resource.TenantIds...),
-		TenantedDeploymentParticipation: resource.TenantedDeploymentParticipation,
-		PrivateKeyFile:                  &certFileVariable,
-		Username:                        resource.Username,
-		PrivateKeyPassphrase:            &secretVariable,
+func (c AccountConverter) writeSshAccount(resource ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+	resource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+	resource.ToHcl = func() (string, error) {
+		secretVariable := "${var." + resourceName + "}"
+		certFileVariable := "${var." + resourceName + "_cert}"
+		terraformResource := terraform.TerraformSshAccount{
+			Type:                            "octopusdeploy_ssh_key_account",
+			Name:                            resourceName,
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			PrivateKeyFile:                  &certFileVariable,
+			Username:                        account.Username,
+			PrivateKeyPassphrase:            &secretVariable,
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The password associated with the certificate for account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
+		}
+
+		certFileVariableResource := terraform.TerraformVariable{
+			Name:        resourceName + "_cert",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   true,
+			Description: "The certificate file for account " + account.Name,
+		}
+
+		if c.DummySecretVariableValues {
+			certFileVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
+			Type: hclsyntax.TokenComment,
+			Bytes: []byte("# Import existing resources with the following commands:\n" +
+				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
+				"# terraform import octopusdeploy_ssh_key_account." + resourceName + " ${RESOURCE_ID}\n"),
+			SpacesBefore: 0,
+		}})
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "account")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(accountBlock, "[private_key_passphrase, private_key_file]")
+		}
+
+		file.Body().AppendBlock(accountBlock)
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		certFileVariableResourceBlock := gohcl.EncodeAsBlock(certFileVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
+		file.Body().AppendBlock(certFileVariableResourceBlock)
+
+		return string(file.Bytes()), nil
 	}
-
-	secretVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName,
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The password associated with the certificate for account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
-		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
-	}
-
-	certFileVariableResource := terraform2.TerraformVariable{
-		Name:        resourceName + "_cert",
-		Type:        "string",
-		Nullable:    false,
-		Sensitive:   true,
-		Description: "The certificate file for account " + resource.Name,
-	}
-
-	if c.DummySecretVariableValues {
-		certFileVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
-	}
-
-	file := hclwrite.NewEmptyFile()
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_ssh_key_account." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
-
-	accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
-	if err != nil {
-		return "", err
-	}
-
-	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(accountBlock, "[private_key_passphrase, private_key_file]")
-	}
-
-	file.Body().AppendBlock(accountBlock)
-
-	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(block, "type", "string")
-	file.Body().AppendBlock(block)
-
-	certFileVariableResourceBlock := gohcl.EncodeAsBlock(certFileVariableResource, "variable")
-	hcl.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
-	file.Body().AppendBlock(certFileVariableResourceBlock)
-
-	return string(file.Bytes()), nil
 }
 
-func (c AccountConverter) exportDependencies(target octopus2.Account, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) exportDependencies(target octopus.Account, dependencies *ResourceDetailsCollection) error {
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
