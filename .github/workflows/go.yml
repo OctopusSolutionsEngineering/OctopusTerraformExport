@@ -92,6 +92,7 @@ jobs:
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
           GOMAXPROCS: 2
+          OCTOTESTRETRYCOUNT: 5
         run: |
           sudo apt install gotestsum
           gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0 ./...
