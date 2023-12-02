@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         parallel: [10]
-        index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 
     steps:
       - name: Install Latest Docker
@@ -98,7 +98,7 @@ jobs:
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
-          GOMAXPROCS: 2
+          GOMAXPROCS: 1
           OCTOTESTRETRYCOUNT: 5
           # This avoids errors like
           # Error response from daemon: No such container: d7447146fc04ed2253f9f73644b59ca856c255c603099414e6f50b800719b05b: creating network reaper failed: failed to create network
@@ -145,6 +145,11 @@ jobs:
           "junit-test-summary-7/*.xml" 
           "junit-test-summary-8/*.xml" 
           "junit-test-summary-9/*.xml"
+          "junit-test-summary-10/*.xml"
+          "junit-test-summary-11/*.xml"
+          "junit-test-summary-12/*.xml"
+          "junit-test-summary-13/*.xml"
+          "junit-test-summary-14/*.xml"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v3
