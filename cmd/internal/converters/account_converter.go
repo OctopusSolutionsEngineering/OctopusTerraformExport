@@ -157,6 +157,54 @@ func (c AccountConverter) GetResourceType() string {
 	return "Accounts"
 }
 
+func (c AccountConverter) createSecretVariable(resourceName string, description string) terraform.TerraformVariable {
+	secretVariableResource := terraform.TerraformVariable{
+		Name:        resourceName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: description,
+	}
+
+	if c.DummySecretVariableValues {
+		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+	}
+
+	return secretVariableResource
+}
+
+func (c AccountConverter) createSecretCertificateNoPassVariable(resourceName string, description string) terraform.TerraformVariable {
+	secretVariableResource := terraform.TerraformVariable{
+		Name:        resourceName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: description,
+	}
+
+	if c.DummySecretVariableValues {
+		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateNoPass()
+	}
+
+	return secretVariableResource
+}
+
+func (c AccountConverter) createSecretCertificateB64Variable(resourceName string, description string) terraform.TerraformVariable {
+	secretVariableResource := terraform.TerraformVariable{
+		Name:        resourceName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: description,
+	}
+
+	if c.DummySecretVariableValues {
+		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
+	}
+
+	return secretVariableResource
+}
+
 func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
 	resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
 	resource.ToHcl = func() (string, error) {
@@ -174,17 +222,7 @@ func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceNam
 			SecretKey:                       &secretVariable,
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The AWS secret key associated with the account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-		}
+		secretVariableResource := c.createSecretVariable(resourceName, "The AWS secret key associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -210,10 +248,7 @@ func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceNam
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 
 		return string(file.Bytes()), nil
 	}
@@ -240,17 +275,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDe
 			ResourceManagerEndpoint:         strutil.NilIfEmptyPointer(account.ResourceManagementEndpointBaseUri),
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The Azure secret associated with the account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-		}
+		secretVariableResource := c.createSecretVariable(resourceName, "The Azure secret associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -276,10 +301,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDe
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 
 		return string(file.Bytes()), nil
 	}
@@ -305,17 +327,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetail
 			Certificate:                     &certVariable,
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName + "_cert",
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The Azure certificate associated with the account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateNoPass()
-		}
+		secretVariableResource := c.createSecretCertificateNoPassVariable(resourceName+"_cert", "The Azure certificate associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -341,10 +353,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetail
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 
 		return string(file.Bytes()), nil
 	}
@@ -366,17 +375,7 @@ func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, res
 			JsonKey:                         &secretVariable,
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The GCP JSON key associated with the account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-		}
+		secretVariableResource := c.createSecretVariable(resourceName, "The GCP JSON key associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -402,10 +401,7 @@ func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, res
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 
 		return string(file.Bytes()), nil
 	}
@@ -427,17 +423,7 @@ func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceN
 			Token:                           &secretVariable,
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The token associated with the account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-		}
+		secretVariableResource := c.createSecretVariable(resourceName, "The token associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -463,10 +449,7 @@ func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceN
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 
 		return string(file.Bytes()), nil
 	}
@@ -489,17 +472,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails
 			Password:                        &secretVariable,
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The password associated with the account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-		}
+		secretVariableResource := c.createSecretVariable(resourceName, "The password associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -525,10 +498,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 
 		return string(file.Bytes()), nil
 	}
@@ -553,30 +523,10 @@ func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceNam
 			PrivateKeyPassphrase:            &secretVariable,
 		}
 
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The password associated with the certificate for account " + account.Name,
-		}
+		// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
+		secretVariableResource := c.createSecretCertificateB64Variable(resourceName, "The password associated with the certificate for account "+account.Name)
 
-		if c.DummySecretVariableValues {
-			// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
-		}
-
-		certFileVariableResource := terraform.TerraformVariable{
-			Name:        resourceName + "_cert",
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The certificate file for account " + account.Name,
-		}
-
-		if c.DummySecretVariableValues {
-			certFileVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
-		}
+		certFileVariableResource := c.createSecretCertificateB64Variable(resourceName+"_cert", "The certificate file for account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -602,14 +552,8 @@ func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceNam
 		}
 
 		file.Body().AppendBlock(accountBlock)
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
-
-		certFileVariableResourceBlock := gohcl.EncodeAsBlock(certFileVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(certFileVariableResourceBlock, "type", "string")
-		file.Body().AppendBlock(certFileVariableResourceBlock)
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
+		file.Body().AppendBlock(hcl.EncodeTerraformVariable(certFileVariableResource))
 
 		return string(file.Bytes()), nil
 	}
