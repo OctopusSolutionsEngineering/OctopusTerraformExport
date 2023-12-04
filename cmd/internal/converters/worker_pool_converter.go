@@ -86,97 +86,17 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool
 		forceLookup := lookup || pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu"
 
 		if forceLookup {
-			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
-
-			thisResource.ToHcl = func() (string, error) {
-				data := terraform2.TerraformWorkerPoolData{
-					Type:         "octopusdeploy_worker_pools",
-					Name:         resourceName,
-					ResourceName: &pool.Name,
-					Ids:          nil,
-					PartialName:  nil,
-					Skip:         0,
-					Take:         1,
-				}
-				file := hclwrite.NewEmptyFile()
-				block := gohcl.EncodeAsBlock(data, "data")
-				hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
-				file.Body().AppendBlock(block)
-
-				return string(file.Bytes()), nil
-			}
+			c.createDynamicWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			thisResource.Lookup = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
-
-			thisResource.ToHcl = func() (string, error) {
-				terraformResource := terraform2.TerraformWorkerPool{
-					Type:         "octopusdeploy_dynamic_worker_pool",
-					Name:         resourceName,
-					ResourceName: pool.Name,
-					Description:  pool.Description,
-					IsDefault:    pool.IsDefault,
-					SortOrder:    pool.SortOrder,
-					WorkerType:   pool.WorkerType,
-				}
-				file := hclwrite.NewEmptyFile()
-
-				// Add a comment with the import command
-				baseUrl, _ := c.Client.GetSpaceBaseUrl()
-				file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, "octopusdeploy_dynamic_worker_pool", resourceName))
-
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-				return string(file.Bytes()), nil
-			}
+			c.createDynamicWorkerPoolResource(resourceName, &thisResource, pool)
 		}
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
 
 		if forceLookup {
-			thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
-
-			thisResource.ToHcl = func() (string, error) {
-				data := terraform2.TerraformWorkerPoolData{
-					Type:         "octopusdeploy_worker_pools",
-					Name:         resourceName,
-					ResourceName: &pool.Name,
-					Ids:          nil,
-					PartialName:  nil,
-					Skip:         0,
-					Take:         1,
-				}
-				file := hclwrite.NewEmptyFile()
-				block := gohcl.EncodeAsBlock(data, "data")
-				hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
-				file.Body().AppendBlock(block)
-
-				return string(file.Bytes()), nil
-
-			}
+			c.createStaticWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
-
-			thisResource.ToHcl = func() (string, error) {
-
-				terraformResource := terraform2.TerraformWorkerPool{
-					Type:         "octopusdeploy_static_worker_pool",
-					Name:         resourceName,
-					ResourceName: pool.Name,
-					Description:  pool.Description,
-					IsDefault:    pool.IsDefault,
-					SortOrder:    pool.SortOrder,
-					WorkerType:   pool.WorkerType,
-				}
-				file := hclwrite.NewEmptyFile()
-
-				// Add a comment with the import command
-				baseUrl, _ := c.Client.GetSpaceBaseUrl()
-				file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, "octopusdeploy_static_worker_pool", resourceName))
-
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-				return string(file.Bytes()), nil
-			}
+			c.createStaticWorkerPoolResource(resourceName, &thisResource, pool)
 		}
 	}
 
@@ -186,4 +106,100 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool
 
 func (c WorkerPoolConverter) GetResourceType() string {
 	return "WorkerPools"
+}
+
+func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
+	thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
+
+	thisResource.ToHcl = func() (string, error) {
+		data := terraform2.TerraformWorkerPoolData{
+			Type:         "octopusdeploy_worker_pools",
+			Name:         resourceName,
+			ResourceName: &pool.Name,
+			Ids:          nil,
+			PartialName:  nil,
+			Skip:         0,
+			Take:         1,
+		}
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(data, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+}
+
+func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
+	thisResource.Lookup = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
+
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := terraform2.TerraformWorkerPool{
+			Type:         "octopusdeploy_dynamic_worker_pool",
+			Name:         resourceName,
+			ResourceName: pool.Name,
+			Description:  pool.Description,
+			IsDefault:    pool.IsDefault,
+			SortOrder:    pool.SortOrder,
+			WorkerType:   pool.WorkerType,
+		}
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, "octopusdeploy_dynamic_worker_pool", resourceName))
+
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		return string(file.Bytes()), nil
+	}
+}
+
+func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
+	thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform2.TerraformWorkerPool{
+			Type:         "octopusdeploy_static_worker_pool",
+			Name:         resourceName,
+			ResourceName: pool.Name,
+			Description:  pool.Description,
+			IsDefault:    pool.IsDefault,
+			SortOrder:    pool.SortOrder,
+			WorkerType:   pool.WorkerType,
+		}
+		file := hclwrite.NewEmptyFile()
+
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, "octopusdeploy_static_worker_pool", resourceName))
+
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+		return string(file.Bytes()), nil
+	}
+}
+
+func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
+	thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
+
+	thisResource.ToHcl = func() (string, error) {
+		data := terraform2.TerraformWorkerPoolData{
+			Type:         "octopusdeploy_worker_pools",
+			Name:         resourceName,
+			ResourceName: &pool.Name,
+			Ids:          nil,
+			PartialName:  nil,
+			Skip:         0,
+			Take:         1,
+		}
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(data, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+
+	}
 }
