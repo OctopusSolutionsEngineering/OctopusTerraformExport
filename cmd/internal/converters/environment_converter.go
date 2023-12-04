@@ -115,13 +115,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, de
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + environment.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_environment." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), environment.Name, "octopusdeploy_environment", resourceName))
 
 		terraformResource := terraform.TerraformEnvironment{
 			Type:                       "octopusdeploy_environment",

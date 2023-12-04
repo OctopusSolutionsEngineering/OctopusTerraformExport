@@ -8,7 +8,6 @@ import (
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
@@ -220,13 +219,7 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 
 	// Add a comment with the import command
 	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + certificate.Name + "\") | .Id')\n" +
-			"# terraform import octopusdeploy_certificate." + certificateName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
+	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), certificate.Name, "octopusdeploy_certificate", certificateName))
 
 	targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
