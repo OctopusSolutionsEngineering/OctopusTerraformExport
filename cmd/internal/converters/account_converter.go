@@ -9,7 +9,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
@@ -228,13 +227,7 @@ func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceNam
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_aws_account." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_aws_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -281,13 +274,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDe
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_azure_service_principal." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_service_principal", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -333,13 +320,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetail
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_azure_subscription_account." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_subscription_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -381,13 +362,7 @@ func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, res
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_gcp_account." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_gcp_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -429,13 +404,7 @@ func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceN
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_token_account." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_token_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -478,13 +447,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_username_password_account." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_username_password_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -532,13 +495,7 @@ func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceNam
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + account.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_ssh_key_account." + resourceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_ssh_key_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
