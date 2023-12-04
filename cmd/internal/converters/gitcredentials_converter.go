@@ -8,7 +8,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
@@ -134,13 +133,7 @@ func (c GitCredentialsConverter) toHclResource(gitCredentials octopus2.GitCreden
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + gitCredentials.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_git_credential." + gitCredentialsName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), gitCredentials.Name, "octopusdeploy_git_credential", gitCredentialsName))
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 

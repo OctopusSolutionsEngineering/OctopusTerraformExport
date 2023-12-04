@@ -8,7 +8,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
@@ -144,13 +143,7 @@ func (c FeedConverter) exportDocker(resource octopus2.Feed, thisResource *Resour
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_docker_container_registry." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_docker_container_registry", resourceName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -210,13 +203,7 @@ func (c FeedConverter) exportAws(resource octopus2.Feed, thisResource *ResourceD
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_aws_elastic_container_registry." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_aws_elastic_container_registry", resourceName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -277,13 +264,7 @@ func (c FeedConverter) exportMaven(resource octopus2.Feed, thisResource *Resourc
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_maven_feed." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_maven_feed", resourceName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -345,13 +326,7 @@ func (c FeedConverter) exportGithub(resource octopus2.Feed, thisResource *Resour
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_github_repository_feed." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_github_repository_feed", resourceName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -411,13 +386,7 @@ func (c FeedConverter) exportHelm(resource octopus2.Feed, thisResource *Resource
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_helm_feed." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_helm_feed", resourceName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -481,13 +450,7 @@ func (c FeedConverter) exportNuget(resource octopus2.Feed, thisResource *Resourc
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_nuget_feed." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_nuget_feed", resourceName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 

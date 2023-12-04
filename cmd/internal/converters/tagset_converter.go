@@ -3,12 +3,12 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
@@ -65,13 +65,7 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + tagSet.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_tag_set." + tagSetName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tagSet.Name, "octopusdeploy_tag_set", tagSetName))
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

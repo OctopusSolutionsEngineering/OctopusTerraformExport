@@ -7,7 +7,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
@@ -120,13 +119,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_project_group." + projectName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_project_group", projectName))
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

@@ -171,13 +171,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-				Type: hclsyntax.TokenComment,
-				Bytes: []byte("# Import existing resources with the following commands:\n" +
-					"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-					"# terraform import octopusdeploy_library_variable_set." + resourceName + " ${RESOURCE_ID}\n"),
-				SpacesBefore: 0,
-			}})
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_library_variable_set", resourceName))
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

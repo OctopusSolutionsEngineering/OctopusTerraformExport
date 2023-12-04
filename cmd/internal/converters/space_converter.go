@@ -7,7 +7,6 @@ import (
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 )
 
@@ -283,13 +282,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-			Type: hclsyntax.TokenComment,
-			Bytes: []byte("# Import existing resources with the following commands:\n" +
-				"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/Spaces | jq -r '.Items[] | select(.Name==\"" + space.Name + "\") | .Id')\n" +
-				"# terraform import octopusdeploy_space." + spaceName + " ${RESOURCE_ID}\n"),
-			SpacesBefore: 0,
-		}})
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, "Spaces", space.Name, "octopusdeploy_space", spaceName))
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
