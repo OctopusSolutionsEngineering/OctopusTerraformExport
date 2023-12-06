@@ -2,17 +2,34 @@ package sanitizer
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 )
 
 // SanitizeMap takes a map returned by the Octopus API, and replaces any sensitive value references with a placeholder
-func SanitizeMap(input map[string]any) map[string]string {
+func SanitizeMap(parentName string, input map[string]any) (map[string]string, []terraform.TerraformVariable) {
+	variables := []terraform.TerraformVariable{}
 	fixedMap := map[string]string{}
 	for k, v := range input {
 		if _, ok := v.(string); ok {
 			fixedMap[k] = fmt.Sprintf("%v", v)
 		} else {
-			fixedMap[k] = "replace me with a password"
+			variableName := SanitizeName(parentName + "_" + k)
+
+			fixedMap[k] = "${" + variableName + "}"
+
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        variableName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "Sensitive value for property " + k,
+				Default:     strutil.StrPointer("replace me with a password"),
+			}
+
+			variables = append(variables, secretVariableResource)
+
 		}
 	}
-	return fixedMap
+	return fixedMap, variables
 }
