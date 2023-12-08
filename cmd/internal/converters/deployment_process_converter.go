@@ -227,13 +227,18 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 		for _, s := range resource.Steps {
 			for _, a := range s.Actions {
 				properties := a.Properties
-				sanitizedProperties := sanitizer.SanitizeMap(properties)
+				sanitizedProperties, variables := sanitizer.SanitizeMap(projectName, properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
+
+				for _, propertyVariables := range variables {
+					propertyVariablesBlock := gohcl.EncodeAsBlock(propertyVariables, "variable")
+					file.Body().AppendBlock(propertyVariablesBlock)
+				}
 			}
 		}
 

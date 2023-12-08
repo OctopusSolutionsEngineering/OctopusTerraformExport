@@ -36,6 +36,14 @@ body:
     validations:
       required: true
   - type: textarea
+    id: output
+    attributes:
+      label: Octoterra log output
+      description: Copy the log output here
+      placeholder: Log output
+    validations:
+      required: true
+  - type: textarea
     id: reproduction-steps
     attributes:
       label: Reproduction steps
