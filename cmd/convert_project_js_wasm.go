@@ -87,6 +87,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
 		TagSetConverter:         tagsetConverter,
+		Excluder:                converters.DefaultExcluder{},
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
