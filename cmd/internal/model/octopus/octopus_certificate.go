@@ -28,5 +28,16 @@ type Certificate struct {
 	SerialNumber                    string
 	SignatureAlgorithmName          string
 	SubjectAlternativeNames         []string
-	CertificateChain                []string
+	CertificateChain                []CertificateChain
+}
+
+type CertificateChain struct {
+	SubjectDistinguishedName string
+	IssuerDistinguishedName  string
+	Thumbprint               string
+	NotAfter                 string
+	NotBefore                string
+	Version                  int
+	SerialNumber             string
+	SignatureAlgorithmName   string
 }
