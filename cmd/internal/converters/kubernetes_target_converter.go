@@ -147,6 +147,12 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 		thisResource.Lookup = "${octopusdeploy_kubernetes_cluster_deployment_target." + targetName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 
+			// don't lookup empty certificate values
+			var clusterCertificate *string = nil
+			if len(strutil.EmptyIfNil(target.Endpoint.ClusterCertificate)) != 0 {
+				clusterCertificate = dependencies.GetResourcePointer("Certificates", target.Endpoint.ClusterCertificate)
+			}
+
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
 				Type:                            "octopusdeploy_kubernetes_cluster_deployment_target",
 				Name:                            targetName,
@@ -154,7 +160,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
-				ClusterCertificate:              dependencies.GetResourcePointer("Certificates", target.Endpoint.ClusterCertificate),
+				ClusterCertificate:              clusterCertificate,
 				ClusterCertificatePath:          target.Endpoint.ClusterCertificatePath,
 				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 				HealthStatus:                    nil,
@@ -262,6 +268,10 @@ func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpo
 
 func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformCertificateAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesCertificate" {
+		if len(strutil.EmptyIfNil(target.Endpoint.Authentication.ClientCertificate)) == 0 {
+			return nil
+		}
+
 		return &terraform.TerraformCertificateAuthentication{
 			ClientCertificate: dependencies.GetResourcePointer("Certificates", target.Endpoint.Authentication.ClientCertificate),
 		}
