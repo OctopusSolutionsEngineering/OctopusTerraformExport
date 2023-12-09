@@ -3024,8 +3024,8 @@ func TestCertificateExport(t *testing.T) {
 						return errors.New("The certificate must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\").")
 					}
 
-					if v.SubjectDistinguishedName != "CN=Test Root CA,C=US" {
-						return errors.New("The certificate must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\").")
+					if v.SubjectDistinguishedName != "CN=Test Leaf,C=US" {
+						return errors.New("The certificate must be have a subject distinguished name of \"CN=Test Leaf,C=US\" (was \"" + v.SubjectDistinguishedName + "\").")
 					}
 
 					if len(v.EnvironmentIds) != 0 {
