@@ -333,7 +333,7 @@ func (c KubernetesTargetConverter) getAccount(account *string, dependencies *Res
 }
 
 func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *ResourceDetailsCollection) *string {
-	if pool == nil {
+	if len(strutil.EmptyIfNil(pool)) == 0 {
 		return nil
 	}
 

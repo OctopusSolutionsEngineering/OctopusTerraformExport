@@ -867,7 +867,7 @@ func (c *VariableSetConverter) exportWorkerPools(recursive bool, lookup bool, va
 }
 
 func (c *VariableSetConverter) getWorkerPools(value *string, dependencies *ResourceDetailsCollection) *string {
-	if value == nil {
+	if len(strutil.EmptyIfNil(value)) == 0 {
 		return nil
 	}
 

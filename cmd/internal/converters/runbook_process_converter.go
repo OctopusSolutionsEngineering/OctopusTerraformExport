@@ -129,6 +129,12 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 					return "", err
 				}
 
+				// don't lookup empty worker pool values
+				workerPool := ""
+				if len(workerPoolId) != 0 {
+					workerPool = dependencies.GetResource("WorkerPools", workerPoolId)
+				}
+
 				terraformResource.Step[i].Action[j] = terraform.TerraformAction{
 					Name:                          a.Name,
 					ActionType:                    a.ActionType,
@@ -136,7 +142,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 					IsDisabled:                    a.IsDisabled,
 					CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 					IsRequired:                    a.IsRequired,
-					WorkerPoolId:                  dependencies.GetResource("WorkerPools", workerPoolId),
+					WorkerPoolId:                  workerPool,
 					Container:                     c.OctopusActionProcessor.ConvertContainer(a.Container, dependencies),
 					WorkerPoolVariable:            a.WorkerPoolVariable,
 					Environments:                  dependencies.GetResources("Environments", a.Environments...),

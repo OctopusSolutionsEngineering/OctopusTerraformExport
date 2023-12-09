@@ -228,6 +228,10 @@ func (c AzureWebAppTargetConverter) getAccount(account string, dependencies *Res
 }
 
 func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *ResourceDetailsCollection) *string {
+	if len(pool) == 0 {
+		return nil
+	}
+
 	machineLookup := dependencies.GetResource("WorkerPools", pool)
 	if machineLookup == "" {
 		return nil

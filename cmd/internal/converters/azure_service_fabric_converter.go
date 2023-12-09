@@ -247,6 +247,10 @@ func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string, depe
 }
 
 func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependencies *ResourceDetailsCollection) *string {
+	if len(pool) == 0 {
+		return nil
+	}
+
 	machineLookup := dependencies.GetResource("WorkerPools", pool)
 	if machineLookup == "" {
 		return nil
