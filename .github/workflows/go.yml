@@ -282,7 +282,7 @@ jobs:
           fetch-depth: '0'
       - name: Get branch name
         id: branch-name
-        uses: tj-actions/branch-names@v7
+        uses: tj-actions/branch-names@v8
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v0.9.15
         with:
