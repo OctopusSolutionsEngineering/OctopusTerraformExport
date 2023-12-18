@@ -319,7 +319,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				secretVariableResource := terraform.TerraformVariable{
 					Name:        resourceName,
 					Type:        "string",
-					Nullable:    false,
+					Nullable:    true,
 					Sensitive:   true,
 					Description: "The secret variable value associated with the variable " + v.Name,
 					Default:     defaultValue,
@@ -338,7 +338,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				regularVariable := terraform.TerraformVariable{
 					Name:        resourceName,
 					Type:        "string",
-					Nullable:    false,
+					Nullable:    true,
 					Sensitive:   false,
 					Description: "The value associated with the variable " + v.Name,
 					Default:     value,
