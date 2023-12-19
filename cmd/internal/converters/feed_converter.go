@@ -145,15 +145,6 @@ func (c FeedConverter) exportDocker(resource octopus2.Feed, thisResource *Resour
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_docker_container_registry", resourceName))
 
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -173,6 +164,15 @@ func (c FeedConverter) exportDocker(resource octopus2.Feed, thisResource *Resour
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
+
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}
@@ -205,15 +205,6 @@ func (c FeedConverter) exportAws(resource octopus2.Feed, thisResource *ResourceD
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_aws_elastic_container_registry", resourceName))
 
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
 			if resource.SecretKey != nil && resource.SecretKey.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -233,6 +224,15 @@ func (c FeedConverter) exportAws(resource octopus2.Feed, thisResource *ResourceD
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
+
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}
@@ -266,15 +266,6 @@ func (c FeedConverter) exportMaven(resource octopus2.Feed, thisResource *Resourc
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_maven_feed", resourceName))
 
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -294,6 +285,15 @@ func (c FeedConverter) exportMaven(resource octopus2.Feed, thisResource *Resourc
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
+
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}
@@ -328,15 +328,6 @@ func (c FeedConverter) exportGithub(resource octopus2.Feed, thisResource *Resour
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_github_repository_feed", resourceName))
 
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -356,6 +347,15 @@ func (c FeedConverter) exportGithub(resource octopus2.Feed, thisResource *Resour
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
+
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}
@@ -388,15 +388,6 @@ func (c FeedConverter) exportHelm(resource octopus2.Feed, thisResource *Resource
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_helm_feed", resourceName))
 
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -416,6 +407,15 @@ func (c FeedConverter) exportHelm(resource octopus2.Feed, thisResource *Resource
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
+
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}
@@ -452,15 +452,6 @@ func (c FeedConverter) exportNuget(resource octopus2.Feed, thisResource *Resourc
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_nuget_feed", resourceName))
 
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -480,6 +471,15 @@ func (c FeedConverter) exportNuget(resource octopus2.Feed, thisResource *Resourc
 				hcl.WriteUnquotedAttribute(block, "type", "string")
 				file.Body().AppendBlock(block)
 			}
+
+			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			// When using dummy values, we expect the secrets will be updated later
+			if c.DummySecretVariableValues {
+				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			}
+
+			file.Body().AppendBlock(targetBlock)
 
 			return string(file.Bytes()), nil
 		}
