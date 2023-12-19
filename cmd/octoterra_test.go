@@ -1063,6 +1063,10 @@ func TestHelmFeedExport(t *testing.T) {
 						return errors.New("The feed must have a username of \"username\"")
 					}
 
+					if !v.Password.HasValue {
+						return errors.New("The feed must have a password")
+					}
+
 					if strutil.EmptyIfNil(v.FeedUri) != "https://charts.helm.sh/stable/" {
 						return errors.New("The feed must be have a URI of \"https://charts.helm.sh/stable/\"")
 					}
@@ -1128,6 +1132,10 @@ func TestDockerFeedExport(t *testing.T) {
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
 						return errors.New("The feed must have a username of \"username\"")
+					}
+
+					if !v.Password.HasValue {
+						return errors.New("The feed must have a password")
 					}
 
 					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
@@ -1197,6 +1205,10 @@ func TestDockerFeedNoCredsExport(t *testing.T) {
 
 					if strutil.EmptyIfNil(v.Username) != "" {
 						return errors.New("The feed must have an empty username")
+					}
+
+					if v.Password.HasValue {
+						return errors.New("The feed must not have a password")
 					}
 
 					if strutil.EmptyIfNil(v.ApiVersion) != "v1" {
@@ -1424,6 +1436,10 @@ func TestEcrFeedExport(t *testing.T) {
 						return errors.New("The feed must have a access key of \"" + os.Getenv("ECR_ACCESS_KEY") + "\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\"")
 					}
 
+					if !v.SecretKey.HasValue {
+						return errors.New("The feed must have a secret key")
+					}
+
 					if strutil.EmptyIfNil(v.Region) != "us-east-1" {
 						return errors.New("The feed must have a region of \"us-east-1\" (was \"" + strutil.EmptyIfNil(v.Region) + "\"")
 					}
@@ -1489,6 +1505,10 @@ func TestMavenFeedExport(t *testing.T) {
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
 						return errors.New("The feed must have a username of \"username\"")
+					}
+
+					if !v.Password.HasValue {
+						return errors.New("The feed must have a password")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
@@ -1568,6 +1588,10 @@ func TestNugetFeedExport(t *testing.T) {
 
 					if strutil.EmptyIfNil(v.Username) != "username" {
 						return errors.New("The feed must have a username of \"username\"")
+					}
+
+					if !v.Password.HasValue {
+						return errors.New("The feed must have a password")
 					}
 
 					if intutil.ZeroIfNil(v.DownloadAttempts) != 5 {
