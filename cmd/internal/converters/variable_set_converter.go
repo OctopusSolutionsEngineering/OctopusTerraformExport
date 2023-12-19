@@ -341,7 +341,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					Nullable:    true,
 					Sensitive:   false,
 					Description: "The value associated with the variable " + v.Name,
-					Default:     value,
+					Default:     strutil.StrPointer(strutil.EmptyIfNil(value)),
 				}
 
 				block := gohcl.EncodeAsBlock(regularVariable, "variable")

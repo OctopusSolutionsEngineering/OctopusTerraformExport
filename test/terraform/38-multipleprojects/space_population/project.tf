@@ -111,6 +111,13 @@ resource "octopusdeploy_variable" "string_variable7" {
   value     = octopusdeploy_certificate.certificate_kind_ca.id
 }
 
+resource "octopusdeploy_variable" "string_variable8" {
+  owner_id  = octopusdeploy_project.project_1.id
+  type      = "String"
+  name      = "TestNull"
+  value     = null
+}
+
 output "octopus_project_1" {
   value = octopusdeploy_project.project_1.id
 }

@@ -5411,6 +5411,14 @@ func TestSingleProjectGroupExport(t *testing.T) {
 					return item.Name == "Certificate"
 				})
 
+				emptyVar := lo.Filter(variableSet.Variables, func(item octopus.Variable, index int) bool {
+					return item.Name == "TestNull"
+				})
+
+				if len(emptyVar) == 0 {
+					return errors.New("The project must have 1 variable called \"TestNull\"")
+				}
+
 				if len(envScoped) == 0 {
 					return errors.New("The project must have 1 variable called \"Test2\"")
 				}
