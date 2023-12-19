@@ -6357,6 +6357,10 @@ func TestGithubFeedExport(t *testing.T) {
 						return errors.New("The feed must have a username of \"test-username\", was \"" + strutil.EmptyIfNil(v.Username) + "\"")
 					}
 
+					if !v.Password.HasValue {
+						return errors.New("The feed must have a password")
+					}
+
 					if intutil.ZeroIfNil(v.DownloadAttempts) != 1 {
 						return errors.New("The feed must be have a downloads attempts set to \"1\"")
 					}
