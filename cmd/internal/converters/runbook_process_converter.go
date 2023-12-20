@@ -217,6 +217,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 
 				for _, propertyVariables := range variables {
 					propertyVariablesBlock := gohcl.EncodeAsBlock(propertyVariables, "variable")
+					hcl.WriteUnquotedAttribute(propertyVariablesBlock, "type", "string")
 					file.Body().AppendBlock(propertyVariablesBlock)
 				}
 			}
