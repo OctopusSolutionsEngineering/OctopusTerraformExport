@@ -322,9 +322,14 @@ jobs:
         run: |
           docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
           docker push octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
+  multiarch-image:
+    needs: [ build-windows ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
       - name: Create manifest
         run: >
-          docker run -v "${PWD}:C:\build" mplatform/manifest-tool 
+          docker run -v $PWD:/build mplatform/manifest-tool 
           --username=${{ secrets.DOCKERHUB_USERNAME }} 
           --password=${{ secrets.DOCKERHUB_TOKEN }} 
-          push from-spec C:\build\manifest-octoterra.yaml
+          push from-spec /build/manifest-octoterra.yaml
