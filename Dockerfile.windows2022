@@ -1,0 +1,7 @@
+# Create the execution image
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+
+COPY ./octoterra_windows_amd64.exe C:/octoterra_windows_amd64.exe
+
+# Run
+ENTRYPOINT ["C:/octoterra_windows_amd64.exe"]
