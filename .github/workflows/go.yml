@@ -324,7 +324,7 @@ jobs:
           docker push octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
       - name: Create manifest
         run: >
-          docker run -v "${PWD}:/build" mplatform/manifest-tool 
+          docker run -v "${PWD}:C:\build" mplatform/manifest-tool 
           --username=${{ secrets.DOCKERHUB_USERNAME }} 
           --password=${{ secrets.DOCKERHUB_TOKEN }} 
-          push from-spec /build/manifest-octoterra.yaml
+          push from-spec C:\build\manifest-octoterra.yaml
