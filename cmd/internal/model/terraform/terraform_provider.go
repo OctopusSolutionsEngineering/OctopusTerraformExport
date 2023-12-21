@@ -5,6 +5,7 @@ import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/intern
 type TerraformConfig struct {
 	RequiredProviders RequiredProviders `hcl:"required_providers,block"`
 	Backend           *Backend          `hcl:"backend,block"`
+	RequiredVersion   *string           `hcl:"required_version"`
 }
 
 type Backend struct {
@@ -32,9 +33,10 @@ func (c TerraformConfig) CreateTerraformConfig(backend string, version string) T
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: OctopusProvider{
 				Source:  "OctopusDeployLabs/octopusdeploy",
-				Version: strutil.DefaultIfEmpty(version, "0.14.1"),
+				Version: strutil.DefaultIfEmpty(version, "0.14.3"),
 			},
 		},
+		RequiredVersion: strutil.StrPointer(">= 1.6.0"),
 	}
 
 	if backend != "" {
