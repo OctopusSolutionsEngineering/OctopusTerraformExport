@@ -16,7 +16,7 @@ func TestMapSanitizer(t *testing.T) {
 		t.Fatal("String should be passed through with o changes")
 	}
 
-	if sanitizedMap["input2"] != "${parent_input2}" {
+	if sanitizedMap["input2"] != "${var.parent_input2}" {
 		t.Fatal("Object should be replaced with placeholder")
 	}
 }
