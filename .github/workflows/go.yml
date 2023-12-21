@@ -315,12 +315,12 @@ jobs:
       - name: Build and push latest 2022
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         run: |
-          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t octopussamples/octoterra-windows-2022:latest
+          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t octopussamples/octoterra-windows-2022:latest
           docker push octopussamples/octoterra-windows-2022:latest
       - name: Build and push 2022
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         run: |
-          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
+          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
           docker push octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
       - name: Create manifest
         run: >
