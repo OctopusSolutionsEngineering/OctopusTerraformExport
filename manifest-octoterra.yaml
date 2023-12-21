@@ -4,7 +4,7 @@ manifests:
     image: octopussamples/octoterra-windows-2019:latest
     platform:
       architecture: arm64
-      os: linux
+      os: windows
   -
     image: octopussamples/octoterra-windows-2022:latest
     platform:
