@@ -1,12 +1,12 @@
-image: octopussamples/octolint-windows:latest
+image: octopussamples/octoterra-windows:latest
 manifests:
   -
-    image: octopussamples/octolint-windows-2019:latest
+    image: octopussamples/octoterra-windows-2019:latest
     platform:
       architecture: arm64
       os: linux
   -
-    image: octopussamples/octolint-windows-2022:latest
+    image: octopussamples/octoterra-windows-2022:latest
     platform:
       architecture: amd64
       os: windows
