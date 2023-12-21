@@ -16,7 +16,7 @@ func SanitizeMap(parentName string, input map[string]any) (map[string]string, []
 		} else {
 			variableName := SanitizeName(parentName + "_" + k)
 
-			fixedMap[k] = "${" + variableName + "}"
+			fixedMap[k] = "${var." + variableName + "}"
 
 			secretVariableResource := terraform.TerraformVariable{
 				Name:        variableName,
