@@ -7998,13 +7998,28 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 			}
 
 			template := lo.Filter(project[0].Templates, func(item octopus.Template, index int) bool {
-				return strutil.EmptyIfNil(item.Name) == "Project Template Variable" &&
-					item.DisplaySettings["Octopus.ControlType"] == "Sensitive" &&
-					strutil.EmptyIfNil(item.Label) == "Test"
+				if strutil.EmptyIfNil(item.Name) != "Project Template Variable" {
+					return false
+				}
+
+				if item.DisplaySettings["Octopus.ControlType"] != "Sensitive" {
+					return false
+				}
+
+				if strutil.EmptyIfNil(item.Label) != "Test" {
+					return false
+				}
+
+				defaultValue, ok := item.DefaultValue.(string)
+				if !(ok && defaultValue == "replace me with a password") {
+					return false
+				}
+
+				return true
 			})
 
 			if len(template) != 1 {
-				return errors.New("Must have found a sensitive template variable")
+				return errors.New("Must have found a sensitive template variable.")
 			}
 
 			singleLineTemplate := lo.Filter(project[0].Templates, func(item octopus.Template, index int) bool {
