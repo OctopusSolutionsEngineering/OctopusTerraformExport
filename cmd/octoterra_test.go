@@ -16,6 +16,7 @@ import (
 	"k8s.io/utils/strings/slices"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -8010,9 +8011,24 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 					return false
 				}
 
+				// Test as a string. This is probably a bug, but the template schema
+				// https://registry.terraform.io/providers/OctopusDeployLabs/octopusdeploy/latest/docs/resources/project#nestedblock--template
+				// has no other way to store a value than default_value, which sets the value as a plain string.
 				defaultValue, ok := item.DefaultValue.(string)
-				if !(ok && defaultValue == "replace me with a password") {
-					return false
+				if ok {
+					if defaultValue != "replace me with a password" {
+						return false
+					}
+				} else {
+					// Otherwise inspect the default value as a secret placeholder
+					r := reflect.ValueOf(item.DefaultValue)
+					f := reflect.Indirect(r).FieldByName("HasValue")
+
+					if f.CanConvert(reflect.TypeOf(true)) {
+						if !f.Bool() {
+							return false
+						}
+					}
 				}
 
 				return true

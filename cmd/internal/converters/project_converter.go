@@ -481,9 +481,11 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			variables = append(variables, secretVariableResource)
 
 			collection = append(collection, terraform.TerraformTemplate{
-				Name:            v.Name,
-				Label:           v.Label,
-				HelpText:        v.HelpText,
+				Name:     v.Name,
+				Label:    v.Label,
+				HelpText: v.HelpText,
+				// Is this a bug? This may need to have a field for sensitive values, but the provider does
+				// not expose that today.
 				DefaultValue:    strutil.StrPointer("${var." + variableName + "}"),
 				DisplaySettings: v.DisplaySettings,
 			})
