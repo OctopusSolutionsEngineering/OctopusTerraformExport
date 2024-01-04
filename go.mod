@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.33.3
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20231202051302-de67f54dad6f
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240104054052-d6c6179795df
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.5.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
@@ -76,11 +76,11 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/shirou/gopsutil/v3 v3.23.9 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.11 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
-	github.com/testcontainers/testcontainers-go v0.26.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.27.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
