@@ -54,6 +54,7 @@ jobs:
           OCTOTESTDUMPSTATE: true
           OCTOTESTDEFAULTSPACEID: Spaces-2
           GOMAXPROCS: 2
+          TESTCONTAINERS_RYUK_DISABLED: true
       - name: Archive code coverage results
         if: always()
         uses: actions/upload-artifact@v3

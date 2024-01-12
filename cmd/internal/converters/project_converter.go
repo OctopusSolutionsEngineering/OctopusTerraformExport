@@ -205,7 +205,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	}
 
 	// The templates are dependencies that we export as part of the project
-	projectTemplates, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
+	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
 	dependencies.AddResource(projectTemplateMap...)
 
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
@@ -269,6 +269,13 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), project.Name, "octopusdeploy_project", projectName))
+
+		// write any variables used to define the value of tenant template secrets
+		for _, variable := range variables {
+			block := gohcl.EncodeAsBlock(variable, "variable")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
+		}
 
 		if terraformResource.GitUsernamePasswordPersistenceSettings != nil {
 			secretVariableResource := terraform.TerraformVariable{
@@ -454,17 +461,43 @@ func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, 
 	file.Body().AppendBlock(block)
 }
 
-func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
+	variables := []terraform.TerraformVariable{}
 	for i, v := range actionPackages {
-		collection = append(collection, terraform.TerraformTemplate{
-			Name:            v.Name,
-			Label:           v.Label,
-			HelpText:        v.HelpText,
-			DefaultValue:    v.GetDefaultValueString(),
-			DisplaySettings: v.DisplaySettings,
-		})
+		if setting, ok := v.DisplaySettings["Octopus.ControlType"]; ok && setting == "Sensitive" {
+			variableName := sanitizer.SanitizeName(projectName + "_template_" + strutil.EmptyIfNil(v.Name))
+
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        variableName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "Sensitive value for tenant variable template " + strutil.EmptyIfNil(v.Name),
+				Default:     strutil.StrPointer("replace me with a password"),
+			}
+
+			variables = append(variables, secretVariableResource)
+
+			collection = append(collection, terraform.TerraformTemplate{
+				Name:     v.Name,
+				Label:    v.Label,
+				HelpText: v.HelpText,
+				// Is this a bug? This may need to have a field for sensitive values, but the provider does
+				// not expose that today.
+				DefaultValue:    strutil.StrPointer("${var." + variableName + "}"),
+				DisplaySettings: v.DisplaySettings,
+			})
+		} else {
+			collection = append(collection, terraform.TerraformTemplate{
+				Name:            v.Name,
+				Label:           v.Label,
+				HelpText:        v.HelpText,
+				DefaultValue:    v.GetDefaultValueString(),
+				DisplaySettings: v.DisplaySettings,
+			})
+		}
 
 		templateMap = append(templateMap, ResourceDetails{
 			Id:           v.Id,
@@ -474,7 +507,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			ToHcl:        nil,
 		})
 	}
-	return collection, templateMap
+	return collection, variables, templateMap
 }
 
 func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
