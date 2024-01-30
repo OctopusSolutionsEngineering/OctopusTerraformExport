@@ -4,13 +4,17 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployCertificateDataType = "octopusdeploy_certificates"
+const octopusdeployCertificateResourceType = "octopusdeploy_certificate"
 
 type CertificateConverter struct {
 	Client                    client.OctopusClient
@@ -23,7 +27,7 @@ type CertificateConverter struct {
 }
 
 func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.Certificate]{}
+	collection := octopus.GeneralCollection[octopus.Certificate]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
@@ -32,7 +36,7 @@ func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Certificate: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -51,7 +55,7 @@ func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetails
 		return nil
 	}
 
-	resource := octopus2.Certificate{}
+	resource := octopus.Certificate{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -59,7 +63,7 @@ func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetails
 	}
 
 	zap.L().Info("Certificate: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -71,7 +75,7 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceD
 		return nil
 	}
 
-	certificate := octopus2.Certificate{}
+	certificate := octopus.Certificate{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
 
 	if err != nil {
@@ -85,16 +89,9 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceD
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
 	thisResource.Id = certificate.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_certificates." + certificateName + ".certificates[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformCertificateData{
-			Type:        "octopusdeploy_certificates",
-			Name:        certificateName,
-			Ids:         nil,
-			PartialName: &certificate.Name,
-			Skip:        0,
-			Take:        1,
-		}
+		terraformResource := c.buildData(certificateName, certificate)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a certificate called \""+certificate.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.certificates) != 0")
@@ -107,7 +104,25 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceD
 	return nil
 }
 
-func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) buildData(resourceName string, resource octopus.Certificate) terraform.TerraformCertificateData {
+	return terraform.TerraformCertificateData{
+		Type:        octopusdeployCertificateDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: &resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c CertificateConverter) writeData(file *hclwrite.File, resource octopus.Certificate, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.
 		It is assumed the exported project links up all required environments, and the certificate
@@ -120,12 +135,21 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
 	thisResource.Id = certificate.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_certificate." + certificateName + ".id}"
+	thisResource.Lookup = "${" + octopusdeployCertificateResourceType + "." + certificateName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".accounts) != 0 " +
+			"? data." + octopusdeployCertificateDataType + "." + certificateName + ".accounts[0].id " +
+			": " + octopusdeployCertificateResourceType + "." + certificateName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployCertificateResourceType + "." + certificateName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
 
-		err := c.writeMainResource(file, certificateName, certificate, recursive, dependencies)
+		err := c.writeMainResource(file, certificateName, certificate, recursive, stateless, dependencies)
 
 		if err != nil {
 			return "", err
@@ -144,10 +168,10 @@ func (c CertificateConverter) toHcl(certificate octopus2.Certificate, recursive 
 	return nil
 }
 
-func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus2.Certificate) error {
+func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus.Certificate) error {
 
 	defaultPassword := ""
-	certificatePassword := terraform2.TerraformVariable{
+	certificatePassword := terraform.TerraformVariable{
 		Name:        certificateName + "_password",
 		Type:        "string",
 		Nullable:    true,
@@ -164,7 +188,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
 
-	certificateData := terraform2.TerraformVariable{
+	certificateData := terraform.TerraformVariable{
 		Name:        certificateName + "_data",
 		Type:        "string",
 		Nullable:    false,
@@ -183,9 +207,9 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	return nil
 }
 
-func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificateName string, certificate octopus2.Certificate, recursive bool, dependencies *ResourceDetailsCollection) error {
-	terraformResource := terraform2.TerraformCertificate{
-		Type:            "octopusdeploy_certificate",
+func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificateName string, certificate octopus.Certificate, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+	terraformResource := terraform.TerraformCertificate{
+		Type:            octopusdeployCertificateResourceType,
 		Name:            certificateName,
 		SpaceId:         nil,
 		ResourceName:    certificate.Name,
@@ -217,9 +241,14 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 		//Version:                         certificate.Version,
 	}
 
+	if stateless {
+		c.writeData(file, certificate, certificateName)
+		terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".accounts) != 0 ? 0 : 1}")
+	}
+
 	// Add a comment with the import command
 	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), certificate.Name, "octopusdeploy_certificate", certificateName))
+	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), certificate.Name, octopusdeployCertificateResourceType, certificateName))
 
 	targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)

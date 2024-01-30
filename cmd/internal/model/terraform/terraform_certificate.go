@@ -3,6 +3,7 @@ package terraform
 type TerraformCertificate struct {
 	Type                            string    `hcl:"type,label"`
 	Name                            string    `hcl:"name,label"`
+	Count                           *string   `hcl:"count"`
 	SpaceId                         *string   `hcl:"space_id"`
 	ResourceName                    string    `hcl:"name"`
 	Password                        string    `hcl:"password"`

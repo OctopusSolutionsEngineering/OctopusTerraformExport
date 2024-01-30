@@ -13,6 +13,9 @@ import (
 	"strings"
 )
 
+const octopusdeployChannelDataType = "octopusdeploy_channels"
+const octopusdeployChannelResourceType = "octopusdeploy_channel"
+
 type ChannelConverter struct {
 	Client               client.OctopusClient
 	LifecycleConverter   ConverterAndLookupById
@@ -101,11 +104,11 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 
 	if channel.Name == "Default" {
 		// TODO: Many channels are called default! But there is no way to look up a channel based on its project.
-		thisResource.Lookup = "${data.octopusdeploy_channels." + resourceName + ".channels[0].id}"
+		thisResource.Lookup = "${data." + octopusdeployChannelDataType + "." + resourceName + ".channels[0].id}"
 		thisResource.ToHcl = func() (string, error) {
 			data := terraform.TerraformChannelData{
 				Name:        resourceName,
-				Type:        "octopusdeploy_channels",
+				Type:        octopusdeployChannelDataType,
 				Ids:         nil,
 				PartialName: channel.Name,
 				Skip:        0,
@@ -120,10 +123,10 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			return string(file.Bytes()), nil
 		}
 	} else {
-		thisResource.Lookup = "${octopusdeploy_channel." + resourceName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployChannelResourceType + "." + resourceName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformChannel{
-				Type:         "octopusdeploy_channel",
+				Type:         octopusdeployChannelResourceType,
 				Name:         resourceName,
 				ResourceName: channel.Name,
 				Description:  channel.Description,
@@ -137,7 +140,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), channel.Name, "octopusdeploy_channel", resourceName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), channel.Name, octopusdeployChannelResourceType, resourceName))
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
