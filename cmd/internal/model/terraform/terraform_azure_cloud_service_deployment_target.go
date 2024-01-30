@@ -3,6 +3,7 @@ package terraform
 type TerraformAzureCloudServiceDeploymentTarget struct {
 	Type               string   `hcl:"type,label"`
 	Name               string   `hcl:"name,label"`
+	Count              *string  `hcl:"count"`
 	Environments       []string `hcl:"environments"`
 	ResourceName       string   `hcl:"name"`
 	Roles              []string `hcl:"roles"`

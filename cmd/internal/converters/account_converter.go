@@ -35,7 +35,7 @@ func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Account: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -62,7 +62,7 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 	}
 
 	zap.L().Info("Account: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -90,19 +90,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data.octopusdeploy_accounts." + resourceName + ".accounts[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformAccountData{
-			Type:        "octopusdeploy_accounts",
-			Name:        resourceName,
-			Ids:         nil,
-			PartialName: resource.Name,
-			Skip:        0,
-			Take:        1,
-		}
-
-		// Google account types are not defined in the data resource (this is a bug), so don't use it
-		if resource.AccountType != "GoogleCloudAccount" {
-			terraformResource.AccountType = resource.AccountType
-		}
+		terraformResource := c.buildData(resourceName, resource)
 
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
@@ -116,7 +104,31 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 	return nil
 }
 
-func (c AccountConverter) toHcl(account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) buildData(resourceName string, resource octopus.Account) terraform.TerraformAccountData {
+	terraformResource := terraform.TerraformAccountData{
+		Type:        "octopusdeploy_accounts",
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+
+	// Google account types are not defined in the data resource (this is a bug), so don't use it
+	if resource.AccountType != "GoogleCloudAccount" {
+		terraformResource.AccountType = resource.AccountType
+	}
+
+	return terraformResource
+}
+
+// toHcl adds this resource to the list of dependencies.
+// account is the Octopus account object to be serialized
+// recursive indicates if any transient dependencies are to be serialized
+// stateless indicates if the resource is to be exported for use with a stateless Terraform transaction (i.e. where the
+// Terraform state is not maintained between apply commands)
+// dependencies maintains the collection of exported Terraform resources
+func (c AccountConverter) toHcl(account octopus.Account, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	if recursive {
 		err := c.exportDependencies(account, dependencies)
 
@@ -132,20 +144,21 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, depende
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = account.Id
 	thisResource.ResourceType = c.GetResourceType()
+
 	if account.AccountType == "AmazonWebServicesAccount" {
-		c.writeAwsAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeAwsAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "AzureServicePrincipal" {
-		c.writeAzureServicePrincipalAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeAzureServicePrincipalAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "AzureSubscription" {
-		c.writeAzureSubscriptionAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeAzureSubscriptionAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "GoogleCloudAccount" {
-		c.writeGoogleCloudAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeGoogleCloudAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "Token" {
-		c.writeTokenAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeTokenAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "UsernamePassword" {
-		c.writeUsernamePasswordAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeUsernamePasswordAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	} else if account.AccountType == "SshKeyPair" {
-		c.writeSshAccount(&thisResource, resourceName, account, recursive, dependencies)
+		c.writeSshAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 	}
 
 	dependencies.AddResource(thisResource)
@@ -204,8 +217,21 @@ func (c AccountConverter) createSecretCertificateB64Variable(resourceName string
 	return secretVariableResource
 }
 
-func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
+// writeData appends the data block for stateless modules
+func (c AccountConverter) writeData(file *hclwrite.File, account octopus.Account, resourceName string) {
+	terraformResource := c.buildData(resourceName, account)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_aws_account." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformAwsAccount{
@@ -224,6 +250,11 @@ func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceNam
 		secretVariableResource := c.createSecretVariable(resourceName, "The AWS secret key associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
@@ -247,8 +278,14 @@ func (c AccountConverter) writeAwsAccount(resource *ResourceDetails, resourceNam
 	}
 }
 
-func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_service_principal." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformAzureServicePrincipal{
@@ -272,6 +309,11 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDe
 
 		file := hclwrite.NewEmptyFile()
 
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
+
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_service_principal", account.Name, resourceName))
@@ -294,8 +336,14 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(resource *ResourceDe
 	}
 }
 
-func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_subscription_account." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		certVariable := "${var." + resourceName + "_cert}"
 		terraformResource := terraform.TerraformAzureSubscription{
@@ -317,6 +365,11 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetail
 		secretVariableResource := c.createSecretCertificateNoPassVariable(resourceName+"_cert", "The Azure certificate associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
@@ -340,8 +393,14 @@ func (c AccountConverter) writeAzureSubscriptionAccount(resource *ResourceDetail
 	}
 }
 
-func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
+func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_gcp_account." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformGcpAccount{
@@ -359,6 +418,11 @@ func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, res
 		secretVariableResource := c.createSecretVariable(resourceName, "The GCP JSON key associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
@@ -382,8 +446,14 @@ func (c AccountConverter) writeGoogleCloudAccount(resource *ResourceDetails, res
 	}
 }
 
-func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
+func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_token_account." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformTokenAccount{
@@ -401,6 +471,11 @@ func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceN
 		secretVariableResource := c.createSecretVariable(resourceName, "The token associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
@@ -424,8 +499,14 @@ func (c AccountConverter) writeTokenAccount(resource *ResourceDetails, resourceN
 	}
 }
 
-func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
+func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_username_password_account." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformUsernamePasswordAccount{
@@ -444,6 +525,11 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails
 		secretVariableResource := c.createSecretVariable(resourceName, "The password associated with the account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
@@ -467,8 +553,14 @@ func (c AccountConverter) writeUsernamePasswordAccount(resource *ResourceDetails
 	}
 }
 
-func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-	resource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	if stateless {
+		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_ssh_key_account." + resourceName + "[0].id}"
+	} else {
+		resource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+	}
+
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		certFileVariable := "${var." + resourceName + "_cert}"
@@ -492,6 +584,11 @@ func (c AccountConverter) writeSshAccount(resource *ResourceDetails, resourceNam
 		certFileVariableResource := c.createSecretCertificateB64Variable(resourceName+"_cert", "The certificate file for account "+account.Name)
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
