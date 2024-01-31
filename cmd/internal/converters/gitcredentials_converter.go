@@ -32,7 +32,7 @@ func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Git Credentials: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -59,7 +59,7 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDeta
 	}
 
 	zap.L().Info("Git Credentials: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, false, false, dependencies)
 }
 
 func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
