@@ -13,6 +13,9 @@ import (
 	"go.uber.org/zap"
 )
 
+const octopusdeployKubernetesClusterDeploymentTargetDataType = "octopusdeploy_deployment_targets"
+const octopusdeployKubernetesClusterDeploymentTargetResourceType = "octopusdeploy_kubernetes_cluster_deployment_target"
+
 type KubernetesTargetConverter struct {
 	Client                 client.OctopusClient
 	MachinePolicyConverter ConverterById
@@ -39,7 +42,7 @@ func (c KubernetesTargetConverter) ToHcl(dependencies *ResourceDetailsCollection
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Kubernetes Target: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -66,7 +69,7 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 	}
 
 	zap.L().Info("Kubernetes Target: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -78,7 +81,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 		return nil
 	}
 
-	resource := octopus.Machine{}
+	resource := octopus.KubernetesEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -101,16 +104,9 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_deployment_targets." + resourceName + ".deployment_targets[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformDeploymentTargetsData{
-			Type:        "octopusdeploy_deployment_targets",
-			Name:        resourceName,
-			Ids:         nil,
-			PartialName: &resource.Name,
-			Skip:        0,
-			Take:        1,
-		}
+		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a deployment target called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.deployment_targets) != 0")
@@ -123,7 +119,25 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 	return nil
 }
 
-func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) buildData(resourceName string, resource octopus.KubernetesEndpointResource) terraform.TerraformDeploymentTargetsData {
+	return terraform.TerraformDeploymentTargetsData{
+		Type:        octopusdeployKubernetesClusterDeploymentTargetDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: &resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c KubernetesTargetConverter) writeData(file *hclwrite.File, resource octopus.KubernetesEndpointResource, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -144,7 +158,16 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_kubernetes_cluster_deployment_target." + targetName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+				"? data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+				": " + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 
 			// don't lookup empty certificate values
@@ -154,7 +177,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			}
 
 			terraformResource := terraform.TerraformKubernetesEndpointResource{
-				Type:                            "octopusdeploy_kubernetes_cluster_deployment_target",
+				Type:                            octopusdeployKubernetesClusterDeploymentTargetResourceType,
 				Name:                            targetName,
 				ClusterUrl:                      strutil.EmptyIfNil(target.Endpoint.ClusterUrl),
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
@@ -198,9 +221,14 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			}
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, target, targetName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
+			}
+
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, "octopusdeploy_kubernetes_cluster_deployment_target", targetName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployKubernetesClusterDeploymentTargetResourceType, targetName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)

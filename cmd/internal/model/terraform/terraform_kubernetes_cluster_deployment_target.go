@@ -3,6 +3,7 @@ package terraform
 type TerraformKubernetesEndpointResource struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Count                           *string  `hcl:"count"`
 	ClusterUrl                      string   `hcl:"cluster_url"`
 	Environments                    []string `hcl:"environments"`
 	ResourceName                    string   `hcl:"name"`
