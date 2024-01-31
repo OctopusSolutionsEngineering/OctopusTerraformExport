@@ -6,6 +6,7 @@ import (
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
@@ -13,6 +14,9 @@ import (
 	"strings"
 	"time"
 )
+
+const octopusdeployMachinePoliciesDataType = "octopusdeploy_machine_policies"
+const octopusdeployMachinePolicyResourceType = "octopusdeploy_machine_policy"
 
 type MachinePolicyConverter struct {
 	Client client.OctopusClient
@@ -28,7 +32,7 @@ func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Machine Policy: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -55,10 +59,28 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetai
 	}
 
 	zap.L().Info("Machine Policy: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) buildData(resourceName string, resource octopus2.MachinePolicy) terraform2.TerraformMachinePolicyData {
+	return terraform2.TerraformMachinePolicyData{
+		Type:        octopusdeployMachinePoliciesDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: &resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c MachinePolicyConverter) writeData(file *hclwrite.File, resource octopus2.MachinePolicy, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
@@ -68,21 +90,20 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 	thisResource.ResourceType = c.GetResourceType()
 
 	if machinePolicy.Name == "Default Machine Policy" {
-		thisResource.Lookup = "${data.octopusdeploy_machine_policies.default_machine_policy.machine_policies[0].id}"
+		thisResource.Lookup = "${data." + octopusdeployMachinePoliciesDataType + ".default_machine_policy.machine_policies[0].id}"
 	} else {
-		thisResource.Lookup = "${octopusdeploy_machine_policy." + policyName + ".id}"
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployMachinePoliciesDataType + "." + policyName + ".machine_policies) != 0 " +
+				"? data." + octopusdeployMachinePoliciesDataType + "." + policyName + ".machine_policies[0].id " +
+				": " + octopusdeployMachinePolicyResourceType + "." + policyName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployMachinePolicyResourceType + "." + policyName + ".id}"
+		}
 	}
 
 	thisResource.ToHcl = func() (string, error) {
 		if machinePolicy.Name == "Default Machine Policy" {
-			data := terraform2.TerraformMachinePolicyData{
-				Type:        "octopusdeploy_machine_policies",
-				Name:        "default_machine_policy",
-				Ids:         nil,
-				PartialName: &machinePolicy.Name,
-				Skip:        0,
-				Take:        1,
-			}
+			data := c.buildData("default_machine_policy", machinePolicy)
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(data, "data")
 			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a machine policy called \""+data.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.machine_policies) != 0")
@@ -92,7 +113,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 		} else {
 
 			terraformResource := terraform2.TerraformMachinePolicy{
-				Type:                         "octopusdeploy_machine_policy",
+				Type:                         octopusdeployMachinePolicyResourceType,
 				Name:                         policyName,
 				ResourceName:                 machinePolicy.Name,
 				Id:                           nil,
@@ -131,9 +152,14 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 			}
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, machinePolicy, policyName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployMachinePoliciesDataType + "." + policyName + ".machine_policies) != 0 ? 0 : 1}")
+			}
+
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), machinePolicy.Name, "octopusdeploy_machine_policy", policyName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), machinePolicy.Name, octopusdeployMachinePolicyResourceType, policyName))
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

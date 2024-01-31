@@ -6,10 +6,14 @@ import (
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployLifecyclesDataType = "octopusdeploy_lifecycles"
+const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
 
 type LifecycleConverter struct {
 	Client               client.OctopusClient
@@ -26,7 +30,7 @@ func (c LifecycleConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Lifecycle: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -54,7 +58,7 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 	}
 
 	zap.L().Info("Lifecycle: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, false, false, dependencies)
 
 }
 
@@ -75,11 +79,29 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *ResourceDet
 		return err
 	}
 
-	return c.toHcl(lifecycle, false, true, dependencies)
+	return c.toHcl(lifecycle, false, true, false, dependencies)
 
 }
 
-func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) buildData(resourceName string, resource octopus2.Lifecycle) terraform2.TerraformLifecycleData {
+	return terraform2.TerraformLifecycleData{
+		Type:        octopusdeployLifecyclesDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus2.Lifecycle, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 
 	if recursive {
 		// The environments are a dependency that we need to lookup
@@ -110,17 +132,10 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 	thisResource.Id = lifecycle.Id
 	thisResource.ResourceType = c.GetResourceType()
 	if forceLookup {
-		thisResource.Lookup = "${data.octopusdeploy_lifecycles." + resourceName + ".lifecycles[0].id}"
+		thisResource.Lookup = "${data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id}"
 
 		thisResource.ToHcl = func() (string, error) {
-			data := terraform2.TerraformLifecycleData{
-				Type:        "octopusdeploy_lifecycles",
-				Name:        resourceName,
-				Ids:         nil,
-				PartialName: lifecycle.Name,
-				Skip:        0,
-				Take:        1,
-			}
+			data := c.buildData(resourceName, lifecycle)
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(data, "data")
 			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a lifecycle called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
@@ -129,12 +144,18 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			return string(file.Bytes()), nil
 		}
 	} else {
-		thisResource.Lookup = "${octopusdeploy_lifecycle." + resourceName + ".id}"
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles) != 0 " +
+				"? data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id " +
+				": " + octopusdeployLifecycleResourceType + "." + resourceName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployLifecycleResourceType + "." + resourceName + ".id}"
+		}
 
 		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform2.TerraformLifecycle{
-				Type:                    "octopusdeploy_lifecycle",
+				Type:                    octopusdeployLifecycleResourceType,
 				Name:                    resourceName,
 				ResourceName:            lifecycle.Name,
 				Description:             lifecycle.Description,
@@ -144,9 +165,14 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			}
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, lifecycle, resourceName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles) != 0 ? 0 : 1}")
+			}
+
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), lifecycle.Name, "octopusdeploy_lifecycle", resourceName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), lifecycle.Name, octopusdeployLifecycleResourceType, resourceName))
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

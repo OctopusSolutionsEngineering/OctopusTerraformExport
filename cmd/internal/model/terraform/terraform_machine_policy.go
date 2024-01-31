@@ -5,6 +5,7 @@ import "time"
 type TerraformMachinePolicy struct {
 	Type                                          string                             `hcl:"type,label"`
 	Name                                          string                             `hcl:"name,label"`
+	Count                                         *string                            `hcl:"count"`
 	ResourceName                                  string                             `hcl:"name"`
 	Id                                            *string                            `hcl:"id"`
 	Description                                   *string                            `hcl:"description"`

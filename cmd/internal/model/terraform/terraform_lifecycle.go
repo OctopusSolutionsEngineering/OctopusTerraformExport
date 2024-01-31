@@ -3,6 +3,7 @@ package terraform
 type TerraformLifecycle struct {
 	Type                    string           `hcl:"type,label"`
 	Name                    string           `hcl:"name,label"`
+	Count                   *string          `hcl:"count"`
 	ResourceName            string           `hcl:"name"`
 	Description             *string          `hcl:"description"`
 	Phase                   []TerraformPhase `hcl:"phase,block"`

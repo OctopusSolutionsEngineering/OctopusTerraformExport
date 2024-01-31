@@ -7,10 +7,14 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployListeningTentacleDeploymentTargetDataType = "octopusdeploy_deployment_targets"
+const octopusdeployListeningTentacleDeploymentTargetResourceType = "octopusdeploy_listening_tentacle_deployment_target"
 
 type ListeningTargetConverter struct {
 	Client                 client.OctopusClient
@@ -36,7 +40,7 @@ func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection)
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Listening Target: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -63,7 +67,7 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 	}
 
 	zap.L().Info("Listening Target: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -75,7 +79,7 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 		return nil
 	}
 
-	resource := octopus.Machine{}
+	resource := octopus.ListeningEndpointResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -98,16 +102,9 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_deployment_targets." + resourceName + ".deployment_targets[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformDeploymentTargetsData{
-			Type:        "octopusdeploy_deployment_targets",
-			Name:        resourceName,
-			Ids:         nil,
-			PartialName: &resource.Name,
-			Skip:        0,
-			Take:        1,
-		}
+		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a deployment target called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.deployment_targets) != 0")
@@ -120,7 +117,25 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 	return nil
 }
 
-func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) buildData(resourceName string, resource octopus.ListeningEndpointResource) terraform.TerraformDeploymentTargetsData {
+	return terraform.TerraformDeploymentTargetsData{
+		Type:        octopusdeployListeningTentacleDeploymentTargetDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: &resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c ListeningTargetConverter) writeData(file *hclwrite.File, resource octopus.ListeningEndpointResource, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -142,11 +157,19 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_listening_tentacle_deployment_target." + targetName + ".id}"
+
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+				"? data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+				": " + octopusdeployListeningTentacleDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployListeningTentacleDeploymentTargetResourceType + "." + targetName + ".id}"
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformListeningTentacleDeploymentTarget{
-				Type:                            "octopusdeploy_listening_tentacle_deployment_target",
+				Type:                            octopusdeployListeningTentacleDeploymentTargetResourceType,
 				Name:                            targetName,
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
@@ -173,9 +196,14 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 			}
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, target, targetName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
+			}
+
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, "octopusdeploy_listening_tentacle_deployment_target", targetName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployListeningTentacleDeploymentTargetResourceType, targetName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
