@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
@@ -42,7 +43,7 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 	for _, resource := range collection.Items {
 		zap.L().Info("Channel: " + resource.Id)
 		project := octopus.Project{}
-		err = c.toHcl(resource, project, true, false, terraformDependencies, dependencies)
+		err = c.toHcl(resource, project, true, false, false, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -71,7 +72,7 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Channel: " + resource.Id)
-		err = c.toHcl(resource, project, false, true, terraformDependencies, dependencies)
+		err = c.toHcl(resource, project, false, true, false, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err
@@ -81,7 +82,26 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 	return nil
 }
 
-func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+// We consider channels to be the responsibility of a project. If the project exists, we don't create the channel.
+func (c ChannelConverter) buildData(resourceName string, name string) terraform.TerraformProjectData {
+	return terraform.TerraformProjectData{
+		Type:        octopusdeployProjectsDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c ChannelConverter) writeData(file *hclwrite.File, name string, resourceName string) {
+	terraformResource := c.buildData(resourceName, name)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, stateless bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
 	if channel.LifecycleId != "" {
 		var err error
 		if recursive {
@@ -123,7 +143,19 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			return string(file.Bytes()), nil
 		}
 	} else {
-		thisResource.Lookup = "${" + octopusdeployChannelResourceType + "." + resourceName + ".id}"
+
+		if stateless {
+			// TODO: because we can not retrieve a project specific channel from a data block, there is no good way
+			// to construct a lookup here if the project exists. That said, if the project exists, no other resource
+			// that might look up a channel (like project variables) will be created either, so nothing will ever use
+			// the lookup. So we just use an empty string for the lookup.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + resourceName + ".projects) != 0 " +
+				"? '' " +
+				": " + octopusdeployChannelResourceType + "." + resourceName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployChannelResourceType + "." + resourceName + ".id}"
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformChannel{
 				Type:         octopusdeployChannelResourceType,
@@ -137,6 +169,12 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				TenantTags:   c.Excluder.FilteredTenantTags(channel.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 			file := hclwrite.NewEmptyFile()
+
+			if stateless {
+				// when importing a stateless project, the channel is only created if the project does not exist
+				c.writeData(file, project.Name, resourceName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + resourceName + ".projects) != 0 ? 0 : 1}")
+			}
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()

@@ -18,6 +18,8 @@ import (
 	"strings"
 )
 
+const octopusdeployVariableResourceType = "octopusdeploy_variable"
+
 // VariableSetConverter exports variable sets.
 // Note that we only access variable sets as dependencies of other resources, like project variables or
 // library variable sets. There is no global collection or all endpoint that we can use to dump variables
@@ -57,7 +59,7 @@ type VariableSetConverter struct {
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
 // defined on a CaC enabled project is not available from the global /variablesets endpoint, and can only be
 // accessed from the project resource.
-func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error {
 	if projectId == "" {
 		return nil
 	}
@@ -79,7 +81,7 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, true, false, ignoreSecrets, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, true, false, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -104,10 +106,10 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, true, ignoreSecrets, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, false, true, ignoreSecrets, parentName, parentLookup, nil, dependencies)
 }
 
-func (c *VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclByIdAndName(id string, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -130,7 +132,7 @@ func (c *VariableSetConverter) ToHclByIdAndName(id string, parentName string, pa
 	}
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, true, false, false, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, true, false, false, parentName, parentLookup, parentCount, dependencies)
 }
 
 // ToHclLookupByIdAndName exports the variable set as a complete resource, but will reference external resources like accounts,
@@ -158,10 +160,10 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	}
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, true, false, parentName, parentLookup, dependencies)
+	return c.toHcl(resource, false, true, false, parentName, parentLookup, nil, dependencies)
 }
 
-func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error {
 	c.convertEnvironmentsToIds()
 
 	nameCount := map[string]int{}
@@ -282,7 +284,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 		thisResource.Id = v.Id
 		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_variable." + resourceName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployVariableResourceType + "." + resourceName + ".id}"
 		thisResource.ToHcl = func() (string, error) {
 
 			// Replace anything that looks like an octopus resource reference
@@ -293,7 +295,8 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
-				Type:           "octopusdeploy_variable",
+				Type:           octopusdeployVariableResourceType,
+				Count:          parentCount,
 				OwnerId:        parentLookup,
 				Value:          value,
 				ResourceName:   v.Name,

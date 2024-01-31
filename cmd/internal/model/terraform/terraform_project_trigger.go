@@ -3,6 +3,7 @@ package terraform
 type TerraformProjectTrigger struct {
 	Type            string   `hcl:"type,label"`
 	Name            string   `hcl:"name,label"`
+	Count           *string  `hcl:"count"`
 	ResourceName    string   `hcl:"name"`
 	ProjectId       string   `hcl:"project_id"`
 	EventCategories []string `hcl:"event_categories"`

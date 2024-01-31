@@ -66,7 +66,13 @@ type ConverterAndLookupByIdAndName interface {
 
 // ConverterByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent
 type ConverterByIdWithNameAndParent interface {
-	ToHclByIdAndName(id string, name string, parentLookup string, dependencies *ResourceDetailsCollection) error
+	// ToHclByIdAndName converts a resource with a reference to a parent object
+	// id is the ID of the resource to convert.
+	// name is the name of the resource to convert.
+	// parentLookup is an HCL interpolation that resolves the parents ID.
+	// parentCount is an HCL interpolation that resolves to 1 or 0 based on whether the parent is created or not in a stateless module.
+	// dependencies is the collection of exported resources.
+	ToHclByIdAndName(id string, name string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error
 }
 
 // ConverterLookupByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent, and
@@ -105,7 +111,7 @@ type ConverterAndLookupByProjectId interface {
 
 // ConverterByProjectIdAndName converts objects based on their relationship to a project, with the ability to reference the parent
 type ConverterByProjectIdAndName interface {
-	ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error
+	ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error
 }
 
 // ConverterLookupByProjectIdAndName converts objects to data lookups based on their relationship to a project, with the ability to reference the parent

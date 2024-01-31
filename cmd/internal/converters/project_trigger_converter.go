@@ -6,10 +6,13 @@ import (
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
 
 type ProjectTriggerConverter struct {
 	Client client.OctopusClient
@@ -25,7 +28,7 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project Trigger: " + resource.Id)
-		err = c.toHcl(resource, false, projectId, projectName, dependencies)
+		err = c.toHcl(resource, false, false, projectId, projectName, dependencies)
 		if err != nil {
 			return err
 		}
@@ -34,7 +37,26 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 	return nil
 }
 
-func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+// We consider triggers to be the responsibility of a project. If the project exists, we don't create the trigger.
+func (c ProjectTriggerConverter) buildData(resourceName string, name string) terraform.TerraformProjectData {
+	return terraform.TerraformProjectData{
+		Type:        octopusdeployProjectsDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c ProjectTriggerConverter) writeData(file *hclwrite.File, name string, resourceName string) {
+	terraformResource := c.buildData(resourceName, name)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, stateless bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
 	// Scheduled triggers with types like "OnceDailySchedule" are not supported
 	if projectTrigger.Filter.FilterType != "MachineFilter" {
 		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
@@ -47,11 +69,22 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
 	thisResource.Id = projectTrigger.Id
 	thisResource.ResourceType = c.GetGroupResourceType(projectId)
-	thisResource.Lookup = "${octopusdeploy_project_deployment_target_trigger." + projectTriggerName + ".id}"
+	thisResource.Lookup = "${" + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + ".id}"
+
+	if stateless {
+		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the trigger anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+			"? '' " +
+			": " + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformProjectTrigger{
-			Type:            "octopusdeploy_project_deployment_target_trigger",
+			Type:            octopusdeployProjectDeploymentTargetTriggerResourceType,
 			Name:            projectTriggerName,
 			ResourceName:    projectTrigger.Name,
 			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
@@ -64,9 +97,15 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 		}
 		file := hclwrite.NewEmptyFile()
 
+		if stateless {
+			// when importing a stateless project, the trigger is only created if the project does not exist
+			c.writeData(file, projectName, projectTriggerName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+		}
+
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), projectTrigger.Name, "octopusdeploy_project_deployment_target_trigger", projectTriggerName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, projectTriggerName))
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

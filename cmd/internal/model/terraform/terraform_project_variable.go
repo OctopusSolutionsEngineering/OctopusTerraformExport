@@ -3,6 +3,7 @@ package terraform
 type TerraformProjectVariable struct {
 	Type           string                          `hcl:"type,label"`
 	Name           string                          `hcl:"name,label"`
+	Count          *string                         `hcl:"count"`
 	OwnerId        string                          `hcl:"owner_id"`
 	Value          *string                         `hcl:"value"`
 	ResourceName   string                          `hcl:"name"`

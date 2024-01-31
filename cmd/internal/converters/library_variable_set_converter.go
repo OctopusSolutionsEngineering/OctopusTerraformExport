@@ -154,11 +154,22 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 
 	// The project group is a dependency that we need to lookup regardless of whether recursive is set
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-		err := c.VariableSetConverter.ToHclByIdAndName(resource.VariableSetId, resourceName, "${"+octopusdeployLibraryVariableSetsResourceType+"."+resourceName+".id}", dependencies)
+		var parentCount *string = nil
+		if stateless {
+			parentCount = strutil.StrPointer("${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? 0 : 1}")
+		}
+
+		err := c.VariableSetConverter.ToHclByIdAndName(
+			resource.VariableSetId,
+			resourceName,
+			"${"+octopusdeployLibraryVariableSetsResourceType+"."+resourceName+".id}",
+			parentCount,
+			dependencies)
 
 		if err != nil {
 			return err
 		}
+
 	}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

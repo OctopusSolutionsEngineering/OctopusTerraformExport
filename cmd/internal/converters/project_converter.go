@@ -211,7 +211,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		}
 	}
 
-	err := c.exportChildDependencies(recursive, lookups, project, projectName, dependencies)
+	err := c.exportChildDependencies(recursive, lookups, stateless, project, projectName, dependencies)
 
 	if err != nil {
 		return err
@@ -632,7 +632,7 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *t
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
-func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
 	var err error
 	if lookup {
 		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
@@ -669,7 +669,17 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 		if lookup {
 			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(project.Id, project.Name, "${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
 		} else {
-			err = c.VariableSetConverter.ToHclByProjectIdAndName(project.Id, project.Name, "${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
+			var parentCount *string = nil
+			if stateless {
+				parentCount = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
+			}
+
+			err = c.VariableSetConverter.ToHclByProjectIdAndName(
+				project.Id,
+				project.Name,
+				"${"+octopusdeployProjectResourceType+"."+projectName+".id}",
+				parentCount,
+				dependencies)
 		}
 
 		if err != nil {

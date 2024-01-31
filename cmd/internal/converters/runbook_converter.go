@@ -8,6 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
@@ -66,7 +67,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *Resourc
 	}
 
 	zap.L().Info("Runbook: " + resource.Id)
-	return c.toHcl(resource, parentResource.Name, false, true, dependencies)
+	return c.toHcl(resource, parentResource.Name, false, true, false, dependencies)
 }
 
 func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
@@ -79,7 +80,7 @@ func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Runbook: " + resource.Id)
-		err = c.toHcl(resource, projectName, true, false, dependencies)
+		err = c.toHcl(resource, projectName, true, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -99,7 +100,7 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Runbook: " + resource.Id)
-		err = c.toHcl(resource, projectName, false, true, dependencies)
+		err = c.toHcl(resource, projectName, false, true, false, dependencies)
 
 		if err != nil {
 			return err
@@ -109,7 +110,26 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 	return nil
 }
 
-func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
+// We consider runbooks to be the responsibility of a project. If the project exists, we don't create the runbook.
+func (c *RunbookConverter) buildData(resourceName string, name string) terraform.TerraformProjectData {
+	return terraform.TerraformProjectData{
+		Type:        octopusdeployProjectsDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c *RunbookConverter) writeData(file *hclwrite.File, name string, resourceName string) {
+	terraformResource := c.buildData(resourceName, name)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	// Ignore excluded runbooks
@@ -135,7 +155,17 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 	thisResource.FileName = "space_population/" + runbookName + ".tf"
 	thisResource.Id = runbook.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${" + octopusdeployRunbookResourceType + "." + runbookName + ".id}"
+
+	if stateless {
+		// There is no way to look up an existing runbook. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + runbookName + ".projects) != 0 " +
+			"? '' " +
+			": " + octopusdeployRunbookResourceType + "." + runbookName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployRunbookResourceType + "." + runbookName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformRunbook{
@@ -154,6 +184,12 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 		}
 
 		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			// when importing a stateless project, the channel is only created if the project does not exist
+			c.writeData(file, projectName, runbookName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + runbookName + ".projects) != 0 ? 0 : 1}")
+		}
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)
 
