@@ -3,6 +3,7 @@ package terraform
 type TerraformGitCredentials struct {
 	Type         string  `hcl:"type,label"`
 	Name         string  `hcl:"name,label"`
+	Count        *string `hcl:"count"`
 	Id           *string `hcl:"id"`
 	Description  *string `hcl:"description"`
 	ResourceName string  `hcl:"name"`

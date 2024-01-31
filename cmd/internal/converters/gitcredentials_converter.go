@@ -12,6 +12,9 @@ import (
 	"go.uber.org/zap"
 )
 
+const octopusdeployGitCredentialDataType = "octopusdeploy_git_credentials"
+const octopusdeployGitCredentialResourceType = "octopusdeploy_git_credential"
+
 type GitCredentialsConverter struct {
 	Client                    client.OctopusClient
 	SpaceResourceName         string
@@ -75,10 +78,10 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *Resour
 		return err
 	}
 
-	return c.toHcl(gitCredentials, false, true, dependencies)
+	return c.toHcl(gitCredentials, false, true, false, dependencies)
 }
 
-func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 
@@ -90,7 +93,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _
 	if lookup {
 		c.toHclLookup(gitCredentials, &thisResource, gitCredentialsName)
 	} else {
-		c.toHclResource(gitCredentials, &thisResource, gitCredentialsName)
+		c.toHclResource(stateless, gitCredentials, &thisResource, gitCredentialsName)
 	}
 
 	dependencies.AddResource(thisResource)
@@ -98,15 +101,9 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _
 }
 
 func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
-	thisResource.Lookup = "${data.octopusdeploy_git_credentials." + gitCredentialsName + ".git_credentials[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformGitCredentialData{
-			Type:         "octopusdeploy_git_credentials",
-			Name:         gitCredentialsName,
-			ResourceName: gitCredentials.Name,
-			Skip:         0,
-			Take:         1,
-		}
+		terraformResource := c.buildData(gitCredentialsName, gitCredentials)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a git credential called \""+gitCredentials.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.git_credentials) != 0")
@@ -116,12 +113,38 @@ func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredenti
 	}
 }
 
-func (c GitCredentialsConverter) toHclResource(gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
-	thisResource.Lookup = "${octopusdeploy_git_credential." + gitCredentialsName + ".id}"
+func (c GitCredentialsConverter) buildData(resourceName string, resource octopus2.GitCredentials) terraform2.TerraformGitCredentialData {
+	return terraform2.TerraformGitCredentialData{
+		Type:         octopusdeployGitCredentialDataType,
+		Name:         resourceName,
+		ResourceName: resource.Name,
+		Skip:         0,
+		Take:         1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c GitCredentialsConverter) writeData(file *hclwrite.File, resource octopus2.GitCredentials, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
+	thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 " +
+			"? data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id " +
+			": " + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform2.TerraformGitCredentials{
-			Type:         "octopusdeploy_git_credential",
+			Type:         octopusdeployGitCredentialResourceType,
 			Name:         gitCredentialsName,
 			Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
 			ResourceName: gitCredentials.Name,
@@ -131,9 +154,14 @@ func (c GitCredentialsConverter) toHclResource(gitCredentials octopus2.GitCreden
 		}
 		file := hclwrite.NewEmptyFile()
 
+		if stateless {
+			c.writeData(file, gitCredentials, gitCredentialsName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 ? 0 : 1}")
+		}
+
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), gitCredentials.Name, "octopusdeploy_git_credential", gitCredentialsName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), gitCredentials.Name, octopusdeployGitCredentialResourceType, gitCredentialsName))
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
