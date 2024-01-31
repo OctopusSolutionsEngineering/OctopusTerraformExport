@@ -162,8 +162,8 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 		thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".accounts) != 0 " +
-				"? data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".accounts[0].id " +
+			thisResource.Lookup = "${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
+				"? data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets[0].id " +
 				": " + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + "[0].id}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
@@ -209,7 +209,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 
 			if stateless {
 				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".accounts) != 0 ? 0 : 1}")
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 			}
 
 			// Add a comment with the import command

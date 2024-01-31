@@ -138,8 +138,8 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 	thisResource.Lookup = "${" + octopusdeployCertificateResourceType + "." + certificateName + ".id}"
 
 	if stateless {
-		thisResource.Lookup = "${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".accounts) != 0 " +
-			"? data." + octopusdeployCertificateDataType + "." + certificateName + ".accounts[0].id " +
+		thisResource.Lookup = "${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates) != 0 " +
+			"? data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates[0].id " +
 			": " + octopusdeployCertificateResourceType + "." + certificateName + "[0].id}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployCertificateResourceType + "." + certificateName + ".id}"
@@ -243,7 +243,7 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 
 	if stateless {
 		c.writeData(file, certificate, certificateName)
-		terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".accounts) != 0 ? 0 : 1}")
+		terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates) != 0 ? 0 : 1}")
 	}
 
 	// Add a comment with the import command

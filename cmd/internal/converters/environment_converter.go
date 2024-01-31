@@ -6,11 +6,15 @@ import (
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployEnvironmentsDataType = "octopusdeploy_environments"
+const octopusdeployEnvironmentsResourceType = "octopusdeploy_environment"
 
 type EnvironmentConverter struct {
 	Client client.OctopusClient
@@ -26,7 +30,7 @@ func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Environment: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -53,7 +57,7 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 	}
 
 	zap.L().Info("Environment: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -79,16 +83,9 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceD
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = environment.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_environments." + resourceName + ".environments[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformEnvironmentData{
-			Type:        "octopusdeploy_environments",
-			Name:        resourceName,
-			Ids:         nil,
-			PartialName: environment.Name,
-			Skip:        0,
-			Take:        1,
-		}
+		terraformResource := c.buildData(resourceName, environment)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an environment called \""+environment.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.environments) != 0")
@@ -101,24 +98,50 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceD
 	return nil
 }
 
-func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) buildData(resourceName string, resource octopus2.Environment) terraform.TerraformEnvironmentData {
+	return terraform.TerraformEnvironmentData{
+		Type:        octopusdeployEnvironmentsDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c EnvironmentConverter) writeData(file *hclwrite.File, resource octopus2.Environment, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
 	thisResource := ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = environment.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_environment." + resourceName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments) != 0 " +
+			"? data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id " +
+			": " + octopusdeployEnvironmentsResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployEnvironmentsResourceType + "." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), environment.Name, "octopusdeploy_environment", resourceName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), environment.Name, octopusdeployEnvironmentsResourceType, resourceName))
 
 		terraformResource := terraform.TerraformEnvironment{
-			Type:                       "octopusdeploy_environment",
+			Type:                       octopusdeployEnvironmentsResourceType,
 			Name:                       resourceName,
 			SpaceId:                    nil,
 			ResourceName:               environment.Name,
@@ -138,15 +161,20 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, de
 		}
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
+		if stateless {
+			c.writeData(file, environment, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".accounts) != 0 ? 0 : 1}")
+		}
+
 		// Add a data lookup to allow projects to quickly switch to using existing environments
 		file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
 			Type: hclsyntax.TokenComment,
 			Bytes: []byte("# To use an existing environment, delete the resource above and use the following lookup instead:\n" +
-				"# data.octopusdeploy_environments." + resourceName + ".environments[0].id\n"),
+				"# data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id\n"),
 			SpacesBefore: 0,
 		}})
 		terraformDataResource := terraform.TerraformEnvironmentData{
-			Type:        "octopusdeploy_environments",
+			Type:        octopusdeployEnvironmentsDataType,
 			Name:        resourceName,
 			Ids:         nil,
 			PartialName: environment.Name,

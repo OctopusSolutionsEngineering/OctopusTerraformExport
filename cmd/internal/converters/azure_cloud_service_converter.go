@@ -159,7 +159,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 		thisResource.ResourceType = c.GetResourceType()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".accounts) != 0 ? data." + azureCloudServiceDeploymentDataType + "." + targetName + ".accounts[0].id : " + azureCloudServiceDeploymentResourceType + "." + targetName + "[0].id}"
+			thisResource.Lookup = "${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets[0].id : " + azureCloudServiceDeploymentResourceType + "." + targetName + "[0].id}"
 		} else {
 			thisResource.Lookup = "${" + azureCloudServiceDeploymentResourceType + "." + targetName + ".id}"
 		}
@@ -202,7 +202,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 
 			if stateless {
 				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".accounts) != 0 ? 0 : 1}")
+				terraformResource.Count = strutil.StrPointer("${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 			}
 
 			// Add a comment with the import command
