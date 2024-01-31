@@ -7,10 +7,14 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployOfflinePackageDropDeploymentTargetDataType = "octopusdeploy_deployment_targets"
+const octopusdeployOfflinePackageDropDeploymentTargetResourceType = "octopusdeploy_offline_package_drop_deployment_target"
 
 type OfflineDropTargetConverter struct {
 	Client                    client.OctopusClient
@@ -38,7 +42,7 @@ func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Offline Drop Target: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -65,7 +69,7 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceD
 	}
 
 	zap.L().Info("Offline Drop Target: " + resource.Id)
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
 func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -77,7 +81,7 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	resource := octopus.Machine{}
+	resource := octopus.OfflineDropResource{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -100,16 +104,9 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_deployment_targets." + resourceName + ".deployment_targets[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformDeploymentTargetsData{
-			Type:        "octopusdeploy_deployment_targets",
-			Name:        resourceName,
-			Ids:         nil,
-			PartialName: &resource.Name,
-			Skip:        0,
-			Take:        1,
-		}
+		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "data"))
 
@@ -120,7 +117,25 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 	return nil
 }
 
-func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) buildData(resourceName string, resource octopus.OfflineDropResource) terraform.TerraformDeploymentTargetsData {
+	return terraform.TerraformDeploymentTargetsData{
+		Type:        octopusdeployOfflinePackageDropDeploymentTargetDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: &resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c OfflineDropTargetConverter) writeData(file *hclwrite.File, resource octopus.OfflineDropResource, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -141,11 +156,19 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${octopusdeploy_offline_package_drop_deployment_target." + targetName + ".id}"
+
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+				"? data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+				": " + octopusdeployOfflinePackageDropDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployOfflinePackageDropDeploymentTargetResourceType + "." + targetName + ".id}"
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformOfflineDropDeploymentTarget{
-				Type:                            "octopusdeploy_offline_package_drop_deployment_target",
+				Type:                            octopusdeployOfflinePackageDropDeploymentTargetResourceType,
 				Name:                            targetName,
 				ApplicationsDirectory:           target.Endpoint.ApplicationsDirectory,
 				WorkingDirectory:                target.Endpoint.OctopusWorkingDirectory,
@@ -169,9 +192,14 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 			}
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, target, targetName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
+			}
+
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, "octopusdeploy_offline_package_drop_deployment_target", targetName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployOfflinePackageDropDeploymentTargetResourceType, targetName))
 
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)

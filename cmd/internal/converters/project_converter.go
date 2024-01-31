@@ -18,6 +18,9 @@ import (
 	"strings"
 )
 
+const octopusdeployProjectsDataType = "octopusdeploy_projects"
+const octopusdeployProjectResourceType = "octopusdeploy_project"
+
 type ProjectConverter struct {
 	Client                       client.OctopusClient
 	LifecycleConverter           ConverterAndLookupById
@@ -61,7 +64,7 @@ func (c *ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -92,17 +95,9 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDeta
 	thisResource.FileName = "space_population/parent_project.tf"
 	thisResource.Id = project.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data.octopusdeploy_projects.parent_project.projects[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployProjectsDataType + ".parent_project.projects[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformProjectData{
-			Type:        "octopusdeploy_projects",
-			Name:        "parent_project",
-			Ids:         nil,
-			PartialName: "${var.parent_project_name}",
-			Skip:        0,
-			Take:        1,
-		}
-
+		terraformResource := c.buildData("parent_project", "${var.parent_project_name}")
 		projectNameVariable := terraform.TerraformVariable{
 			Name:        "parent_project_name",
 			Type:        "string",
@@ -152,7 +147,7 @@ func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *Resourc
 	}
 
 	zap.L().Info("Project: " + resource.Id)
-	return c.toHcl(resource, false, true, dependencies)
+	return c.toHcl(resource, false, true, false, dependencies)
 }
 
 func (c *ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -171,10 +166,28 @@ func (c *ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCol
 		return err
 	}
 
-	return c.toHcl(project, true, false, dependencies)
+	return c.toHcl(project, true, false, false, dependencies)
 }
 
-func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectConverter) buildData(resourceName string, name string) terraform.TerraformProjectData {
+	return terraform.TerraformProjectData{
+		Type:        octopusdeployProjectsDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c ProjectConverter) writeData(file *hclwrite.File, name string, resourceName string) {
+	terraformResource := c.buildData(resourceName, name)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded projects
 	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
 		return nil
@@ -211,14 +224,23 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_project." + projectName + ".id}"
+	thisResource.Lookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
+			"? data." + octopusdeployProjectsDataType + "." + projectName + ".projects[0].id " +
+			": " + octopusdeployProjectResourceType + "." + projectName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformProject{
-			Type:                                   "octopusdeploy_project",
+			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
 			ResourceName:                           "${var." + projectName + "_name}",
-			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no ay to reference the package
+			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no way to reference the package
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
@@ -263,12 +285,17 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 		file := hclwrite.NewEmptyFile()
 
+		if stateless {
+			c.writeData(file, "${var."+projectName+"_name}", projectName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
+		}
+
 		c.writeProjectNameVariable(file, projectName, project.Name)
 		c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), project.Name, "octopusdeploy_project", projectName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), project.Name, octopusdeployProjectResourceType, projectName))
 
 		// write any variables used to define the value of tenant template secrets
 		for _, variable := range variables {
@@ -502,7 +529,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 		templateMap = append(templateMap, ResourceDetails{
 			Id:           v.Id,
 			ResourceType: "ProjectTemplates",
-			Lookup:       "${octopusdeploy_project." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
+			Lookup:       "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
 			FileName:     "",
 			ToHcl:        nil,
 		})
@@ -640,9 +667,9 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 	if project.VariableSetId != nil {
 		var err error
 		if lookup {
-			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(project.Id, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(project.Id, project.Name, "${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
 		} else {
-			err = c.VariableSetConverter.ToHclByProjectIdAndName(project.Id, project.Name, "${octopusdeploy_project."+projectName+".id}", dependencies)
+			err = c.VariableSetConverter.ToHclByProjectIdAndName(project.Id, project.Name, "${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
 		}
 
 		if err != nil {

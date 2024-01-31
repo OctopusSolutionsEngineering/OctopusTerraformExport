@@ -3,6 +3,7 @@ package terraform
 type TerraformOfflineDropDeploymentTarget struct {
 	Type                  string   `hcl:"type,label"`
 	Name                  string   `hcl:"name,label"`
+	Count                 *string  `hcl:"count"`
 	ApplicationsDirectory string   `hcl:"applications_directory"`
 	WorkingDirectory      string   `hcl:"working_directory"`
 	Environments          []string `hcl:"environments"`
