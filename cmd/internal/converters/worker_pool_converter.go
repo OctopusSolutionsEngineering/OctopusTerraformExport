@@ -6,10 +6,15 @@ import (
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployWorkerPoolsDataType = "octopusdeploy_worker_pools"
+const octopusdeployStaticWorkerPoolResourcePool = "octopusdeploy_static_worker_pool"
+const octopusdeployDynamicWorkerPoolResourceType = "octopusdeploy_dynamic_worker_pool"
 
 type WorkerPoolConverter struct {
 	Client client.OctopusClient
@@ -25,7 +30,7 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Worker Pool: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -52,7 +57,7 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *ResourceDetailsC
 	}
 
 	zap.L().Info("Worker Pool: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, false, false, dependencies)
 }
 
 func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -71,10 +76,29 @@ func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *ResourceDe
 		return err
 	}
 
-	return c.toHcl(pool, false, true, dependencies)
+	return c.toHcl(pool, false, true, false, dependencies)
 }
 
-func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) buildData(resourceName string, resource octopus2.WorkerPool) terraform2.TerraformWorkerPoolData {
+	return terraform2.TerraformWorkerPoolData{
+		Type:         octopusdeployWorkerPoolsDataType,
+		Name:         resourceName,
+		ResourceName: &resource.Name,
+		Ids:          nil,
+		PartialName:  nil,
+		Skip:         0,
+		Take:         1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c WorkerPoolConverter) writeData(file *hclwrite.File, resource octopus2.WorkerPool, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	resourceName := "workerpool_" + sanitizer.SanitizeNamePointer(&pool.Name)
 
 	thisResource := ResourceDetails{}
@@ -88,7 +112,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			c.createDynamicWorkerPoolResource(resourceName, &thisResource, pool)
+			c.createDynamicWorkerPoolResource(resourceName, &thisResource, pool, stateless)
 		}
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
@@ -96,7 +120,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool
 		if forceLookup {
 			c.createStaticWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			c.createStaticWorkerPoolResource(resourceName, &thisResource, pool)
+			c.createStaticWorkerPoolResource(resourceName, &thisResource, pool, stateless)
 		}
 	}
 
@@ -109,18 +133,10 @@ func (c WorkerPoolConverter) GetResourceType() string {
 }
 
 func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
-	thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
 
 	thisResource.ToHcl = func() (string, error) {
-		data := terraform2.TerraformWorkerPoolData{
-			Type:         "octopusdeploy_worker_pools",
-			Name:         resourceName,
-			ResourceName: &pool.Name,
-			Ids:          nil,
-			PartialName:  nil,
-			Skip:         0,
-			Take:         1,
-		}
+		data := c.buildData(resourceName, pool)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(data, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
@@ -130,12 +146,18 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName 
 	}
 }
 
-func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
-	thisResource.Lookup = "${octopusdeploy_dynamic_worker_pool." + resourceName + ".id}"
+func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool, stateless bool) {
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
+			": " + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + ".id}"
+	}
 
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform2.TerraformWorkerPool{
-			Type:         "octopusdeploy_dynamic_worker_pool",
+			Type:         octopusdeployDynamicWorkerPoolResourceType,
 			Name:         resourceName,
 			ResourceName: pool.Name,
 			Description:  pool.Description,
@@ -145,9 +167,14 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 		}
 		file := hclwrite.NewEmptyFile()
 
+		if stateless {
+			c.writeData(file, pool, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
+		}
+
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, "octopusdeploy_dynamic_worker_pool", resourceName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, octopusdeployDynamicWorkerPoolResourceType, resourceName))
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
@@ -155,13 +182,19 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 	}
 }
 
-func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
-	thisResource.Lookup = "${octopusdeploy_static_worker_pool." + resourceName + ".id}"
+func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool, stateless bool) {
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
+			": " + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + ".id}"
+	}
 
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform2.TerraformWorkerPool{
-			Type:         "octopusdeploy_static_worker_pool",
+			Type:         octopusdeployStaticWorkerPoolResourcePool,
 			Name:         resourceName,
 			ResourceName: pool.Name,
 			Description:  pool.Description,
@@ -171,9 +204,14 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 		}
 		file := hclwrite.NewEmptyFile()
 
+		if stateless {
+			c.writeData(file, pool, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
+		}
+
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, "octopusdeploy_static_worker_pool", resourceName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, octopusdeployStaticWorkerPoolResourcePool, resourceName))
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
@@ -182,24 +220,15 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 }
 
 func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName string, thisResource *ResourceDetails, pool octopus2.WorkerPool) {
-	thisResource.Lookup = "${data.octopusdeploy_worker_pools." + resourceName + ".worker_pools[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
 
 	thisResource.ToHcl = func() (string, error) {
-		data := terraform2.TerraformWorkerPoolData{
-			Type:         "octopusdeploy_worker_pools",
-			Name:         resourceName,
-			ResourceName: &pool.Name,
-			Ids:          nil,
-			PartialName:  nil,
-			Skip:         0,
-			Take:         1,
-		}
+		data := c.buildData(resourceName, pool)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(data, "data")
 		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
-
 	}
 }

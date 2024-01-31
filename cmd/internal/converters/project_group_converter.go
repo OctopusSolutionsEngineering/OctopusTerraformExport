@@ -6,10 +6,14 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 )
+
+const octopusdeployProjectGroupsDataType = "octopusdeploy_project_groups"
+const octopusdeployProjectGroupResourceType = "octopusdeploy_project_group"
 
 type ProjectGroupConverter struct {
 	Client client.OctopusClient
@@ -25,7 +29,7 @@ func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) er
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project Group: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -52,7 +56,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 	}
 
 	zap.L().Info("Project Group: " + resource.Id)
-	return c.toHcl(resource, false, false, dependencies)
+	return c.toHcl(resource, false, false, false, dependencies)
 }
 
 func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
@@ -71,10 +75,28 @@ func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *Resource
 		return err
 	}
 
-	return c.toHcl(resource, false, true, dependencies)
+	return c.toHcl(resource, false, true, false, dependencies)
 }
 
-func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) buildData(resourceName string, name string) terraform.TerraformProjectGroupData {
+	return terraform.TerraformProjectGroupData{
+		Type:        octopusdeployProjectGroupsDataType,
+		Name:        name,
+		Ids:         nil,
+		PartialName: resourceName,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c ProjectGroupConverter) writeData(file *hclwrite.File, name string, resourceName string) {
+	terraformResource := c.buildData(resourceName, name)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	thisResource := ResourceDetails{}
 
 	forceLookup := lookup || resource.Name == "Default Project Group"
@@ -86,16 +108,9 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 	thisResource.ResourceType = c.GetResourceType()
 
 	if forceLookup {
-		thisResource.Lookup = "${data.octopusdeploy_project_groups." + projectName + ".project_groups[0].id}"
+		thisResource.Lookup = "${data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups[0].id}"
 		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform.TerraformProjectGroupData{
-				Type:        "octopusdeploy_project_groups",
-				Name:        projectName,
-				Ids:         nil,
-				PartialName: "${var." + projectName + "_name}",
-				Skip:        0,
-				Take:        1,
-			}
+			terraformResource := c.buildData("${var."+projectName+"_name}", projectName)
 			file := hclwrite.NewEmptyFile()
 			c.writeProjectNameVariable(file, projectName, resource.Name)
 			block := gohcl.EncodeAsBlock(terraformResource, "data")
@@ -105,21 +120,33 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 			return string(file.Bytes()), nil
 		}
 	} else {
-		thisResource.Lookup = "${octopusdeploy_project_group." + projectName + ".id}"
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups) != 0 " +
+				"? data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups[0].id " +
+				": " + octopusdeployProjectGroupResourceType + "." + projectName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployProjectGroupResourceType + "." + projectName + ".id}"
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformProjectGroup{
-				Type:         "octopusdeploy_project_group",
+				Type:         octopusdeployProjectGroupResourceType,
 				Name:         projectName,
 				ResourceName: "${var." + projectName + "_name}",
 				Description:  resource.Description,
 			}
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, "${var."+projectName+"_name}", projectName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups) != 0 ? 0 : 1}")
+			}
+
 			c.writeProjectNameVariable(file, projectName, resource.Name)
 
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, "octopusdeploy_project_group", projectName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployProjectGroupResourceType, projectName))
 
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 

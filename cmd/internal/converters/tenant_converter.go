@@ -16,6 +16,9 @@ import (
 	"strings"
 )
 
+const octopusdeployTenantsDataType = "octopusdeploy_tenants"
+const octopusdeployTenantResourceType = "octopusdeploy_tenant"
+
 type TenantConverter struct {
 	Client                  client.OctopusClient
 	TenantVariableConverter ConverterByTenantId
@@ -45,7 +48,7 @@ func (c *TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Tenant: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -65,7 +68,7 @@ func (c *TenantConverter) ToHclByProjectId(projectId string, dependencies *Resou
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Tenant: " + resource.Id)
-		err = c.toHcl(resource, true, false, dependencies)
+		err = c.toHcl(resource, true, false, false, dependencies)
 		if err != nil {
 			return nil
 		}
@@ -83,7 +86,7 @@ func (c *TenantConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 
 	if found {
 		zap.L().Info("Tenant: " + resource.Id)
-		return c.toHcl(resource, true, false, dependencies)
+		return c.toHcl(resource, true, false, false, dependencies)
 	}
 
 	return nil
@@ -98,7 +101,7 @@ func (c *TenantConverter) ToHclLookupByProjectId(projectId string, dependencies 
 	}
 
 	for _, tenant := range collection.Items {
-		err = c.toHcl(tenant, false, true, dependencies)
+		err = c.toHcl(tenant, false, true, false, dependencies)
 		if err != nil {
 			return nil
 		}
@@ -106,7 +109,25 @@ func (c *TenantConverter) ToHclLookupByProjectId(projectId string, dependencies 
 	return nil
 }
 
-func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) buildData(resourceName string, resource octopus2.Tenant) terraform.TerraformTenantData {
+	return terraform.TerraformTenantData{
+		Type:        octopusdeployTenantsDataType,
+		Name:        resourceName,
+		Ids:         nil,
+		PartialName: resource.Name,
+		Skip:        0,
+		Take:        1,
+	}
+}
+
+// writeData appends the data block for stateless modules
+func (c *TenantConverter) writeData(file *hclwrite.File, resource octopus2.Tenant, resourceName string) {
+	terraformResource := c.buildData(resourceName, resource)
+	block := gohcl.EncodeAsBlock(terraformResource, "data")
+	file.Body().AppendBlock(block)
+}
+
+func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
@@ -159,16 +180,9 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 	thisResource.ResourceType = c.GetResourceType()
 
 	if lookup {
-		thisResource.Lookup = "${data.octopusdeploy_tenants." + tenantName + ".tenants[0].id}"
+		thisResource.Lookup = "${data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants[0].id}"
 		thisResource.ToHcl = func() (string, error) {
-			terraformResource := terraform.TerraformTenantData{
-				Type:        "octopusdeploy_tenants",
-				Name:        tenantName,
-				Ids:         nil,
-				PartialName: tenant.Name,
-				Skip:        0,
-				Take:        1,
-			}
+			terraformResource := c.buildData(tenantName, tenant)
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(terraformResource, "data")
 			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a tenant called \""+tenant.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.tenants) != 0")
@@ -177,10 +191,17 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 			return string(file.Bytes()), nil
 		}
 	} else {
-		thisResource.Lookup = "${octopusdeploy_tenant." + tenantName + ".id}"
+		if stateless {
+			thisResource.Lookup = "${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 " +
+				"? data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants[0].id " +
+				": " + octopusdeployTenantResourceType + "." + tenantName + "[0].id}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployTenantResourceType + "." + tenantName + ".id}"
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTenant{
-				Type:               "octopusdeploy_tenant",
+				Type:               octopusdeployTenantResourceType,
 				Name:               tenantName,
 				ResourceName:       tenant.Name,
 				Id:                 nil,
@@ -199,9 +220,14 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 
 			file := hclwrite.NewEmptyFile()
 
+			if stateless {
+				c.writeData(file, tenant, tenantName)
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 ? 0 : 1}")
+			}
+
 			// Add a comment with the import command
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tenant.Name, "octopusdeploy_tenant", tenantName))
+			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tenant.Name, octopusdeployTenantResourceType, tenantName))
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 

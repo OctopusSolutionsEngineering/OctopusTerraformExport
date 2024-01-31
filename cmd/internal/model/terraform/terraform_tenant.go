@@ -3,6 +3,7 @@ package terraform
 type TerraformTenant struct {
 	Type               string                        `hcl:"type,label"`
 	Name               string                        `hcl:"name,label"`
+	Count              *string                       `hcl:"count"`
 	ResourceName       string                        `hcl:"name"`
 	Id                 *string                       `hcl:"id"`
 	ClonedFromTenantId *string                       `hcl:"cloned_from_tenant_id"`

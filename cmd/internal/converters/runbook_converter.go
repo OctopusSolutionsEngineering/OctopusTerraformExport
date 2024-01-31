@@ -16,6 +16,8 @@ import (
 	"regexp"
 )
 
+const octopusdeployRunbookResourceType = "octopusdeploy_runbook"
+
 type RunbookConverter struct {
 	Client                       client.OctopusClient
 	RunbookProcessConverter      ConverterAndLookupByIdAndName
@@ -133,11 +135,11 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 	thisResource.FileName = "space_population/" + runbookName + ".tf"
 	thisResource.Id = runbook.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_runbook." + runbookName + ".id}"
+	thisResource.Lookup = "${" + octopusdeployRunbookResourceType + "." + runbookName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformRunbook{
-			Type:                     "octopusdeploy_runbook",
+			Type:                     octopusdeployRunbookResourceType,
 			Name:                     runbookName,
 			ResourceName:             "${var." + runbookName + "_name}",
 			ProjectId:                dependencies.GetResource("Projects", runbook.ProjectId),
@@ -157,7 +159,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), runbook.Name, "octopusdeploy_runbook", runbookName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), runbook.Name, octopusdeployRunbookResourceType, runbookName))
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 

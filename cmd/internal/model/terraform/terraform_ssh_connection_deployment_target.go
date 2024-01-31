@@ -3,6 +3,7 @@ package terraform
 type TerraformSshConnectionDeploymentTarget struct {
 	Type               string   `hcl:"type,label"`
 	Name               string   `hcl:"name,label"`
+	Count              *string  `hcl:"count"`
 	AccountId          string   `hcl:"account_id"`
 	Environments       []string `hcl:"environments"`
 	Fingerprint        string   `hcl:"fingerprint"`
