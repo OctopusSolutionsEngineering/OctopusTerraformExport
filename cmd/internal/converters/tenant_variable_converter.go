@@ -26,7 +26,15 @@ type TenantVariableConverter struct {
 	DummySecretGenerator      DummySecretGenerator
 }
 
-func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c TenantVariableConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c TenantVariableConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := []octopus.TenantVariable{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -35,7 +43,7 @@ func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 	}
 
 	for _, resource := range collection {
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

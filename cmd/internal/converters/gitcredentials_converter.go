@@ -22,7 +22,15 @@ type GitCredentialsConverter struct {
 	DummySecretGenerator      DummySecretGenerator
 }
 
-func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c GitCredentialsConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.GitCredentials]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -32,7 +40,7 @@ func (c GitCredentialsConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Git Credentials: " + resource.Id)
-		err = c.toHcl(resource, false, false, false, dependencies)
+		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err

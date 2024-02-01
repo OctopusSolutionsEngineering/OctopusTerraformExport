@@ -24,7 +24,15 @@ type TagSetConverter struct {
 	Excluder             ExcludeByName
 }
 
-func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c *TagSetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c *TagSetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.TagSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -34,7 +42,7 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Tagset: " + resource.Id)
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -44,11 +52,11 @@ func (c TagSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 	return nil
 }
 
-func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
 	return c.toHcl(tagSet, false, dependencies)
 }
 
-func (c TagSetConverter) GetResourceType() string {
+func (c *TagSetConverter) GetResourceType() string {
 	return "TagSets"
 }
 

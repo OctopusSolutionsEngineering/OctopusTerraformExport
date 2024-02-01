@@ -20,7 +20,15 @@ type WorkerPoolConverter struct {
 	Client client.OctopusClient
 }
 
-func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c WorkerPoolConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c WorkerPoolConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c WorkerPoolConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.WorkerPool]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -30,7 +38,7 @@ func (c WorkerPoolConverter) ToHcl(dependencies *ResourceDetailsCollection) erro
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Worker Pool: " + resource.Id)
-		err = c.toHcl(resource, false, false, false, dependencies)
+		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err

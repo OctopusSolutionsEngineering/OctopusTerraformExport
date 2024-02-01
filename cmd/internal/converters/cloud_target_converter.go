@@ -30,7 +30,15 @@ type CloudRegionTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c CloudRegionTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -40,7 +48,7 @@ func (c CloudRegionTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Cloud Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

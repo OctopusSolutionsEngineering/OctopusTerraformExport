@@ -31,7 +31,15 @@ type AzureWebAppTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c AzureWebAppTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -41,7 +49,7 @@ func (c AzureWebAppTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Azure Web App Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

@@ -38,7 +38,15 @@ type TenantConverter struct {
 	ExcludeAllProjects      bool
 }
 
-func (c *TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *TenantConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c *TenantConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c *TenantConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -48,7 +56,7 @@ func (c *TenantConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Tenant: " + resource.Id)
-		err = c.toHcl(resource, false, false, false, dependencies)
+		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err

@@ -22,7 +22,15 @@ type MachinePolicyConverter struct {
 	Client client.OctopusClient
 }
 
-func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c MachinePolicyConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.MachinePolicy]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -32,7 +40,7 @@ func (c MachinePolicyConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Machine Policy: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

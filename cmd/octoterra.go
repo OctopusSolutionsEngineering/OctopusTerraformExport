@@ -192,7 +192,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		Client:                  octopusClient,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
-		TagSetConverter:         tagsetConverter,
+		TagSetConverter:         &tagsetConverter,
 		ExcludeTenants:          args.ExcludeTenants,
 		ExcludeTenantsRegex:     args.ExcludeTenantsRegex,
 		ExcludeTenantsWithTags:  args.ExcludeTenantsWithTags,
@@ -469,7 +469,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		LifecycleConverter:          lifecycleConverter,
 		WorkerPoolConverter:         workerPoolConverter,
-		TagSetConverter:             tagsetConverter,
+		TagSetConverter:             &tagsetConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		ProjectConverter: &converters.ProjectConverter{
@@ -532,10 +532,18 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		FeedConverter:                     feedConverter,
 	}
 
-	err := spaceConverter.ToHcl(&dependencies)
+	if args.Stateless {
+		err := spaceConverter.AllToStatelessHcl(&dependencies)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+	} else {
+		err := spaceConverter.AllToHcl(&dependencies)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	hcl, err := processResources(dependencies.Resources)
@@ -593,7 +601,7 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 		Client:                  octopusClient,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
-		TagSetConverter:         tagsetConverter,
+		TagSetConverter:         &tagsetConverter,
 		ExcludeTenants:          args.ExcludeTenants,
 		ExcludeTenantsRegex:     args.ExcludeTenantsRegex,
 		ExcludeAllTenants:       args.ExcludeAllTenants,
@@ -739,7 +747,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		Client:                  octopusClient,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
-		TagSetConverter:         tagsetConverter,
+		TagSetConverter:         &tagsetConverter,
 		ExcludeTenants:          args.ExcludeTenants,
 		ExcludeTenantsRegex:     args.ExcludeTenantsRegex,
 		ExcludeAllTenants:       args.ExcludeAllTenants,

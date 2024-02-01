@@ -26,7 +26,15 @@ type CertificateConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c CertificateConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c CertificateConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Certificate]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -36,7 +44,7 @@ func (c CertificateConverter) ToHcl(dependencies *ResourceDetailsCollection) err
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Certificate: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

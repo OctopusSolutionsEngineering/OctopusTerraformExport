@@ -32,7 +32,15 @@ type AzureServiceFabricTargetConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c AzureServiceFabricTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -42,7 +50,7 @@ func (c AzureServiceFabricTargetConverter) ToHcl(dependencies *ResourceDetailsCo
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Azure Service Fabric Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

@@ -25,7 +25,15 @@ type AccountConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c AccountConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c AccountConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Account]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -35,7 +43,7 @@ func (c AccountConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Account: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

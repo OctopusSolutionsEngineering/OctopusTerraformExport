@@ -31,7 +31,15 @@ type AzureCloudServiceTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureCloudServiceResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -41,7 +49,7 @@ func (c AzureCloudServiceTargetConverter) ToHcl(dependencies *ResourceDetailsCol
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Azure Cloud Service Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

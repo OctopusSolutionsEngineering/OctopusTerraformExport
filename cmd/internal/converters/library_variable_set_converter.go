@@ -34,7 +34,15 @@ type LibraryVariableSetConverter struct {
 	Excluder                                ExcludeByName
 }
 
-func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -44,7 +52,7 @@ func (c *LibraryVariableSetConverter) ToHcl(dependencies *ResourceDetailsCollect
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Library Variable Set: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -118,7 +126,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 	return nil
 }
 
-func (c LibraryVariableSetConverter) buildData(resourceName string, resource octopus.LibraryVariableSet) terraform.TerraformLibraryVariableSetData {
+func (c *LibraryVariableSetConverter) buildData(resourceName string, resource octopus.LibraryVariableSet) terraform.TerraformLibraryVariableSetData {
 	return terraform.TerraformLibraryVariableSetData{
 		Type:        octopusdeployLibraryVariableSetsDataType,
 		Name:        resourceName,
@@ -130,7 +138,7 @@ func (c LibraryVariableSetConverter) buildData(resourceName string, resource oct
 }
 
 // writeData appends the data block for stateless modules
-func (c LibraryVariableSetConverter) writeData(file *hclwrite.File, resource octopus.LibraryVariableSet, resourceName string) {
+func (c *LibraryVariableSetConverter) writeData(file *hclwrite.File, resource octopus.LibraryVariableSet, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)

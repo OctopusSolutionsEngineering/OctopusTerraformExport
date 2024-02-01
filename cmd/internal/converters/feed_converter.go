@@ -30,7 +30,15 @@ func (c FeedConverter) GetResourceType() string {
 	return "Feeds"
 }
 
-func (c FeedConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c FeedConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c FeedConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Feed]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -40,7 +48,7 @@ func (c FeedConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Feed: " + resource.Id)
-		err = c.toHcl(resource, false, false, false, dependencies)
+		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err

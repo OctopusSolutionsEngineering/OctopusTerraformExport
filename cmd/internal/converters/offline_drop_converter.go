@@ -32,7 +32,15 @@ type OfflineDropTargetConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c OfflineDropTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -42,7 +50,7 @@ func (c OfflineDropTargetConverter) ToHcl(dependencies *ResourceDetailsCollectio
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Offline Drop Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

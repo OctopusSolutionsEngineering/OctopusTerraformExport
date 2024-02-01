@@ -20,7 +20,15 @@ type EnvironmentConverter struct {
 	Client client.OctopusClient
 }
 
-func (c EnvironmentConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c EnvironmentConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Environment]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

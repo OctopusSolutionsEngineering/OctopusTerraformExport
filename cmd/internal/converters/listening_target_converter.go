@@ -30,7 +30,15 @@ type ListeningTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c ListeningTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c ListeningTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -40,7 +48,7 @@ func (c ListeningTargetConverter) ToHcl(dependencies *ResourceDetailsCollection)
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Listening Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

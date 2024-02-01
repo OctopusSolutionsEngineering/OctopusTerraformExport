@@ -30,7 +30,15 @@ type PollingTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c PollingTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -40,7 +48,7 @@ func (c PollingTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) e
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Polling Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

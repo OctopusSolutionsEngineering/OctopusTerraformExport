@@ -50,7 +50,15 @@ type ProjectConverter struct {
 	LookupOnlyMode bool
 }
 
-func (c *ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c *ProjectConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c *ProjectConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	if c.LookupOnlyMode {
 		return errors.New("this function can not be called whe LookupOnlyMode is true")
 	}
@@ -64,7 +72,7 @@ func (c *ProjectConverter) ToHcl(dependencies *ResourceDetailsCollection) error 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project: " + resource.Id)
-		err = c.toHcl(resource, false, false, false, dependencies)
+		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -169,7 +177,7 @@ func (c *ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCol
 	return c.toHcl(project, true, false, false, dependencies)
 }
 
-func (c ProjectConverter) buildData(resourceName string, name string) terraform.TerraformProjectData {
+func (c *ProjectConverter) buildData(resourceName string, name string) terraform.TerraformProjectData {
 	return terraform.TerraformProjectData{
 		Type:        octopusdeployProjectsDataType,
 		Name:        resourceName,
@@ -181,7 +189,7 @@ func (c ProjectConverter) buildData(resourceName string, name string) terraform.
 }
 
 // writeData appends the data block for stateless modules
-func (c ProjectConverter) writeData(file *hclwrite.File, name string, resourceName string) {
+func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceName string) {
 	terraformResource := c.buildData(resourceName, name)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)

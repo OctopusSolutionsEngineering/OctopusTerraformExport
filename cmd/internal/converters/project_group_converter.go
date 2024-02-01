@@ -19,7 +19,15 @@ type ProjectGroupConverter struct {
 	Client client.OctopusClient
 }
 
-func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c ProjectGroupConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -29,7 +37,7 @@ func (c ProjectGroupConverter) ToHcl(dependencies *ResourceDetailsCollection) er
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project Group: " + resource.Id)
-		err = c.toHcl(resource, false, false, false, dependencies)
+		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err

@@ -31,7 +31,15 @@ type SshTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(false, dependencies)
+}
+
+func (c SshTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+	return c.allToHcl(true, dependencies)
+}
+
+func (c SshTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -41,7 +49,7 @@ func (c SshTargetConverter) ToHcl(dependencies *ResourceDetailsCollection) error
 
 	for _, resource := range collection.Items {
 		zap.L().Info("SSH Target: " + resource.Id)
-		err = c.toHcl(resource, false, false, dependencies)
+		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err
