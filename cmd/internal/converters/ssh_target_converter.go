@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +48,11 @@ func (c SshTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetai
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.SshEndpointResource, index int) bool {
+		return c.isSsh(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("SSH Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -57,6 +62,10 @@ func (c SshTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetai
 	}
 
 	return nil
+}
+
+func (c SshTargetConverter) isSsh(resource octopus.SshEndpointResource) bool {
+	return resource.Endpoint.CommunicationStyle == "Ssh"
 }
 
 func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -73,6 +82,10 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 
 	if err != nil {
 		return err
+	}
+
+	if !c.isSsh(resource) {
+		return nil
 	}
 
 	zap.L().Info("SSH Target: " + resource.Id)
@@ -100,7 +113,7 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "Ssh" {
+	if !c.isSsh(resource) {
 		return nil
 	}
 
@@ -150,68 +163,69 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "Ssh" {
+	if !c.isSsh(target) {
+		return nil
+	}
 
-		if recursive {
-			err := c.exportDependencies(target, dependencies)
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
+	}
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformSshConnectionDeploymentTarget{
+			Type:               octopusdeploySshConnectionDeploymentTargetResourceType,
+			Name:               targetName,
+			AccountId:          c.getAccount(target.Endpoint.AccountId, dependencies),
+			Environments:       c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			Fingerprint:        target.Endpoint.Fingerprint,
+			Host:               target.Endpoint.Host,
+			ResourceName:       target.Name,
+			Roles:              target.Roles,
+			DotNetCorePlatform: &target.Endpoint.DotNetCorePlatform,
+			MachinePolicyId:    c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			TenantTags:         c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+		}
+		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
-				"? data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
-				": " + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + "[0].id}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + ".id}"
+			c.writeData(file, target, targetName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeploySshConnectionDeploymentTargetResourceType, targetName))
 
-			terraformResource := terraform.TerraformSshConnectionDeploymentTarget{
-				Type:               octopusdeploySshConnectionDeploymentTargetResourceType,
-				Name:               targetName,
-				AccountId:          c.getAccount(target.Endpoint.AccountId, dependencies),
-				Environments:       c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				Fingerprint:        target.Endpoint.Fingerprint,
-				Host:               target.Endpoint.Host,
-				ResourceName:       target.Name,
-				Roles:              target.Roles,
-				DotNetCorePlatform: &target.Endpoint.DotNetCorePlatform,
-				MachinePolicyId:    c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				TenantTags:         c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
-			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeploySshConnectionDeploymentTargetResourceType, targetName))
-
-			block := gohcl.EncodeAsBlock(terraformResource, "resource")
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-			file.Body().AppendBlock(block)
-
-			return string(file.Bytes()), nil
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
+		if err != nil {
+			return "", err
 		}
+		file.Body().AppendBlock(block)
 
-		dependencies.AddResource(thisResource)
+		return string(file.Bytes()), nil
 	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -46,7 +47,11 @@ func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *Resou
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.CloudRegionResource, index int) bool {
+		return c.isCloudTarget(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("Cloud Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -56,6 +61,10 @@ func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *Resou
 	}
 
 	return nil
+}
+
+func (c CloudRegionTargetConverter) isCloudTarget(resource octopus.CloudRegionResource) bool {
+	return resource.Endpoint.CommunicationStyle == "None"
 }
 
 func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -72,6 +81,10 @@ func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceD
 
 	if err != nil {
 		return err
+	}
+
+	if !c.isCloudTarget(resource) {
+		return nil
 	}
 
 	zap.L().Info("Cloud Target: " + resource.Id)
@@ -99,7 +112,7 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "None" {
+	if !c.isCloudTarget(resource) {
 		return nil
 	}
 
@@ -149,78 +162,79 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "None" {
+	if !c.isCloudTarget(target) {
+		return nil
+	}
 
-		if recursive {
-			err := c.exportDependencies(target, dependencies)
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
+	}
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeployCloudRegionResourceType + "." + targetName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployCloudRegionResourceType + "." + targetName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformCloudRegionDeploymentTarget{
+			Type:                            octopusdeployCloudRegionResourceType,
+			Name:                            targetName,
+			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			ResourceName:                    target.Name,
+			Roles:                           target.Roles,
+			HealthStatus:                    &target.HealthStatus,
+			IsDisabled:                      &target.IsDisabled,
+			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			OperatingSystem:                 nil,
+			ShellName:                       &target.ShellName,
+			ShellVersion:                    &target.ShellVersion,
+			SpaceId:                         nil,
+			Status:                          nil,
+			StatusSummary:                   nil,
+			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
+			Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
+			Uri:                             nil,
+			Thumbprint:                      &target.Thumbprint,
+			DefaultWorkerPoolId:             &target.Endpoint.DefaultWorkerPoolId,
+		}
+		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets) != 0 " +
-				"? data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets[0].id " +
-				": " + octopusdeployCloudRegionResourceType + "." + targetName + "[0].id}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployCloudRegionResourceType + "." + targetName + ".id}"
+			c.writeData(file, target, targetName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployCloudRegionResourceType, targetName))
 
-			terraformResource := terraform.TerraformCloudRegionDeploymentTarget{
-				Type:                            octopusdeployCloudRegionResourceType,
-				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				ResourceName:                    target.Name,
-				Roles:                           target.Roles,
-				HealthStatus:                    &target.HealthStatus,
-				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				OperatingSystem:                 nil,
-				ShellName:                       &target.ShellName,
-				ShellVersion:                    &target.ShellVersion,
-				SpaceId:                         nil,
-				Status:                          nil,
-				StatusSummary:                   nil,
-				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
-				Uri:                             nil,
-				Thumbprint:                      &target.Thumbprint,
-				DefaultWorkerPoolId:             &target.Endpoint.DefaultWorkerPoolId,
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
-			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployCloudRegionResourceType, targetName))
-
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-			file.Body().AppendBlock(targetBlock)
-
-			return string(file.Bytes()), nil
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
 		}
+		file.Body().AppendBlock(targetBlock)
 
-		dependencies.AddResource(thisResource)
+		return string(file.Bytes()), nil
 	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

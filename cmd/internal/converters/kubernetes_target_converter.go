@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -48,7 +49,11 @@ func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *Resour
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.KubernetesEndpointResource, index int) bool {
+		return c.isKubernetesTarget(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("Kubernetes Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -58,6 +63,10 @@ func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *Resour
 	}
 
 	return nil
+}
+
+func (c KubernetesTargetConverter) isKubernetesTarget(resource octopus.KubernetesEndpointResource) bool {
+	return resource.Endpoint.CommunicationStyle == "Kubernetes"
 }
 
 func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -74,6 +83,10 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 
 	if err != nil {
 		return err
+	}
+
+	if !c.isKubernetesTarget(resource) {
+		return nil
 	}
 
 	zap.L().Info("Kubernetes Target: " + resource.Id)
@@ -101,7 +114,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "Kubernetes" {
+	if !c.isKubernetesTarget(resource) {
 		return nil
 	}
 
@@ -151,105 +164,107 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "Kubernetes" {
-		if recursive {
-			err := c.exportDependencies(target, dependencies)
+	if !c.isKubernetesTarget(target) {
+		return nil
+	}
 
-			if err != nil {
-				return err
-			}
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
+
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		// don't lookup empty certificate values
+		var clusterCertificate *string = nil
+		if len(strutil.EmptyIfNil(target.Endpoint.ClusterCertificate)) != 0 {
+			clusterCertificate = dependencies.GetResourcePointer("Certificates", target.Endpoint.ClusterCertificate)
 		}
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
-
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+		terraformResource := terraform.TerraformKubernetesEndpointResource{
+			Type:                            octopusdeployKubernetesClusterDeploymentTargetResourceType,
+			Name:                            targetName,
+			ClusterUrl:                      strutil.EmptyIfNil(target.Endpoint.ClusterUrl),
+			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			ResourceName:                    target.Name,
+			Roles:                           target.Roles,
+			ClusterCertificate:              clusterCertificate,
+			ClusterCertificatePath:          target.Endpoint.ClusterCertificatePath,
+			DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
+			HealthStatus:                    nil,
+			Id:                              nil,
+			IsDisabled:                      strutil.NilIfFalse(target.IsDisabled),
+			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			Namespace:                       strutil.NilIfEmptyPointer(target.Endpoint.Namespace),
+			OperatingSystem:                 nil,
+			ProxyId:                         nil,
+			RunningInContainer:              nil,
+			ShellName:                       nil,
+			ShellVersion:                    nil,
+			SkipTlsVerification:             strutil.ParseBoolPointer(target.Endpoint.SkipTlsVerification),
+			SpaceId:                         nil,
+			Status:                          nil,
+			StatusSummary:                   nil,
+			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			TenantedDeploymentParticipation: target.TenantedDeploymentParticipation,
+			Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
+			Thumbprint:                      nil,
+			Uri:                             target.Uri,
+			Endpoint: terraform.TerraformKubernetesEndpoint{
+				CommunicationStyle: "Kubernetes",
+			},
+			Container: terraform.TerraformKubernetesContainer{
+				FeedId: target.Endpoint.Container.FeedId,
+				Image:  target.Endpoint.Container.Image,
+			},
+			Authentication:                      c.getK8sAuth(&target, dependencies),
+			AwsAccountAuthentication:            c.getAwsAuth(&target, dependencies),
+			AzureServicePrincipalAuthentication: c.getAzureAuth(&target, dependencies),
+			CertificateAuthentication:           c.getCertAuth(&target, dependencies),
+			GcpAccountAuthentication:            c.getGoogleAuth(&target, dependencies),
+			PodAuthentication:                   c.getPodAuth(&target),
+		}
+		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
-				"? data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
-				": " + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "[0].id}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+			c.writeData(file, target, targetName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployKubernetesClusterDeploymentTargetResourceType, targetName))
 
-			// don't lookup empty certificate values
-			var clusterCertificate *string = nil
-			if len(strutil.EmptyIfNil(target.Endpoint.ClusterCertificate)) != 0 {
-				clusterCertificate = dependencies.GetResourcePointer("Certificates", target.Endpoint.ClusterCertificate)
-			}
-
-			terraformResource := terraform.TerraformKubernetesEndpointResource{
-				Type:                            octopusdeployKubernetesClusterDeploymentTargetResourceType,
-				Name:                            targetName,
-				ClusterUrl:                      strutil.EmptyIfNil(target.Endpoint.ClusterUrl),
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				ResourceName:                    target.Name,
-				Roles:                           target.Roles,
-				ClusterCertificate:              clusterCertificate,
-				ClusterCertificatePath:          target.Endpoint.ClusterCertificatePath,
-				DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
-				HealthStatus:                    nil,
-				Id:                              nil,
-				IsDisabled:                      strutil.NilIfFalse(target.IsDisabled),
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				Namespace:                       strutil.NilIfEmptyPointer(target.Endpoint.Namespace),
-				OperatingSystem:                 nil,
-				ProxyId:                         nil,
-				RunningInContainer:              nil,
-				ShellName:                       nil,
-				ShellVersion:                    nil,
-				SkipTlsVerification:             strutil.ParseBoolPointer(target.Endpoint.SkipTlsVerification),
-				SpaceId:                         nil,
-				Status:                          nil,
-				StatusSummary:                   nil,
-				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-				TenantedDeploymentParticipation: target.TenantedDeploymentParticipation,
-				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
-				Thumbprint:                      nil,
-				Uri:                             target.Uri,
-				Endpoint: terraform.TerraformKubernetesEndpoint{
-					CommunicationStyle: "Kubernetes",
-				},
-				Container: terraform.TerraformKubernetesContainer{
-					FeedId: target.Endpoint.Container.FeedId,
-					Image:  target.Endpoint.Container.Image,
-				},
-				Authentication:                      c.getK8sAuth(&target, dependencies),
-				AwsAccountAuthentication:            c.getAwsAuth(&target, dependencies),
-				AzureServicePrincipalAuthentication: c.getAzureAuth(&target, dependencies),
-				CertificateAuthentication:           c.getCertAuth(&target, dependencies),
-				GcpAccountAuthentication:            c.getGoogleAuth(&target, dependencies),
-				PodAuthentication:                   c.getPodAuth(&target),
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
-			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployKubernetesClusterDeploymentTargetResourceType, targetName))
-
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-			file.Body().AppendBlock(targetBlock)
-
-			return string(file.Bytes()), nil
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
 		}
+		file.Body().AppendBlock(targetBlock)
 
-		dependencies.AddResource(thisResource)
+		return string(file.Bytes()), nil
 	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

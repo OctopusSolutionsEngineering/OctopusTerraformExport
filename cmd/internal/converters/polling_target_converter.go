@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -46,7 +47,11 @@ func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *ResourceD
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.PollingEndpointResource, index int) bool {
+		return c.isPollingTarget(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("Polling Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -56,6 +61,10 @@ func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *ResourceD
 	}
 
 	return nil
+}
+
+func (c PollingTargetConverter) isPollingTarget(resource octopus.PollingEndpointResource) bool {
+	return resource.Endpoint.CommunicationStyle == "TentacleActive"
 }
 
 func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -72,6 +81,10 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 
 	if err != nil {
 		return err
+	}
+
+	if !c.isPollingTarget(resource) {
+		return nil
 	}
 
 	zap.L().Info("Polling Target: " + resource.Id)
@@ -99,7 +112,7 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *Resourc
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "TentacleActive" {
+	if !c.isPollingTarget(resource) {
 		return nil
 	}
 
@@ -147,79 +160,81 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "TentacleActive" {
-		if recursive {
-			err := c.exportDependencies(target, dependencies)
+	if !c.isPollingTarget(target) {
+		return nil
+	}
 
-			if err != nil {
-				return err
-			}
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
+
+		if err != nil {
+			return err
 		}
+	}
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformPollingTentacleDeploymentTarget{
+			Type:                            octopusdeployPollingTentacleDeploymentTargetResourceType,
+			Name:                            targetName,
+			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			ResourceName:                    target.Name,
+			Roles:                           target.Roles,
+			TentacleUrl:                     target.Endpoint.Uri,
+			CertificateSignatureAlgorithm:   nil,
+			HealthStatus:                    nil,
+			IsDisabled:                      &target.IsDisabled,
+			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			OperatingSystem:                 nil,
+			ShellName:                       &target.ShellName,
+			ShellVersion:                    &target.ShellVersion,
+			SpaceId:                         nil,
+			Status:                          nil,
+			StatusSummary:                   nil,
+			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
+			Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
+			TentacleVersionDetails:          terraform.TerraformTentacleVersionDetails{},
+			Uri:                             nil,
+			Thumbprint:                      target.Thumbprint,
+		}
+		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
-				"? data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
-				": " + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + "[0].id}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + ".id}"
+			c.writeData(file, target, targetName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployPollingTentacleDeploymentTargetResourceType, targetName))
 
-			terraformResource := terraform.TerraformPollingTentacleDeploymentTarget{
-				Type:                            octopusdeployPollingTentacleDeploymentTargetResourceType,
-				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				ResourceName:                    target.Name,
-				Roles:                           target.Roles,
-				TentacleUrl:                     target.Endpoint.Uri,
-				CertificateSignatureAlgorithm:   nil,
-				HealthStatus:                    nil,
-				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				OperatingSystem:                 nil,
-				ShellName:                       &target.ShellName,
-				ShellVersion:                    &target.ShellVersion,
-				SpaceId:                         nil,
-				Status:                          nil,
-				StatusSummary:                   nil,
-				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
-				TentacleVersionDetails:          terraform.TerraformTentacleVersionDetails{},
-				Uri:                             nil,
-				Thumbprint:                      target.Thumbprint,
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
-			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployPollingTentacleDeploymentTargetResourceType, targetName))
-
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-			file.Body().AppendBlock(targetBlock)
-
-			return string(file.Bytes()), nil
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
 		}
+		file.Body().AppendBlock(targetBlock)
 
-		dependencies.AddResource(thisResource)
+		return string(file.Bytes()), nil
 	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

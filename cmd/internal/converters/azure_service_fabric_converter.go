@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -48,7 +49,11 @@ func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.AzureServiceFabricResource, index int) bool {
+		return c.isAzureServiceFabricCluster(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("Azure Service Fabric Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -58,6 +63,10 @@ func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies
 	}
 
 	return nil
+}
+
+func (c AzureServiceFabricTargetConverter) isAzureServiceFabricCluster(resource octopus.AzureServiceFabricResource) bool {
+	return resource.Endpoint.CommunicationStyle == "AzureServiceFabricCluster"
 }
 
 func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -74,6 +83,10 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 
 	if err != nil {
 		return err
+	}
+
+	if !c.isAzureServiceFabricCluster(resource) {
+		return nil
 	}
 
 	zap.L().Info("Azure Service Fabric Target: " + resource.Id)
@@ -96,12 +109,16 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 		return err
 	}
 
+	if !c.isAzureServiceFabricCluster(resource) {
+		return nil
+	}
+
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "AzureServiceFabricCluster" {
+	if !c.isAzureServiceFabricCluster(resource) {
 		return nil
 	}
 
@@ -151,113 +168,114 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "AzureServiceFabricCluster" {
+	if !c.isAzureServiceFabricCluster(target) {
+		return nil
+	}
 
-		if recursive {
-			err := c.exportDependencies(target, dependencies)
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
+	}
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + "[0].id}"
+	} else {
 		thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		passwordLookup := "${var." + targetName + "}"
+
+		terraformResource := terraform.TerraformAzureServiceFabricClusterDeploymentTarget{
+			Type:                            octopusdeployAzureServiceFabricClusterDeploymentResourceType,
+			Name:                            targetName,
+			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			ResourceName:                    target.Name,
+			Roles:                           target.Roles,
+			ConnectionEndpoint:              target.Endpoint.ConnectionEndpoint,
+			AadClientCredentialSecret:       &target.Endpoint.AadClientCredentialSecret,
+			AadCredentialType:               &target.Endpoint.AadCredentialType,
+			AadUserCredentialPassword:       &passwordLookup,
+			AadUserCredentialUsername:       &target.Endpoint.AadUserCredentialUsername,
+			CertificateStoreLocation:        &target.Endpoint.CertificateStoreLocation,
+			CertificateStoreName:            &target.Endpoint.CertificateStoreName,
+			ClientCertificateVariable:       &target.Endpoint.ClientCertVariable,
+			HealthStatus:                    &target.HealthStatus,
+			IsDisabled:                      &target.IsDisabled,
+			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			OperatingSystem:                 nil,
+			SecurityMode:                    nil,
+			ServerCertificateThumbprint:     nil,
+			ShellName:                       &target.ShellName,
+			ShellVersion:                    &target.ShellVersion,
+			SpaceId:                         nil,
+			Status:                          nil,
+			StatusSummary:                   nil,
+			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
+			Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
+			Thumbprint:                      &target.Thumbprint,
+			Uri:                             nil,
+			Endpoint:                        nil,
+		}
+		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
-				"? data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets[0].id " +
-				": " + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + "[0].id}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
+			c.writeData(file, target, targetName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureServiceFabricClusterDeploymentResourceType, targetName))
 
-			passwordLookup := "${var." + targetName + "}"
-
-			terraformResource := terraform.TerraformAzureServiceFabricClusterDeploymentTarget{
-				Type:                            octopusdeployAzureServiceFabricClusterDeploymentResourceType,
-				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				ResourceName:                    target.Name,
-				Roles:                           target.Roles,
-				ConnectionEndpoint:              target.Endpoint.ConnectionEndpoint,
-				AadClientCredentialSecret:       &target.Endpoint.AadClientCredentialSecret,
-				AadCredentialType:               &target.Endpoint.AadCredentialType,
-				AadUserCredentialPassword:       &passwordLookup,
-				AadUserCredentialUsername:       &target.Endpoint.AadUserCredentialUsername,
-				CertificateStoreLocation:        &target.Endpoint.CertificateStoreLocation,
-				CertificateStoreName:            &target.Endpoint.CertificateStoreName,
-				ClientCertificateVariable:       &target.Endpoint.ClientCertVariable,
-				HealthStatus:                    &target.HealthStatus,
-				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				OperatingSystem:                 nil,
-				SecurityMode:                    nil,
-				ServerCertificateThumbprint:     nil,
-				ShellName:                       &target.ShellName,
-				ShellVersion:                    &target.ShellVersion,
-				SpaceId:                         nil,
-				Status:                          nil,
-				StatusSummary:                   nil,
-				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
-				Thumbprint:                      &target.Thumbprint,
-				Uri:                             nil,
-				Endpoint:                        nil,
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
-			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureServiceFabricClusterDeploymentResourceType, targetName))
-
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[aad_user_credential_password]")
-			}
-
-			file.Body().AppendBlock(targetBlock)
-
-			secretVariableResource := terraform.TerraformVariable{
-				Name:        targetName,
-				Type:        "string",
-				Nullable:    true,
-				Sensitive:   true,
-				Description: "The aad_user_credential_password value associated with the target \"" + target.Name + "\"",
-			}
-
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-			}
-
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
-
-			return string(file.Bytes()), nil
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
 		}
 
-		dependencies.AddResource(thisResource)
+		// When using dummy values, we expect the secrets will be updated later
+		if c.DummySecretVariableValues {
+			hcl.WriteLifecycleAttribute(targetBlock, "[aad_user_credential_password]")
+		}
+
+		file.Body().AppendBlock(targetBlock)
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        targetName,
+			Type:        "string",
+			Nullable:    true,
+			Sensitive:   true,
+			Description: "The aad_user_credential_password value associated with the target \"" + target.Name + "\"",
+		}
+
+		if c.DummySecretVariableValues {
+			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		}
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
 	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

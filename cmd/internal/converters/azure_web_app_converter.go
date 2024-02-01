@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +48,11 @@ func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *Resou
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.AzureWebAppResource, index int) bool {
+		return c.isAzureWebApp(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("Azure Web App Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -57,6 +62,10 @@ func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *Resou
 	}
 
 	return nil
+}
+
+func (c AzureWebAppTargetConverter) isAzureWebApp(resource octopus.AzureWebAppResource) bool {
+	return resource.Endpoint.CommunicationStyle == "AzureWebApp"
 }
 
 func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
@@ -73,6 +82,10 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 
 	if err != nil {
 		return err
+	}
+
+	if !c.isAzureWebApp(resource) {
+		return nil
 	}
 
 	zap.L().Info("Azure Web App Target: " + resource.Id)
@@ -100,7 +113,7 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "AzureWebApp" {
+	if !c.isAzureWebApp(resource) {
 		return nil
 	}
 
@@ -150,86 +163,87 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "AzureWebApp" {
+	if !c.isAzureWebApp(target) {
+		return nil
+	}
 
-		if recursive {
-			err := c.exportDependencies(target, dependencies)
+	if recursive {
+		err := c.exportDependencies(target, dependencies)
 
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
+	}
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-		thisResource := ResourceDetails{}
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
+	thisResource := ResourceDetails{}
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${" + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + ".id}"
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + "[0].id}"
+	} else {
 		thisResource.Lookup = "${" + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformAzureWebAppDeploymentTarget{
+			Type:                            octopusdeployAzureWebAppDeploymentTargetResourceType,
+			Name:                            targetName,
+			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			ResourceName:                    target.Name,
+			Roles:                           target.Roles,
+			AccountId:                       c.getAccount(target.Endpoint.AccountId, dependencies),
+			ResourceGroupName:               target.Endpoint.ResourceGroupName,
+			WebAppName:                      target.Endpoint.WebAppName,
+			HealthStatus:                    &target.HealthStatus,
+			IsDisabled:                      &target.IsDisabled,
+			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			OperatingSystem:                 nil,
+			ShellName:                       &target.ShellName,
+			ShellVersion:                    &target.ShellVersion,
+			SpaceId:                         nil,
+			Status:                          nil,
+			StatusSummary:                   nil,
+			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
+			Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
+			Thumbprint:                      &target.Thumbprint,
+			Uri:                             nil,
+			WebAppSlotName:                  &target.Endpoint.WebAppSlotName,
+			Endpoint: &terraform.TerraformAzureWebAppDeploymentTargetEndpoint{
+				DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
+				CommunicationStyle:  "AzureWebApp",
+			},
+		}
+		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
-				"? data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
-				": " + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + "[0].id}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + ".id}"
+			c.writeData(file, target, targetName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		// Add a comment with the import command
+		baseUrl, _ := c.Client.GetSpaceBaseUrl()
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureWebAppDeploymentTargetResourceType, targetName))
 
-			terraformResource := terraform.TerraformAzureWebAppDeploymentTarget{
-				Type:                            octopusdeployAzureWebAppDeploymentTargetResourceType,
-				Name:                            targetName,
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				ResourceName:                    target.Name,
-				Roles:                           target.Roles,
-				AccountId:                       c.getAccount(target.Endpoint.AccountId, dependencies),
-				ResourceGroupName:               target.Endpoint.ResourceGroupName,
-				WebAppName:                      target.Endpoint.WebAppName,
-				HealthStatus:                    &target.HealthStatus,
-				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				OperatingSystem:                 nil,
-				ShellName:                       &target.ShellName,
-				ShellVersion:                    &target.ShellVersion,
-				SpaceId:                         nil,
-				Status:                          nil,
-				StatusSummary:                   nil,
-				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
-				Thumbprint:                      &target.Thumbprint,
-				Uri:                             nil,
-				WebAppSlotName:                  &target.Endpoint.WebAppSlotName,
-				Endpoint: &terraform.TerraformAzureWebAppDeploymentTargetEndpoint{
-					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
-					CommunicationStyle:  "AzureWebApp",
-				},
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
-			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureWebAppDeploymentTargetResourceType, targetName))
-
-			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-			file.Body().AppendBlock(targetBlock)
-
-			return string(file.Bytes()), nil
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
 		}
+		file.Body().AppendBlock(targetBlock)
 
-		dependencies.AddResource(thisResource)
+		return string(file.Bytes()), nil
 	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

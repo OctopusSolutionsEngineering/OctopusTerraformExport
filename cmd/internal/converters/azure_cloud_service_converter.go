@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -39,6 +40,10 @@ func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *Resour
 	return c.allToHcl(true, dependencies)
 }
 
+func (c AzureCloudServiceTargetConverter) isAzureCloudService(resource octopus.AzureCloudServiceResource) bool {
+	return resource.Endpoint.CommunicationStyle == "AzureCloudService"
+}
+
 func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureCloudServiceResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
@@ -47,7 +52,11 @@ func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies 
 		return err
 	}
 
-	for _, resource := range collection.Items {
+	targets := lo.Filter(collection.Items, func(item octopus.AzureCloudServiceResource, index int) bool {
+		return c.isAzureCloudService(item)
+	})
+
+	for _, resource := range targets {
 		zap.L().Info("Azure Cloud Service Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -75,6 +84,10 @@ func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *Res
 		return err
 	}
 
+	if !c.isAzureCloudService(resource) {
+		return nil
+	}
+
 	zap.L().Info("Azure Cloud Service Target: " + resource.Id)
 	return c.toHcl(resource, true, false, dependencies)
 }
@@ -95,12 +108,12 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 		return err
 	}
 
-	// Ignore excluded targets
-	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
+	if !c.isAzureCloudService(resource) {
 		return nil
 	}
 
-	if resource.Endpoint.CommunicationStyle != "AzureCloudService" {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
 	}
 
@@ -150,7 +163,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 		return nil
 	}
 
-	if target.Endpoint.CommunicationStyle == "AzureCloudService" {
+	if c.isAzureCloudService(target) {
 		if recursive {
 			err := c.exportDependencies(target, dependencies)
 
