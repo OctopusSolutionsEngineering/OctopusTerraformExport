@@ -199,10 +199,16 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 			thisResource.Lookup = "${" + octopusdeployTenantResourceType + "." + tenantName + ".id}"
 		}
 
+		var count *string = nil
+		if stateless {
+			count = strutil.StrPointer("${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 ? 0 : 1}")
+		}
+
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTenant{
 				Type:               octopusdeployTenantResourceType,
 				Name:               tenantName,
+				Count:              count,
 				ResourceName:       tenant.Name,
 				Id:                 nil,
 				ClonedFromTenantId: nil,
@@ -222,7 +228,6 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 
 			if stateless {
 				c.writeData(file, tenant, tenantName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 ? 0 : 1}")
 			}
 
 			// Add a comment with the import command

@@ -7,10 +7,13 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 )
+
+const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_project_variable"
 
 type TenantVariableConverter struct {
 	Client                    client.OctopusClient
@@ -32,7 +35,7 @@ func (c TenantVariableConverter) ToHcl(dependencies *ResourceDetailsCollection) 
 	}
 
 	for _, resource := range collection {
-		err = c.toHcl(resource, false, dependencies)
+		err = c.toHcl(resource, false, false, dependencies)
 
 		if err != nil {
 			return err
@@ -50,10 +53,10 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *Resour
 		return err
 	}
 
-	return c.toHcl(resource, true, dependencies)
+	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.TenantName, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
@@ -71,6 +74,14 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, de
 		return nil
 	}
 
+	// Assume the tenant has added the data block to resolve existing tenants. Use that data block
+	// to test if any of the tenant variables should be created.
+	tenantName := "tenant_" + sanitizer.SanitizeName(tenant.TenantName)
+	var count *string = nil
+	if stateless {
+		count = strutil.StrPointer("${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 ? 0 : 1}")
+	}
+
 	for _, p := range tenant.ProjectVariables {
 
 		projectVariableIndex := 0
@@ -86,13 +97,23 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, de
 				thisResource.FileName = "space_population/" + variableName + ".tf"
 				thisResource.Id = templateId
 				thisResource.ResourceType = c.GetResourceType()
-				thisResource.Lookup = "${octopusdeploy_tenant_project_variable." + variableName + ".id}"
+				thisResource.Lookup = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + ".id}"
+
+				if stateless {
+					thisResource.Lookup = "${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 " +
+						"? '' " +
+						": " + octopusdeployTenantProjectVariableResourceType + "." + variableName + "[0].id}"
+				} else {
+					thisResource.Lookup = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + ".id}"
+				}
+
 				thisResource.ToHcl = func() (string, error) {
 					file := hclwrite.NewEmptyFile()
 
 					terraformResource := terraform2.TerraformTenantProjectVariable{
-						Type:          "octopusdeploy_tenant_project_variable",
+						Type:          octopusdeployTenantProjectVariableResourceType,
 						Name:          variableName,
+						Count:         count,
 						Id:            nil,
 						EnvironmentId: dependencies.GetResource("Environments", env),
 						ProjectId:     dependencies.GetResource("Projects", p.ProjectId),
@@ -140,6 +161,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, de
 				terraformResource := terraform2.TerraformTenantCommonVariable{
 					Type:                 "octopusdeploy_tenant_common_variable",
 					Name:                 variableName,
+					Count:                count,
 					Id:                   nil,
 					LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", l.LibraryVariableSetId),
 					TemplateId:           dependencies.GetResource("CommonTemplateMap", id),

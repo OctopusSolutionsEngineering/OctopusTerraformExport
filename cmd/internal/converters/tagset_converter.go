@@ -13,6 +13,9 @@ import (
 	"go.uber.org/zap"
 )
 
+const octopusdeployTagSetResourceType = "octopusdeploy_tag_set"
+const octopusdeployTagResourceType = "octopusdeploy_tag"
+
 type TagSetConverter struct {
 	Client               client.OctopusClient
 	ExcludeTenantTags    args.ExcludeTenantTags
@@ -52,10 +55,10 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 	thisResource.FileName = "space_population/" + tagSetName + ".tf"
 	thisResource.Id = tagSet.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_tag_set." + tagSetName + ".id}"
+	thisResource.Lookup = "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform.TerraformTagSet{
-			Type:         "octopusdeploy_tag_set",
+			Type:         octopusdeployTagSetResourceType,
 			Name:         tagSetName,
 			ResourceName: tagSet.Name,
 			Description:  strutil.NilIfEmptyPointer(tagSet.Description),
@@ -65,7 +68,7 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 
 		// Add a comment with the import command
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tagSet.Name, "octopusdeploy_tag_set", tagSetName))
+		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tagSet.Name, octopusdeployTagSetResourceType, tagSetName))
 
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
@@ -88,13 +91,13 @@ func (c TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *R
 		tagResource.FileName = "space_population/" + tagName + ".tf"
 		tagResource.Id = tag.Id
 		tagResource.ResourceType = "Tags"
-		tagResource.Lookup = "${octopusdeploy_tag." + tagName + ".id}"
+		tagResource.Lookup = "${" + octopusdeployTagResourceType + "." + tagName + ".id}"
 		tagResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTag{
-				Type:         "octopusdeploy_tag",
+				Type:         octopusdeployTagResourceType,
 				Name:         tagName,
 				ResourceName: tag.Name,
-				TagSetId:     "${octopusdeploy_tag_set." + tagSetName + ".id}",
+				TagSetId:     "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}",
 				Color:        tag.Color,
 				Description:  tag.Description,
 				SortOrder:    tag.SortOrder,
