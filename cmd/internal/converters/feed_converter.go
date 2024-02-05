@@ -147,6 +147,7 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
 				": " + octopusdeployDockerContainerRegistryResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployDockerContainerRegistryResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployDockerContainerRegistryResourceType + "." + resourceName + ".id}"
 		}
@@ -223,6 +224,7 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
 				": " + octopusdeployAwsElasticContainerRegistryResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployAwsElasticContainerRegistryResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployAwsElasticContainerRegistryResourceType + "." + resourceName + ".id}"
 		}
@@ -297,6 +299,7 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
 				": " + octopusdeployMavenFeedResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 		}
@@ -372,6 +375,7 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
 				": " + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + ".id}"
 		}
@@ -448,6 +452,7 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
 				": " + octopusdeployHelmFeedResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployHelmFeedResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployHelmFeedResourceType + "." + resourceName + ".id}"
 		}
@@ -522,6 +527,7 @@ func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisR
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
 				": " + octopusdeploy_nuget_feed_resource_type + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + ".id}"
 		}

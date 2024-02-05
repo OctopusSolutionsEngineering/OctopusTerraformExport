@@ -152,6 +152,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + resourceName + ".projects) != 0 " +
 				"? '' " +
 				": " + octopusdeployChannelResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployChannelResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployChannelResourceType + "." + resourceName + ".id}"
 		}
@@ -189,7 +190,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			manualDependencies := make([]string, 0)
 			for t, r := range terraformDependencies {
 				if t != "" && r != "" {
-					dependency := dependencies.GetResource(t, r)
+					dependency := dependencies.GetResourceDependency(t, r)
 					dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
 					manualDependencies = append(manualDependencies, dependency)
 				}

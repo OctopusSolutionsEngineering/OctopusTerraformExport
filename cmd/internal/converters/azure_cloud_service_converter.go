@@ -181,6 +181,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 
 		if stateless {
 			thisResource.Lookup = "${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets[0].id : " + azureCloudServiceDeploymentResourceType + "." + targetName + "[0].id}"
+			thisResource.Dependency = "${" + azureCloudServiceDeploymentResourceType + "." + targetName + "}"
 		} else {
 			thisResource.Lookup = "${" + azureCloudServiceDeploymentResourceType + "." + targetName + ".id}"
 		}

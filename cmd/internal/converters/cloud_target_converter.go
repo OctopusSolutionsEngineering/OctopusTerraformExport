@@ -185,6 +185,7 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 		thisResource.Lookup = "${length(data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployCloudRegionResourceDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployCloudRegionResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployCloudRegionResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployCloudRegionResourceType + "." + targetName + ".id}"
 	}

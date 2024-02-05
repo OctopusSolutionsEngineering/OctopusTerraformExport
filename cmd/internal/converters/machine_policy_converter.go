@@ -104,6 +104,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 			thisResource.Lookup = "${length(data." + octopusdeployMachinePoliciesDataType + "." + policyName + ".machine_policies) != 0 " +
 				"? data." + octopusdeployMachinePoliciesDataType + "." + policyName + ".machine_policies[0].id " +
 				": " + octopusdeployMachinePolicyResourceType + "." + policyName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployMachinePolicyResourceType + "." + policyName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployMachinePolicyResourceType + "." + policyName + ".id}"
 		}

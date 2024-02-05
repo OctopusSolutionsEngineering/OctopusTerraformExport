@@ -236,6 +236,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_aws_account." + resourceName + "[0].id}"
+		resource.Dependency = "${octopusdeploy_aws_account." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
 	}
@@ -290,6 +291,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_service_principal." + resourceName + "[0].id}"
+		resource.Dependency = "${octopusdeploy_azure_service_principal." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
 	}
@@ -348,6 +350,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_subscription_account." + resourceName + "[0].id}"
+		resource.Dependency = "${octopusdeploy_azure_subscription_account." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
 	}
@@ -405,6 +408,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_gcp_account." + resourceName + "[0].id}"
+		resource.Dependency = "${octopusdeploy_gcp_account." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
 	}
@@ -458,6 +462,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_token_account." + resourceName + "[0].id}"
+		resource.Dependency = "${octopusdeploy_token_account." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
 	}
@@ -511,6 +516,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_username_password_account." + resourceName + "[0].id}"
+		resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
 	}
@@ -565,6 +571,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 
 	if stateless {
 		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_ssh_key_account." + resourceName + "[0].id}"
+		resource.Dependency = "${octopusdeploy_ssh_key_account." + resourceName + "}"
 	} else {
 		resource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
 	}

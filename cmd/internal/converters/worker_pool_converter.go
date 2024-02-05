@@ -159,6 +159,7 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
 			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
 			": " + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + ".id}"
 	}
@@ -195,6 +196,7 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
 			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
 			": " + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + ".id}"
 	}

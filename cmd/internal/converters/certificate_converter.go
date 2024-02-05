@@ -149,6 +149,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 		thisResource.Lookup = "${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates) != 0 " +
 			"? data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates[0].id " +
 			": " + octopusdeployCertificateResourceType + "." + certificateName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployCertificateResourceType + "." + certificateName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployCertificateResourceType + "." + certificateName + ".id}"
 	}

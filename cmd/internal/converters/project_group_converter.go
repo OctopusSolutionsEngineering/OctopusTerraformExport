@@ -132,6 +132,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 			thisResource.Lookup = "${length(data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups) != 0 " +
 				"? data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups[0].id " +
 				": " + octopusdeployProjectGroupResourceType + "." + projectName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployProjectGroupResourceType + "." + projectName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployProjectGroupResourceType + "." + projectName + ".id}"
 		}
@@ -146,7 +147,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 			file := hclwrite.NewEmptyFile()
 
 			if stateless {
-				c.writeData(file, "${var."+projectName+"_name}", projectName)
+				c.writeData(file, projectName, "${var."+projectName+"_name}")
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectGroupsDataType + "." + projectName + ".project_groups) != 0 ? 0 : 1}")
 			}
 

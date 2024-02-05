@@ -185,6 +185,7 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 		thisResource.Lookup = "${length(data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeploySshConnectionDeploymentTargetResourceType + "." + targetName + ".id}"
 	}

@@ -136,6 +136,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, st
 		thisResource.Lookup = "${length(data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments) != 0 " +
 			"? data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id " +
 			": " + octopusdeployEnvironmentsResourceType + "." + resourceName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployEnvironmentsResourceType + "." + resourceName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployEnvironmentsResourceType + "." + resourceName + ".id}"
 	}

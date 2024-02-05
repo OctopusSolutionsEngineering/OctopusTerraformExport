@@ -192,6 +192,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 		thisResource.Lookup = "${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
 	}

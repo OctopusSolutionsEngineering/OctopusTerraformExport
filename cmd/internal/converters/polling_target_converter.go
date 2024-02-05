@@ -183,6 +183,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 		thisResource.Lookup = "${length(data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployPollingTentacleDeploymentTargetResourceType + "." + targetName + ".id}"
 	}

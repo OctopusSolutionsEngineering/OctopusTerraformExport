@@ -157,14 +157,14 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 	dummySecretGenerator := converters.DummySecret{}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.BackendBlock,
+		TerraformBackend:         args.GetBackend(),
 		ProviderVersion:          args.ProviderVersion,
 		ExcludeProvider:          args.ExcludeProvider,
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
 	}.ToHcl("space_population", true, &dependencies)
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.BackendBlock,
+		TerraformBackend:         args.GetBackend(),
 		ProviderVersion:          args.ProviderVersion,
 		ExcludeProvider:          args.ExcludeProvider,
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,

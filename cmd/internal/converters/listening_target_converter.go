@@ -185,6 +185,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 		thisResource.Lookup = "${length(data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployListeningTentacleDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployListeningTentacleDeploymentTargetResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployListeningTentacleDeploymentTargetResourceType + "." + targetName + ".id}"
 	}

@@ -145,6 +145,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		thisResource.Lookup = "${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 " +
 			"? data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id " +
 			": " + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
 	}

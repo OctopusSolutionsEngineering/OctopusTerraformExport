@@ -63,6 +63,15 @@ type Arguments struct {
 	ExcludeTargetsExcept             ExcludeTargets
 }
 
+// GetBackend forces the use of a local backend for stateless exports
+func (a *Arguments) GetBackend() string {
+	if a.Stateless {
+		return ""
+	}
+
+	return a.BackendBlock
+}
+
 type ExcludeTargets []string
 
 func (i *ExcludeTargets) String() string {

@@ -374,7 +374,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				dependsOn := []string{}
 				for resourceType, terraformDependencies := range tagSetDependencies {
 					for _, terraformDependency := range terraformDependencies {
-						dependency := dependencies.GetResource(resourceType, terraformDependency)
+						dependency := dependencies.GetResourceDependency(resourceType, terraformDependency)
 						dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
 						dependsOn = append(dependsOn, dependency)
 					}

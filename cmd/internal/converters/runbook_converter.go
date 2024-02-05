@@ -162,6 +162,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + runbookName + ".projects) != 0 " +
 			"? '' " +
 			": " + octopusdeployRunbookResourceType + "." + runbookName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployRunbookResourceType + "." + runbookName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployRunbookResourceType + "." + runbookName + ".id}"
 	}

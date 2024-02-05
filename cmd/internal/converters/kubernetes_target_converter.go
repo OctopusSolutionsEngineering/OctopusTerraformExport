@@ -188,6 +188,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 		thisResource.Lookup = "${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
 	}

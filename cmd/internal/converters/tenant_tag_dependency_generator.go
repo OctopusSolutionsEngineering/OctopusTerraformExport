@@ -63,7 +63,7 @@ func (t TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.
 	tagSetDependencies := []string{}
 	if tagSets != nil {
 		tagSetDependencies = lo.FilterMap(tagSets, func(item octopus.TagSet, index int) (string, bool) {
-			dependency := dependencies.GetResource("TagSets", item.Id)
+			dependency := dependencies.GetResourceDependency("TagSets", item.Id)
 			return dependency, dependency != ""
 		})
 	}
@@ -71,7 +71,7 @@ func (t TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.
 	tagDependencies := []string{}
 	if tags != nil {
 		tagDependencies = lo.FilterMap(tags, func(item octopus.Tag, index int) (string, bool) {
-			dependency := dependencies.GetResource("Tags", item.Id)
+			dependency := dependencies.GetResourceDependency("Tags", item.Id)
 			return dependency, dependency != ""
 		})
 	}

@@ -156,6 +156,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			thisResource.Lookup = "${length(data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles) != 0 " +
 				"? data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id " +
 				": " + octopusdeployLifecycleResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployLifecycleResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployLifecycleResourceType + "." + resourceName + ".id}"
 		}

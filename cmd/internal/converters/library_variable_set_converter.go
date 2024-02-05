@@ -189,6 +189,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 			thisResource.Lookup = "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 " +
 				"? data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id " +
 				": " + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + ".id}"
 		}
@@ -198,6 +199,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 			thisResource.Lookup = "${length(data." + octopusdeployScriptModuleResourceType + "." + resourceName + ".library_variable_sets) != 0 " +
 				"? data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id " +
 				": " + octopusdeployScriptModuleResourceType + "." + resourceName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployScriptModuleResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployScriptModuleResourceType + "." + resourceName + ".id}"
 		}
@@ -239,23 +241,6 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployLibraryVariableSetsResourceType, resourceName))
 
 	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-
-	// Add a data lookup to allow projects to quickly switch to using existing environments
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# To use an existing environment, delete the resource above and use the following lookup instead:\n" +
-			"# data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id\n"),
-		SpacesBefore: 0,
-	}})
-	terraformDataResource := terraform.TerraformLibraryVariableSetData{
-		Type:        octopusdeployLibraryVariableSetsDataType,
-		Name:        resourceName,
-		Ids:         nil,
-		PartialName: resource.Name,
-		Skip:        0,
-		Take:        1,
-	}
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformDataResource, "data"))
 
 	return string(file.Bytes()), nil
 }

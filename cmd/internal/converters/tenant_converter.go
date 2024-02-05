@@ -203,6 +203,7 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 			thisResource.Lookup = "${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 " +
 				"? data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants[0].id " +
 				": " + octopusdeployTenantResourceType + "." + tenantName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployTenantResourceType + "." + tenantName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployTenantResourceType + "." + tenantName + ".id}"
 		}
@@ -248,7 +249,7 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 			dependsOn := []string{}
 			for resourceType, terraformDependencies := range tagSetDependencies {
 				for _, terraformDependency := range terraformDependencies {
-					dependency := dependencies.GetResource(resourceType, terraformDependency)
+					dependency := dependencies.GetResourceDependency(resourceType, terraformDependency)
 					dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
 					dependsOn = append(dependsOn, dependency)
 				}

@@ -187,6 +187,7 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 		thisResource.Lookup = "${length(data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployAzureWebAppDeploymentTargetResourceType + "." + targetName + ".id}"
 	}

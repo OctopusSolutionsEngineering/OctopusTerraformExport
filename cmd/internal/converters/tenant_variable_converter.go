@@ -111,6 +111,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 					thisResource.Lookup = "${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 " +
 						"? '' " +
 						": " + octopusdeployTenantProjectVariableResourceType + "." + variableName + "[0].id}"
+					thisResource.Dependency = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + "}"
 				} else {
 					thisResource.Lookup = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + ".id}"
 				}

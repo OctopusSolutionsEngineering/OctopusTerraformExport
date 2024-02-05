@@ -15,11 +15,19 @@ type ToHcl func() (string, error)
 // 4. Once all dependencies are captured, run ToHcl feeding in the collection of ResourceDetails built in steps 1 - 3.
 // 5. ToHcl converts the object to HCL, and uses the Lookup field in the appropriate ResourceDetails to reference a dependency.
 type ResourceDetails struct {
-	Id           string
+	// Id is the octopus ID of the exported resource
+	Id string
+	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
-	Lookup       string
-	FileName     string
-	ToHcl        ToHcl
+	// Lookup is the ID of the resource created or looked up by Terraform
+	Lookup string
+	// Dependency provides a way for one resource to depend on this resource. Usually the same of the Lookup, but can be
+	// a reference to a group of resources in stateless mode.
+	Dependency string
+	// FileName is the file contains the exported resource
+	FileName string
+	// ToHCL is a function that generates the HCL from the Octopus resource
+	ToHcl ToHcl
 }
 
 type ResourceDetailsCollection struct {
@@ -69,7 +77,23 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 		}
 	}
 
-	zap.L().Error("Failed to resolve " + id + " of type " + resourceType)
+	zap.L().Error("Failed to resolve lookup " + id + " of type " + resourceType)
+
+	return ""
+}
+
+// GetResourceDependency returns the terraform references for a given resource type and id.
+// The returned string is used only for the depends_on field, as it may reference to a collection of resources
+// rather than a single ID.
+func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, id string) string {
+	for _, r := range c.Resources {
+		if r.Id == id && r.ResourceType == resourceType {
+			// return the dependency field if it was defined, otherwise fall back to the lookup field
+			return strutil.DefaultIfEmpty(r.Dependency, r.Lookup)
+		}
+	}
+
+	zap.L().Error("Failed to resolve dependency " + id + " of type " + resourceType)
 
 	return ""
 }

@@ -77,6 +77,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 		thisResource.Lookup = "${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 " +
 			"? data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets[0].id " +
 			": " + octopusdeployTagSetResourceType + "." + tagSetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployTagSetResourceType + "." + tagSetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}"
 	}
@@ -134,6 +135,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 			thisResource.Lookup = "${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 " +
 				"? '' " +
 				": " + octopusdeployTagResourceType + "." + tagName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployTagResourceType + "." + tagName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployTagResourceType + "." + tagName + ".id}"
 		}

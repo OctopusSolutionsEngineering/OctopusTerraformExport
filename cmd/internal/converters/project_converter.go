@@ -238,6 +238,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
 			"? data." + octopusdeployProjectsDataType + "." + projectName + ".projects[0].id " +
 			": " + octopusdeployProjectResourceType + "." + projectName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployProjectResourceType + "." + projectName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
 	}

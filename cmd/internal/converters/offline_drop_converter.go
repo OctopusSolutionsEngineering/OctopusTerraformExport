@@ -189,6 +189,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 		thisResource.Lookup = "${length(data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
 			": " + octopusdeployOfflinePackageDropDeploymentTargetResourceType + "." + targetName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployOfflinePackageDropDeploymentTargetResourceType + "." + targetName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployOfflinePackageDropDeploymentTargetResourceType + "." + targetName + ".id}"
 	}
