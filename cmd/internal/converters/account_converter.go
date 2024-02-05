@@ -232,15 +232,26 @@ func (c AccountConverter) writeData(file *hclwrite.File, account octopus.Account
 	file.Body().AppendBlock(block)
 }
 
-func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getAwsLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_aws_account." + resourceName + "[0].id}"
-		resource.Dependency = "${octopusdeploy_aws_account." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_aws_account." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_aws_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_aws_account." + resourceName + ".id}"
+
+}
+
+func (c AccountConverter) getAwsDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_aws_account." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getAwsLookup(stateless, resourceName)
+	resource.Dependency = c.getAwsDependency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformAwsAccount{
@@ -287,15 +298,26 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 	}
 }
 
-func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getAzureServicePrincipalLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_service_principal." + resourceName + "[0].id}"
-		resource.Dependency = "${octopusdeploy_azure_service_principal." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_service_principal." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_azure_service_principal." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getAzureServicePrincipalsDependency(stateless bool, resourceName string) string {
+	if stateless {
+
+		return "${octopusdeploy_azure_service_principal." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getAzureServicePrincipalLookup(stateless, resourceName)
+	resource.Dependency = c.getAzureServicePrincipalsDependency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformAzureServicePrincipal{
@@ -346,15 +368,26 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 	}
 }
 
-func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getAzureSubscriptionLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_subscription_account." + resourceName + "[0].id}"
-		resource.Dependency = "${octopusdeploy_azure_subscription_account." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_subscription_account." + resourceName + "[0].id}"
+
+	}
+	return "${octopusdeploy_azure_subscription_account." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getAzureSubscriptionDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_azure_subscription_account." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getAzureSubscriptionLookup(stateless, resourceName)
+	resource.Dependency = c.getAzureSubscriptionDependency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		certVariable := "${var." + resourceName + "_cert}"
 		terraformResource := terraform.TerraformAzureSubscription{
@@ -405,15 +438,25 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 	}
 }
 
-func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getGoogleCloudLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_gcp_account." + resourceName + "[0].id}"
-		resource.Dependency = "${octopusdeploy_gcp_account." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_gcp_account." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_gcp_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_gcp_account." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getGoogleCloudDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_gcp_account." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getGoogleCloudLookup(stateless, resourceName)
+	resource.Dependency = c.getGoogleCloudDependency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformGcpAccount{
@@ -459,15 +502,25 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 	}
 }
 
-func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getTokenLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_token_account." + resourceName + "[0].id}"
-		resource.Dependency = "${octopusdeploy_token_account." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_token_account." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_token_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_token_account." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getTokenDpendency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_token_account." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getTokenLookup(stateless, resourceName)
+	resource.Dependency = c.getTokenDpendency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformTokenAccount{
@@ -513,15 +566,26 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 	}
 }
 
-func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getUsernamePasswordLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_username_password_account." + resourceName + "[0].id}"
-		resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_username_password_account." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_username_password_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_username_password_account." + resourceName + ".id}"
+
+}
+
+func (c AccountConverter) getUsernamePasswordDpendency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_username_password_account." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getUsernamePasswordLookup(stateless, resourceName)
+	resource.Dependency = c.getUsernamePasswordDpendency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformUsernamePasswordAccount{
@@ -568,15 +632,25 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 	}
 }
 
-func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
-
+func (c AccountConverter) getSshLookup(stateless bool, resourceName string) string {
 	if stateless {
-		resource.Lookup = "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_ssh_key_account." + resourceName + "[0].id}"
-		resource.Dependency = "${octopusdeploy_ssh_key_account." + resourceName + "}"
-	} else {
-		resource.Lookup = "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_ssh_key_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_ssh_key_account." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getSshDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_ssh_key_account." + resourceName + "}"
 	}
 
+	return ""
+}
+
+func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+
+	resource.Lookup = c.getSshLookup(stateless, resourceName)
+	resource.Dependency = c.getSshDependency(stateless, resourceName)
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		certFileVariable := "${var." + resourceName + "_cert}"
