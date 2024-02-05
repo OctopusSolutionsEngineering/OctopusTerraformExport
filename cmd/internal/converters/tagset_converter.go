@@ -82,16 +82,11 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 		thisResource.Lookup = "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}"
 	}
 
-	var count *string = nil
-	if stateless {
-		count = strutil.StrPointer("${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 ? 0 : 1}")
-	}
-
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform.TerraformTagSet{
 			Type:         octopusdeployTagSetResourceType,
 			Name:         tagSetName,
-			Count:        count,
+			Count:        c.getCount(stateless, tagSetName),
 			ResourceName: tagSet.Name,
 			Description:  strutil.NilIfEmptyPointer(tagSet.Description),
 			SortOrder:    tagSet.SortOrder,
@@ -127,36 +122,62 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 		tagResource.FileName = "space_population/" + tagName + ".tf"
 		tagResource.Id = tag.Id
 		tagResource.ResourceType = "Tags"
-		tagResource.Lookup = "${" + octopusdeployTagResourceType + "." + tagName + ".id}"
-
-		if stateless {
-			// There is no tag lookup, so if the tagset exists, the tag is not created, and the lookup is an
-			// empty string.
-			thisResource.Lookup = "${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 " +
-				"? '' " +
-				": " + octopusdeployTagResourceType + "." + tagName + "[0].id}"
-			thisResource.Dependency = "${" + octopusdeployTagResourceType + "." + tagName + "}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployTagResourceType + "." + tagName + ".id}"
-		}
+		tagResource.Lookup = c.getLookup(stateless, tagSetName, tagName)
+		tagResource.Dependency = c.getDependency(stateless, tagName)
 
 		tagResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTag{
 				Type:         octopusdeployTagResourceType,
 				Name:         tagName,
-				Count:        count,
+				Count:        c.getCount(stateless, tagSetName),
 				ResourceName: tag.Name,
-				TagSetId:     "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}",
+				TagSetId:     c.getTagsetId(stateless, tagSetName, tagName),
 				Color:        tag.Color,
 				Description:  tag.Description,
 				SortOrder:    tag.SortOrder,
 			}
+
 			file := hclwrite.NewEmptyFile()
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 
 			return string(file.Bytes()), nil
 		}
 		dependencies.AddResource(tagResource)
+	}
+
+	return nil
+}
+
+func (c *TagSetConverter) getTagsetId(stateless bool, tagSetName string, tagName string) string {
+	if stateless {
+		return "${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 " +
+			"? data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets[0].id " +
+			": " + octopusdeployTagResourceType + "." + tagName + "[0].id}"
+	}
+	return "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}"
+}
+
+func (c *TagSetConverter) getLookup(stateless bool, tagSetName string, tagName string) string {
+	if stateless {
+		// There is no tag lookup, so if the tagset exists, the tag is not created, and the lookup is an
+		// empty string.
+		return "${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 " +
+			"? '' " +
+			": " + octopusdeployTagResourceType + "." + tagName + "[0].id}"
+	}
+	return "${" + octopusdeployTagResourceType + "." + tagName + ".id}"
+}
+
+func (c *TagSetConverter) getDependency(stateless bool, tagName string) string {
+	if stateless {
+		return "${" + octopusdeployTagResourceType + "." + tagName + "}"
+	}
+	return ""
+}
+
+func (c *TagSetConverter) getCount(stateless bool, tagSetName string) *string {
+	if stateless {
+		return strutil.StrPointer("${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 ? 0 : 1}")
 	}
 
 	return nil

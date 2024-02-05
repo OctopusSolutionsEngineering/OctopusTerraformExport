@@ -182,16 +182,8 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
-
-	if stateless {
-		thisResource.Lookup = "${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
-			"? data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
-			": " + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "[0].id}"
-		thisResource.Dependency = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "}"
-	} else {
-		thisResource.Lookup = "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
-	}
+	thisResource.Lookup = c.getLookup(stateless, targetName)
+	thisResource.Dependency = c.getDependency(stateless, targetName)
 
 	thisResource.ToHcl = func() (string, error) {
 
@@ -441,4 +433,20 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 	}
 
 	return nil
+}
+
+func (c *KubernetesTargetConverter) getLookup(stateless bool, targetName string) string {
+	if stateless {
+		return "${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "[0].id}"
+	}
+	return "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + ".id}"
+}
+
+func (c *KubernetesTargetConverter) getDependency(stateless bool, targetName string) string {
+	if stateless {
+		return "${" + octopusdeployKubernetesClusterDeploymentTargetResourceType + "." + targetName + "}"
+	}
+	return ""
 }

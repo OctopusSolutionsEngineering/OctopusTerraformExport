@@ -144,7 +144,7 @@ func (c *LibraryVariableSetConverter) writeData(file *hclwrite.File, resource oc
 	file.Body().AppendBlock(block)
 }
 
-func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded runbooks
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
 		return nil
@@ -157,25 +157,19 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 		"_" + sanitizer.SanitizeName(resource.Name)
 
 	// The templates are dependencies that we export as part of the project
-	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName)
+	projectTemplates, projectTemplateMap := c.convertTemplates(resource.Templates, resourceName, stateless)
 	dependencies.AddResource(projectTemplateMap...)
 
-	// The project group is a dependency that we need to lookup regardless of whether recursive is set
+	// The variables are a dependency that we need to export regardless of whether recursive is set.
+	// That said, the variables themselves should only recursively export dependencies if we are
+	// exporting a single project.
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-		var parentCount *string = nil
-		parentLookup := "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + ".id}"
-		if stateless {
-			parentCount = strutil.StrPointer("${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? 0 : 1}")
-			parentLookup = "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? " +
-				"data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id : " +
-				octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "[0].id}"
-		}
-
 		err := c.VariableSetConverter.ToHclByIdAndName(
 			resource.VariableSetId,
+			recursive,
 			resourceName,
-			parentLookup,
-			parentCount,
+			c.getParentLookup(stateless, resourceName),
+			c.getParentCount(stateless, resourceName),
 			dependencies)
 
 		if err != nil {
@@ -189,24 +183,11 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 	thisResource.ResourceType = c.GetResourceType()
 
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 " +
-				"? data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id " +
-				": " + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "[0].id}"
-			thisResource.Dependency = "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + ".id}"
-		}
-
+		thisResource.Lookup = c.getLibraryVariableSetLookup(stateless, resourceName)
+		thisResource.Dependency = c.getLibraryVariableSetDependency(stateless, resourceName)
 	} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
-		if stateless {
-			thisResource.Lookup = "${length(data." + octopusdeployScriptModuleResourceType + "." + resourceName + ".library_variable_sets) != 0 " +
-				"? data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id " +
-				": " + octopusdeployScriptModuleResourceType + "." + resourceName + "[0].id}"
-			thisResource.Dependency = "${" + octopusdeployScriptModuleResourceType + "." + resourceName + "}"
-		} else {
-			thisResource.Lookup = "${" + octopusdeployScriptModuleResourceType + "." + resourceName + ".id}"
-		}
+		thisResource.Lookup = c.getScriptModuleLookup(stateless, resourceName)
+		thisResource.Dependency = c.getScriptModuleDependency(stateless, resourceName)
 	}
 
 	thisResource.ToHcl = func() (string, error) {
@@ -303,7 +284,61 @@ func (c *LibraryVariableSetConverter) GetResourceType() string {
 	return "LibraryVariableSets"
 }
 
-func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string) ([]terraform.TerraformTemplate, []ResourceDetails) {
+func (c *LibraryVariableSetConverter) getParentLookup(stateless bool, resourceName string) string {
+	if stateless {
+		return "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? " +
+			"data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id : " +
+			octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "[0].id}"
+	}
+
+	return "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + ".id}"
+}
+
+func (c *LibraryVariableSetConverter) getParentCount(stateless bool, resourceName string) *string {
+	if stateless {
+		return strutil.StrPointer("${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? 0 : 1}")
+	}
+
+	return nil
+}
+
+func (c *LibraryVariableSetConverter) getLibraryVariableSetLookup(stateless bool, resourceName string) string {
+	if stateless {
+		return "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 " +
+			"? data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id " +
+			": " + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "[0].id}"
+	}
+
+	return "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + ".id}"
+}
+
+func (c *LibraryVariableSetConverter) getLibraryVariableSetDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "}"
+	}
+
+	return ""
+}
+
+func (c *LibraryVariableSetConverter) getScriptModuleLookup(stateless bool, resourceName string) string {
+	if stateless {
+		return "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 " +
+			"? data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id " +
+			": " + octopusdeployScriptModuleResourceType + "." + resourceName + "[0].id}"
+	}
+
+	return "${" + octopusdeployScriptModuleResourceType + "." + resourceName + ".id}"
+}
+
+func (c *LibraryVariableSetConverter) getScriptModuleDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${" + octopusdeployScriptModuleResourceType + "." + resourceName + "}"
+	}
+
+	return ""
+}
+
+func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string, stateless bool) ([]terraform.TerraformTemplate, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
@@ -318,10 +353,20 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 		templateMap = append(templateMap, ResourceDetails{
 			Id:           v.Id,
 			ResourceType: "CommonTemplateMap",
-			Lookup:       "${" + octopusdeployLibraryVariableSetsResourceType + "." + libraryName + ".template[" + fmt.Sprint(i) + "].id}",
+			Lookup:       c.getTemplateLookup(stateless, libraryName, i),
 			FileName:     "",
 			ToHcl:        nil,
 		})
 	}
 	return collection, templateMap
+}
+
+func (c *LibraryVariableSetConverter) getTemplateLookup(stateless bool, libraryName string, index int) string {
+	if stateless {
+		return "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + libraryName + ".library_variable_sets) != 0 " +
+			"? data." + octopusdeployLibraryVariableSetsDataType + "." + libraryName + ".library_variable_sets[0].template[" + fmt.Sprint(index) + "] " +
+			": " + octopusdeployLibraryVariableSetsResourceType + "." + libraryName + "[0].template[" + fmt.Sprint(index) + "].id}"
+	}
+
+	return "${" + octopusdeployLibraryVariableSetsResourceType + "." + libraryName + ".template[" + fmt.Sprint(index) + "].id}"
 }

@@ -178,7 +178,7 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 
 		if stateless {
 			c.writeData(file, pool, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployDynamicWorkerPoolResourceType + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -216,7 +216,7 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 
 		if stateless {
 			c.writeData(file, pool, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployStaticWorkerPoolResourcePool + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command

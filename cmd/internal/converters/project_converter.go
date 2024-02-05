@@ -226,7 +226,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	}
 
 	// The templates are dependencies that we export as part of the project
-	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName)
+	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName, stateless)
 	dependencies.AddResource(projectTemplateMap...)
 
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
@@ -497,7 +497,7 @@ func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, 
 	file.Body().AppendBlock(block)
 }
 
-func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []ResourceDetails) {
+func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string, stateless bool) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []ResourceDetails) {
 	templateMap := make([]ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	variables := []terraform.TerraformVariable{}
@@ -544,6 +544,17 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 		})
 	}
 	return collection, variables, templateMap
+}
+
+func (c *ProjectConverter) getLookup(stateless bool, projectName string, index int) string {
+	if stateless {
+		// There is no tag lookup, so if the project exists, the template is not created, and the lookup is an
+		// empty string.
+		return "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
+			"? '' " +
+			": ${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(index) + "][0].id}"
+	}
+	return "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(index) + "].id}"
 }
 
 func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
