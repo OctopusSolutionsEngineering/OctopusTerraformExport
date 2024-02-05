@@ -152,7 +152,7 @@ func (c *TagSetConverter) getTagsetId(stateless bool, tagSetName string, tagName
 	if stateless {
 		return "${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 " +
 			"? data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets[0].id " +
-			": " + octopusdeployTagResourceType + "." + tagName + "[0].id}"
+			": " + octopusdeployTagSetResourceType + "." + tagSetName + "[0].id}"
 	}
 	return "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}"
 }
