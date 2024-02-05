@@ -232,6 +232,13 @@ func (c AccountConverter) writeData(file *hclwrite.File, account octopus.Account
 	file.Body().AppendBlock(block)
 }
 
+func (c AccountConverter) getCount(stateless bool, resourceName string) *string {
+	if stateless {
+		return strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
+	}
+	return nil
+}
+
 func (c AccountConverter) getAwsLookup(stateless bool, resourceName string) string {
 	if stateless {
 		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_aws_account." + resourceName + "[0].id}"
@@ -265,6 +272,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
 			AccessKey:                       account.AccessKey,
 			SecretKey:                       &secretVariable,
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretVariable(resourceName, "The AWS secret key associated with the account "+account.Name)
@@ -273,7 +281,6 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -335,6 +342,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			TenantId:                        account.TenantId,
 			AzureEnvironment:                strutil.NilIfEmptyPointer(account.AzureEnvironment),
 			ResourceManagerEndpoint:         strutil.NilIfEmptyPointer(account.ResourceManagementEndpointBaseUri),
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretVariable(resourceName, "The Azure secret associated with the account "+account.Name)
@@ -343,7 +351,6 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -405,6 +412,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			// A value is required, and an empty upstream string means "AzureCloud"
 			AzureEnvironment: strutil.DefaultIfEmptyOrNil(account.AzureEnvironment, "AzureCloud"),
 			Certificate:      &certVariable,
+			Count:            c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretCertificateNoPassVariable(resourceName+"_cert", "The Azure certificate associated with the account "+account.Name)
@@ -413,7 +421,6 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -469,6 +476,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
 			JsonKey:                         &secretVariable,
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretVariable(resourceName, "The GCP JSON key associated with the account "+account.Name)
@@ -477,7 +485,6 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -533,6 +540,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
 			Token:                           &secretVariable,
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretVariable(resourceName, "The token associated with the account "+account.Name)
@@ -541,7 +549,6 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -599,6 +606,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
 			Username:                        account.Username,
 			Password:                        &secretVariable,
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretVariable(resourceName, "The password associated with the account "+account.Name)
@@ -607,7 +615,6 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
@@ -666,6 +673,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 			PrivateKeyFile:                  &certFileVariable,
 			Username:                        account.Username,
 			PrivateKeyPassphrase:            &secretVariable,
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
@@ -677,7 +685,6 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 
 		if stateless {
 			c.writeData(file, account, resourceName)
-			terraformResource.Count = strutil.StrPointer("${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? 0 : 1}")
 		}
 
 		// Add a comment with the import command
