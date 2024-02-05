@@ -157,6 +157,31 @@ func (c AzureCloudServiceTargetConverter) writeData(file *hclwrite.File, resourc
 	file.Body().AppendBlock(block)
 }
 
+func (c *AzureCloudServiceTargetConverter) getLookup(stateless bool, targetName string) string {
+	if stateless {
+		return "${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
+			"? data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets[0].id " +
+			": " + azureCloudServiceDeploymentResourceType + "." + targetName + "[0].id}"
+	}
+	return "${" + azureCloudServiceDeploymentResourceType + "." + targetName + ".id}"
+}
+
+func (c *AzureCloudServiceTargetConverter) getDependency(stateless bool, targetName string) string {
+	if stateless {
+		return "${" + azureCloudServiceDeploymentResourceType + "." + targetName + "}"
+	}
+
+	return ""
+}
+
+func (c *AzureCloudServiceTargetConverter) getCount(stateless bool, targetName string) *string {
+	if stateless {
+		return strutil.StrPointer("${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
+	}
+
+	return nil
+}
+
 func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
@@ -178,13 +203,8 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
-
-		if stateless {
-			thisResource.Lookup = "${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets[0].id : " + azureCloudServiceDeploymentResourceType + "." + targetName + "[0].id}"
-			thisResource.Dependency = "${" + azureCloudServiceDeploymentResourceType + "." + targetName + "}"
-		} else {
-			thisResource.Lookup = "${" + azureCloudServiceDeploymentResourceType + "." + targetName + ".id}"
-		}
+		thisResource.Lookup = c.getLookup(stateless, targetName)
+		thisResource.Dependency = c.getDependency(stateless, targetName)
 
 		thisResource.ToHcl = func() (string, error) {
 
@@ -219,12 +239,12 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 					CommunicationStyle:  "AzureCloudService",
 				},
+				Count: c.getCount(stateless, targetName),
 			}
 			file := hclwrite.NewEmptyFile()
 
 			if stateless {
 				c.writeData(file, target, targetName)
-				terraformResource.Count = strutil.StrPointer("${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 			}
 
 			// Add a comment with the import command
