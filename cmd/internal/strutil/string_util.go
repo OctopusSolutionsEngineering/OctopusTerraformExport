@@ -38,6 +38,16 @@ func EmptyIfNil(input *string) string {
 	return *input
 }
 
+func EmptyPointerIfNil(input *string) *string {
+	empty := ""
+
+	if input == nil {
+		return &empty
+	}
+
+	return input
+}
+
 func FalseIfNil(input *bool) bool {
 	if input == nil {
 		return false

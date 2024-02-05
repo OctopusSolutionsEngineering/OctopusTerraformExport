@@ -358,17 +358,19 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
-		Client:                 octopusClient,
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeAllTargets:      args.ExcludeAllTargets,
-		ExcludeTenantTags:      args.ExcludeTenantTags,
-		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
-		TagSetConverter:        tagsetConverter,
-		ExcludeTargets:         args.ExcludeTargets,
-		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
-		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		Client:                    octopusClient,
+		MachinePolicyConverter:    machinePolicyConverter,
+		EnvironmentConverter:      environmentConverter,
+		ExcludeAllTargets:         args.ExcludeAllTargets,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		Excluder:                  converters.DefaultExcluder{},
+		TagSetConverter:           tagsetConverter,
+		ExcludeTargets:            args.ExcludeTargets,
+		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
+		ExcludeTargetsExcept:      args.ExcludeTargetsExcept,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{

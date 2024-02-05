@@ -163,14 +163,18 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 	// The project group is a dependency that we need to lookup regardless of whether recursive is set
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
 		var parentCount *string = nil
+		parentLookup := "${" + octopusdeployLibraryVariableSetsResourceType + "." + resourceName + ".id}"
 		if stateless {
 			parentCount = strutil.StrPointer("${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? 0 : 1}")
+			parentLookup = "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? " +
+				"data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id : " +
+				octopusdeployLibraryVariableSetsResourceType + "." + resourceName + "[0].id}"
 		}
 
 		err := c.VariableSetConverter.ToHclByIdAndName(
 			resource.VariableSetId,
 			resourceName,
-			"${"+octopusdeployLibraryVariableSetsResourceType+"."+resourceName+".id}",
+			parentLookup,
 			parentCount,
 			dependencies)
 

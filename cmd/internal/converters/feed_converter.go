@@ -277,7 +277,7 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+				hcl.WriteLifecycleAttribute(targetBlock, "[secret_key]")
 			}
 
 			file.Body().AppendBlock(targetBlock)

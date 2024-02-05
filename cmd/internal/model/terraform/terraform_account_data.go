@@ -7,6 +7,6 @@ type TerraformAccountData struct {
 	PartialName string                          `hcl:"partial_name"`
 	Skip        int                             `hcl:"skip"`
 	Take        int                             `hcl:"take"`
-	AccountType string                          `hcl:"account_type"`
+	AccountType *string                         `hcl:"account_type"`
 	Lifecycle   *TerraformLifecycleMetaArgument `hcl:"lifecycle,block"`
 }

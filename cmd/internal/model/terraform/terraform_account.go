@@ -50,7 +50,8 @@ type TerraformAzureSubscription struct {
 	// StorageEndpointSuffix is required, even if it is a blank string
 	StorageEndpointSuffix string  `hcl:"storage_endpoint_suffix"`
 	SubscriptionId        *string `hcl:"subscription_id"`
-	AzureEnvironment      *string `hcl:"azure_environment"`
+	// AzureEnvironment is required. A blank string in Octopus means "AzureCloud"
+	AzureEnvironment      string  `hcl:"azure_environment"`
 	Certificate           *string `hcl:"certificate"`
 	CertificateThumbprint *string `hcl:"certificate_thumbprint"`
 }

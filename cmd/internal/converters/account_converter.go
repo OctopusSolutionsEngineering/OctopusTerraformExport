@@ -124,7 +124,7 @@ func (c AccountConverter) buildData(resourceName string, resource octopus.Accoun
 
 	// Google account types are not defined in the data resource (this is a bug), so don't use it
 	if resource.AccountType != "GoogleCloudAccount" {
-		terraformResource.AccountType = resource.AccountType
+		terraformResource.AccountType = strutil.StrPointer(resource.AccountType)
 	}
 
 	return terraformResource
@@ -369,8 +369,9 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			ManagementEndpoint:              strutil.EmptyIfNil(account.ServiceManagementEndpointBaseUri),
 			StorageEndpointSuffix:           strutil.EmptyIfNil(account.ServiceManagementEndpointSuffix),
 			SubscriptionId:                  account.SubscriptionNumber,
-			AzureEnvironment:                strutil.NilIfEmptyPointer(account.AzureEnvironment),
-			Certificate:                     &certVariable,
+			// A value is required, and an empty upstream string means "AzureCloud"
+			AzureEnvironment: strutil.DefaultIfEmptyOrNil(account.AzureEnvironment, "AzureCloud"),
+			Certificate:      &certVariable,
 		}
 
 		secretVariableResource := c.createSecretCertificateNoPassVariable(resourceName+"_cert", "The Azure certificate associated with the account "+account.Name)
