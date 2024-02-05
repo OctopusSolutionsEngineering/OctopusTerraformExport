@@ -157,7 +157,7 @@ func (c AzureCloudServiceTargetConverter) writeData(file *hclwrite.File, resourc
 	file.Body().AppendBlock(block)
 }
 
-func (c *AzureCloudServiceTargetConverter) getLookup(stateless bool, targetName string) string {
+func (c AzureCloudServiceTargetConverter) getLookup(stateless bool, targetName string) string {
 	if stateless {
 		return "${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
 			"? data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets[0].id " +
@@ -166,7 +166,7 @@ func (c *AzureCloudServiceTargetConverter) getLookup(stateless bool, targetName 
 	return "${" + azureCloudServiceDeploymentResourceType + "." + targetName + ".id}"
 }
 
-func (c *AzureCloudServiceTargetConverter) getDependency(stateless bool, targetName string) string {
+func (c AzureCloudServiceTargetConverter) getDependency(stateless bool, targetName string) string {
 	if stateless {
 		return "${" + azureCloudServiceDeploymentResourceType + "." + targetName + "}"
 	}
@@ -174,7 +174,7 @@ func (c *AzureCloudServiceTargetConverter) getDependency(stateless bool, targetN
 	return ""
 }
 
-func (c *AzureCloudServiceTargetConverter) getCount(stateless bool, targetName string) *string {
+func (c AzureCloudServiceTargetConverter) getCount(stateless bool, targetName string) *string {
 	if stateless {
 		return strutil.StrPointer("${length(data." + azureCloudServiceDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 	}
