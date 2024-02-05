@@ -272,10 +272,6 @@ func (c *TenantConverter) GetResourceType() string {
 }
 
 func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
-	if c.ExcludeProjects == nil {
-		return false, nil
-	}
-
 	if c.ExcludeAllProjects {
 		return true, nil
 	}

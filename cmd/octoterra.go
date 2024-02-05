@@ -181,6 +181,10 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		Excluder:                  converters.DefaultExcluder{},
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeProjects:           args.ExcludeProjects,
+		ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
+		ExcludeAllProjects:        args.ExcludeAllProjects,
+		ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:               octopusClient,
@@ -204,6 +208,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ExcludeAllProjects:      args.ExcludeAllProjects,
 		ExcludeTenantTags:       args.ExcludeTenantTags,
 		ExcludeTenantTagSets:    args.ExcludeTenantTagSets,
+		ExcludeProjectsExcept:   args.ExcludeProjectsExcept,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    octopusClient,
@@ -598,6 +603,10 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 		Excluder:                  converters.DefaultExcluder{},
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
+		ExcludeAllProjects:        args.ExcludeAllProjects,
+		ExcludeProjects:           args.ExcludeProjects,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  octopusClient,
@@ -744,6 +753,10 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		Excluder:                  converters.DefaultExcluder{},
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
+		ExcludeAllProjects:        args.ExcludeAllProjects,
+		ExcludeProjects:           args.ExcludeProjects,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  octopusClient,

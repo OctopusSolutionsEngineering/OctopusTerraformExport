@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -24,6 +25,10 @@ type TenantVariableConverter struct {
 	Excluder                  ExcludeByName
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
+	ExcludeProjects           args.ExcludeProjects
+	ExcludeProjectsExcept     args.ExcludeProjects
+	ExcludeProjectsRegex      args.ExcludeProjectsRegex
+	ExcludeAllProjects        bool
 }
 
 func (c TenantVariableConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
@@ -90,7 +95,22 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 		count = strutil.StrPointer("${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 ? 0 : 1}")
 	}
 
-	for _, p := range tenant.ProjectVariables {
+	// Don't attempt to link variables from excluded projects
+	var filterErr error = nil
+	filteredProjectVariables := lo.Filter(lo.Values[string, octopus.ProjectVariable](tenant.ProjectVariables), func(item octopus.ProjectVariable, index int) bool {
+		varExcluded, varExcludedErr := c.excludeProject(item.ProjectId)
+		if varExcludedErr != nil {
+			filterErr = errors.Join(filterErr, varExcludedErr)
+			return false
+		}
+
+		return !varExcluded
+	})
+	if filterErr != nil {
+		return filterErr
+	}
+
+	for _, p := range filteredProjectVariables {
 
 		projectVariableIndex := 0
 
@@ -207,4 +227,19 @@ func (c TenantVariableConverter) isTenantExcludedByTag(tenantId string) (bool, e
 	}
 
 	return false, nil
+}
+
+func (c *TenantVariableConverter) excludeProject(projectId string) (bool, error) {
+	if c.ExcludeAllProjects {
+		return true, nil
+	}
+
+	project := octopus.Project{}
+	_, err := c.Client.GetResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return false, err
+	}
+
+	return c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept), nil
 }
