@@ -95,3 +95,6 @@ type TerraformLifecycleAllMetaArgument struct {
 type TerraformLifecyclePostCondition struct {
 	ErrorMessage string `hcl:"error_message"`
 }
+
+type EmptyBlock struct {
+}

@@ -225,7 +225,13 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 	baseUrl, _ := c.Client.GetSpaceBaseUrl()
 	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployLibraryVariableSetsResourceType, resourceName))
 
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+	block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+	if stateless {
+		hcl.WriteLifecyclePreventDeleteAttribute(block)
+	}
+
+	file.Body().AppendBlock(block)
 
 	return string(file.Bytes()), nil
 }
@@ -276,7 +282,13 @@ func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.Library
 		SpacesBefore: 0,
 	}})
 
-	file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+	block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+	if stateless {
+		hcl.WriteLifecyclePreventDeleteAttribute(block)
+	}
+
+	file.Body().AppendBlock(block)
 	return string(file.Bytes()), nil
 }
 

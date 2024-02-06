@@ -172,14 +172,25 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), gitCredentials.Name, octopusdeployGitCredentialResourceType, gitCredentialsName))
 
-		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+		gitCertBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform2.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			gitCertBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
-		file.Body().AppendBlock(targetBlock)
+		file.Body().AppendBlock(gitCertBlock)
 
 		secretVariableResource := terraform2.TerraformVariable{
 			Name:        gitCredentialsName,

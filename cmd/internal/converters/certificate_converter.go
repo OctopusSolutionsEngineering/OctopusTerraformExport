@@ -263,8 +263,19 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
 
 	// When using dummy values, we expect the secrets will be updated later
-	if c.DummySecretVariableValues {
-		hcl.WriteLifecycleAttribute(targetBlock, "[password, certificate_data]")
+	if c.DummySecretVariableValues || stateless {
+
+		ignoreAll := terraform.EmptyBlock{}
+		lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+		targetBlock.Body().AppendBlock(lifecycleBlock)
+
+		if c.DummySecretVariableValues {
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password, certificate_data]")
+		}
+
+		if stateless {
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+		}
 	}
 
 	if err != nil {

@@ -252,8 +252,19 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(targetBlock, "[aad_user_credential_password]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			targetBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[aad_user_credential_password]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(targetBlock)

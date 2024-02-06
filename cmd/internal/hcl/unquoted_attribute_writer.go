@@ -29,19 +29,21 @@ func WriteLifecyclePreventDeleteAttribute(block *hclwrite.Block) {
 }
 
 // WriteLifecycleAllAttribute writes a lifecycle block with ignore_changes set to all
-func WriteLifecycleAllAttribute(block *hclwrite.Block) {
+func WriteLifecycleAllAttribute(block *hclwrite.Block) *hclwrite.Block {
 	ignoreAll := terraform.TerraformLifecycleAllMetaArgument{}
 	lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 	WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "all")
 	block.Body().AppendBlock(lifecycleBlock)
+	return lifecycleBlock
 }
 
 // WriteLifecycleAttribute writes a lifecycle block with ignore_changes set to the supplied list
-func WriteLifecycleAttribute(block *hclwrite.Block, attributes string) {
+func WriteLifecycleAttribute(block *hclwrite.Block, attributes string) *hclwrite.Block {
 	ignoreAll := terraform.TerraformLifecycleAllMetaArgument{}
 	lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 	WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", attributes)
 	block.Body().AppendBlock(lifecycleBlock)
+	return lifecycleBlock
 }
 
 // WriteLifecyclePostCondition writes a lifecycle block with a postcondition

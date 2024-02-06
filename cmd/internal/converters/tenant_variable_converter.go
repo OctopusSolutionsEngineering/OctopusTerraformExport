@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -150,7 +151,14 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 						TenantId:      dependencies.GetResource("Tenants", tenant.TenantId),
 						Value:         &value,
 					}
-					file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
+					block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+					if stateless {
+						hcl.WriteLifecyclePreventDeleteAttribute(block)
+					}
+
+					file.Body().AppendBlock(block)
 					return string(file.Bytes()), nil
 				}
 				dependencies.AddResource(thisResource)

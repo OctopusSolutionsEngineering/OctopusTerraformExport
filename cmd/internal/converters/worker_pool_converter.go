@@ -229,7 +229,13 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, octopusdeployStaticWorkerPoolResourcePool, resourceName))
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}

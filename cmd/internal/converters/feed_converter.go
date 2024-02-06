@@ -201,8 +201,19 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform2.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				targetBlock.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			file.Body().AppendBlock(targetBlock)
@@ -276,8 +287,19 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[secret_key]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform2.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				targetBlock.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[secret_key]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			file.Body().AppendBlock(targetBlock)
@@ -352,8 +374,19 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform2.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				targetBlock.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			file.Body().AppendBlock(targetBlock)
@@ -429,8 +462,19 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform2.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				targetBlock.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			file.Body().AppendBlock(targetBlock)
@@ -504,8 +548,19 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform2.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				targetBlock.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			file.Body().AppendBlock(targetBlock)
@@ -583,8 +638,19 @@ func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisR
 			targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(targetBlock, "[password]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform2.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				targetBlock.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			file.Body().AppendBlock(targetBlock)
