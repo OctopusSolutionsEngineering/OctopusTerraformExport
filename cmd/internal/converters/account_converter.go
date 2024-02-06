@@ -289,10 +289,6 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -310,7 +306,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 
@@ -375,10 +371,6 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -396,7 +388,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 
@@ -461,10 +453,6 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -482,7 +470,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 
@@ -541,10 +529,6 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -562,7 +546,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 
@@ -621,10 +605,6 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -642,7 +622,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 
@@ -703,10 +683,6 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -724,7 +700,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 
@@ -789,10 +765,6 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
-		}
-
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -810,7 +782,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 			}
 		}
 

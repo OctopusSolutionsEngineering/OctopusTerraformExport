@@ -212,7 +212,7 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 				}
 			}
 
@@ -298,7 +298,7 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 				}
 			}
 
@@ -385,7 +385,7 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 				}
 			}
 
@@ -473,7 +473,7 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 				}
 			}
 
@@ -559,7 +559,7 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 				}
 			}
 
@@ -649,7 +649,7 @@ func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisR
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 				}
 			}
 
