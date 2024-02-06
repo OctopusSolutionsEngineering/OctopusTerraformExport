@@ -22,7 +22,7 @@ func WriteUnquotedAttribute(block *hclwrite.Block, attrName string, attrValue st
 
 // WriteLifecyclePreventDeleteAttribute writes a lifecycle block with prevent_delete set to true
 func WriteLifecyclePreventDeleteAttribute(block *hclwrite.Block) {
-	ignoreAll := terraform.TerraformLifecycleAllMetaArgument{}
+	ignoreAll := terraform.EmptyBlock{}
 	lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 	WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 	block.Body().AppendBlock(lifecycleBlock)
