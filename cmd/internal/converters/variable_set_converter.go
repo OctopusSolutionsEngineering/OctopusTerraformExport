@@ -81,7 +81,7 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, true, false, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, true, false, parentCount != nil, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error {
@@ -106,7 +106,7 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, true, ignoreSecrets, parentName, parentLookup, nil, dependencies)
+	return c.toHcl(resource, false, true, false, ignoreSecrets, parentName, parentLookup, nil, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclByIdAndName(id string, recursive bool, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error {
@@ -132,7 +132,7 @@ func (c *VariableSetConverter) ToHclByIdAndName(id string, recursive bool, paren
 	}
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, recursive, false, false, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, recursive, false, false, false, parentName, parentLookup, parentCount, dependencies)
 }
 
 // ToHclLookupByIdAndName exports the variable set as a complete resource, but will reference external resources like accounts,
@@ -160,10 +160,10 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	}
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, true, false, parentName, parentLookup, nil, dependencies)
+	return c.toHcl(resource, false, true, false, false, parentName, parentLookup, nil, dependencies)
 }
 
-func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error {
+func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, stateless bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error {
 	c.convertEnvironmentsToIds()
 
 	nameCount := map[string]int{}
@@ -355,8 +355,19 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues {
-				hcl.WriteLifecycleAttribute(block, "[sensitive_value]")
+			if c.DummySecretVariableValues || stateless {
+
+				ignoreAll := terraform.EmptyBlock{}
+				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+				block.Body().AppendBlock(lifecycleBlock)
+
+				if c.DummySecretVariableValues {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[sensitive_value]")
+				}
+
+				if stateless {
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				}
 			}
 
 			// If we are creating the tag sets (i.e. exporting a space or recursively exporting a project),

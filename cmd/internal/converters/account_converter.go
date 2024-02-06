@@ -299,8 +299,19 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[secret_key]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[secret_key]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
@@ -374,8 +385,19 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[password]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
@@ -449,8 +471,19 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[certificate]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[certificate]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
@@ -518,8 +551,19 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[json_key]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[json_key]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
@@ -587,8 +631,19 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[token]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[token]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
@@ -658,8 +713,19 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[password]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
@@ -733,8 +799,19 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 		}
 
 		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues {
-			hcl.WriteLifecycleAttribute(accountBlock, "[private_key_passphrase, private_key_file]")
+		if c.DummySecretVariableValues || stateless {
+
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			accountBlock.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[private_key_passphrase, private_key_file]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
 		}
 
 		file.Body().AppendBlock(accountBlock)
