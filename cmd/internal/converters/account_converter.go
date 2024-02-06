@@ -288,6 +288,11 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_aws_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -358,6 +363,11 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_service_principal", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -428,6 +438,11 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_subscription_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -492,6 +507,11 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_gcp_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -556,6 +576,11 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_token_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -622,6 +647,11 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_username_password_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err
@@ -692,6 +722,11 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_ssh_key_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(accountBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
 		if err != nil {
 			return "", err

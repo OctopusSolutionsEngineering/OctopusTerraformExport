@@ -245,6 +245,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureServiceFabricClusterDeploymentResourceType, targetName))
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
 		if err != nil {
 			return "", err

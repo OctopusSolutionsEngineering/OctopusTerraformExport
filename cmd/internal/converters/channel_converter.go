@@ -183,6 +183,10 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
+			if stateless {
+				hcl.WriteLifecyclePreventDeleteAttribute(block)
+			}
+
 			/* Channels reference steps and packages by text without terraform understanding
 			there is any relationship. In order for the channel to be created after the deployment process,
 			we must make this dependency explicit. Otherwise, the channel may be created without the deployment

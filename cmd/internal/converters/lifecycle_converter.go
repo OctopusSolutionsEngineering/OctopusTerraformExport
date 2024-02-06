@@ -183,7 +183,13 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), lifecycle.Name, octopusdeployLifecycleResourceType, resourceName))
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			if stateless {
+				hcl.WriteLifecyclePreventDeleteAttribute(block)
+			}
+
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

@@ -108,7 +108,13 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, projectTriggerName))
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}

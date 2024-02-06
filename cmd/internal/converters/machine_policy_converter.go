@@ -170,7 +170,13 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 			baseUrl, _ := c.Client.GetSpaceBaseUrl()
 			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), machinePolicy.Name, octopusdeployMachinePolicyResourceType, policyName))
 
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			if stateless {
+				hcl.WriteLifecyclePreventDeleteAttribute(block)
+			}
+
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}

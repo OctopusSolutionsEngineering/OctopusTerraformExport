@@ -245,6 +245,10 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
+			if stateless {
+				hcl.WriteLifecyclePreventDeleteAttribute(block)
+			}
+
 			// Explicitly describe the dependency between a target and a tag set
 			dependsOn := []string{}
 			for resourceType, terraformDependencies := range tagSetDependencies {

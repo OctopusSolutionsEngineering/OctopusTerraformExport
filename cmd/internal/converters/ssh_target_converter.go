@@ -217,6 +217,11 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeploySshConnectionDeploymentTargetResourceType, targetName))
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(block)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
 		if err != nil {
 			return "", err

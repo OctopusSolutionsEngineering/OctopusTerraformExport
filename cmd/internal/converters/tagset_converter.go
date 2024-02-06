@@ -101,7 +101,13 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tagSet.Name, octopusdeployTagSetResourceType, tagSetName))
 
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}

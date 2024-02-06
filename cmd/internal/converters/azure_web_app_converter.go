@@ -235,6 +235,11 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureWebAppDeploymentTargetResourceType, targetName))
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(targetBlock)
+		}
+
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
 		if err != nil {
 			return "", err

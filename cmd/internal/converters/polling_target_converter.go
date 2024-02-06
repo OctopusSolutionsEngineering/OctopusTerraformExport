@@ -225,12 +225,17 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 		baseUrl, _ := c.Client.GetSpaceBaseUrl()
 		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployPollingTentacleDeploymentTargetResourceType, targetName))
 
-		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
-		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(block)
+		}
+
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
 		if err != nil {
 			return "", err
 		}
-		file.Body().AppendBlock(targetBlock)
+		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
 	}

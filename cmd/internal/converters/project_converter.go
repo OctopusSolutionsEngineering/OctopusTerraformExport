@@ -339,6 +339,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
+		if stateless {
+			hcl.WriteLifecyclePreventDeleteAttribute(block)
+		}
+
 		hcl.WriteUnquotedAttribute(block, "description", "\"${var."+projectName+"_description_prefix}${var."+projectName+"_description}${var."+projectName+"_description_suffix}\"")
 
 		if c.IgnoreProjectChanges {
