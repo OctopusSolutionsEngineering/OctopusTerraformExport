@@ -33,7 +33,7 @@ type AzureCloudServiceTargetConverter struct {
 }
 
 func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+	return c.allToHcl(false, dependencies)
 }
 
 func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {

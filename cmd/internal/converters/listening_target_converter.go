@@ -32,7 +32,7 @@ type ListeningTargetConverter struct {
 }
 
 func (c ListeningTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+	return c.allToHcl(false, dependencies)
 }
 
 func (c ListeningTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
