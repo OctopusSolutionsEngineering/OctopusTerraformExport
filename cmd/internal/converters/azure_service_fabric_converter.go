@@ -263,7 +263,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 

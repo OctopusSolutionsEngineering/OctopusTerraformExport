@@ -186,7 +186,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 

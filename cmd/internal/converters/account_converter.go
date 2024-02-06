@@ -310,7 +310,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDeta
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 
@@ -396,7 +396,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 
@@ -482,7 +482,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 
@@ -562,7 +562,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *Reso
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 
@@ -642,7 +642,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDe
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 
@@ -724,7 +724,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 
@@ -810,7 +810,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 			}
 
 			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 			}
 		}
 

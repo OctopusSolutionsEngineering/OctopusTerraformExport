@@ -366,7 +366,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				}
 
 				if stateless {
-					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+					hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 				}
 			}
 
