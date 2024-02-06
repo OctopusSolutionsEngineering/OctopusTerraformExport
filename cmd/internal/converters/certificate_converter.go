@@ -274,7 +274,7 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 		}
 
 		if stateless {
-			hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_delete", "true")
 		}
 	}
 
