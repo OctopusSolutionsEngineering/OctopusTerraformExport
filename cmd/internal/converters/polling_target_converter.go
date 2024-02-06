@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -31,15 +32,15 @@ type PollingTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c PollingTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c PollingTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -67,7 +68,7 @@ func (c PollingTargetConverter) isPollingTarget(resource octopus.PollingEndpoint
 	return resource.Endpoint.CommunicationStyle == "TentacleActive"
 }
 
-func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -91,7 +92,7 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *ResourceDetai
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -116,7 +117,7 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *Resourc
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -154,7 +155,7 @@ func (c PollingTargetConverter) writeData(file *hclwrite.File, resource octopus.
 	file.Body().AppendBlock(block)
 }
 
-func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -174,7 +175,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -249,7 +250,7 @@ func (c PollingTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c PollingTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c PollingTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -257,7 +258,7 @@ func (c PollingTargetConverter) lookupEnvironments(envs []string, dependencies *
 	return newEnvs
 }
 
-func (c PollingTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c PollingTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -266,7 +267,7 @@ func (c PollingTargetConverter) getMachinePolicy(machine string, dependencies *R
 	return &machineLookup
 }
 
-func (c PollingTargetConverter) exportDependencies(target octopus.PollingEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c PollingTargetConverter) exportDependencies(target octopus.PollingEndpointResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

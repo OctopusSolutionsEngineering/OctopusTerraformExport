@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -50,15 +51,15 @@ type ProjectConverter struct {
 	LookupOnlyMode bool
 }
 
-func (c *ProjectConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c *ProjectConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c *ProjectConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.LookupOnlyMode {
 		return errors.New("this function can not be called whe LookupOnlyMode is true")
 	}
@@ -82,7 +83,7 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *ResourceDetail
 	return nil
 }
 
-func (c *ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -98,7 +99,7 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDeta
 		return err
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	thisResource.FileName = "space_population/parent_project.tf"
 	thisResource.Id = project.Id
@@ -134,7 +135,7 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *ResourceDeta
 
 // ToHclByIdWithLookups exports a self-contained representation of the project where external resources like
 // environments, lifecycles, feeds, accounts etc are resolved with data lookups.
-func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
 	if c.LookupOnlyMode {
 		return errors.New("this function can not be called whe LookupOnlyMode is true")
 	}
@@ -158,7 +159,7 @@ func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *Resourc
 	return c.toHcl(resource, false, true, false, dependencies)
 }
 
-func (c *ProjectConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -195,13 +196,13 @@ func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceN
 	file.Body().AppendBlock(block)
 }
 
-func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded projects
 	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	projectName := "project_" + sanitizer.SanitizeName(project.Name)
 
@@ -501,8 +502,8 @@ func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, 
 	file.Body().AppendBlock(block)
 }
 
-func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string, stateless bool) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []ResourceDetails) {
-	templateMap := make([]ResourceDetails, 0)
+func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string, stateless bool) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []data.ResourceDetails) {
+	templateMap := make([]data.ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	variables := []terraform.TerraformVariable{}
 	for i, v := range actionPackages {
@@ -539,7 +540,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			})
 		}
 
-		templateMap = append(templateMap, ResourceDetails{
+		templateMap = append(templateMap, data.ResourceDetails{
 			Id:           v.Id,
 			ResourceType: "ProjectTemplates",
 			Lookup:       "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
@@ -573,7 +574,7 @@ func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) *t
 	}
 }
 
-func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *ResourceDetailsCollection) []string {
+func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *data.ResourceDetailsCollection) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
 		collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
@@ -581,7 +582,7 @@ func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependenc
 	return collection
 }
 
-func (c *ProjectConverter) convertLibraryGitPersistence(project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) *terraform.TerraformGitLibraryPersistenceSettings {
+func (c *ProjectConverter) convertLibraryGitPersistence(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) *terraform.TerraformGitLibraryPersistenceSettings {
 	if project.PersistenceSettings.Credentials.Type != "Reference" {
 		return nil
 	}
@@ -656,7 +657,7 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *t
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
-func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project octopus.Project, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	var err error
 	if lookup {
 		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
@@ -735,7 +736,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 	return nil
 }
 
-func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, dependencies *data.ResourceDetailsCollection) error {
 	// Export the project group
 	err := c.ProjectGroupConverter.ToHclLookupById(project.ProjectGroupId, dependencies)
 
@@ -778,7 +779,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 	return nil
 }
 
-func (c *ProjectConverter) exportDependencies(project octopus.Project, dependencies *ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencies(project octopus.Project, dependencies *data.ResourceDetailsCollection) error {
 	// Export the project group
 	err := c.ProjectGroupConverter.ToHclById(project.ProjectGroupId, dependencies)
 

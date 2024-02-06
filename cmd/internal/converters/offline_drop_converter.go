@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -33,15 +34,15 @@ type OfflineDropTargetConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c OfflineDropTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c OfflineDropTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -69,7 +70,7 @@ func (c OfflineDropTargetConverter) isOfflineTarget(resource octopus.OfflineDrop
 	return resource.Endpoint.CommunicationStyle == "OfflineDrop"
 }
 
-func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -93,7 +94,7 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *ResourceD
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -122,7 +123,7 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -160,7 +161,7 @@ func (c OfflineDropTargetConverter) writeData(file *hclwrite.File, resource octo
 	file.Body().AppendBlock(block)
 }
 
-func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -180,7 +181,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -254,7 +255,7 @@ func (c OfflineDropTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c OfflineDropTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c OfflineDropTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -262,7 +263,7 @@ func (c OfflineDropTargetConverter) lookupEnvironments(envs []string, dependenci
 	return newEnvs
 }
 
-func (c OfflineDropTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c OfflineDropTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -271,7 +272,7 @@ func (c OfflineDropTargetConverter) getMachinePolicy(machine string, dependencie
 	return &machineLookup
 }
 
-func (c OfflineDropTargetConverter) exportDependencies(target octopus.OfflineDropResource, dependencies *ResourceDetailsCollection) error {
+func (c OfflineDropTargetConverter) exportDependencies(target octopus.OfflineDropResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -27,7 +28,7 @@ type DeploymentProcessConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -60,7 +61,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, depend
 	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -92,10 +93,10 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	return c.toHcl(resource, project.HasCacConfigured(), false, true, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	err := c.exportDependencies(recursive, lookup, resource, dependencies)
 
@@ -132,7 +133,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 
 			for j, a := range s.Actions {
 
-				actionResource := ResourceDetails{}
+				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
 				actionResource.Id = a.Id
 				actionResource.ResourceType = "Actions"
@@ -261,7 +262,7 @@ func (c DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
 	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, resource.Steps, dependencies)
 	if err != nil {

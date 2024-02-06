@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -25,7 +26,7 @@ type ChannelConverter struct {
 	Excluder             ExcludeByName
 }
 
-func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -55,7 +56,7 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 
 // ToHclLookupByProjectIdWithTerraDependencies exports the channel set as a complete resource, but will reference external resources like
 // lifecycles as data source lookups.
-func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -101,7 +102,7 @@ func (c ChannelConverter) writeData(file *hclwrite.File, name string, resourceNa
 	file.Body().AppendBlock(block)
 }
 
-func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, stateless bool, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error {
+func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, stateless bool, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
 	if channel.LifecycleId != "" {
 		var err error
 		if recursive {
@@ -116,7 +117,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		}
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = channel.Id
@@ -209,7 +210,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	return nil
 }
 
-func (c ChannelConverter) getLifecycleId(lifecycleId string, dependencies *ResourceDetailsCollection) *string {
+func (c ChannelConverter) getLifecycleId(lifecycleId string, dependencies *data.ResourceDetailsCollection) *string {
 	if lifecycleId == "" {
 		return nil
 	}

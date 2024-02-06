@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -22,15 +23,15 @@ type MachinePolicyConverter struct {
 	Client client.OctopusClient
 }
 
-func (c MachinePolicyConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c MachinePolicyConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.MachinePolicy]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -50,7 +51,7 @@ func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *ResourceD
 	return nil
 }
 
-func (c MachinePolicyConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -88,11 +89,11 @@ func (c MachinePolicyConverter) writeData(file *hclwrite.File, resource octopus2
 	file.Body().AppendBlock(block)
 }
 
-func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + policyName + ".tf"
 	thisResource.Id = machinePolicy.Id
 	thisResource.ResourceType = c.GetResourceType()

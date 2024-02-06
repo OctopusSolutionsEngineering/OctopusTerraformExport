@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -32,15 +33,15 @@ type TenantVariableConverter struct {
 	ExcludeAllProjects        bool
 }
 
-func (c TenantVariableConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c TenantVariableConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c TenantVariableConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := []octopus.TenantVariable{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -59,7 +60,7 @@ func (c TenantVariableConverter) allToHcl(stateless bool, dependencies *Resource
 	return nil
 }
 
-func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *data.ResourceDetailsCollection) error {
 	resource := octopus.TenantVariable{}
 	err := c.Client.GetAllResources("Tenants/"+id+"/Variables", &resource)
 
@@ -70,7 +71,7 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *Resour
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcluded(tenant.TenantName, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
@@ -122,7 +123,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 				projectVariableIndex++
 				variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
 
-				thisResource := ResourceDetails{}
+				thisResource := data.ResourceDetails{}
 				thisResource.FileName = "space_population/" + variableName + ".tf"
 				thisResource.Id = templateId
 				thisResource.ResourceType = c.GetResourceType()
@@ -173,7 +174,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 			commonVariableIndex++
 			variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
 
-			thisResource := ResourceDetails{}
+			thisResource := data.ResourceDetails{}
 			thisResource.FileName = "space_population/" + variableName + ".tf"
 			thisResource.Id = id
 			thisResource.ResourceType = c.GetResourceType()

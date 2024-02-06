@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -16,7 +17,7 @@ type TerraformProviderGenerator struct {
 	IncludeOctopusOutputVars bool
 }
 
-func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, dependencies *data.ResourceDetailsCollection) {
 	c.createProvider(directory, includeSpaceId, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, includeSpaceId, dependencies)
@@ -25,12 +26,12 @@ func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool,
 	}
 }
 
-func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, dependencies *data.ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = directory + "/provider.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
@@ -52,8 +53,8 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 	dependencies.AddResource(thisResource)
 }
 
-func (c TerraformProviderGenerator) createTerraformConfig(directory string, dependencies *ResourceDetailsCollection) {
-	thisResource := ResourceDetails{}
+func (c TerraformProviderGenerator) createTerraformConfig(directory string, dependencies *data.ResourceDetailsCollection) {
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = directory + "/config.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
@@ -67,12 +68,12 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	dependencies.AddResource(thisResource)
 }
 
-func (c TerraformProviderGenerator) createVariables(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createVariables(directory string, includeSpaceId bool, dependencies *data.ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = directory + "/provider_vars.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""
@@ -125,12 +126,12 @@ func (c TerraformProviderGenerator) createVariables(directory string, includeSpa
 
 // createOctopusOutputVars captures the details of the octopus server as output variables. This is
 // useful when finding the created resources from the Terraform state.
-func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, includeSpaceId bool, dependencies *ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, includeSpaceId bool, dependencies *data.ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = directory + "/provider_output_vars.tf"
 	thisResource.Id = ""
 	thisResource.ResourceType = ""

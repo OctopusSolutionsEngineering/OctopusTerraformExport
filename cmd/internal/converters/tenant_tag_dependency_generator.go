@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/hashicorp/hcl2/hclwrite"
@@ -17,7 +18,7 @@ type TenantTagDependencyGenerator struct {
 
 // AddAndWriteTagSetDependencies writes a depends_on block to a terraform resource, and optionally recursively includes
 // the tagsets that the resource depends on.
-func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client client.OctopusClient, tenantTags []string, tagSetConverter TagSetConverter, block *hclwrite.Block, dependencies *ResourceDetailsCollection, recursive bool) error {
+func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client client.OctopusClient, tenantTags []string, tagSetConverter TagSetConverter, block *hclwrite.Block, dependencies *data.ResourceDetailsCollection, recursive bool) error {
 	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := client.GetAllResources("TagSets", &collection)
 
@@ -47,7 +48,7 @@ func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client clien
 	return nil
 }
 
-func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.TagSet, tagSetConverter TagSetConverter, dependencies *ResourceDetailsCollection) error {
+func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.TagSet, tagSetConverter TagSetConverter, dependencies *data.ResourceDetailsCollection) error {
 	for _, tagSet := range tagSets {
 		err := tagSetConverter.ToHclByResource(tagSet, dependencies)
 		if err != nil {
@@ -58,7 +59,7 @@ func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.Ta
 	return nil
 }
 
-func (t TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.TagSet, tags []octopus.Tag, block *hclwrite.Block, dependencies *ResourceDetailsCollection) error {
+func (t TenantTagDependencyGenerator) WriteTagSetDependencies(tagSets []octopus.TagSet, tags []octopus.Tag, block *hclwrite.Block, dependencies *data.ResourceDetailsCollection) error {
 	// Explicitly describe the dependency between a variable and a tag set
 	tagSetDependencies := []string{}
 	if tagSets != nil {

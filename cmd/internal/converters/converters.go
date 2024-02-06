@@ -1,5 +1,7 @@
 package converters
 
+import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+
 // DummySecretGenerator defines the service used to generate dummy secret values
 type DummySecretGenerator interface {
 	GetDummySecret() *string
@@ -13,7 +15,7 @@ type DummySecretGenerator interface {
 type ConverterById interface {
 	// ToHclById converts a single resource by its ID. This is used when converting a single project,
 	// and then converting anything that the project references (like feeds, accounts, environments etc).
-	ToHclById(id string, dependencies *ResourceDetailsCollection) error
+	ToHclById(id string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterByIdWithLookups converts an individual resource by its ID, with all external resources referenced
@@ -21,7 +23,7 @@ type ConverterById interface {
 type ConverterByIdWithLookups interface {
 	// ToHclByIdWithLookups converts a single resource by its ID. This is used when converting a single project,
 	// and then referencing all other resources by lookup (like feeds, accounts, environments etc).
-	ToHclByIdWithLookups(id string, dependencies *ResourceDetailsCollection) error
+	ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupById converts an individual resource by its ID to a data lookup
@@ -30,7 +32,7 @@ type ConverterLookupById interface {
 	// is used when converting a project with the -lookupProjectDependencies argument specified. It allows a project
 	// to reference existing resources like accounts, feeds, environments etc in the space in which the project
 	// is imported.
-	ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error
+	ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupById converts an individual resource by ID to HCL and to a data lookup
@@ -49,13 +51,13 @@ type ConverterAndWithLookupsById interface {
 
 // ConverterByIdWithName converts an individual resource by its ID, and uses the supplied name for the Terraform resource
 type ConverterByIdWithName interface {
-	ToHclByIdAndName(id string, name string, dependencies *ResourceDetailsCollection) error
+	ToHclByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByIdWithName converts an individual resource by its ID, uses the supplied name for the Terraform resource, and
 // references external resources via a data source lookup
 type ConverterLookupByIdWithName interface {
-	ToHclLookupByIdAndName(id string, name string, dependencies *ResourceDetailsCollection) error
+	ToHclLookupByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupByIdAndName converts an individual resource by ID to HCL and to a data lookup
@@ -73,13 +75,13 @@ type ConverterByIdWithNameAndParent interface {
 	// parentLookup is an HCL interpolation that resolves the parents ID.
 	// parentCount is an HCL interpolation that resolves to 1 or 0 based on whether the parent is created or not in a stateless module.
 	// dependencies is the collection of exported resources.
-	ToHclByIdAndName(id string, recursive bool, name string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error
+	ToHclByIdAndName(id string, recursive bool, name string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent, and
 // references external resources via data source lookups
 type ConverterLookupByIdWithNameAndParent interface {
-	ToHclLookupByIdAndName(id string, name string, parentLookup string, dependencies *ResourceDetailsCollection) error
+	ToHclLookupByIdAndName(id string, name string, parentLookup string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent, and
@@ -91,17 +93,17 @@ type ConverterAndLookupByIdWithNameAndParent interface {
 
 // ConverterByProjectIdWithName converts objects based on their relationship to a project, and uses the supplied name for the Terraform resource
 type ConverterByProjectIdWithName interface {
-	ToHclByProjectIdAndName(id string, name string, dependencies *ResourceDetailsCollection) error
+	ToHclByProjectIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterByProjectId converts objects based on their relationship to a project
 type ConverterByProjectId interface {
-	ToHclByProjectId(projectId string, dependencies *ResourceDetailsCollection) error
+	ToHclByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByProjectId converts objects to data lookups based on their relationship to a project
 type ConverterLookupByProjectId interface {
-	ToHclLookupByProjectId(projectId string, dependencies *ResourceDetailsCollection) error
+	ToHclLookupByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupByProjectId converts objects to HCL and data lookups based on their relationship to a project
@@ -112,12 +114,12 @@ type ConverterAndLookupByProjectId interface {
 
 // ConverterByProjectIdAndName converts objects based on their relationship to a project, with the ability to reference the parent
 type ConverterByProjectIdAndName interface {
-	ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, parentCount *string, dependencies *ResourceDetailsCollection) error
+	ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByProjectIdAndName converts objects to data lookups based on their relationship to a project, with the ability to reference the parent
 type ConverterLookupByProjectIdAndName interface {
-	ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *ResourceDetailsCollection) error
+	ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupByProjectIdAndName converts objects to HCL and data lookups based on their relationship to a project
@@ -128,12 +130,12 @@ type ConverterAndLookupByProjectIdAndName interface {
 
 // ConverterByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies
 type ConverterByProjectIdWithTerraDependencies interface {
-	ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error
+	ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies, and using a lookup for dependencies
 type ConverterLookupByProjectIdWithTerraDependencies interface {
-	ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *ResourceDetailsCollection) error
+	ToHclLookupByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupByProjectIdWithTerraDependencies converts objects to HCL and data lookups based on their relationship to a project
@@ -144,23 +146,23 @@ type ConverterAndLookupByProjectIdWithTerraDependencies interface {
 
 // ConverterByTenantId converts objects based on the relationship to a tenant
 type ConverterByTenantId interface {
-	ToHclByTenantId(projectId string, dependencies *ResourceDetailsCollection) error
+	ToHclByTenantId(projectId string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConvertToHclByResource converts objects directly
 type ConvertToHclByResource[C any] interface {
-	ToHclByResource(resource C, dependencies *ResourceDetailsCollection) error
+	ToHclByResource(resource C, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConvertToHclLookupByResource creates a data lookup from the objects
 type ConvertToHclLookupByResource[C any] interface {
-	ToHclLookupByResource(resource C, dependencies *ResourceDetailsCollection) error
+	ToHclLookupByResource(resource C, dependencies *data.ResourceDetailsCollection) error
 }
 
 // Converter converts all objects in bulk
 type Converter interface {
 	// AllToHcl converts all the resources of a given type to HCL. This is used when converting a space.
-	AllToHcl(dependencies *ResourceDetailsCollection) error
+	AllToHcl(dependencies *data.ResourceDetailsCollection) error
 	// AllToStatelessHcl converts all the resources of a given type to a stateless HCL module suitable for a step template.
-	AllToStatelessHcl(dependencies *ResourceDetailsCollection) error
+	AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error
 }

@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -20,15 +21,15 @@ type LifecycleConverter struct {
 	EnvironmentConverter ConverterById
 }
 
-func (c LifecycleConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c LifecycleConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c LifecycleConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Lifecycle]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -48,7 +49,7 @@ func (c LifecycleConverter) allToHcl(stateless bool, dependencies *ResourceDetai
 	return nil
 }
 
-func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	// Channels can have empty strings for the lifecycle ID
 	if id == "" {
 		return nil
@@ -70,7 +71,7 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 
 }
 
-func (c LifecycleConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	// Channels can have empty strings for the lifecycle ID
 	if id == "" {
 		return nil
@@ -109,7 +110,7 @@ func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus2.Lif
 	file.Body().AppendBlock(block)
 }
 
-func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if recursive {
 		// The environments are a dependency that we need to lookup
@@ -135,7 +136,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = lifecycle.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -215,7 +216,7 @@ func (c LifecycleConverter) convertPolicy(policy *octopus2.Policy) *terraform2.T
 	}
 }
 
-func (c LifecycleConverter) convertPhases(phases []octopus2.Phase, dependencies *ResourceDetailsCollection) []terraform2.TerraformPhase {
+func (c LifecycleConverter) convertPhases(phases []octopus2.Phase, dependencies *data.ResourceDetailsCollection) []terraform2.TerraformPhase {
 	terraformPhases := make([]terraform2.TerraformPhase, 0)
 	for _, v := range phases {
 		terraformPhases = append(terraformPhases, terraform2.TerraformPhase{
@@ -231,7 +232,7 @@ func (c LifecycleConverter) convertPhases(phases []octopus2.Phase, dependencies 
 	return terraformPhases
 }
 
-func (c LifecycleConverter) convertTargets(environments []string, dependencies *ResourceDetailsCollection) []string {
+func (c LifecycleConverter) convertTargets(environments []string, dependencies *data.ResourceDetailsCollection) []string {
 	converted := make([]string, len(environments))
 
 	for i, v := range environments {

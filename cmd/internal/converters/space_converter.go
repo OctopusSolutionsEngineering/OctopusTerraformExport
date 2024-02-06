@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -42,7 +43,7 @@ type SpaceConverter struct {
 
 // AllToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
 // with no filter and with the least number of network calls.
-func (c SpaceConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 
 	err := c.createSpaceTf(dependencies)
 
@@ -217,7 +218,7 @@ func (c SpaceConverter) AllToHcl(dependencies *ResourceDetailsCollection) error 
 // AllToStatelessHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
 // with no filter and with the least number of network calls. The exported module is suitable for a stateless terraform
 // apply.
-func (c SpaceConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 
 	err := c.createSpaceTf(dependencies)
 
@@ -393,7 +394,7 @@ func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
 }
 
-func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) error {
+func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollection) error {
 	space := octopus.Space{}
 	err := c.Client.GetSpace(&space)
 
@@ -404,7 +405,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *ResourceDetailsCollection) e
 	spaceResourceName := "octopus_space_" + sanitizer.SanitizeName(space.Name)
 	spaceName := "${var.octopus_space_name}"
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_creation/" + spaceResourceName + ".tf"
 	thisResource.Id = space.Id
 	thisResource.ResourceType = "Spaces"

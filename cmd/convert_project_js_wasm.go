@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 	"sort"
@@ -61,7 +62,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Space: space,
 	}
 
-	dependencies := converters.ResourceDetailsCollection{}
+	dependencies := data.ResourceDetailsCollection{}
 
 	converters.TerraformProviderGenerator{}.ToHcl("space_population", true, &dependencies)
 
@@ -308,7 +309,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 }
 
 // processResources creates a map of file names to file content
-func processJavaScriptResources(resources []converters.ResourceDetails) (map[string]string, error) {
+func processJavaScriptResources(resources []data.ResourceDetails) (map[string]string, error) {
 	fileMap := map[string]string{}
 
 	// Sort by resource type

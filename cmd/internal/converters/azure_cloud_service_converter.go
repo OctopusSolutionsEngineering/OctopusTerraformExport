@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -32,11 +33,11 @@ type AzureCloudServiceTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
@@ -44,7 +45,7 @@ func (c AzureCloudServiceTargetConverter) isAzureCloudService(resource octopus.A
 	return resource.Endpoint.CommunicationStyle == "AzureCloudService"
 }
 
-func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureCloudServiceResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -68,7 +69,7 @@ func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies 
 	return nil
 }
 
-func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -92,7 +93,7 @@ func (c AzureCloudServiceTargetConverter) ToHclById(id string, dependencies *Res
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -117,7 +118,7 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -182,7 +183,7 @@ func (c AzureCloudServiceTargetConverter) getCount(stateless bool, targetName st
 	return nil
 }
 
-func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudServiceResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -199,7 +200,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 
 		targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-		thisResource := ResourceDetails{}
+		thisResource := data.ResourceDetails{}
 		thisResource.FileName = "space_population/" + targetName + ".tf"
 		thisResource.Id = target.Id
 		thisResource.ResourceType = c.GetResourceType()
@@ -276,7 +277,7 @@ func (c AzureCloudServiceTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.AzureCloudServiceResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.AzureCloudServiceResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
@@ -304,7 +305,7 @@ func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.Azur
 	return nil
 }
 
-func (c AzureCloudServiceTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c AzureCloudServiceTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -312,7 +313,7 @@ func (c AzureCloudServiceTargetConverter) lookupEnvironments(envs []string, depe
 	return newEnvs
 }
 
-func (c AzureCloudServiceTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c AzureCloudServiceTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -321,7 +322,7 @@ func (c AzureCloudServiceTargetConverter) getMachinePolicy(machine string, depen
 	return &machineLookup
 }
 
-func (c AzureCloudServiceTargetConverter) getAccount(account string, dependencies *ResourceDetailsCollection) string {
+func (c AzureCloudServiceTargetConverter) getAccount(account string, dependencies *data.ResourceDetailsCollection) string {
 	accountLookup := dependencies.GetResource("Accounts", account)
 	if accountLookup == "" {
 		return ""
@@ -330,7 +331,7 @@ func (c AzureCloudServiceTargetConverter) getAccount(account string, dependencie
 	return accountLookup
 }
 
-func (c AzureCloudServiceTargetConverter) getWorkerPool(pool string, dependencies *ResourceDetailsCollection) *string {
+func (c AzureCloudServiceTargetConverter) getWorkerPool(pool string, dependencies *data.ResourceDetailsCollection) *string {
 	if len(pool) == 0 {
 		return nil
 	}

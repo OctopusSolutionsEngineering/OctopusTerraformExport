@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -27,7 +28,7 @@ type RunbookProcessConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -53,7 +54,7 @@ func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string,
 	return c.toHcl(resource, true, false, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -79,10 +80,10 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	return c.toHcl(resource, false, true, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursive bool, lookup bool, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursive bool, lookup bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "runbook_process_" + sanitizer2.SanitizeName(projectName)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	err := c.exportDependencies(recursive, lookup, resource, dependencies)
 
@@ -116,7 +117,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 
 			for j, a := range s.Actions {
 
-				actionResource := ResourceDetails{}
+				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
 				actionResource.Id = a.Id
 				actionResource.ResourceType = "Actions"
@@ -239,7 +240,7 @@ func (c RunbookProcessConverter) GetResourceType() string {
 	return "RunbookProcesses"
 }
 
-func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.RunbookProcess, dependencies *ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
 	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, resource.Steps, dependencies)
 	if err != nil {

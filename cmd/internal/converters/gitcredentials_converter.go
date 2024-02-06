@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -22,15 +23,15 @@ type GitCredentialsConverter struct {
 	DummySecretGenerator      DummySecretGenerator
 }
 
-func (c GitCredentialsConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c GitCredentialsConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.GitCredentials]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -50,7 +51,7 @@ func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *Resource
 	return nil
 }
 
-func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -70,7 +71,7 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *ResourceDeta
 	return c.toHcl(resource, true, false, false, dependencies)
 }
 
-func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -89,11 +90,11 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *Resour
 	return c.toHcl(gitCredentials, false, true, false, dependencies)
 }
 
-func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + gitCredentialsName + ".tf"
 	thisResource.Id = gitCredentials.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -108,7 +109,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _
 	return nil
 }
 
-func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
+func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredentials, thisResource *data.ResourceDetails, gitCredentialsName string) {
 	thisResource.Lookup = "${data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(gitCredentialsName, gitCredentials)
@@ -138,7 +139,7 @@ func (c GitCredentialsConverter) writeData(file *hclwrite.File, resource octopus
 	file.Body().AppendBlock(block)
 }
 
-func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, thisResource *ResourceDetails, gitCredentialsName string) {
+func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, thisResource *data.ResourceDetails, gitCredentialsName string) {
 	thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
 
 	if stateless {

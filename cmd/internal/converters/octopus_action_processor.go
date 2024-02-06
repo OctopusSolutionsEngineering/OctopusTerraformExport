@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
@@ -22,7 +23,7 @@ type OctopusActionProcessor struct {
 	WorkerPoolProcessor     OctopusWorkerPoolProcessor
 }
 
-func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 
 	for _, step := range steps {
 		for _, action := range step.Actions {
@@ -75,7 +76,7 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 
 	for _, step := range steps {
 		for _, action := range step.Actions {
@@ -99,7 +100,7 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)
@@ -126,7 +127,7 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 	return nil
 }
 
-func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *ResourceDetailsCollection) *terraform.TerraformContainer {
+func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformContainer {
 	if container.Image != nil || container.FeedId != nil {
 		return &terraform.TerraformContainer{
 			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
@@ -137,7 +138,7 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 	return nil
 }
 
-func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	properties = c.replaceAccountIds(properties, dependencies)
 	properties = c.replaceFeedIds(properties, dependencies)
 	properties = c.replaceProjectIds(properties, dependencies)
@@ -220,7 +221,7 @@ func (c OctopusActionProcessor) GetRunOnServer(properties map[string]any) bool {
 
 // ReplaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Feeds") {
 			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
@@ -234,7 +235,7 @@ func (c OctopusActionProcessor) replaceFeedIds(properties map[string]string, dep
 
 // replaceAccountIds looks for any property value that is a valid account ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Accounts") {
 			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
@@ -248,7 +249,7 @@ func (c OctopusActionProcessor) replaceAccountIds(properties map[string]string, 
 
 // replaceProjectIds looks for any property value that is a valid project ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Projects") {
 			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
@@ -262,7 +263,7 @@ func (c OctopusActionProcessor) replaceProjectIds(properties map[string]string, 
 
 // replaceGitCredentialIds looks for any property value that is a valid git credentials ID and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]string, dependencies *ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
 		for _, v2 := range dependencies.GetAllResource("Git-Credentials") {
 			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
@@ -292,7 +293,7 @@ func (c OctopusActionProcessor) GetRoles(properties map[string]string) []string 
 	return []string{}
 }
 
-func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, steps []octopus.Step, dependencies *ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			for _, environment := range action.Environments {

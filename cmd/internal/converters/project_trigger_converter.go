@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -18,7 +19,7 @@ type ProjectTriggerConverter struct {
 	Client client.OctopusClient
 }
 
-func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -56,7 +57,7 @@ func (c ProjectTriggerConverter) writeData(file *hclwrite.File, name string, res
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, stateless bool, projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	// Scheduled triggers with types like "OnceDailySchedule" are not supported
 	if projectTrigger.Filter.FilterType != "MachineFilter" {
 		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
@@ -65,7 +66,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
 	thisResource.Id = projectTrigger.Id
 	thisResource.ResourceType = c.GetGroupResourceType(projectId)

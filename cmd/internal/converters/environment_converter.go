@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -19,15 +20,15 @@ type EnvironmentConverter struct {
 	Client client.OctopusClient
 }
 
-func (c EnvironmentConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c EnvironmentConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Environment]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -47,7 +48,7 @@ func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *ResourceDet
 	return nil
 }
 
-func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -67,7 +68,7 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *ResourceDetails
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -83,7 +84,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *ResourceD
 		return err
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
@@ -149,10 +150,10 @@ func (c EnvironmentConverter) getCount(stateless bool, resourceName string) *str
 	return nil
 }
 
-func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = environment.Id
 	thisResource.ResourceType = c.GetResourceType()

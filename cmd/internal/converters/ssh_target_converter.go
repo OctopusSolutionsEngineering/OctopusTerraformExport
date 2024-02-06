@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -32,15 +33,15 @@ type SshTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c SshTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c SshTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c SshTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -68,7 +69,7 @@ func (c SshTargetConverter) isSsh(resource octopus.SshEndpointResource) bool {
 	return resource.Endpoint.CommunicationStyle == "Ssh"
 }
 
-func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -92,7 +93,7 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCo
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -117,7 +118,7 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *ResourceDet
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -157,7 +158,7 @@ func (c SshTargetConverter) writeData(file *hclwrite.File, resource octopus.SshE
 	file.Body().AppendBlock(block)
 }
 
-func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -176,7 +177,7 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 	}
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -240,7 +241,7 @@ func (c SshTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c SshTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c SshTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -248,7 +249,7 @@ func (c SshTargetConverter) lookupEnvironments(envs []string, dependencies *Reso
 	return newEnvs
 }
 
-func (c SshTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c SshTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -257,7 +258,7 @@ func (c SshTargetConverter) getMachinePolicy(machine string, dependencies *Resou
 	return &machineLookup
 }
 
-func (c SshTargetConverter) getAccount(account string, dependencies *ResourceDetailsCollection) string {
+func (c SshTargetConverter) getAccount(account string, dependencies *data.ResourceDetailsCollection) string {
 	accountLookup := dependencies.GetResource("Accounts", account)
 	if accountLookup == "" {
 		return ""
@@ -266,7 +267,7 @@ func (c SshTargetConverter) getAccount(account string, dependencies *ResourceDet
 	return accountLookup
 }
 
-func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

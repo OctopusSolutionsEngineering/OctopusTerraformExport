@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -35,7 +36,7 @@ type RunbookConverter struct {
 
 // ToHclByIdWithLookups exports a self-contained representation of the runbook where external resources like
 // environments, lifecycles, feeds, accounts, projects etc are resolved with data lookups.
-func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -70,7 +71,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *Resourc
 	return c.toHcl(resource, parentResource.Name, false, true, false, dependencies)
 }
 
-func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -90,7 +91,7 @@ func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string
 	return nil
 }
 
-func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -129,7 +130,7 @@ func (c *RunbookConverter) writeData(file *hclwrite.File, name string, resourceN
 	file.Body().AppendBlock(block)
 }
 
-func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	// Ignore excluded runbooks
@@ -141,7 +142,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
 	runbookName := "runbook_" + resourceNameSuffix
@@ -251,7 +252,7 @@ func (c *RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terr
 	}
 }
 
-func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *ResourceDetailsCollection) error {
+func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	// It is not valid to have lookup be false and recursive be true, as the only supported export of a runbook is
 	// with lookup being true.
 	if lookup && recursive {

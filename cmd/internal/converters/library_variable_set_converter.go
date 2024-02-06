@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -34,15 +35,15 @@ type LibraryVariableSetConverter struct {
 	Excluder                                ExcludeByName
 }
 
-func (c *LibraryVariableSetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -62,7 +63,7 @@ func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *Res
 	return nil
 }
 
-func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -82,7 +83,7 @@ func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *Resourc
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -103,7 +104,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *R
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "library_variable_set_" + sanitizer.SanitizeName(resource.Name)
 
@@ -144,13 +145,13 @@ func (c *LibraryVariableSetConverter) writeData(file *hclwrite.File, resource oc
 	file.Body().AppendBlock(block)
 }
 
-func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded runbooks
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	// embedding the type allows files to be distinguished by script module and variable
 	resourceName := "library_variable_set_" + sanitizer.SanitizeName(strutil.EmptyIfNil(resource.ContentType)) +
@@ -350,8 +351,8 @@ func (c *LibraryVariableSetConverter) getScriptModuleDependency(stateless bool, 
 	return ""
 }
 
-func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string, stateless bool) ([]terraform.TerraformTemplate, []ResourceDetails) {
-	templateMap := make([]ResourceDetails, 0)
+func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.Template, libraryName string, stateless bool) ([]terraform.TerraformTemplate, []data.ResourceDetails) {
+	templateMap := make([]data.ResourceDetails, 0)
 	collection := make([]terraform.TerraformTemplate, 0)
 	for i, v := range actionPackages {
 		collection = append(collection, terraform.TerraformTemplate{
@@ -362,7 +363,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 			DisplaySettings: v.DisplaySettings,
 		})
 
-		templateMap = append(templateMap, ResourceDetails{
+		templateMap = append(templateMap, data.ResourceDetails{
 			Id:           v.Id,
 			ResourceType: "CommonTemplateMap",
 			Lookup:       c.getTemplateLookup(stateless, libraryName, i),

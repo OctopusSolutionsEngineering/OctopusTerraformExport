@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -33,15 +34,15 @@ type KubernetesTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c KubernetesTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c KubernetesTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -69,7 +70,7 @@ func (c KubernetesTargetConverter) isKubernetesTarget(resource octopus.Kubernete
 	return resource.Endpoint.CommunicationStyle == "Kubernetes"
 }
 
-func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -93,7 +94,7 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *ResourceDe
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -118,7 +119,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *Reso
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -158,7 +159,7 @@ func (c KubernetesTargetConverter) writeData(file *hclwrite.File, resource octop
 	file.Body().AppendBlock(block)
 }
 
-func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -178,7 +179,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -271,7 +272,7 @@ func (c KubernetesTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAwsAccountAuthentication {
+func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) *terraform.TerraformAwsAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAws" {
 		return &terraform.TerraformAwsAccountAuthentication{
 			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -288,7 +289,7 @@ func (c KubernetesTargetConverter) getAwsAuth(target *octopus.KubernetesEndpoint
 	return nil
 }
 
-func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAccountAuthentication {
+func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) *terraform.TerraformAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesStandard" {
 		return &terraform.TerraformAccountAuthentication{
 			AccountId: c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -298,7 +299,7 @@ func (c KubernetesTargetConverter) getK8sAuth(target *octopus.KubernetesEndpoint
 	return nil
 }
 
-func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformGcpAccountAuthentication {
+func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) *terraform.TerraformGcpAccountAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesGoogleCloud" {
 		return &terraform.TerraformGcpAccountAuthentication{
 			AccountId:                 c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -315,7 +316,7 @@ func (c KubernetesTargetConverter) getGoogleAuth(target *octopus.KubernetesEndpo
 	return nil
 }
 
-func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformCertificateAuthentication {
+func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) *terraform.TerraformCertificateAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesCertificate" {
 		if len(strutil.EmptyIfNil(target.Endpoint.Authentication.ClientCertificate)) == 0 {
 			return nil
@@ -329,7 +330,7 @@ func (c KubernetesTargetConverter) getCertAuth(target *octopus.KubernetesEndpoin
 	return nil
 }
 
-func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) *terraform.TerraformAzureServicePrincipalAuthentication {
+func (c KubernetesTargetConverter) getAzureAuth(target *octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) *terraform.TerraformAzureServicePrincipalAuthentication {
 	if target.Endpoint.Authentication.AuthenticationType == "KubernetesAzure" {
 		return &terraform.TerraformAzureServicePrincipalAuthentication{
 			AccountId:            c.getAccount(target.Endpoint.Authentication.AccountId, dependencies),
@@ -351,7 +352,7 @@ func (c KubernetesTargetConverter) getPodAuth(target *octopus.KubernetesEndpoint
 	return nil
 }
 
-func (c KubernetesTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c KubernetesTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -359,7 +360,7 @@ func (c KubernetesTargetConverter) lookupEnvironments(envs []string, dependencie
 	return newEnvs
 }
 
-func (c KubernetesTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c KubernetesTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -368,7 +369,7 @@ func (c KubernetesTargetConverter) getMachinePolicy(machine string, dependencies
 	return &machineLookup
 }
 
-func (c KubernetesTargetConverter) getAccount(account *string, dependencies *ResourceDetailsCollection) string {
+func (c KubernetesTargetConverter) getAccount(account *string, dependencies *data.ResourceDetailsCollection) string {
 	if account == nil {
 		return ""
 	}
@@ -381,7 +382,7 @@ func (c KubernetesTargetConverter) getAccount(account *string, dependencies *Res
 	return accountLookup
 }
 
-func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *ResourceDetailsCollection) *string {
+func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *data.ResourceDetailsCollection) *string {
 	if len(strutil.EmptyIfNil(pool)) == 0 {
 		return nil
 	}
@@ -394,7 +395,7 @@ func (c KubernetesTargetConverter) getWorkerPool(pool *string, dependencies *Res
 	return &workerPoolLookup
 }
 
-func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) error {
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 

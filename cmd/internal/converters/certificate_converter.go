@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -26,15 +27,15 @@ type CertificateConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c CertificateConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c CertificateConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c CertificateConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Certificate]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -54,7 +55,7 @@ func (c CertificateConverter) allToHcl(stateless bool, dependencies *ResourceDet
 	return nil
 }
 
-func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -74,7 +75,7 @@ func (c CertificateConverter) ToHclById(id string, dependencies *ResourceDetails
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -90,7 +91,7 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *ResourceD
 		return err
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
 
@@ -130,7 +131,7 @@ func (c CertificateConverter) writeData(file *hclwrite.File, resource octopus.Ce
 	file.Body().AppendBlock(block)
 }
 
-func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.
 		It is assumed the exported project links up all required environments, and the certificate
@@ -139,7 +140,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 
 	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
 	thisResource.Id = certificate.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -216,7 +217,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	return nil
 }
 
-func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificateName string, certificate octopus.Certificate, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificateName string, certificate octopus.Certificate, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	terraformResource := terraform.TerraformCertificate{
 		Type:            octopusdeployCertificateResourceType,
 		Name:            certificateName,
@@ -291,7 +292,7 @@ func (c CertificateConverter) GetResourceType() string {
 	return "Certificates"
 }
 
-func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, 0)
 	for _, v := range envs {
 		environment := dependencies.GetResource("Environments", v)
@@ -302,7 +303,7 @@ func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *Re
 	return newEnvs
 }
 
-func (c CertificateConverter) lookupTenants(tenants []string, dependencies *ResourceDetailsCollection) []string {
+func (c CertificateConverter) lookupTenants(tenants []string, dependencies *data.ResourceDetailsCollection) []string {
 	newTenants := make([]string, 0)
 	for _, v := range tenants {
 		tenant := dependencies.GetResource("Tenants", v)

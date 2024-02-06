@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -32,15 +33,15 @@ type AzureWebAppTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c AzureWebAppTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c AzureWebAppTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -68,7 +69,7 @@ func (c AzureWebAppTargetConverter) isAzureWebApp(resource octopus.AzureWebAppRe
 	return resource.Endpoint.CommunicationStyle == "AzureWebApp"
 }
 
-func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -92,7 +93,7 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *ResourceD
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -117,7 +118,7 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -157,7 +158,7 @@ func (c AzureWebAppTargetConverter) writeData(file *hclwrite.File, resource octo
 	file.Body().AppendBlock(block)
 }
 
-func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -177,7 +178,7 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -258,7 +259,7 @@ func (c AzureWebAppTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c AzureWebAppTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c AzureWebAppTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -266,7 +267,7 @@ func (c AzureWebAppTargetConverter) lookupEnvironments(envs []string, dependenci
 	return newEnvs
 }
 
-func (c AzureWebAppTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c AzureWebAppTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -275,7 +276,7 @@ func (c AzureWebAppTargetConverter) getMachinePolicy(machine string, dependencie
 	return &machineLookup
 }
 
-func (c AzureWebAppTargetConverter) getAccount(account string, dependencies *ResourceDetailsCollection) string {
+func (c AzureWebAppTargetConverter) getAccount(account string, dependencies *data.ResourceDetailsCollection) string {
 	accountLookup := dependencies.GetResource("Accounts", account)
 	if accountLookup == "" {
 		return ""
@@ -284,7 +285,7 @@ func (c AzureWebAppTargetConverter) getAccount(account string, dependencies *Res
 	return accountLookup
 }
 
-func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *ResourceDetailsCollection) *string {
+func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *data.ResourceDetailsCollection) *string {
 	if len(pool) == 0 {
 		return nil
 	}
@@ -297,7 +298,7 @@ func (c AzureWebAppTargetConverter) getWorkerPool(pool string, dependencies *Res
 	return &machineLookup
 }
 
-func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAppResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAppResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

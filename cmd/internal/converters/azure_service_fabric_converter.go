@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -33,15 +34,15 @@ type AzureServiceFabricTargetConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c AzureServiceFabricTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c AzureServiceFabricTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -69,7 +70,7 @@ func (c AzureServiceFabricTargetConverter) isAzureServiceFabricCluster(resource 
 	return resource.Endpoint.CommunicationStyle == "AzureServiceFabricCluster"
 }
 
-func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -93,7 +94,7 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *Re
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -122,7 +123,7 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -162,7 +163,7 @@ func (c AzureServiceFabricTargetConverter) writeData(file *hclwrite.File, resour
 	file.Body().AppendBlock(block)
 }
 
-func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabricResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -182,7 +183,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -297,7 +298,7 @@ func (c AzureServiceFabricTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -305,7 +306,7 @@ func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string, dep
 	return newEnvs
 }
 
-func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -314,7 +315,7 @@ func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string, depe
 	return &machineLookup
 }
 
-func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependencies *ResourceDetailsCollection) *string {
+func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependencies *data.ResourceDetailsCollection) *string {
 	if len(pool) == 0 {
 		return nil
 	}
@@ -327,7 +328,7 @@ func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependenci
 	return &machineLookup
 }
 
-func (c AzureServiceFabricTargetConverter) exportDependencies(target octopus.AzureServiceFabricResource, dependencies *ResourceDetailsCollection) error {
+func (c AzureServiceFabricTargetConverter) exportDependencies(target octopus.AzureServiceFabricResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

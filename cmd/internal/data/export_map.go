@@ -1,4 +1,4 @@
-package converters
+package data
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"

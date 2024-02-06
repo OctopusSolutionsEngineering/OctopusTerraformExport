@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -31,15 +32,15 @@ type CloudRegionTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c CloudRegionTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c CloudRegionTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -67,7 +68,7 @@ func (c CloudRegionTargetConverter) isCloudTarget(resource octopus.CloudRegionRe
 	return resource.Endpoint.CommunicationStyle == "None"
 }
 
-func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -91,7 +92,7 @@ func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *ResourceD
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -116,7 +117,7 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *Res
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -156,7 +157,7 @@ func (c CloudRegionTargetConverter) writeData(file *hclwrite.File, resource octo
 	file.Body().AppendBlock(block)
 }
 
-func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -176,7 +177,7 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -249,7 +250,7 @@ func (c CloudRegionTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c CloudRegionTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c CloudRegionTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -257,7 +258,7 @@ func (c CloudRegionTargetConverter) lookupEnvironments(envs []string, dependenci
 	return newEnvs
 }
 
-func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -266,7 +267,7 @@ func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencie
 	return &machineLookup
 }
 
-func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, dependencies *ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

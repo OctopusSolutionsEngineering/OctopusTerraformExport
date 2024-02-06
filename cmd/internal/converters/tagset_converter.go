@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -24,15 +25,15 @@ type TagSetConverter struct {
 	Excluder             ExcludeByName
 }
 
-func (c *TagSetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c *TagSetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c *TagSetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.TagSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -52,7 +53,7 @@ func (c *TagSetConverter) allToHcl(stateless bool, dependencies *ResourceDetails
 	return nil
 }
 
-func (c *TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHcl(tagSet, false, dependencies)
 }
 
@@ -60,14 +61,14 @@ func (c *TagSetConverter) GetResourceType() string {
 	return "TagSets"
 }
 
-func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcluded(tagSet.Name, false, c.ExcludeTenantTagSets, nil) {
 		return nil
 	}
 
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + tagSetName + ".tf"
 	thisResource.Id = tagSet.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -124,7 +125,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 
 		tagName := "tag_" + sanitizer.SanitizeName(tag.Name)
 
-		tagResource := ResourceDetails{}
+		tagResource := data.ResourceDetails{}
 		tagResource.FileName = "space_population/" + tagName + ".tf"
 		tagResource.Id = tag.Id
 		tagResource.ResourceType = "Tags"

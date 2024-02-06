@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -152,7 +153,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		ApiKey: args.ApiKey,
 	}
 
-	dependencies := converters.ResourceDetailsCollection{}
+	dependencies := data.ResourceDetailsCollection{}
 
 	dummySecretGenerator := converters.DummySecret{}
 
@@ -574,7 +575,7 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 
 	dummySecretGenerator := converters.DummySecret{}
 
-	dependencies := converters.ResourceDetailsCollection{}
+	dependencies := data.ResourceDetailsCollection{}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,
@@ -715,7 +716,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 
 	dummySecretGenerator := converters.DummySecret{}
 
-	dependencies := converters.ResourceDetailsCollection{}
+	dependencies := data.ResourceDetailsCollection{}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,
@@ -1119,7 +1120,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 }
 
 // processResources creates a map of file names to file content
-func processResources(resources []converters.ResourceDetails) (map[string]string, error) {
+func processResources(resources []data.ResourceDetails) (map[string]string, error) {
 	fileMap := map[string]string{}
 
 	for _, r := range resources {

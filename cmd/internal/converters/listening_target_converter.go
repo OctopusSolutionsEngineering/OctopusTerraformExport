@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -31,15 +32,15 @@ type ListeningTargetConverter struct {
 	TagSetConverter        TagSetConverter
 }
 
-func (c ListeningTargetConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c ListeningTargetConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c ListeningTargetConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -67,7 +68,7 @@ func (c ListeningTargetConverter) isListeningTarget(resource octopus.ListeningEn
 	return resource.Endpoint.CommunicationStyle == "TentaclePassive"
 }
 
-func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -91,7 +92,7 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *ResourceDet
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -116,7 +117,7 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *Resou
 		return nil
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
@@ -156,7 +157,7 @@ func (c ListeningTargetConverter) writeData(file *hclwrite.File, resource octopu
 	file.Body().AppendBlock(block)
 }
 
-func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
@@ -176,7 +177,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -253,7 +254,7 @@ func (c ListeningTargetConverter) GetResourceType() string {
 	return "Machines"
 }
 
-func (c ListeningTargetConverter) lookupEnvironments(envs []string, dependencies *ResourceDetailsCollection) []string {
+func (c ListeningTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
@@ -261,7 +262,7 @@ func (c ListeningTargetConverter) lookupEnvironments(envs []string, dependencies
 	return newEnvs
 }
 
-func (c ListeningTargetConverter) getMachinePolicy(machine string, dependencies *ResourceDetailsCollection) *string {
+func (c ListeningTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -270,7 +271,7 @@ func (c ListeningTargetConverter) getMachinePolicy(machine string, dependencies 
 	return &machineLookup
 }
 
-func (c ListeningTargetConverter) exportDependencies(target octopus.ListeningEndpointResource, dependencies *ResourceDetailsCollection) error {
+func (c ListeningTargetConverter) exportDependencies(target octopus.ListeningEndpointResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)

@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -30,15 +31,15 @@ func (c FeedConverter) GetResourceType() string {
 	return "Feeds"
 }
 
-func (c FeedConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c FeedConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c FeedConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Feed]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -58,7 +59,7 @@ func (c FeedConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCol
 	return nil
 }
 
-func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -78,7 +79,7 @@ func (c FeedConverter) ToHclById(id string, dependencies *ResourceDetailsCollect
 	return c.toHcl(resource, true, false, false, dependencies)
 }
 
-func (c FeedConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -97,14 +98,14 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *ResourceDetailsC
 	return c.toHcl(resource, false, true, false, dependencies)
 }
 
-func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	forceLookup := lookup ||
 		strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" ||
 		strutil.EmptyIfNil(resource.FeedType) == "OctopusProject"
 
 	resourceName := "feed_" + sanitizer.SanitizeName(resource.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
@@ -120,7 +121,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, statel
 	return nil
 }
 
-func (c FeedConverter) toHclResource(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) {
+func (c FeedConverter) toHclResource(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) {
 	if !(c.exportProjectFeed(resource) ||
 		c.exportDocker(stateless, resource, thisResource, resourceName) ||
 		c.exportAws(stateless, resource, thisResource, resourceName) ||
@@ -140,7 +141,7 @@ func (c FeedConverter) exportProjectFeed(resource octopus2.Feed) bool {
 	return false
 }
 
-func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 
 		if stateless {
@@ -227,7 +228,7 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 	return false
 }
 
-func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
 		thisResource.Lookup = "${octopusdeploy_aws_elastic_container_registry." + resourceName + ".id}"
 
@@ -313,7 +314,7 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 	return false
 }
 
-func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
 		thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 
@@ -400,7 +401,7 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 	return false
 }
 
-func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
 		thisResource.Lookup = "${" + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + ".id}"
 
@@ -488,7 +489,7 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 	return false
 }
 
-func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		thisResource.Lookup = "${" + octopusdeployHelmFeedResourceType + "." + resourceName + ".id}"
 
@@ -574,7 +575,7 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 	return false
 }
 
-func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
 		thisResource.Lookup = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + ".id}"
 
@@ -664,7 +665,7 @@ func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisR
 	return false
 }
 
-func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) {
+func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) {
 	thisResource.Lookup = "${data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id}"
 
 	if !(c.lookupBuiltIn(resource, thisResource, resourceName) ||
@@ -679,7 +680,7 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *Resourc
 	}
 }
 
-func (c FeedConverter) lookupOctopusProject(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupOctopusProject(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, "", "OctopusProject")
@@ -697,7 +698,7 @@ func (c FeedConverter) lookupOctopusProject(resource octopus2.Feed, thisResource
 	return false
 }
 
-func (c FeedConverter) lookupNuget(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupNuget(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "NuGet")
@@ -715,7 +716,7 @@ func (c FeedConverter) lookupNuget(resource octopus2.Feed, thisResource *Resourc
 	return false
 }
 
-func (c FeedConverter) lookupHelm(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupHelm(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "Helm")
@@ -733,7 +734,7 @@ func (c FeedConverter) lookupHelm(resource octopus2.Feed, thisResource *Resource
 	return false
 }
 
-func (c FeedConverter) lookupGithub(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupGithub(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "GitHub")
@@ -751,7 +752,7 @@ func (c FeedConverter) lookupGithub(resource octopus2.Feed, thisResource *Resour
 	return false
 }
 
-func (c FeedConverter) lookupMaven(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupMaven(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "Maven")
@@ -769,7 +770,7 @@ func (c FeedConverter) lookupMaven(resource octopus2.Feed, thisResource *Resourc
 	return false
 }
 
-func (c FeedConverter) lookupAws(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupAws(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "AwsElasticContainerRegistry")
@@ -787,7 +788,7 @@ func (c FeedConverter) lookupAws(resource octopus2.Feed, thisResource *ResourceD
 	return false
 }
 
-func (c FeedConverter) lookupDocker(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupDocker(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "Docker")
@@ -805,7 +806,7 @@ func (c FeedConverter) lookupDocker(resource octopus2.Feed, thisResource *Resour
 	return false
 }
 
-func (c FeedConverter) lookupBuiltIn(resource octopus2.Feed, thisResource *ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupBuiltIn(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, "", "BuiltIn")

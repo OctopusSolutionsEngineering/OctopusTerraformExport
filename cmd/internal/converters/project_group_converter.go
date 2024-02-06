@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -19,15 +20,15 @@ type ProjectGroupConverter struct {
 	Client client.OctopusClient
 }
 
-func (c ProjectGroupConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c ProjectGroupConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -47,7 +48,7 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *ResourceDe
 	return nil
 }
 
-func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -67,7 +68,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *ResourceDetail
 	return c.toHcl(resource, false, false, false, dependencies)
 }
 
-func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -104,8 +105,8 @@ func (c ProjectGroupConverter) writeData(file *hclwrite.File, name string, resou
 	file.Body().AppendBlock(block)
 }
 
-func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, stateless bool, dependencies *ResourceDetailsCollection) error {
-	thisResource := ResourceDetails{}
+func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	thisResource := data.ResourceDetails{}
 
 	forceLookup := lookup || resource.Name == "Default Project Group"
 

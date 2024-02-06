@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -25,15 +26,15 @@ type AccountConverter struct {
 	TagSetConverter           TagSetConverter
 }
 
-func (c AccountConverter) AllToHcl(dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(false, dependencies)
 }
 
-func (c AccountConverter) AllToStatelessHcl(dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 	return c.allToHcl(true, dependencies)
 }
 
-func (c AccountConverter) allToHcl(stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Account]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -53,7 +54,7 @@ func (c AccountConverter) allToHcl(stateless bool, dependencies *ResourceDetails
 	return nil
 }
 
-func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -73,7 +74,7 @@ func (c AccountConverter) ToHclById(id string, dependencies *ResourceDetailsColl
 	return c.toHcl(resource, true, false, dependencies)
 }
 
-func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -89,7 +90,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *ResourceDetai
 		return err
 	}
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)
 
@@ -136,7 +137,7 @@ func (c AccountConverter) buildData(resourceName string, resource octopus.Accoun
 // stateless indicates if the resource is to be exported for use with a stateless Terraform transaction (i.e. where the
 // Terraform state is not maintained between apply commands)
 // dependencies maintains the collection of exported Terraform resources
-func (c AccountConverter) toHcl(account octopus.Account, recursive bool, stateless bool, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) toHcl(account octopus.Account, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if recursive {
 		err := c.exportDependencies(account, dependencies)
 
@@ -147,7 +148,7 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 
 	resourceName := "account_" + sanitizer.SanitizeName(account.Name)
 
-	thisResource := ResourceDetails{}
+	thisResource := data.ResourceDetails{}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = account.Id
@@ -255,7 +256,7 @@ func (c AccountConverter) getAwsDependency(stateless bool, resourceName string) 
 	return ""
 }
 
-func (c AccountConverter) writeAwsAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getAwsLookup(stateless, resourceName)
 	resource.Dependency = c.getAwsDependency(stateless, resourceName)
@@ -333,7 +334,7 @@ func (c AccountConverter) getAzureServicePrincipalsDependency(stateless bool, re
 	return ""
 }
 
-func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getAzureServicePrincipalLookup(stateless, resourceName)
 	resource.Dependency = c.getAzureServicePrincipalsDependency(stateless, resourceName)
@@ -415,7 +416,7 @@ func (c AccountConverter) getAzureSubscriptionDependency(stateless bool, resourc
 	return ""
 }
 
-func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getAzureSubscriptionLookup(stateless, resourceName)
 	resource.Dependency = c.getAzureSubscriptionDependency(stateless, resourceName)
@@ -496,7 +497,7 @@ func (c AccountConverter) getGoogleCloudDependency(stateless bool, resourceName 
 	return ""
 }
 
-func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getGoogleCloudLookup(stateless, resourceName)
 	resource.Dependency = c.getGoogleCloudDependency(stateless, resourceName)
@@ -572,7 +573,7 @@ func (c AccountConverter) getTokenDpendency(stateless bool, resourceName string)
 	return ""
 }
 
-func (c AccountConverter) writeTokenAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getTokenLookup(stateless, resourceName)
 	resource.Dependency = c.getTokenDpendency(stateless, resourceName)
@@ -649,7 +650,7 @@ func (c AccountConverter) getUsernamePasswordDpendency(stateless bool, resourceN
 	return ""
 }
 
-func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getUsernamePasswordLookup(stateless, resourceName)
 	resource.Dependency = c.getUsernamePasswordDpendency(stateless, resourceName)
@@ -726,7 +727,7 @@ func (c AccountConverter) getSshDependency(stateless bool, resourceName string) 
 	return ""
 }
 
-func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *ResourceDetailsCollection) {
+func (c AccountConverter) writeSshAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
 
 	resource.Lookup = c.getSshLookup(stateless, resourceName)
 	resource.Dependency = c.getSshDependency(stateless, resourceName)
@@ -794,7 +795,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *ResourceDeta
 	}
 }
 
-func (c AccountConverter) exportDependencies(target octopus.Account, dependencies *ResourceDetailsCollection) error {
+func (c AccountConverter) exportDependencies(target octopus.Account, dependencies *data.ResourceDetailsCollection) error {
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
