@@ -104,7 +104,7 @@ func TestNilIfFalse(t *testing.T) {
 }
 
 func TestUnEscapeDollar(t *testing.T) {
-	unescapedMap := UnEscapeDollar(map[string]string{
+	unescapedMap := UnEscapeDollarInMap(map[string]string{
 		"entry1": "\"$${value}\"",
 		"entry2": "$${value}",
 		"entry3": "\"value\"",

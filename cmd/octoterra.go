@@ -585,7 +585,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 			return err
 		}
 
-		err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
+		err = writeFiles(strutil.UnEscapeDollarInMap(hcl), args.Destination, args.Console)
 
 		if err != nil {
 			return err
@@ -731,7 +731,7 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 		return err
 	}
 
-	err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
+	err = writeFiles(strutil.UnEscapeDollarInMap(hcl), args.Destination, args.Console)
 
 	return err
 }
@@ -1144,7 +1144,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		return err
 	}
 
-	err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
+	err = writeFiles(strutil.UnEscapeDollarInMap(hcl), args.Destination, args.Console)
 
 	return err
 }

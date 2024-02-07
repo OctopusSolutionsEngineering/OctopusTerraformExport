@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/steptemplate"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/google/uuid"
 	"github.com/zeebo/xxh3"
 	"strings"
@@ -54,7 +55,7 @@ func (s StepTemplateGenerator) Generate(collection *data.ResourceDetailsCollecti
 			OctopusActionScriptScriptSource:                    "Inline",
 			OctopusActionTerraformRunAutomaticFileSubstitution: "True",
 			OctopusActionTerraformPlanJsonOutput:               "False",
-			OctopusActionTerraformTemplate:                     templateText,
+			OctopusActionTerraformTemplate:                     strutil.UnEscapeDollar(templateText),
 			OctopusActionTerraformTemplateParameters:           string(templateParamsJson[:]),
 			OctopusActionRunOnServer:                           "True",
 			OctopusUseBundledTooling:                           "False",
@@ -100,7 +101,7 @@ func (s StepTemplateGenerator) createTerraformTemplateParameters(collection *dat
 
 	// These are the common parameters exposed by all octoterra modules
 	parameters["octopus_server"] = "#{ReferenceArchitecture." + stepKey + ".Octopus.ServerUrl}"
-	parameters["octopus_apikey"] = "#{ReferenceArchitecture." + stepKey + ".Octopus.ApiKey}"
+	parameters["octopus_apikey"] = "#{ReferenceArchitecture." + stepKey + "..Octopus.ApiKey}"
 	parameters["octopus_space_id"] = "#{ReferenceArchitecture." + stepKey + ".Octopus.SpaceId}"
 
 	for _, resource := range collection.Resources {

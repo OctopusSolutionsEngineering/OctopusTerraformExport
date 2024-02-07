@@ -40,7 +40,7 @@ func convertProject() js.Func {
 
 				hclBlob := ""
 
-				for _, h := range strutil.UnEscapeDollar(files) {
+				for _, h := range strutil.UnEscapeDollarInMap(files) {
 					hclBlob += h + "\n"
 				}
 
