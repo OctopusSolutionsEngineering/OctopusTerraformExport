@@ -155,16 +155,20 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 
 		passwordName := resourceName + "_password"
 
-		thisResource.Parameters = []data.ResourceParameter{
-			{
+		parameters := []data.ResourceParameter{}
+		if resource.Password != nil && resource.Password.HasValue {
+
+			parameters = append(parameters, data.ResourceParameter{
 				Label:         "Docker Feed " + resource.Name + " password",
 				Description:   "The password associated with the feed \"" + resource.Name + "\"",
 				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
 				ParameterType: "Password",
 				Sensitive:     true,
 				VariableName:  passwordName,
-			},
+			})
 		}
+
+		thisResource.Parameters = parameters
 		thisResource.ToHcl = func() (string, error) {
 
 			password := "${var." + passwordName + "}"
@@ -350,16 +354,21 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 
 		passwordName := resourceName + "_password"
 
-		thisResource.Parameters = []data.ResourceParameter{
-			{
+		parameters := []data.ResourceParameter{}
+
+		if resource.Password != nil && resource.Password.HasValue {
+
+			parameters = append(parameters, data.ResourceParameter{
 				Label:         "Maven Feed " + resource.Name + " password",
 				Description:   "The password associated with the feed \"" + resource.Name + "\"",
 				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
 				ParameterType: "Password",
 				Sensitive:     true,
 				VariableName:  passwordName,
-			},
+			})
 		}
+
+		thisResource.Parameters = parameters
 		thisResource.ToHcl = func() (string, error) {
 			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformMavenFeed{
@@ -446,16 +455,19 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 
 		passwordName := resourceName + "_password"
 
-		thisResource.Parameters = []data.ResourceParameter{
-			{
-				Label:         "Maven Feed " + resource.Name + " password",
+		parameters := []data.ResourceParameter{}
+		if resource.Password != nil && resource.Password.HasValue {
+			parameters = append(parameters, data.ResourceParameter{
+				Label:         "GitHub Feed " + resource.Name + " password",
 				Description:   "The password associated with the feed \"" + resource.Name + "\"",
 				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
 				ParameterType: "Password",
 				Sensitive:     true,
 				VariableName:  passwordName,
-			},
+			})
 		}
+
+		thisResource.Parameters = parameters
 		thisResource.ToHcl = func() (string, error) {
 
 			password := "${var." + passwordName + "}"
