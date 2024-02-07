@@ -220,14 +220,8 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 // apply.
 func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 
-	err := c.createSpaceTf(dependencies)
-
-	if err != nil {
-		return err
-	}
-
 	// Convert the feeds
-	err = c.FeedConverter.AllToStatelessHcl(dependencies)
+	err := c.FeedConverter.AllToStatelessHcl(dependencies)
 
 	if err != nil {
 		return err

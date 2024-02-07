@@ -109,7 +109,7 @@ func (s StepTemplateGenerator) createTerraformTemplateParameters(collection *dat
 
 	// These are the common parameters exposed by all octoterra modules
 	parameters["octopus_server"] = "#{ReferenceArchitecture." + stepKey + ".Octopus.ServerUrl}"
-	parameters["octopus_apikey"] = "#{ReferenceArchitecture." + stepKey + "..Octopus.ApiKey}"
+	parameters["octopus_apikey"] = "#{ReferenceArchitecture." + stepKey + ".Octopus.ApiKey}"
 	parameters["octopus_space_id"] = "#{ReferenceArchitecture." + stepKey + ".Octopus.SpaceId}"
 
 	for _, resource := range collection.Resources {
