@@ -555,16 +555,19 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 
 		passwordName := resourceName + "_password"
 
-		thisResource.Parameters = []data.ResourceParameter{
-			{
-				Label:         "Maven Feed " + resource.Name + " password",
+		parameters := []data.ResourceParameter{}
+		if resource.Password != nil && resource.Password.HasValue {
+			parameters = append(parameters, data.ResourceParameter{
+				Label:         "Helm Feed " + resource.Name + " password",
 				Description:   "The password associated with the feed \"" + resource.Name + "\"",
 				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
 				ParameterType: "Password",
 				Sensitive:     true,
 				VariableName:  passwordName,
-			},
+			})
 		}
+
+		thisResource.Parameters = parameters
 		thisResource.ToHcl = func() (string, error) {
 
 			password := "${var." + passwordName + "}"
@@ -653,7 +656,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:         "Maven Feed " + resource.Name + " password",
+				Label:         "Nuget Feed " + resource.Name + " password",
 				Description:   "The password associated with the feed \"" + resource.Name + "\"",
 				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
 				ParameterType: "Password",
