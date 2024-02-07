@@ -97,7 +97,7 @@ func (s StepTemplateGenerator) createTemplate(collection *data.ResourceDetailsCo
 			return "", err
 		}
 
-		sb.WriteString(hcl + "\\n")
+		sb.WriteString(hcl + "\n")
 	}
 
 	return sb.String(), nil

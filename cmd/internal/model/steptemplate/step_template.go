@@ -8,18 +8,18 @@ type StepTemplate struct {
 	ActionType      string                   `json:"ActionType"`
 	Packages        []string                 `json:"Packages"`
 	GitDependencies []string                 `json:"GitDependencies"`
+	Meta            StepTemplateMeta         `json:"$Meta"`
 	Properties      StepTemplateProperties   `json:"Properties"`
 	LastModifiedBy  string                   `json:"LastModifiedBy"`
 	Category        string                   `json:"Category"`
 	StepPackageId   string                   `json:"StepPackageId"`
-	Meta            StepTemplateMeta         `json:"$Meta"`
 	Parameters      []StepTemplateParameters `json:"Parameters"`
 }
 
 type StepTemplateMeta struct {
 	ExportedAt     string `json:"ExportedAt"`
 	OctopusVersion string `json:"OctopusVersion"`
-	Type           string `json:"ResourceName"`
+	Type           string `json:"Type"`
 }
 
 type StepTemplateProperties struct {
