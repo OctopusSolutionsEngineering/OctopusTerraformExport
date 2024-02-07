@@ -781,6 +781,24 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 
 	resource.Lookup = c.getSshLookup(stateless, resourceName)
 	resource.Dependency = c.getSshDependency(stateless, resourceName)
+	resource.Parameters = []data.ResourceParameter{
+		{
+			VariableName:  resourceName,
+			Label:         "Account " + account.Name + " certificate password",
+			Description:   "The password associated with the certificate for account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "CertPassword"),
+			ParameterType: "CertPassword",
+			Sensitive:     true,
+		},
+		{
+			VariableName:  resourceName + "_cert",
+			Label:         "Account " + account.Name + " certificate data",
+			Description:   "The certificate file for account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "CertData"),
+			ParameterType: "CertData",
+			Sensitive:     true,
+		},
+	}
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		certFileVariable := "${var." + resourceName + "_cert}"
