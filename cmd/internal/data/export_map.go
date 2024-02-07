@@ -8,11 +8,11 @@ import (
 type ToHcl func() (string, error)
 
 type ResourceParameter struct {
-	Name        string
-	Description string
-	Label       string
-	Type        string
-	Sensitive   bool
+	VariableName string
+	Description  string
+	Label        string
+	Type         string
+	Sensitive    bool
 }
 
 // ResourceDetails is used to capture the dependencies required by the root resources that was
@@ -36,7 +36,7 @@ type ResourceDetails struct {
 	FileName string
 	// ToHCL is a function that generates the HCL from the Octopus resource
 	ToHcl ToHcl
-	// A collection of any parameters that relate to the resource
+	// A collection of any parameters that relate to the resource. These are used when building up a step template.
 	Parameters []ResourceParameter
 }
 

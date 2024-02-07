@@ -145,6 +145,22 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 	thisResource.Id = certificate.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${" + octopusdeployCertificateResourceType + "." + certificateName + ".id}"
+	thisResource.Parameters = []data.ResourceParameter{
+		{
+			Label:        "Certificate " + certificate.Name + " password",
+			Description:  "The password associated with the certificate \"" + certificate.Name + "\"",
+			Type:         sanitizer.SanitizeParameterName(certificate.Name) + ".Password",
+			Sensitive:    true,
+			VariableName: certificateName + "_password",
+		},
+		{
+			Label:        "Certificate " + certificate.Name + " contents",
+			Description:  "The content of the certificate \"" + certificate.Name + "\"",
+			Type:         sanitizer.SanitizeParameterName(certificate.Name) + ".Data",
+			Sensitive:    true,
+			VariableName: certificateName + "_data",
+		},
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates) != 0 " +

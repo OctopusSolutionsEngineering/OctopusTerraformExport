@@ -140,8 +140,6 @@ func (c GitCredentialsConverter) writeData(file *hclwrite.File, resource octopus
 }
 
 func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, thisResource *data.ResourceDetails, gitCredentialsName string) {
-	thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
-
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 " +
 			"? data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id " +
@@ -151,6 +149,15 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
 	}
 
+	thisResource.Parameters = []data.ResourceParameter{
+		{
+			Label:        "Git Credentials " + gitCredentials.Name + " password",
+			Description:  "The password associated with the feed \"" + gitCredentials.Name + "\"",
+			Type:         sanitizer.SanitizeParameterName(gitCredentials.Name) + ".Password",
+			Sensitive:    true,
+			VariableName: gitCredentialsName,
+		},
+	}
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform2.TerraformGitCredentials{

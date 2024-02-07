@@ -153,9 +153,19 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 			thisResource.Lookup = "${" + octopusdeployDockerContainerRegistryResourceType + "." + resourceName + ".id}"
 		}
 
-		thisResource.Lookup = "${" + octopusdeployDockerContainerRegistryResourceType + "." + resourceName + ".id}"
+		passwordName := resourceName + "_password"
+
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:        "Docker Feed " + resource.Name + " password",
+				Description:  "The password associated with the feed \"" + resource.Name + "\"",
+				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
+				Sensitive:    true,
+				VariableName: passwordName,
+			},
+		}
 		thisResource.ToHcl = func() (string, error) {
-			passwordName := resourceName + "_password"
+
 			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformDockerFeed{
 				Type:                              octopusdeployDockerContainerRegistryResourceType,
@@ -230,8 +240,6 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 
 func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
-		thisResource.Lookup = "${octopusdeploy_aws_elastic_container_registry." + resourceName + ".id}"
-
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
@@ -241,8 +249,19 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 			thisResource.Lookup = "${" + octopusdeployAwsElasticContainerRegistryResourceType + "." + resourceName + ".id}"
 		}
 
+		passwordName := resourceName + "_password"
+
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:        "ECR Feed " + resource.Name + " password",
+				Description:  "The password associated with the feed \"" + resource.Name + "\"",
+				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
+				Sensitive:    true,
+				VariableName: passwordName,
+			},
+		}
 		thisResource.ToHcl = func() (string, error) {
-			passwordName := resourceName + "_password"
+
 			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformEcrFeed{
 				Type:                              octopusdeployAwsElasticContainerRegistryResourceType,
@@ -327,8 +346,18 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 			thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 		}
 
+		passwordName := resourceName + "_password"
+
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:        "Maven Feed " + resource.Name + " password",
+				Description:  "The password associated with the feed \"" + resource.Name + "\"",
+				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
+				Sensitive:    true,
+				VariableName: passwordName,
+			},
+		}
 		thisResource.ToHcl = func() (string, error) {
-			passwordName := resourceName + "_password"
 			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformMavenFeed{
 				Type:                              octopusdeployMavenFeedResourceType,
@@ -403,8 +432,6 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 
 func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
-		thisResource.Lookup = "${" + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + ".id}"
-
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
@@ -414,10 +441,20 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 			thisResource.Lookup = "${" + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + ".id}"
 		}
 
-		thisResource.ToHcl = func() (string, error) {
-			passwordName := resourceName + "_password"
-			password := "${var." + passwordName + "}"
+		passwordName := resourceName + "_password"
 
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:        "Maven Feed " + resource.Name + " password",
+				Description:  "The password associated with the feed \"" + resource.Name + "\"",
+				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
+				Sensitive:    true,
+				VariableName: passwordName,
+			},
+		}
+		thisResource.ToHcl = func() (string, error) {
+
+			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformGitHubRepoFeed{
 				Type:                              octopusdeployGithubRepositoryFeedResourceType,
 				Name:                              resourceName,
@@ -491,8 +528,6 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 
 func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
-		thisResource.Lookup = "${" + octopusdeployHelmFeedResourceType + "." + resourceName + ".id}"
-
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
@@ -502,8 +537,19 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 			thisResource.Lookup = "${" + octopusdeployHelmFeedResourceType + "." + resourceName + ".id}"
 		}
 
+		passwordName := resourceName + "_password"
+
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:        "Maven Feed " + resource.Name + " password",
+				Description:  "The password associated with the feed \"" + resource.Name + "\"",
+				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
+				Sensitive:    true,
+				VariableName: passwordName,
+			},
+		}
 		thisResource.ToHcl = func() (string, error) {
-			passwordName := resourceName + "_password"
+
 			password := "${var." + passwordName + "}"
 
 			terraformResource := terraform2.TerraformHelmFeed{
@@ -588,9 +634,18 @@ func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisR
 			thisResource.Lookup = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + ".id}"
 		}
 
-		thisResource.ToHcl = func() (string, error) {
+		passwordName := resourceName + "_password"
 
-			passwordName := resourceName + "_password"
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:        "Maven Feed " + resource.Name + " password",
+				Description:  "The password associated with the feed \"" + resource.Name + "\"",
+				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
+				Sensitive:    true,
+				VariableName: passwordName,
+			},
+		}
+		thisResource.ToHcl = func() (string, error) {
 			password := "${var." + passwordName + "}"
 
 			terraformResource := terraform2.TerraformNuGetFeed{

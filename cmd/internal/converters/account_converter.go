@@ -260,6 +260,15 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 
 	resource.Lookup = c.getAwsLookup(stateless, resourceName)
 	resource.Dependency = c.getAwsDependency(stateless, resourceName)
+	resource.Parameters = []data.ResourceParameter{
+		{
+			VariableName: resourceName,
+			Label:        "Account " + account.Name + " secret access key",
+			Description:  "The AWS secret key associated with the account " + account.Name,
+			Type:         sanitizer.SanitizeParameterName(account.Name) + ".SecretAccessKey",
+			Sensitive:    true,
+		},
+	}
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformAwsAccount{
@@ -338,6 +347,15 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 
 	resource.Lookup = c.getAzureServicePrincipalLookup(stateless, resourceName)
 	resource.Dependency = c.getAzureServicePrincipalsDependency(stateless, resourceName)
+	resource.Parameters = []data.ResourceParameter{
+		{
+			VariableName: resourceName,
+			Label:        "Account " + account.Name + " secret",
+			Description:  "The Azure secret associated with the account " + account.Name,
+			Type:         sanitizer.SanitizeParameterName(account.Name) + ".Secret",
+			Sensitive:    true,
+		},
+	}
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformAzureServicePrincipal{
@@ -501,6 +519,15 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 
 	resource.Lookup = c.getGoogleCloudLookup(stateless, resourceName)
 	resource.Dependency = c.getGoogleCloudDependency(stateless, resourceName)
+	resource.Parameters = []data.ResourceParameter{
+		{
+			VariableName: resourceName,
+			Label:        "Account " + account.Name + " JSON key",
+			Description:  "The GCP JSON key associated with the account " + account.Name,
+			Type:         sanitizer.SanitizeParameterName(account.Name) + ".JsonKey",
+			Sensitive:    true,
+		},
+	}
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformGcpAccount{
@@ -577,6 +604,15 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 
 	resource.Lookup = c.getTokenLookup(stateless, resourceName)
 	resource.Dependency = c.getTokenDpendency(stateless, resourceName)
+	resource.Parameters = []data.ResourceParameter{
+		{
+			VariableName: resourceName,
+			Label:        "Account " + account.Name + " token",
+			Description:  "The token associated with the account " + account.Name,
+			Type:         sanitizer.SanitizeParameterName(account.Name) + ".Token",
+			Sensitive:    true,
+		},
+	}
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformTokenAccount{
@@ -654,6 +690,15 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 
 	resource.Lookup = c.getUsernamePasswordLookup(stateless, resourceName)
 	resource.Dependency = c.getUsernamePasswordDpendency(stateless, resourceName)
+	resource.Parameters = []data.ResourceParameter{
+		{
+			VariableName: resourceName,
+			Label:        "Account " + account.Name + " password",
+			Description:  "The password associated with the account " + account.Name,
+			Type:         sanitizer.SanitizeParameterName(account.Name) + ".Password",
+			Sensitive:    true,
+		},
+	}
 	resource.ToHcl = func() (string, error) {
 		secretVariable := "${var." + resourceName + "}"
 		terraformResource := terraform.TerraformUsernamePasswordAccount{

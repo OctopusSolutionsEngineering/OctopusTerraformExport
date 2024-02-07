@@ -230,6 +230,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName, stateless)
 	dependencies.AddResource(projectTemplateMap...)
 
+	thisResource.Parameters = c.getStepTemplateParameters(projectName, project)
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -371,6 +372,35 @@ func (c *ProjectConverter) writeGitUrlVar(projectName string, project octopus.Pr
 	block := gohcl.EncodeAsBlock(variableResource, "variable")
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
+}
+
+func (c *ProjectConverter) getStepTemplateParameters(projectName string, project octopus.Project) []data.ResourceParameter {
+	parameters := []data.ResourceParameter{}
+
+	if project.PersistenceSettings.Credentials.Type != "UsernamePassword" {
+		parameters = append(parameters, data.ResourceParameter{
+			VariableName: projectName + "_git_password",
+			Label:        "Project " + project.Name + " Git password",
+			Description:  "The Git password associated with the project \"" + project.Name + "\"",
+			Type:         sanitizer.SanitizeParameterName(project.Name) + ".GitPassword",
+			Sensitive:    true,
+		})
+	}
+
+	for _, v := range project.Templates {
+		if setting, ok := v.DisplaySettings["Octopus.ControlType"]; ok && setting == "Sensitive" {
+			variableName := sanitizer.SanitizeName(projectName + "_template_" + strutil.EmptyIfNil(v.Name))
+			parameters = append(parameters, data.ResourceParameter{
+				VariableName: variableName,
+				Label:        "Project " + project.Name + " tenant variable " + strutil.EmptyIfNil(v.Name),
+				Description:  "Sensitive value for tenant variable template " + strutil.EmptyIfNil(v.Name) + " for project " + project.Name,
+				Type:         sanitizer.SanitizeParameterName(project.Name) + ".GitPassword",
+				Sensitive:    true,
+			})
+		}
+	}
+
+	return parameters
 }
 
 // Octopus has two places where protected branches are defined: the explicit list of branches and optionally the default branch.

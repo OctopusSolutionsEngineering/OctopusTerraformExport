@@ -188,6 +188,15 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
+	thisResource.Parameters = []data.ResourceParameter{
+		{
+			VariableName: targetName,
+			Label:        "Service Fabric Target " + target.Name + " aad_user_credential_password",
+			Description:  "The aad_user_credential_password value associated with the target \"" + target.Name + "\"",
+			Type:         sanitizer.SanitizeParameterName(target.Name) + ".AadUserCredentialPassword",
+			Sensitive:    true,
+		},
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 " +
