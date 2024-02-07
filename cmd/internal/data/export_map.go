@@ -8,11 +8,12 @@ import (
 type ToHcl func() (string, error)
 
 type ResourceParameter struct {
-	VariableName string
-	Description  string
-	Label        string
-	Type         string
-	Sensitive    bool
+	VariableName  string
+	Description   string
+	Label         string
+	ResourceName  string
+	ParameterType string
+	Sensitive     bool
 }
 
 // ResourceDetails is used to capture the dependencies required by the root resources that was

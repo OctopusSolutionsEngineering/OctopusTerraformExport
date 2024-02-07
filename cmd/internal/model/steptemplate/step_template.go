@@ -2,6 +2,7 @@ package steptemplate
 
 type StepTemplate struct {
 	Id              string                   `json:"Id"`
+	Version         int                      `json:"Version"`
 	Name            string                   `json:"Name"`
 	Description     string                   `json:"Description"`
 	ActionType      string                   `json:"ActionType"`
@@ -10,7 +11,15 @@ type StepTemplate struct {
 	Properties      StepTemplateProperties   `json:"Properties"`
 	LastModifiedBy  string                   `json:"LastModifiedBy"`
 	Category        string                   `json:"Category"`
+	StepPackageId   string                   `json:"StepPackageId"`
+	Meta            StepTemplateMeta         `json:"$Meta"`
 	Parameters      []StepTemplateParameters `json:"Parameters"`
+}
+
+type StepTemplateMeta struct {
+	ExportedAt     string `json:"ExportedAt"`
+	OctopusVersion string `json:"OctopusVersion"`
+	Type           string `json:"ResourceName"`
 }
 
 type StepTemplateProperties struct {

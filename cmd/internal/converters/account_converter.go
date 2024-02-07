@@ -262,11 +262,12 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 	resource.Dependency = c.getAwsDependency(stateless, resourceName)
 	resource.Parameters = []data.ResourceParameter{
 		{
-			VariableName: resourceName,
-			Label:        "Account " + account.Name + " secret access key",
-			Description:  "The AWS secret key associated with the account " + account.Name,
-			Type:         sanitizer.SanitizeParameterName(account.Name) + ".SecretAccessKey",
-			Sensitive:    true,
+			VariableName:  resourceName,
+			Label:         "Account " + account.Name + " secret access key",
+			Description:   "The AWS secret key associated with the account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "SecretAccessKey"),
+			ParameterType: "SecretAccessKey",
+			Sensitive:     true,
 		},
 	}
 	resource.ToHcl = func() (string, error) {
@@ -349,11 +350,12 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 	resource.Dependency = c.getAzureServicePrincipalsDependency(stateless, resourceName)
 	resource.Parameters = []data.ResourceParameter{
 		{
-			VariableName: resourceName,
-			Label:        "Account " + account.Name + " secret",
-			Description:  "The Azure secret associated with the account " + account.Name,
-			Type:         sanitizer.SanitizeParameterName(account.Name) + ".Secret",
-			Sensitive:    true,
+			VariableName:  resourceName,
+			Label:         "Account " + account.Name + " secret",
+			Description:   "The Azure secret associated with the account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "Secret"),
+			ParameterType: "Secret",
+			Sensitive:     true,
 		},
 	}
 	resource.ToHcl = func() (string, error) {
@@ -521,11 +523,12 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 	resource.Dependency = c.getGoogleCloudDependency(stateless, resourceName)
 	resource.Parameters = []data.ResourceParameter{
 		{
-			VariableName: resourceName,
-			Label:        "Account " + account.Name + " JSON key",
-			Description:  "The GCP JSON key associated with the account " + account.Name,
-			Type:         sanitizer.SanitizeParameterName(account.Name) + ".JsonKey",
-			Sensitive:    true,
+			VariableName:  resourceName,
+			Label:         "Account " + account.Name + " JSON key",
+			Description:   "The GCP JSON key associated with the account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "JsonKey"),
+			ParameterType: "JsonKey",
+			Sensitive:     true,
 		},
 	}
 	resource.ToHcl = func() (string, error) {
@@ -606,11 +609,12 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 	resource.Dependency = c.getTokenDpendency(stateless, resourceName)
 	resource.Parameters = []data.ResourceParameter{
 		{
-			VariableName: resourceName,
-			Label:        "Account " + account.Name + " token",
-			Description:  "The token associated with the account " + account.Name,
-			Type:         sanitizer.SanitizeParameterName(account.Name) + ".Token",
-			Sensitive:    true,
+			VariableName:  resourceName,
+			Label:         "Account " + account.Name + " token",
+			Description:   "The token associated with the account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "Token"),
+			ParameterType: "Token",
+			Sensitive:     true,
 		},
 	}
 	resource.ToHcl = func() (string, error) {
@@ -692,11 +696,12 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 	resource.Dependency = c.getUsernamePasswordDpendency(stateless, resourceName)
 	resource.Parameters = []data.ResourceParameter{
 		{
-			VariableName: resourceName,
-			Label:        "Account " + account.Name + " password",
-			Description:  "The password associated with the account " + account.Name,
-			Type:         sanitizer.SanitizeParameterName(account.Name) + ".Password",
-			Sensitive:    true,
+			VariableName:  resourceName,
+			Label:         "Account " + account.Name + " password",
+			Description:   "The password associated with the account " + account.Name,
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, account.Name, "Password"),
+			ParameterType: "Password",
+			Sensitive:     true,
 		},
 	}
 	resource.ToHcl = func() (string, error) {

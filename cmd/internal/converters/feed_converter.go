@@ -114,21 +114,21 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, statel
 	if forceLookup {
 		c.toHclLookup(resource, &thisResource, resourceName)
 	} else {
-		c.toHclResource(stateless, resource, &thisResource, resourceName)
+		c.toHclResource(stateless, dependencies, resource, &thisResource, resourceName)
 	}
 
 	dependencies.AddResource(thisResource)
 	return nil
 }
 
-func (c FeedConverter) toHclResource(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) {
+func (c FeedConverter) toHclResource(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) {
 	if !(c.exportProjectFeed(resource) ||
-		c.exportDocker(stateless, resource, thisResource, resourceName) ||
-		c.exportAws(stateless, resource, thisResource, resourceName) ||
-		c.exportMaven(stateless, resource, thisResource, resourceName) ||
-		c.exportGithub(stateless, resource, thisResource, resourceName) ||
-		c.exportHelm(stateless, resource, thisResource, resourceName) ||
-		c.exportNuget(stateless, resource, thisResource, resourceName)) {
+		c.exportDocker(stateless, dependencies, resource, thisResource, resourceName) ||
+		c.exportAws(stateless, dependencies, resource, thisResource, resourceName) ||
+		c.exportMaven(stateless, dependencies, resource, thisResource, resourceName) ||
+		c.exportGithub(stateless, dependencies, resource, thisResource, resourceName) ||
+		c.exportHelm(stateless, dependencies, resource, thisResource, resourceName) ||
+		c.exportNuget(stateless, dependencies, resource, thisResource, resourceName)) {
 		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
 	}
 }
@@ -141,7 +141,7 @@ func (c FeedConverter) exportProjectFeed(resource octopus2.Feed) bool {
 	return false
 }
 
-func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 
 		if stateless {
@@ -157,11 +157,12 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:        "Docker Feed " + resource.Name + " password",
-				Description:  "The password associated with the feed \"" + resource.Name + "\"",
-				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
-				Sensitive:    true,
-				VariableName: passwordName,
+				Label:         "Docker Feed " + resource.Name + " password",
+				Description:   "The password associated with the feed \"" + resource.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  passwordName,
 			},
 		}
 		thisResource.ToHcl = func() (string, error) {
@@ -238,7 +239,7 @@ func (c FeedConverter) exportDocker(stateless bool, resource octopus2.Feed, this
 	return false
 }
 
-func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -253,11 +254,12 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:        "ECR Feed " + resource.Name + " password",
-				Description:  "The password associated with the feed \"" + resource.Name + "\"",
-				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
-				Sensitive:    true,
-				VariableName: passwordName,
+				Label:         "ECR Feed " + resource.Name + " password",
+				Description:   "The password associated with the feed \"" + resource.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  passwordName,
 			},
 		}
 		thisResource.ToHcl = func() (string, error) {
@@ -333,7 +335,7 @@ func (c FeedConverter) exportAws(stateless bool, resource octopus2.Feed, thisRes
 	return false
 }
 
-func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
 		thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 
@@ -350,11 +352,12 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:        "Maven Feed " + resource.Name + " password",
-				Description:  "The password associated with the feed \"" + resource.Name + "\"",
-				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
-				Sensitive:    true,
-				VariableName: passwordName,
+				Label:         "Maven Feed " + resource.Name + " password",
+				Description:   "The password associated with the feed \"" + resource.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  passwordName,
 			},
 		}
 		thisResource.ToHcl = func() (string, error) {
@@ -430,7 +433,7 @@ func (c FeedConverter) exportMaven(stateless bool, resource octopus2.Feed, thisR
 	return false
 }
 
-func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -445,11 +448,12 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:        "Maven Feed " + resource.Name + " password",
-				Description:  "The password associated with the feed \"" + resource.Name + "\"",
-				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
-				Sensitive:    true,
-				VariableName: passwordName,
+				Label:         "Maven Feed " + resource.Name + " password",
+				Description:   "The password associated with the feed \"" + resource.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  passwordName,
 			},
 		}
 		thisResource.ToHcl = func() (string, error) {
@@ -526,7 +530,7 @@ func (c FeedConverter) exportGithub(stateless bool, resource octopus2.Feed, this
 	return false
 }
 
-func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -541,11 +545,12 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:        "Maven Feed " + resource.Name + " password",
-				Description:  "The password associated with the feed \"" + resource.Name + "\"",
-				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
-				Sensitive:    true,
-				VariableName: passwordName,
+				Label:         "Maven Feed " + resource.Name + " password",
+				Description:   "The password associated with the feed \"" + resource.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  passwordName,
 			},
 		}
 		thisResource.ToHcl = func() (string, error) {
@@ -621,10 +626,8 @@ func (c FeedConverter) exportHelm(stateless bool, resource octopus2.Feed, thisRe
 	return false
 }
 
-func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
-		thisResource.Lookup = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + ".id}"
-
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 				"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
@@ -638,11 +641,12 @@ func (c FeedConverter) exportNuget(stateless bool, resource octopus2.Feed, thisR
 
 		thisResource.Parameters = []data.ResourceParameter{
 			{
-				Label:        "Maven Feed " + resource.Name + " password",
-				Description:  "The password associated with the feed \"" + resource.Name + "\"",
-				Type:         sanitizer.SanitizeParameterName(resource.Name) + ".Password",
-				Sensitive:    true,
-				VariableName: passwordName,
+				Label:         "Maven Feed " + resource.Name + " password",
+				Description:   "The password associated with the feed \"" + resource.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  passwordName,
 			},
 		}
 		thisResource.ToHcl = func() (string, error) {

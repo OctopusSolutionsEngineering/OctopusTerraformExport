@@ -102,7 +102,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _
 	if lookup {
 		c.toHclLookup(gitCredentials, &thisResource, gitCredentialsName)
 	} else {
-		c.toHclResource(stateless, gitCredentials, &thisResource, gitCredentialsName)
+		c.toHclResource(stateless, gitCredentials, dependencies, &thisResource, gitCredentialsName)
 	}
 
 	dependencies.AddResource(thisResource)
@@ -139,7 +139,7 @@ func (c GitCredentialsConverter) writeData(file *hclwrite.File, resource octopus
 	file.Body().AppendBlock(block)
 }
 
-func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, thisResource *data.ResourceDetails, gitCredentialsName string) {
+func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, dependencies *data.ResourceDetailsCollection, thisResource *data.ResourceDetails, gitCredentialsName string) {
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 " +
 			"? data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id " +
@@ -151,11 +151,12 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 
 	thisResource.Parameters = []data.ResourceParameter{
 		{
-			Label:        "Git Credentials " + gitCredentials.Name + " password",
-			Description:  "The password associated with the feed \"" + gitCredentials.Name + "\"",
-			Type:         sanitizer.SanitizeParameterName(gitCredentials.Name) + ".Password",
-			Sensitive:    true,
-			VariableName: gitCredentialsName,
+			Label:         "Git Credentials " + gitCredentials.Name + " password",
+			Description:   "The password associated with the feed \"" + gitCredentials.Name + "\"",
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, gitCredentials.Name, "Password"),
+			ParameterType: "Password",
+			Sensitive:     true,
+			VariableName:  gitCredentialsName,
 		},
 	}
 	thisResource.ToHcl = func() (string, error) {

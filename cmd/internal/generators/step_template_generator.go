@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/zeebo/xxh3"
 	"strings"
+	"time"
 )
 
 type StepTemplateGenerator struct {
@@ -62,7 +63,14 @@ func (s StepTemplateGenerator) Generate(collection *data.ResourceDetailsCollecti
 		},
 		LastModifiedBy: "OctopusDeploy",
 		Category:       "octopus",
+		StepPackageId:  "Octopus.TerraformApply",
 		Parameters:     stepTemplateParams,
+		Version:        1,
+		Meta: steptemplate.StepTemplateMeta{
+			ExportedAt:     time.Now().Format(time.RFC3339),
+			OctopusVersion: "2024.1.10177",
+			Type:           "ActionTemplate",
+		},
 	}
 
 	return json.MarshalIndent(template, "", "\t")
@@ -106,7 +114,7 @@ func (s StepTemplateGenerator) createTerraformTemplateParameters(collection *dat
 
 	for _, resource := range collection.Resources {
 		for _, parameter := range resource.Parameters {
-			name := "ReferenceArchitecture." + stepKey + "." + resource.ResourceType + "." + parameter.Type
+			name := "ReferenceArchitecture." + stepKey + "." + resource.ResourceType + "." + resource.ResourceType + "." + parameter.ParameterType
 			parameters[parameter.VariableName] = "#{" + name + "}"
 		}
 	}
@@ -124,7 +132,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 		Name:         "ReferenceArchitecture.Octopus.ServerUrl",
 		Label:        "Octopus Server URL",
 		HelpText:     "The Octopus server URL.",
-		DefaultValue: "",
+		DefaultValue: "#{Octopus.Web.ServerUri}",
 		DisplaySettings: steptemplate.StepTemplateParameterDisplaySettings{
 			OctopusControlType: "SingleLineText",
 		},
@@ -152,7 +160,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 
 	for _, resource := range collection.Resources {
 		for _, parameter := range resource.Parameters {
-			name := "ReferenceArchitecture." + stepKey + "." + resource.ResourceType + "." + parameter.Type
+			name := "ReferenceArchitecture." + stepKey + "." + resource.ResourceType + "." + parameter.ResourceName + "." + parameter.ParameterType
 			parameters = append(parameters, steptemplate.StepTemplateParameters{
 				Id:           s.createStableGuid(name),
 				Name:         name,
