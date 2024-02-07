@@ -88,6 +88,81 @@ docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
     -dest /tmp/octoexport
 ```
 
+## Creating reference architecture step templates
+
+The `Apply a Terraform template` step in Octopus can be used to execute the Terraform modules created with `octoterra`.
+One limitation of this step is that it does not persist the local state, so you must use remote state for most
+scenarios.
+
+However, the fact that local state is not maintained between step executions can be used to build "stateless" modules.
+Stateless modules use a `resource` and `data` block pair to look for existing resources and only create a new resource
+if it does not already exist. For example, the following code creates an environment only if it doesn't already exist:
+
+```hcl
+data "octopusdeploy_environments" "environment_development" {
+  ids          = null
+  partial_name = "Development"
+  skip         = 0
+  take         = 1
+}
+
+resource "octopusdeploy_environment" "environment_development" {
+  count                        = "${length(data.octopusdeploy_environments.environment_development.environments) != 0 ? 0 : 1}"
+  name                         = "Development"
+  description                  = "A test environment"
+  allow_dynamic_infrastructure = true
+  use_guided_failure           = false
+  sort_order                   = 0
+
+  jira_extension_settings {
+    environment_type = "unmapped"
+  }
+
+  jira_service_management_extension_settings {
+    is_enabled = false
+  }
+
+  servicenow_extension_settings {
+    is_enabled = false
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+```
+
+The ID of the environment can be then be accessed with:
+
+```hcl
+${length(data.octopusdeploy_environments.environment_development.environments) != 0 ? data.octopusdeploy_environments.environment_development.environments[0].id : octopusdeploy_environment.environment_development[0].id}
+```
+
+When used with a persistent state, the example above would first create the environment and then delete it when
+the module was applied for a second time. However, when the state is not maintained between calls to `terraform apply`,
+the example above either creates an environment if it doesn't exist, or references the existing environment.
+
+We exploit this behaviour to create "stateless" modules that are executed by a template `Apply a Terraform template` step.
+The command below uses the `-stepTemplate`, `-stepTemplateName`, and `-stepTemplateKey` arguments to generate a step
+template JSON file that captures the Octopus resources in the space passed to `-space` as a stateless module:
+
+```bash
+docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-123 \
+    -apiKey API-ABCDEFGHIJKLMNOPQURTUVWXYZ \
+    -stepTemplate \
+    -stepTemplateName "My Reference Architecture" \
+    -stepTemplateKey "Kubernetes" \ 
+    -lookupProjectDependencies \
+    -dest /tmp/octoexport
+```
+
+This command produces a file called `step-template.json` that can be imported as an Octopus step template. It exposes
+all the secret variables required to deploy the module as step template parameters, allowing users to apply (and reapply)
+the template into any space, reusing any existing Octopus resources and creating any that are missing. This is a convenient
+method for composing Octopus resources in a space without having to worry about configuring any external persistent
+state.
+
 ## Octopus integration
 
 The documentation in [platform engineering](https://octopus.com/docs/platform-engineering) allow octoterra to be used directly in Octopus via native steps.
