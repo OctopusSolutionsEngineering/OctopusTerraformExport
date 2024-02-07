@@ -153,7 +153,6 @@ docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
     -stepTemplate \
     -stepTemplateName "My Reference Architecture" \
     -stepTemplateKey "Kubernetes" \ 
-    -lookupProjectDependencies \
     -dest /tmp/octoexport
 ```
 
