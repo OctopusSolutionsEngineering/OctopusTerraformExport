@@ -80,8 +80,8 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	return c.toHcl(resource, false, true, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursive bool, lookup bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
-	resourceName := "runbook_process_" + sanitizer2.SanitizeName(projectName)
+func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursive bool, lookup bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbookName)
 
 	thisResource := data.ResourceDetails{}
 
@@ -208,7 +208,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursiv
 		for _, s := range resource.Steps {
 			for _, a := range s.Actions {
 				properties := a.Properties
-				sanitizedProperties, variables := sanitizer2.SanitizeMap(projectName, properties)
+				sanitizedProperties, variables := sanitizer2.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
