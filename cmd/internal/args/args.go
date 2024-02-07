@@ -20,6 +20,9 @@ type Arguments struct {
 	RunbookName                      string
 	LookupProjectDependencies        bool
 	Stateless                        bool
+	StepTemplateName                 string
+	StepTemplateKey                  string
+	StepTemplateDescription          string
 	IgnoreCacManagedValues           bool
 	BackendBlock                     string
 	DetachProjectTemplates           bool
@@ -289,7 +292,10 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
 	flags.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
 	flags.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
-	flags.BoolVar(&arguments.Stateless, "stateless", false, "Create a Terraform module that can be used for stateless space population")
+	flags.BoolVar(&arguments.Stateless, "stepTemplate", false, "Create an Octopus step template")
+	flags.StringVar(&arguments.StepTemplateName, "stepTemplateName", "", "Step template name. Only used with the stepTemplate option.")
+	flags.StringVar(&arguments.StepTemplateKey, "stepTemplateKey", "", "Step template key used when building parameter names. Only used with the stepTemplate option.")
+	flags.StringVar(&arguments.StepTemplateDescription, "stepTemplateDescription", "", "Step template description used when building parameter names. Only used with the stepTemplate option.")
 	flags.StringVar(&arguments.ProjectId, "projectId", "", "Limit the export to a single project")
 	flags.StringVar(&arguments.ProjectName, "projectName", "", "Limit the export to a single project")
 	flags.StringVar(&arguments.RunbookId, "runbookId", "", "Limit the export to a single runbook. Runbooks are exported referencing external resources as data sources.")

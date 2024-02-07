@@ -8,6 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -48,6 +49,16 @@ func main() {
 
 	if parseArgs.RunbookName != "" && parseArgs.ProjectName == "" && parseArgs.ProjectId == "" {
 		errorExit("runbookName requires either projectId or projectName to be set")
+	}
+
+	if parseArgs.Stateless {
+		if parseArgs.StepTemplateKey == "" {
+			errorExit("stepTemplate requires stepTemplateKey to be defined (e.g. EKS, AKS, Lambda, WebApp)")
+		}
+
+		if parseArgs.StepTemplateName == "" {
+			errorExit("stepTemplate requires stepTemplateName to be defined")
+		}
 	}
 
 	if parseArgs.ProjectName != "" {
@@ -554,15 +565,34 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		}
 	}
 
-	hcl, err := processResources(dependencies.Resources)
+	if args.Stateless {
+		templateGenerator := generators.StepTemplateGenerator{}
+		templateContent, err := templateGenerator.Generate(&dependencies, args.StepTemplateName, args.StepTemplateKey, args.StepTemplateDescription)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
+		err = writeFiles(map[string]string{"step_template.json": string(templateContent[:])}, args.Destination, args.Console)
+
+		if err != nil {
+			return err
+		}
+	} else {
+		hcl, err := processResources(dependencies.Resources)
+
+		if err != nil {
+			return err
+		}
+
+		err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	err = writeFiles(strutil.UnEscapeDollar(hcl), args.Destination, args.Console)
-
-	return err
+	return nil
 }
 
 func ConvertRunbookToTerraform(args args.Arguments) error {

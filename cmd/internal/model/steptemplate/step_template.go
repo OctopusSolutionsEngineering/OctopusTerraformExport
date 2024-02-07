@@ -1,15 +1,16 @@
 package steptemplate
 
 type StepTemplate struct {
-	Id              string                 `json:"Id"`
-	Name            string                 `json:"Name"`
-	Description     string                 `json:"Description"`
-	ActionType      string                 `json:"ActionType"`
-	Packages        []string               `json:"Packages"`
-	GitDependencies []string               `json:"GitDependencies"`
-	Properties      StepTemplateProperties `json:"Properties"`
-	LastModifiedBy  string                 `json:"LastModifiedBy"`
-	Category        string                 `json:"Category"`
+	Id              string                   `json:"Id"`
+	Name            string                   `json:"Name"`
+	Description     string                   `json:"Description"`
+	ActionType      string                   `json:"ActionType"`
+	Packages        []string                 `json:"Packages"`
+	GitDependencies []string                 `json:"GitDependencies"`
+	Properties      StepTemplateProperties   `json:"Properties"`
+	LastModifiedBy  string                   `json:"LastModifiedBy"`
+	Category        string                   `json:"Category"`
+	Parameters      []StepTemplateParameters `json:"Parameters"`
 }
 
 type StepTemplateProperties struct {
