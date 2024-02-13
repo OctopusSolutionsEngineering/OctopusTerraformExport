@@ -18,7 +18,7 @@ type TenantTagDependencyGenerator struct {
 
 // AddAndWriteTagSetDependencies writes a depends_on block to a terraform resource, and optionally recursively includes
 // the tagsets that the resource depends on.
-func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client client.OctopusClient, tenantTags []string, tagSetConverter TagSetConverter, block *hclwrite.Block, dependencies *data.ResourceDetailsCollection, recursive bool) error {
+func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client client.OctopusClient, tenantTags []string, tagSetConverter ConvertToHclByResource[octopus.TagSet], block *hclwrite.Block, dependencies *data.ResourceDetailsCollection, recursive bool) error {
 	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := client.GetAllResources("TagSets", &collection)
 
@@ -48,7 +48,7 @@ func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client clien
 	return nil
 }
 
-func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.TagSet, tagSetConverter TagSetConverter, dependencies *data.ResourceDetailsCollection) error {
+func (t TenantTagDependencyGenerator) AddTagSetDependencies(tagSets []octopus.TagSet, tagSetConverter ConvertToHclByResource[octopus.TagSet], dependencies *data.ResourceDetailsCollection) error {
 	for _, tagSet := range tagSets {
 		err := tagSetConverter.ToHclByResource(tagSet, dependencies)
 		if err != nil {

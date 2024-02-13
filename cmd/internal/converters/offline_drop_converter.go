@@ -31,7 +31,7 @@ type OfflineDropTargetConverter struct {
 	ExcludeTenantTags         args.ExcludeTenantTags
 	ExcludeTenantTagSets      args.ExcludeTenantTagSets
 	Excluder                  ExcludeByName
-	TagSetConverter           TagSetConverter
+	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 }
 
 func (c OfflineDropTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {

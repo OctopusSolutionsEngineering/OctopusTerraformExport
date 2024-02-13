@@ -29,7 +29,7 @@ type VariableSetConverter struct {
 	Client                              client.OctopusClient
 	ChannelConverter                    ConverterByProjectIdWithTerraDependencies
 	EnvironmentConverter                ConverterAndLookupById
-	TagSetConverter                     TagSetConverter
+	TagSetConverter                     ConvertToHclByResource[octopus.TagSet]
 	AzureCloudServiceTargetConverter    ConverterAndLookupById
 	AzureServiceFabricTargetConverter   ConverterAndLookupById
 	AzureWebAppTargetConverter          ConverterAndLookupById

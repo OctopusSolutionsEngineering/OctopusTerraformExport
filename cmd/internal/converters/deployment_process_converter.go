@@ -25,7 +25,7 @@ type DeploymentProcessConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
-	TagSetConverter        TagSetConverter
+	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {

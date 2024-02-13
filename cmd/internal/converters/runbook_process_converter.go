@@ -25,7 +25,7 @@ type RunbookProcessConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
-	TagSetConverter        TagSetConverter
+	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {

@@ -29,7 +29,7 @@ type CloudRegionTargetConverter struct {
 	ExcludeTenantTags      args.ExcludeTenantTags
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
-	TagSetConverter        TagSetConverter
+	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 }
 
 func (c CloudRegionTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {

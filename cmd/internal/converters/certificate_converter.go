@@ -24,7 +24,7 @@ type CertificateConverter struct {
 	ExcludeTenantTags         args.ExcludeTenantTags
 	ExcludeTenantTagSets      args.ExcludeTenantTagSets
 	Excluder                  ExcludeByName
-	TagSetConverter           TagSetConverter
+	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 }
 
 func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
