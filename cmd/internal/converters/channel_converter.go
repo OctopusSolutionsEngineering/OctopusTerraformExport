@@ -130,7 +130,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			data := terraform.TerraformChannelData{
 				Name:        resourceName,
 				Type:        octopusdeployChannelDataType,
-				Ids:         nil,
+				Ids:         []string{},
 				PartialName: channel.Name,
 				Skip:        0,
 				Take:        1,

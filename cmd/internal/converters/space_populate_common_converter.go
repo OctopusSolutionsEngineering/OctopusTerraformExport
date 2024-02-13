@@ -39,11 +39,11 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := terraform2.TerraformProvider{
 			Type:    "octopusdeploy",
-			Address: "${var.octopus_server}",
-			ApiKey:  "${var.octopus_apikey}",
+			Address: "${trimspace(var.octopus_server)}",
+			ApiKey:  "${trimspace(var.octopus_apikey)}",
 		}
 		if includeSpaceId {
-			spaceId := "${var.octopus_space_id}"
+			spaceId := "${trimspace(var.octopus_space_id)}"
 			terraformResource.SpaceId = &spaceId
 		}
 		file := hclwrite.NewEmptyFile()

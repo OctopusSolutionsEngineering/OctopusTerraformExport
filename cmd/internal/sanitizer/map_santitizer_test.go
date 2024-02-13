@@ -7,6 +7,7 @@ import (
 
 func TestMapSanitizer(t *testing.T) {
 	sanitizedMap, _ := SanitizeMap("parent",
+		"actionname",
 		map[string]any{
 			"input":  "test",
 			"input2": octopus.Variable{},
@@ -16,7 +17,7 @@ func TestMapSanitizer(t *testing.T) {
 		t.Fatal("String should be passed through with o changes")
 	}
 
-	if sanitizedMap["input2"] != "${var.parent_input2}" {
+	if sanitizedMap["input2"] != "${var.parent_actionname_input2}" {
 		t.Fatal("Object should be replaced with placeholder")
 	}
 }
