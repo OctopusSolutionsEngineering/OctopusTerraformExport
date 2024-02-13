@@ -57,6 +57,14 @@ data "octopusdeploy_worker_pools" "workerpool_default" {
   take = 1
 }
 
+
+data "octopusdeploy_worker_pools" "worker_pool_docker" {
+  ids          = null
+  partial_name = "Docker"
+  skip         = 0
+  take         = 1
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -378,7 +386,7 @@ resource "octopusdeploy_runbook_process" "runbook" {
       is_disabled                        = false
       can_be_used_for_project_versioning = true
       is_required                        = false
-      worker_pool_id                     = ""
+      worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
       worker_pool_variable               = ""
       properties                         = {
         "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"

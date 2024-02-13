@@ -6063,6 +6063,21 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					return errors.New("Should have created a project called \"Lookup project\"")
 				}
 
+				workerPoolCollection := octopus.GeneralCollection[octopus.WorkerPool]{}
+				err = octopusClient.GetAllResources("WorkerPools", &workerPoolCollection)
+
+				if err != nil {
+					return err
+				}
+
+				workerPool := lo.Filter(workerPoolCollection.Items, func(item octopus.WorkerPool, index int) bool {
+					return item.Name == "Docker"
+				})
+
+				if len(workerPool) != 1 {
+					return errors.New("Should have created a worker pool called \"Docker\"")
+				}
+
 				deploymentProcess := octopus.DeploymentProcess{}
 				found, err := octopusClient.GetResourceById("DeploymentProcesses",
 					strutil.EmptyIfNil(project[0].DeploymentProcessId),
@@ -6078,6 +6093,10 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
 					return errors.New("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
+				}
+
+				if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != workerPool[0].Id {
+					return errors.New("Action should have worker pool set to Docker (was" + deploymentProcess.Steps[0].Actions[0].WorkerPoolId + " )")
 				}
 
 				return nil

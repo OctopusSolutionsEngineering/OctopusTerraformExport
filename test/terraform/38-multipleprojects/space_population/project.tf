@@ -147,3 +147,40 @@ resource "octopusdeploy_project" "project_2" {
     skip_machine_behavior           = "SkipUnavailableMachines"
   }
 }
+
+resource "octopusdeploy_deployment_process" "deployment_process_hello_world" {
+  project_id = "${octopusdeploy_project.project_2.id}"
+
+  step {
+    condition           = "Success"
+    name                = "Hello world (using Bash)"
+    package_requirement = "LetOctopusDecide"
+    start_trigger       = "StartAfterPrevious"
+
+    action {
+      action_type                        = "Octopus.Script"
+      name                               = "Hello world (using Bash)"
+      condition                          = "Success"
+      run_on_server                      = true
+      is_disabled                        = false
+      can_be_used_for_project_versioning = false
+      is_required                        = true
+      worker_pool_id                     = octopusdeploy_static_worker_pool.workerpool_docker.id
+      properties                         = {
+        "Octopus.Action.Script.ScriptSource" = "Inline"
+        "Octopus.Action.Script.ScriptBody" = "echo 'Hello world, using Bash'\n\n#TODO: Experiment with steps of your own :)\n\necho '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
+        "Octopus.Action.Script.Syntax" = "Bash"
+        "Octopus.Action.RunOnServer" = "true"
+      }
+      environments                       = []
+      excluded_environments              = []
+      channels                           = []
+      tenant_tags                        = []
+      features                           = []
+    }
+
+    properties   = {}
+    target_roles = []
+  }
+  depends_on = []
+}
