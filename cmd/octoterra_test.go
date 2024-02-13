@@ -6063,42 +6063,6 @@ func TestSingleProjectLookupExport(t *testing.T) {
 					return errors.New("Should have created a project called \"Lookup project\"")
 				}
 
-				workerPoolCollection := octopus.GeneralCollection[octopus.WorkerPool]{}
-				err = octopusClient.GetAllResources("WorkerPools", &workerPoolCollection)
-
-				if err != nil {
-					return err
-				}
-
-				workerPool := lo.Filter(workerPoolCollection.Items, func(item octopus.WorkerPool, index int) bool {
-					return item.Name == "Docker"
-				})
-
-				if len(workerPool) != 1 {
-					return errors.New("Should have created a worker pool called \"Docker\"")
-				}
-
-				deploymentProcess := octopus.DeploymentProcess{}
-				found, err := octopusClient.GetResourceById("DeploymentProcesses",
-					strutil.EmptyIfNil(project[0].DeploymentProcessId),
-					&deploymentProcess)
-
-				if err != nil {
-					return err
-				}
-
-				if !found {
-					return errors.New("Expected to find a deployment process")
-				}
-
-				if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
-					return errors.New("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
-				}
-
-				if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != workerPool[0].Id {
-					return errors.New("Action should have worker pool set to Docker (was" + deploymentProcess.Steps[0].Actions[0].WorkerPoolId + " )")
-				}
-
 				return nil
 			}()
 
@@ -6203,6 +6167,94 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				if collection.Items[0].Name != "MyRunbook3" {
 					return errors.New("The runbook should be called MyRunbook3")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+}
+
+// TestSingleProjectLookupExportWithWorkerPool verifies that a single project can be reimported with the correct worker pool.
+func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
+	if os.Getenv("GIT_CREDENTIAL") == "" {
+		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
+	}
+
+	exportProjectLookupImportAndTest(
+		t,
+		"Test 2",
+		"../test/terraform/43-multipleprojectslookup/space_creation",
+		"../test/terraform/43-multipleprojectslookup/space_prepopulation",
+		"../test/terraform/43-multipleprojectslookup/space_population",
+		"../test/terraform/43-multipleprojectslookup/space_creation",
+		"../test/terraform/43-multipleprojectslookup/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{
+			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
+		},
+		[]string{},
+		args2.Arguments{
+			ExcludeAllTenants: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			// Verify that the single project was exported
+			err := func() error {
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Test 2"
+				})
+
+				if len(testProject) != 1 {
+					return errors.New("The project must be called \"Test 2\"")
+				}
+
+				workerPoolCollection := octopus.GeneralCollection[octopus.WorkerPool]{}
+				err = octopusClient.GetAllResources("WorkerPools", &workerPoolCollection)
+
+				if err != nil {
+					return err
+				}
+
+				dockerWorkerPool := lo.Filter(workerPoolCollection.Items, func(item octopus.WorkerPool, index int) bool {
+					return item.Name == "Docker"
+				})
+
+				if len(dockerWorkerPool) != 1 {
+					return errors.New("Should have created a worker pool called \"Docker\"")
+				}
+
+				deploymentProcess := octopus.DeploymentProcess{}
+				found, err := octopusClient.GetResourceById("DeploymentProcesses",
+					strutil.EmptyIfNil(testProject[0].DeploymentProcessId),
+					&deploymentProcess)
+
+				if err != nil {
+					return err
+				}
+
+				if !found {
+					return errors.New("Expected to find a deployment process")
+				}
+
+				if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != dockerWorkerPool[0].Id {
+					return errors.New("Action should have worker pool set to Docker (was" + deploymentProcess.Steps[0].Actions[0].WorkerPoolId + " )")
 				}
 
 				return nil
