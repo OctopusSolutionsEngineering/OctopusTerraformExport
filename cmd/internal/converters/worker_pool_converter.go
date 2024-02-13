@@ -92,9 +92,9 @@ func (c WorkerPoolConverter) buildData(resourceName string, resource octopus2.Wo
 	return terraform2.TerraformWorkerPoolData{
 		Type:         octopusdeployWorkerPoolsDataType,
 		Name:         resourceName,
-		ResourceName: &resource.Name,
+		ResourceName: nil,
 		Ids:          nil,
-		PartialName:  nil,
+		PartialName:  &resource.Name,
 		Skip:         0,
 		Take:         1,
 	}
