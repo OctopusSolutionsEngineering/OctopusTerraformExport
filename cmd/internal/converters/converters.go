@@ -64,6 +64,7 @@ type ConverterLookupByIdWithName interface {
 // references external resources via a data source lookup
 type ConverterLookupByIdWithBranch interface {
 	ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterAndLookupByIdAndName converts an individual resource by ID to HCL and to a data lookup

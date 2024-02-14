@@ -35,6 +35,7 @@ type ProjectConverter struct {
 	ChannelConverter             ConverterAndLookupByProjectIdWithTerraDependencies
 	RunbookConverter             ConverterAndLookupByIdAndName
 	IgnoreCacManagedValues       bool
+	ExcludeCaCProjectSettings    bool
 	ExcludeAllRunbooks           bool
 	IgnoreProjectChanges         bool
 	IgnoreProjectGroupChanges    bool
@@ -315,28 +316,30 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			file.Body().AppendBlock(block)
 		}
 
-		if terraformResource.GitUsernamePasswordPersistenceSettings != nil {
-			secretVariableResource := terraform.TerraformVariable{
-				Name:        projectName + "_git_password",
-				Type:        "string",
-				Nullable:    false,
-				Sensitive:   true,
-				Description: "The git password for the project \"" + project.Name + "\"",
+		if !c.ExcludeCaCProjectSettings {
+			if terraformResource.GitUsernamePasswordPersistenceSettings != nil {
+				secretVariableResource := terraform.TerraformVariable{
+					Name:        projectName + "_git_password",
+					Type:        "string",
+					Nullable:    false,
+					Sensitive:   true,
+					Description: "The git password for the project \"" + project.Name + "\"",
+				}
+
+				if c.DummySecretVariableValues {
+					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				}
+
+				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+				hcl.WriteUnquotedAttribute(block, "type", "string")
+				file.Body().AppendBlock(block)
 			}
 
-			if c.DummySecretVariableValues {
-				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			if terraformResource.HasCacConfigured() {
+				c.writeGitPathVar(projectName, project, file)
+				c.writeGitUrlVar(projectName, project, file)
+				c.writeProtectedBranchesVar(projectName, project, file)
 			}
-
-			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-			hcl.WriteUnquotedAttribute(block, "type", "string")
-			file.Body().AppendBlock(block)
-		}
-
-		if terraformResource.HasCacConfigured() {
-			c.writeGitPathVar(projectName, project, file)
-			c.writeGitUrlVar(projectName, project, file)
-			c.writeProtectedBranchesVar(projectName, project, file)
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -615,7 +618,7 @@ func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependenc
 }
 
 func (c *ProjectConverter) convertLibraryGitPersistence(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) *terraform.TerraformGitLibraryPersistenceSettings {
-	if project.PersistenceSettings.Credentials.Type != "Reference" {
+	if project.PersistenceSettings.Credentials.Type != "Reference" || c.ExcludeCaCProjectSettings {
 		return nil
 	}
 
@@ -629,7 +632,7 @@ func (c *ProjectConverter) convertLibraryGitPersistence(project octopus.Project,
 }
 
 func (c *ProjectConverter) convertAnonymousGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitAnonymousPersistenceSettings {
-	if project.PersistenceSettings.Credentials.Type != "Anonymous" {
+	if project.PersistenceSettings.Credentials.Type != "Anonymous" || c.ExcludeCaCProjectSettings {
 		return nil
 	}
 
@@ -642,7 +645,7 @@ func (c *ProjectConverter) convertAnonymousGitPersistence(project octopus.Projec
 }
 
 func (c *ProjectConverter) convertUsernamePasswordGitPersistence(project octopus.Project, projectName string) *terraform.TerraformGitUsernamePasswordPersistenceSettings {
-	if project.PersistenceSettings.Credentials.Type != "UsernamePassword" {
+	if project.PersistenceSettings.Credentials.Type != "UsernamePassword" || c.ExcludeCaCProjectSettings {
 		return nil
 	}
 
@@ -743,6 +746,8 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 
 			if lookup {
 				err = c.DeploymentProcessConverter.ToHclLookupByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+			} else {
+				err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
 			}
 
 			if err != nil {

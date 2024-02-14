@@ -24,6 +24,7 @@ type Arguments struct {
 	StepTemplateKey                  string
 	StepTemplateDescription          string
 	IgnoreCacManagedValues           bool
+	ExcludeCaCProjectSettings        bool
 	BackendBlock                     string
 	DetachProjectTemplates           bool
 	DefaultSecretVariableValues      bool
@@ -302,6 +303,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.RunbookName, "runbookName", "", "Limit the export to a single runbook. Requires projectName or projectId. Runbooks are exported referencing external resources as data sources.")
 	flags.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
 	flags.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", true, "Pass this to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings. This has no effect on projects that do not have CaC enabled.")
+	flags.BoolVar(&arguments.ExcludeCaCProjectSettings, "excludeCaCProjectSettings", false, "Pass this to exclude any Config-As-Code settings in the exported projects. Typically you set -ignoreCacManagedValues=false -excludeCaCProjectSettings=true to essentially \"convert\" a CaC project to a regular project.")
 	flags.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
 	flags.BoolVar(&arguments.DummySecretVariableValues, "dummySecretVariableValues", false, "Pass this to set the default value of secret variables, account secrets, feed credentials to a dummy value. This allows resources with secret values to be created without knowing the secrets, while still allowing the secret values to be specified if they are known. This option takes precedence over the defaultSecretVariableValues option.")
 	flags.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")

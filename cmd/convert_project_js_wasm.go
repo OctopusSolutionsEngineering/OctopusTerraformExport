@@ -294,11 +294,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
 			Client: client,
 		},
-		VariableSetConverter:   &variableSetConverter,
-		ChannelConverter:       channelConverter,
-		RunbookConverter:       &runbookConverter,
-		IgnoreCacManagedValues: false,
-		Excluder:               converters.DefaultExcluder{},
+		VariableSetConverter:      &variableSetConverter,
+		ChannelConverter:          channelConverter,
+		RunbookConverter:          &runbookConverter,
+		IgnoreCacManagedValues:    false,
+		ExcludeCaCProjectSettings: false,
+		Excluder:                  converters.DefaultExcluder{},
 	}).ToHclByIdWithLookups(projectId, &dependencies)
 
 	if err != nil {

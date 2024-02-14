@@ -29,6 +29,39 @@ type DeploymentProcessConverter struct {
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 }
 
+func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+	if parentId == "" || branch == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(parentId+"/"+branch, c.GetResourceType()) {
+		return nil
+	}
+
+	// Get the deployment process associated with the git branch
+	resource := octopus.DeploymentProcess{}
+	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/deploymentprocesses", &resource)
+
+	if err != nil {
+		return err
+	}
+
+	// Projects with no deployment process will not have a deployment process resources.
+	// This is expected, so just return.
+	if !found {
+		return nil
+	}
+
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
+}
+
 func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
