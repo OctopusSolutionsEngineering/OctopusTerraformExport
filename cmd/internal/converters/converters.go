@@ -60,10 +60,23 @@ type ConverterLookupByIdWithName interface {
 	ToHclLookupByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
 }
 
+// ConverterLookupByIdWithBranch converts an individual resource by its git branch, uses the supplied name for the Terraform resource, and
+// references external resources via a data source lookup
+type ConverterLookupByIdWithBranch interface {
+	ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
+}
+
 // ConverterAndLookupByIdAndName converts an individual resource by ID to HCL and to a data lookup
 type ConverterAndLookupByIdAndName interface {
 	ConverterByIdWithName
 	ConverterLookupByIdWithName
+}
+
+// ConverterAndLookupByIdAndNameOrBranch converts an individual resource by ID or git branch to HCL and to a data lookup
+type ConverterAndLookupByIdAndNameOrBranch interface {
+	ConverterByIdWithName
+	ConverterLookupByIdWithName
+	ConverterLookupByIdWithBranch
 }
 
 // ConverterByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent

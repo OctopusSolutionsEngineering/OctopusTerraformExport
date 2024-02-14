@@ -28,7 +28,7 @@ type ProjectConverter struct {
 	GitCredentialsConverter      ConverterAndLookupById
 	LibraryVariableSetConverter  ConverterAndLookupById
 	ProjectGroupConverter        ConverterAndLookupById
-	DeploymentProcessConverter   ConverterAndLookupByIdAndName
+	DeploymentProcessConverter   ConverterAndLookupByIdAndNameOrBranch
 	TenantConverter              ConverterAndLookupByProjectId
 	ProjectTriggerConverter      ConverterByProjectIdWithName
 	VariableSetConverter         ConverterAndLookupByProjectIdAndName
@@ -717,6 +717,37 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 
 		if err != nil {
 			return err
+		}
+	}
+
+	// The deployment process for a CaC enabled project is found under the name of a Git branch
+	if !c.IgnoreCacManagedValues && project.HasCacConfigured() {
+		collection := octopus.GeneralCollection[octopus.Branch]{}
+		err := c.Client.GetAllResources("Projects/"+project.Id+"/git/branches", &collection)
+
+		if err != nil {
+			return err
+		}
+
+		if len(collection.Items) != 0 {
+
+			branch := collection.Items[0]
+
+			branches := lo.Filter(collection.Items, func(item octopus.Branch, index int) bool {
+				return item.CanonicalName == "refs/heads/main" || item.CanonicalName == "refs/heads/master"
+			})
+
+			if len(branches) != 0 {
+				branch = collection.Items[0]
+			}
+
+			if lookup {
+				err = c.DeploymentProcessConverter.ToHclLookupByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+			}
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 
