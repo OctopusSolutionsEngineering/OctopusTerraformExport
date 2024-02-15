@@ -42,6 +42,10 @@ func (c AzureWebAppTargetConverter) AllToStatelessHcl(dependencies *data.Resourc
 }
 
 func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

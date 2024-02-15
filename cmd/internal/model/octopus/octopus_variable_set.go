@@ -2,6 +2,7 @@ package octopus
 
 type VariableSet struct {
 	Id        *string
+	OwnerId   *string
 	Variables []Variable
 }
 

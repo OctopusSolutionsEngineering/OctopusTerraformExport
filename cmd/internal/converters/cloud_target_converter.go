@@ -41,6 +41,10 @@ func (c CloudRegionTargetConverter) AllToStatelessHcl(dependencies *data.Resourc
 }
 
 func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

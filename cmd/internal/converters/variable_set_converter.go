@@ -16,6 +16,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
+	"net/url"
 	"strings"
 )
 
@@ -55,6 +56,64 @@ type VariableSetConverter struct {
 	ExcludeVariableEnvironmentScopes    args.ExcludeVariableEnvironmentScopes
 	excludeVariableEnvironmentScopesIds []string
 	Excluder                            ExcludeByName
+}
+
+func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
+	if projectId == "" {
+		return nil
+	}
+
+	resource := octopus.VariableSet{}
+	found, err := c.Client.GetResource("Projects/"+projectId+"/"+url.QueryEscape(branch)+"/variables", &resource)
+
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		return nil
+	}
+
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
+
+	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
+	return c.toHcl(resource, false, true, false, ignoreSecrets, parentName, parentLookup, nil, dependencies)
+}
+
+func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error {
+	if projectId == "" {
+		return nil
+	}
+
+	resource := octopus.VariableSet{}
+	found, err := c.Client.GetResource("Projects/"+projectId+"/"+url.QueryEscape(branch)+"/variables", &resource)
+
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		return nil
+	}
+
+	project := octopus.Project{}
+	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return err
+	}
+
+	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
+
+	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
+	return c.toHcl(resource, false, true, false, ignoreSecrets, parentName, parentLookup, nil, dependencies)
 }
 
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID

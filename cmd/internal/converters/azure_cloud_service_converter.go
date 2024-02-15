@@ -46,6 +46,10 @@ func (c AzureCloudServiceTargetConverter) isAzureCloudService(resource octopus.A
 }
 
 func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.AzureCloudServiceResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

@@ -42,6 +42,10 @@ func (c SshTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetails
 }
 
 func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -70,6 +74,10 @@ func (c SshTargetConverter) isSsh(resource octopus.SshEndpointResource) bool {
 }
 
 func (c SshTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -94,6 +102,10 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *data.ResourceDeta
 }
 
 func (c SshTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
