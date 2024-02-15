@@ -114,7 +114,7 @@ func (s StepTemplateGenerator) createTerraformTemplateParameters(collection *dat
 
 	for _, resource := range collection.Resources {
 		for _, parameter := range resource.Parameters {
-			name := "ReferenceArchitecture." + stepKey + "." + resource.ResourceType + "." + resource.ResourceType + "." + parameter.ParameterType
+			name := "ReferenceArchitecture." + stepKey + "." + resource.ResourceType + "." + parameter.ResourceName + "." + parameter.ParameterType
 			parameters[parameter.VariableName] = "#{" + name + "}"
 		}
 	}
