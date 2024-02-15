@@ -882,7 +882,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 	}
 
 	// Export the git credentials
-	if project.PersistenceSettings.Credentials.Type == "Reference" {
+	if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
 		err = c.GitCredentialsConverter.ToHclLookupById(project.PersistenceSettings.Credentials.Id, dependencies)
 
 		if err != nil {
@@ -925,7 +925,7 @@ func (c *ProjectConverter) exportDependencies(project octopus.Project, dependenc
 	}
 
 	// Export the git credentials
-	if project.PersistenceSettings.Credentials.Type == "Reference" {
+	if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
 		err = c.GitCredentialsConverter.ToHclById(project.PersistenceSettings.Credentials.Id, dependencies)
 
 		if err != nil {

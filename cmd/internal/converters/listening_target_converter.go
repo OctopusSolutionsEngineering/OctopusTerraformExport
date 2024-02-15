@@ -41,6 +41,10 @@ func (c ListeningTargetConverter) AllToStatelessHcl(dependencies *data.ResourceD
 }
 
 func (c ListeningTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.ListeningEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

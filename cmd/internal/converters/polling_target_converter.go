@@ -41,6 +41,10 @@ func (c PollingTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDet
 }
 
 func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.PollingEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

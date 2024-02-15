@@ -43,6 +43,10 @@ func (c OfflineDropTargetConverter) AllToStatelessHcl(dependencies *data.Resourc
 }
 
 func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

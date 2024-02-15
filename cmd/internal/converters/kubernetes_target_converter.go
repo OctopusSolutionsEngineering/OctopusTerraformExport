@@ -43,6 +43,10 @@ func (c KubernetesTargetConverter) AllToStatelessHcl(dependencies *data.Resource
 }
 
 func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

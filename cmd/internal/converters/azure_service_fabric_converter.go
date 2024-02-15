@@ -43,6 +43,10 @@ func (c AzureServiceFabricTargetConverter) AllToStatelessHcl(dependencies *data.
 }
 
 func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTargets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.AzureServiceFabricResource]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
