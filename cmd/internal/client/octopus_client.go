@@ -474,7 +474,7 @@ func (o OctopusApiClient) GetResource(resourceType string, resources any) (exist
 	}
 
 	if res.StatusCode != 200 {
-		return false, errors.New("did not find the requested resource: " + resourceType + "\n" + string(body[:]))
+		return false, errors.New("did not find the requested resource: " + resourceType + "\n" + fmt.Sprint(res.StatusCode) + "\n" + string(body[:]))
 	}
 
 	err = json.Unmarshal(body, resources)
