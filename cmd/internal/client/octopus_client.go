@@ -477,13 +477,11 @@ func (o OctopusApiClient) GetResource(resourceType string, resources any) (exist
 		errorResponse := octopus2.ErrorResponse{}
 		err = json.Unmarshal(body, &errorResponse)
 
-		if err != nil {
-			return false, errors.New("did not find the requested resource: " + resourceType + "\n" + fmt.Sprint(res.StatusCode) + "\n" + string(body[:]))
-		}
-
-		// treat a missing variables.ocl file as a missing resource
-		if strings.Index(errorResponse.ErrorMessage, "does not exist in the Git repository") != -1 && strings.Index(errorResponse.ErrorMessage, "variables.ocl") != -1 {
-			return false, nil
+		if err == nil {
+			// treat a missing variables.ocl file as a missing resource
+			if strings.Index(errorResponse.ErrorMessage, "does not exist in the Git repository") != -1 && strings.Index(errorResponse.ErrorMessage, "variables.ocl") != -1 {
+				return false, nil
+			}
 		}
 
 		return false, errors.New("did not find the requested resource: " + resourceType + "\n" + fmt.Sprint(res.StatusCode) + "\n" + string(body[:]))
