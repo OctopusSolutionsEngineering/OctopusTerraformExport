@@ -65,6 +65,7 @@ type Arguments struct {
 	ExcludeTargets                   ExcludeTargets
 	ExcludeTargetsRegex              ExcludeTargets
 	ExcludeTargetsExcept             ExcludeTargets
+	ExcludeAllGitCredentials         bool
 }
 
 // GetBackend forces the use of a local backend for stateless exports
@@ -347,6 +348,8 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsExcept, "excludeProjectsExcept", "All projects except those defined with excludeProjectsExcept are excluded. This is only used when exporting a space.")
+
+	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
 
 	/*
 		Missing exclude options for environments, machine policies, accounts, certificates, workerpools, lifecycles, feeds, gitcreds.

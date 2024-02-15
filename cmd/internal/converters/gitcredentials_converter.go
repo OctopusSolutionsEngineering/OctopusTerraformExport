@@ -21,6 +21,7 @@ type GitCredentialsConverter struct {
 	SpaceResourceName         string
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
+	ExcludeAllGitCredentials  bool
 }
 
 func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
@@ -32,6 +33,10 @@ func (c GitCredentialsConverter) AllToStatelessHcl(dependencies *data.ResourceDe
 }
 
 func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllGitCredentials {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.GitCredentials]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -52,6 +57,10 @@ func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *data.Res
 }
 
 func (c GitCredentialsConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllGitCredentials {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -72,6 +81,10 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *data.Resourc
 }
 
 func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllGitCredentials {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -91,6 +104,10 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.R
 }
 
 func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+
+	if c.ExcludeAllGitCredentials {
+		return nil
+	}
 
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 

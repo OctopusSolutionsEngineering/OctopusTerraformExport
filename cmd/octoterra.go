@@ -61,6 +61,10 @@ func main() {
 		}
 	}
 
+	if !parseArgs.ExcludeCaCProjectSettings && parseArgs.ExcludeAllGitCredentials {
+		errorExit("excludeAllGitCredentials requires excludeCaCProjectSettings to be true")
+	}
+
 	if parseArgs.ProjectName != "" {
 		parseArgs.ProjectId, err = ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectName)
 
@@ -244,6 +248,7 @@ func ConvertSpaceToTerraform(args args.Arguments) error {
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
 	}
 	channelConverter := converters.ChannelConverter{
 		Client:               octopusClient,
@@ -621,6 +626,7 @@ func ConvertRunbookToTerraform(args args.Arguments) error {
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
+		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:               octopusClient,
@@ -763,6 +769,7 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
+		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:               octopusClient,
