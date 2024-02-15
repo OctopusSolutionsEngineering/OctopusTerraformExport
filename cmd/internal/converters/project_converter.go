@@ -689,6 +689,32 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *t
 	return &versioningStrategy
 }
 
+func (c *ProjectConverter) getGitBranch(projectId string) (*octopus.Branch, error) {
+	collection := octopus.GeneralCollection[octopus.Branch]{}
+	err := c.Client.GetAllResources("Projects/"+projectId+"/git/branches", &collection)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(collection.Items) != 0 {
+
+		branch := collection.Items[0]
+
+		branches := lo.Filter(collection.Items, func(item octopus.Branch, index int) bool {
+			return item.CanonicalName == "refs/heads/main" || item.CanonicalName == "refs/heads/master"
+		})
+
+		if len(branches) != 0 {
+			branch = collection.Items[0]
+		}
+
+		return &branch, nil
+	}
+
+	return nil, errors.New("Project does not have any branches.")
+}
+
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.
 // These are resources that do not expose an API for bulk retrieval, or those whose resource names benefit
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
@@ -725,38 +751,24 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 
 	// The deployment process for a CaC enabled project is found under the name of a Git branch
 	if !c.IgnoreCacManagedValues && project.HasCacConfigured() {
-		collection := octopus.GeneralCollection[octopus.Branch]{}
-		err := c.Client.GetAllResources("Projects/"+project.Id+"/git/branches", &collection)
+		branch, err := c.getGitBranch(project.Id)
 
 		if err != nil {
 			return err
 		}
 
-		if len(collection.Items) != 0 {
+		if lookup {
+			err = c.DeploymentProcessConverter.ToHclLookupByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+		} else {
+			err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+		}
 
-			branch := collection.Items[0]
-
-			branches := lo.Filter(collection.Items, func(item octopus.Branch, index int) bool {
-				return item.CanonicalName == "refs/heads/main" || item.CanonicalName == "refs/heads/master"
-			})
-
-			if len(branches) != 0 {
-				branch = collection.Items[0]
-			}
-
-			if lookup {
-				err = c.DeploymentProcessConverter.ToHclLookupByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
-			} else {
-				err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
-			}
-
-			if err != nil {
-				return err
-			}
+		if err != nil {
+			return err
 		}
 	}
 
-	// Export the variable set
+	// Export the variable set. Cac projects save secrets here, regular projects save all variables
 	if project.VariableSetId != nil {
 		var err error
 		if lookup {
@@ -769,6 +781,40 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 
 			err = c.VariableSetConverter.ToHclByProjectIdAndName(
 				project.Id,
+				project.Name,
+				"${"+octopusdeployProjectResourceType+"."+projectName+".id}",
+				parentCount,
+				dependencies)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// The variables for a CaC enabled project are found under the name of a Git branch
+	if !c.IgnoreCacManagedValues && project.HasCacConfigured() {
+		branch, err := c.getGitBranch(project.Id)
+
+		if err != nil {
+			return err
+		}
+
+		if lookup {
+			err = c.VariableSetConverter.ToHclLookupByProjectIdBranchAndName(
+				project.Id,
+				branch.CanonicalName,
+				project.Name,
+				"${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
+		} else {
+			var parentCount *string = nil
+			if stateless {
+				parentCount = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
+			}
+
+			err = c.VariableSetConverter.ToHclByProjectIdBranchAndName(
+				project.Id,
+				branch.CanonicalName,
 				project.Name,
 				"${"+octopusdeployProjectResourceType+"."+projectName+".id}",
 				parentCount,
