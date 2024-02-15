@@ -456,13 +456,6 @@ func (o OctopusApiClient) GetResource(resourceType string, resources any) (exist
 		return false, err
 	}
 
-	if res.StatusCode == 404 {
-		return false, nil
-	}
-
-	if res.StatusCode != 200 {
-		return false, errors.New("did not find the requested resource: " + resourceType)
-	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -470,10 +463,18 @@ func (o OctopusApiClient) GetResource(resourceType string, resources any) (exist
 		}
 	}(res.Body)
 
+	if res.StatusCode == 404 {
+		return false, nil
+	}
+
 	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
 		return false, err
+	}
+
+	if res.StatusCode != 200 {
+		return false, errors.New("did not find the requested resource: " + resourceType + "\n" + string(body[:]))
 	}
 
 	err = json.Unmarshal(body, resources)
