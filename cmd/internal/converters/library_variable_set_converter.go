@@ -52,6 +52,10 @@ func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *dat
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
+			continue
+		}
+
 		zap.L().Info("Library Variable Set: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 

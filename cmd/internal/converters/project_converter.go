@@ -73,6 +73,10 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceD
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
+			continue
+		}
+
 		zap.L().Info("Project: " + resource.Id)
 		err = c.toHcl(resource, false, false, stateless, dependencies)
 
