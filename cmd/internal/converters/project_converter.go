@@ -796,7 +796,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 	var parentLookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
 	if stateless {
 		parentCount = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
-		parentLookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ?" + octopusdeployProjectResourceType + "." + projectName + "[0].id : data.octopusdeploy_projects." + projectName + ".projects[0].id}"
+		parentLookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) == 0 ?" + octopusdeployProjectResourceType + "." + projectName + "[0].id : data.octopusdeploy_projects." + projectName + ".projects[0].id}"
 	}
 
 	// Export the variable set. Cac projects save secrets here, regular projects save all variables
