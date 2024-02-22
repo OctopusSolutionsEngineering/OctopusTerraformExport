@@ -6803,7 +6803,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 9 {
-					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines")
+					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines (was scpoed to " + fmt.Sprint(len(scopedVar[0].Scope.Machine)) + " machines).")
 				}
 
 				return nil
