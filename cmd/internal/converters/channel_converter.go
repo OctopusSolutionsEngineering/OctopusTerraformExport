@@ -155,7 +155,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			// that might look up a channel (like project variables) will be created either, so nothing will ever use
 			// the lookup. So we just use an empty string for the lookup.
 			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + resourceName + ".projects) != 0 " +
-				"? '' " +
+				"? \"\" " +
 				": " + octopusdeployChannelResourceType + "." + resourceName + "[0].id}"
 			thisResource.Dependency = "${" + octopusdeployChannelResourceType + "." + resourceName + "}"
 		} else {

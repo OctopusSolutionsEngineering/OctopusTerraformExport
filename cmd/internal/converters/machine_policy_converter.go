@@ -52,6 +52,14 @@ func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *data.Reso
 }
 
 func (c MachinePolicyConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c MachinePolicyConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
+func (c MachinePolicyConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -68,7 +76,7 @@ func (c MachinePolicyConverter) ToHclById(id string, dependencies *data.Resource
 	}
 
 	zap.L().Info("Machine Policy: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c MachinePolicyConverter) buildData(resourceName string, resource octopus2.MachinePolicy) terraform2.TerraformMachinePolicyData {

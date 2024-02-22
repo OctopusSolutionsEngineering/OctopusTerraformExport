@@ -67,7 +67,7 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
+	return c.toHcl(resource, project, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -100,7 +100,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
+	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
@@ -141,7 +141,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, statel
 	}
 
 	zap.L().Info("Deployment Process: " + resource.Id)
-	return c.toHcl(resource, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
+	return c.toHcl(resource, project, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
@@ -173,10 +173,10 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
+	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, project octopus.Project, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := data.ResourceDetails{}
@@ -331,6 +331,11 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, ca
 					file.Body().AppendBlock(propertyVariablesBlock)
 				}
 			}
+		}
+
+		if stateless {
+			// only create the runbook process if the project does not exist
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + sanitizer.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
 		}
 
 		file.Body().AppendBlock(block)

@@ -6776,6 +6776,13 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 					return err
 				}
 
+				machineCollection := octopus.GeneralCollection[octopus.Machine]{}
+				err = octopusClient.GetAllResources("Machines", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
 				if len(projectCollection.Items) != 1 {
 					return errors.New("There must only be one project")
 				}
@@ -6803,7 +6810,13 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 9 {
-					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines (was scpoed to " + fmt.Sprint(len(scopedVar[0].Scope.Machine)) + " machines).")
+					machineTypes := lo.Map(machineCollection.Items, func(item octopus.Machine, index int) string {
+						return item.Endpoint.CommunicationStyle
+					})
+
+					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines " +
+						"(was scoped to " + fmt.Sprint(len(scopedVar[0].Scope.Machine)) + " machines). " +
+						"The following machines were available in the space: " + strings.Join(machineTypes, ", "))
 				}
 
 				return nil
@@ -6854,6 +6867,13 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 					return err
 				}
 
+				machineCollection := octopus.GeneralCollection[octopus.Machine]{}
+				err = octopusClient.GetAllResources("Machines", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
 				if len(projectCollection.Items) != 1 {
 					return errors.New("There must only be one project")
 				}
@@ -6881,7 +6901,13 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 				}
 
 				if len(scopedVar[0].Scope.Machine) != 9 {
-					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines (was scpoed to " + fmt.Sprint(len(scopedVar[0].Scope.Machine)) + " machines).")
+					machineTypes := lo.Map(machineCollection.Items, func(item octopus.Machine, index int) string {
+						return item.Endpoint.CommunicationStyle
+					})
+
+					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines " +
+						"(was scoped to " + fmt.Sprint(len(scopedVar[0].Scope.Machine)) + " machines). " +
+						"The following machines were available in the space: " + strings.Join(machineTypes, ", "))
 				}
 
 				// Validate the k8s target

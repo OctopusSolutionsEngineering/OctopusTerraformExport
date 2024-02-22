@@ -49,7 +49,13 @@ type ConverterAndLookupById interface {
 	ConverterLookupById
 }
 
-// ConverterAndLookupById converts an individual resource by ID to HCL and to a data lookup
+// ConverterWithStatelessById converts an individual resource by ID to HCL, either stateless or normal
+type ConverterWithStatelessById interface {
+	ConverterById
+	ConverterToStatelessById
+}
+
+// ConverterAndLookupWithStatelessById converts an individual resource by ID to HCL and to a data lookup
 type ConverterAndLookupWithStatelessById interface {
 	ConverterById
 	ConverterLookupById

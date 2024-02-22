@@ -20,8 +20,8 @@ const octopusdeployCloudRegionResourceType = "octopusdeploy_cloud_region_deploym
 
 type CloudRegionTargetConverter struct {
 	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	EnvironmentConverter   ConverterById
+	MachinePolicyConverter ConverterWithStatelessById
+	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
 	ExcludeTargets         args.ExcludeTargets
 	ExcludeTargetsRegex    args.ExcludeTargets
@@ -180,7 +180,7 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 	}
 
 	if recursive {
-		err := c.exportDependencies(target, dependencies)
+		err := c.exportDependencies(target, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -279,21 +279,29 @@ func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencie
 	return &machineLookup
 }
 
-func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, dependencies *data.ResourceDetailsCollection) error {
+func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegionResource, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
-	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
-		return err
+	if stateless {
+		if err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies); err != nil {
+			return err
+		}
+	} else {
+		if err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies); err != nil {
+			return err
+		}
 	}
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = c.EnvironmentConverter.ToHclById(e, dependencies)
-
-		if err != nil {
-			return err
+		if stateless {
+			if err := c.EnvironmentConverter.ToHclStatelessById(e, dependencies); err != nil {
+				return err
+			}
+		} else {
+			if err := c.EnvironmentConverter.ToHclById(e, dependencies); err != nil {
+				return err
+			}
 		}
 	}
 
