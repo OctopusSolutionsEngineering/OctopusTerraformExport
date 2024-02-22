@@ -6784,7 +6784,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					return errors.New("There must only be one project")
+					return errors.New("There must only be one project (found " + fmt.Sprint(len(projectCollection.Items)) + ")")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
@@ -6875,7 +6875,7 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 1 {
-					return errors.New("There must only be one project")
+					return errors.New("There must only be one project (found " + fmt.Sprint(len(projectCollection.Items)) + ")")
 				}
 
 				if projectCollection.Items[0].Name != "Test" {
