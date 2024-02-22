@@ -172,7 +172,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 		err := c.VariableSetConverter.ToHclByIdAndName(
 			resource.VariableSetId,
 			recursive,
-			strutil.EmptyIfNil(resource.ContentType)+" "+sanitizer.SanitizeName(resource.Name),
+			strutil.EmptyIfNil(resource.ContentType)+" "+resource.Name,
 			c.getParentLookup(stateless, resourceName),
 			c.getParentCount(stateless, resourceName),
 			dependencies)
