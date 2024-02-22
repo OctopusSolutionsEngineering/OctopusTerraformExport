@@ -8356,7 +8356,7 @@ func TestSingleRunbookExport(t *testing.T) {
 		[]string{},
 		args2.Arguments{
 			RunbookName: "Runbook",
-			ProjectName: "Test",
+			ProjectName: []string{"Test"},
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
