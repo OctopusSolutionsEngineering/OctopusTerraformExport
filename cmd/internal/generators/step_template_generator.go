@@ -152,7 +152,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 		Name:         "ReferenceArchitecture." + stepKey + ".Octopus.SpaceId",
 		Label:        "Octopus Space ID",
 		HelpText:     "The Octopus space ID.",
-		DefaultValue: "",
+		DefaultValue: "#{Octopus.Space.Id}",
 		DisplaySettings: steptemplate.StepTemplateParameterDisplaySettings{
 			OctopusControlType: "SingleLineText",
 		},
