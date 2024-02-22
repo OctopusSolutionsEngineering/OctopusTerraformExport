@@ -14,8 +14,8 @@ type Arguments struct {
 	Space                            string
 	Destination                      string
 	Console                          bool
-	ProjectId                        string
-	ProjectName                      string
+	ProjectId                        Projects
+	ProjectName                      Projects
 	RunbookId                        string
 	RunbookName                      string
 	LookupProjectDependencies        bool
@@ -75,6 +75,23 @@ func (a *Arguments) GetBackend() string {
 	}
 
 	return a.BackendBlock
+}
+
+type Projects []string
+
+func (i *Projects) String() string {
+	return "exported projects"
+}
+
+func (i *Projects) Set(value string) error {
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
+	return nil
 }
 
 type ExcludeTargets []string
@@ -298,8 +315,8 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.StepTemplateName, "stepTemplateName", "", "Step template name. Only used with the stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateKey, "stepTemplateKey", "", "Step template key used when building parameter names. Only used with the stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateDescription, "stepTemplateDescription", "", "Step template description used when building parameter names. Only used with the stepTemplate option.")
-	flags.StringVar(&arguments.ProjectId, "projectId", "", "Limit the export to a single project")
-	flags.StringVar(&arguments.ProjectName, "projectName", "", "Limit the export to a single project")
+	flags.Var(&arguments.ProjectId, "projectId", "Limit the export to a single project")
+	flags.Var(&arguments.ProjectName, "projectName", "Limit the export to a single project")
 	flags.StringVar(&arguments.RunbookId, "runbookId", "", "Limit the export to a single runbook. Runbooks are exported referencing external resources as data sources.")
 	flags.StringVar(&arguments.RunbookName, "runbookName", "", "Limit the export to a single runbook. Requires projectName or projectId. Runbooks are exported referencing external resources as data sources.")
 	flags.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")

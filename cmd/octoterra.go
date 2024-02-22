@@ -47,8 +47,8 @@ func main() {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
-	if parseArgs.RunbookName != "" && parseArgs.ProjectName == "" && parseArgs.ProjectId == "" {
-		errorExit("runbookName requires either projectId or projectName to be set")
+	if parseArgs.RunbookName != "" && len(parseArgs.ProjectName) != 1 && len(parseArgs.ProjectId) == 1 {
+		errorExit("runbookName requires either a single projectId or projectName to be set")
 	}
 
 	if parseArgs.Stateless {
@@ -69,16 +69,25 @@ func main() {
 		errorExit("lookupProjectDependencies can not be used with stepTemplate")
 	}
 
-	if parseArgs.ProjectName != "" {
-		parseArgs.ProjectId, err = ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectName)
+	if len(parseArgs.ProjectName) != 0 {
 
-		if err != nil {
-			errorExit(err.Error())
+		projectIds := []string{}
+
+		for _, project := range parseArgs.ProjectName {
+			projectId, err := ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, project)
+
+			if err != nil {
+				errorExit(err.Error())
+			}
+
+			projectIds = append(projectIds, projectId)
 		}
+
+		parseArgs.ProjectId = projectIds
 	}
 
 	if parseArgs.RunbookName != "" {
-		parseArgs.RunbookId, err = ConvertRunbookNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectId, parseArgs.RunbookName)
+		parseArgs.RunbookId, err = ConvertRunbookNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectId[0], parseArgs.RunbookName)
 
 		if err != nil {
 			errorExit(err.Error())
@@ -88,8 +97,8 @@ func main() {
 	if parseArgs.RunbookId != "" {
 		zap.L().Info("Exporting runbook " + parseArgs.RunbookId + " in space " + parseArgs.Space)
 		err = ConvertRunbookToTerraform(parseArgs)
-	} else if parseArgs.ProjectId != "" {
-		zap.L().Info("Exporting project " + parseArgs.ProjectId + " in space " + parseArgs.Space)
+	} else if len(parseArgs.ProjectId) != 0 {
+		zap.L().Info("Exporting project(s) " + strings.Join(parseArgs.ProjectId, ", ") + " in space " + parseArgs.Space)
 		err = ConvertProjectToTerraform(parseArgs)
 	} else {
 		zap.L().Info("Exporting space " + parseArgs.Space)
@@ -1143,23 +1152,29 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 	}
 
 	if args.LookupProjectDependencies {
-		err := projectConverter.ToHclByIdWithLookups(args.ProjectId, &dependencies)
-
-		if err != nil {
-			return err
-		}
-	} else {
-		if args.Stateless {
-			err := projectConverter.ToHclStatelessById(args.ProjectId, &dependencies)
+		for _, project := range args.ProjectId {
+			err := projectConverter.ToHclByIdWithLookups(project, &dependencies)
 
 			if err != nil {
 				return err
 			}
-		} else {
-			err := projectConverter.ToHclById(args.ProjectId, &dependencies)
+		}
+	} else {
+		if args.Stateless {
+			for _, project := range args.ProjectId {
+				err := projectConverter.ToHclStatelessById(project, &dependencies)
 
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			for _, project := range args.ProjectId {
+				err := projectConverter.ToHclById(project, &dependencies)
+
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
