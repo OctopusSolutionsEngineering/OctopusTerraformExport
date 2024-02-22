@@ -792,21 +792,23 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 		}
 	}
 
+	var parentCount *string = nil
+	var parentLookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
+	if stateless {
+		parentCount = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
+		parentLookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ?" + octopusdeployProjectResourceType + "." + projectName + "[0].id : data.octopusdeploy_projects." + projectName + ".projects[0].id}"
+	}
+
 	// Export the variable set. Cac projects save secrets here, regular projects save all variables
 	if project.VariableSetId != nil {
 		var err error
 		if lookup {
 			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(project.Id, project.Name, "${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
 		} else {
-			var parentCount *string = nil
-			if stateless {
-				parentCount = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
-			}
-
 			err = c.VariableSetConverter.ToHclByProjectIdAndName(
 				project.Id,
 				project.Name,
-				"${"+octopusdeployProjectResourceType+"."+projectName+".id}",
+				parentLookup,
 				parentCount,
 				dependencies)
 		}
@@ -831,16 +833,11 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 				project.Name,
 				"${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
 		} else {
-			var parentCount *string = nil
-			if stateless {
-				parentCount = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
-			}
-
 			err = c.VariableSetConverter.ToHclByProjectIdBranchAndName(
 				project.Id,
 				branch.CanonicalName,
 				project.Name,
-				"${"+octopusdeployProjectResourceType+"."+projectName+".id}",
+				parentLookup,
 				parentCount,
 				dependencies)
 		}
