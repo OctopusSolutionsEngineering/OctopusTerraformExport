@@ -238,7 +238,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(block)
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
 
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)

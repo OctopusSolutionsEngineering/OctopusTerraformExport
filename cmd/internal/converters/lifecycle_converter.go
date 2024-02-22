@@ -187,7 +187,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {
-				hcl.WriteLifecyclePreventDeleteAttribute(block)
+				hcl.WriteLifecyclePreventDestroyAttribute(block)
 			}
 
 			file.Body().AppendBlock(block)

@@ -105,7 +105,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(block)
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
 
 		file.Body().AppendBlock(block)

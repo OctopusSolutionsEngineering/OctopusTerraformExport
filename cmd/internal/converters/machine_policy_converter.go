@@ -174,7 +174,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {
-				hcl.WriteLifecyclePreventDeleteAttribute(block)
+				hcl.WriteLifecyclePreventDestroyAttribute(block)
 			}
 
 			file.Body().AppendBlock(block)

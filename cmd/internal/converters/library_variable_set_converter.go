@@ -233,7 +233,7 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 	block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 	if stateless {
-		hcl.WriteLifecyclePreventDeleteAttribute(block)
+		hcl.WriteLifecyclePreventDestroyAttribute(block)
 	}
 
 	file.Body().AppendBlock(block)
@@ -290,7 +290,7 @@ func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.Library
 	block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 	if stateless {
-		hcl.WriteLifecyclePreventDeleteAttribute(block)
+		hcl.WriteLifecyclePreventDestroyAttribute(block)
 	}
 
 	file.Body().AppendBlock(block)

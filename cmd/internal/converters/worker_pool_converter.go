@@ -189,7 +189,7 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(block)
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
 
 		file.Body().AppendBlock(block)
@@ -233,7 +233,7 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(block)
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
 
 		file.Body().AppendBlock(block)

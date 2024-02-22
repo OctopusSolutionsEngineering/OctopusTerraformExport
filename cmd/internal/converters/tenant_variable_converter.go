@@ -156,7 +156,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 					block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 					if stateless {
-						hcl.WriteLifecyclePreventDeleteAttribute(block)
+						hcl.WriteLifecyclePreventDestroyAttribute(block)
 					}
 
 					file.Body().AppendBlock(block)

@@ -185,7 +185,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {
-				hcl.WriteLifecyclePreventDeleteAttribute(block)
+				hcl.WriteLifecyclePreventDestroyAttribute(block)
 			}
 
 			/* Channels reference steps and packages by text without terraform understanding

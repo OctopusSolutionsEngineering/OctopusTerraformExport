@@ -293,7 +293,8 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
 
-		if !c.IgnoreProjectChanges {
+		// There is no point ignoring changes for stateless exports
+		if !c.IgnoreProjectChanges && !stateless {
 			ignoreList := []string{}
 
 			if project.HasCacConfigured() {
@@ -368,7 +369,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
-			hcl.WriteLifecyclePreventDeleteAttribute(block)
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
 
 		hcl.WriteUnquotedAttribute(block, "description", "\"${var."+projectName+"_description_prefix}${var."+projectName+"_description}${var."+projectName+"_description_suffix}\"")

@@ -161,7 +161,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {
-				hcl.WriteLifecyclePreventDeleteAttribute(block)
+				hcl.WriteLifecyclePreventDestroyAttribute(block)
 			}
 
 			file.Body().AppendBlock(block)
