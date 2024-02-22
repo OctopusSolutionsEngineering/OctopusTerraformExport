@@ -119,38 +119,27 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 	thisResource.Lookup = "${octopusdeploy_runbook_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
+		validSteps := FilterSteps(resource.Steps)
+
 		terraformResource := terraform.TerraformRunbookProcess{
 			Type:      "octopusdeploy_runbook_process",
 			Name:      resourceName,
 			RunbookId: dependencies.GetResource("Runbooks", resource.RunbookId),
-			Step:      make([]terraform.TerraformStep, len(resource.Steps)),
+			Step:      make([]terraform.TerraformStep, len(validSteps)),
 		}
 
-		for i, s := range resource.Steps {
-			validActions := lo.Filter(s.Actions, func(item octopus.Action, index int) bool {
-				if len(item.Inputs) != 0 {
-					zap.L().Error("Action " + strutil.EmptyIfNil(item.Name) + " has Items, which indicates that it is from the new step framework. These steps are not supported and are not exported.")
-					return false
-				}
-				return true
-			})
-
-			// Don't write empty steps
-			if len(validActions) == 0 {
-				continue
-			}
-
+		for i, s := range validSteps {
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:               s.Name,
 				PackageRequirement: s.PackageRequirement,
 				Properties:         c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
 				Condition:          s.Condition,
 				StartTrigger:       s.StartTrigger,
-				Action:             make([]terraform.TerraformAction, len(validActions)),
+				Action:             make([]terraform.TerraformAction, len(s.Actions)),
 				TargetRoles:        c.OctopusActionProcessor.GetRoles(s.Properties),
 			}
 
-			for j, a := range validActions {
+			for j, a := range s.Actions {
 
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
@@ -245,11 +234,8 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 			return "", err
 		}
 
-		for _, s := range resource.Steps {
-			validActions := lo.Filter(s.Actions, func(item octopus.Action, index int) bool {
-				return len(item.Inputs) == 0
-			})
-			for _, a := range validActions {
+		for _, s := range validSteps {
+			for _, a := range s.Actions {
 				properties := a.Properties
 				sanitizedProperties, variables := sanitizer2.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)

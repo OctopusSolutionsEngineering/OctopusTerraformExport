@@ -193,29 +193,18 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 	thisResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
+		validSteps := FilterSteps(resource.Steps)
+
 		terraformResource := terraform.TerraformDeploymentProcess{
 			Type:      "octopusdeploy_deployment_process",
 			Name:      resourceName,
 			ProjectId: dependencies.GetResource("Projects", resource.ProjectId),
-			Step:      make([]terraform.TerraformStep, len(resource.Steps)),
+			Step:      make([]terraform.TerraformStep, len(validSteps)),
 		}
 
 		file := hclwrite.NewEmptyFile()
 
-		for i, s := range resource.Steps {
-			validActions := lo.Filter(s.Actions, func(item octopus.Action, index int) bool {
-				if len(item.Inputs) != 0 {
-					zap.L().Error("Action " + strutil.EmptyIfNil(item.Name) + " has Items, which indicates that it is from the new step framework. These steps are not supported and are not exported.")
-					return false
-				}
-				return true
-			})
-
-			// Don't write empty steps
-			if len(validActions) == 0 {
-				continue
-			}
-
+		for i, s := range validSteps {
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:                s.Name,
 				PackageRequirement:  s.PackageRequirement,
@@ -223,11 +212,11 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 				Condition:           s.Condition,
 				ConditionExpression: strutil.NilIfEmpty(s.Properties["Octopus.Step.ConditionVariableExpression"]),
 				StartTrigger:        s.StartTrigger,
-				Action:              make([]terraform.TerraformAction, len(validActions)),
+				Action:              make([]terraform.TerraformAction, len(s.Actions)),
 				TargetRoles:         c.OctopusActionProcessor.GetRoles(s.Properties),
 			}
 
-			for j, a := range validActions {
+			for j, a := range s.Actions {
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
 				actionResource.Id = a.Id
@@ -326,12 +315,8 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		for _, s := range resource.Steps {
-			validActions := lo.Filter(s.Actions, func(item octopus.Action, index int) bool {
-				return len(item.Inputs) == 0
-			})
-
-			for _, a := range validActions {
+		for _, s := range validSteps {
+			for _, a := range s.Actions {
 				properties := a.Properties
 				sanitizedProperties, variables := sanitizer.SanitizeMap(projectName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
