@@ -129,7 +129,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 	// These are the common parameters exposed by all octoterra modules
 	parameters = append(parameters, steptemplate.StepTemplateParameters{
 		Id:           s.createStableGuid("ReferenceArchitecture." + stepKey + ".Octopus.ServerUrl"),
-		Name:         "ReferenceArchitecture.Octopus.ServerUrl",
+		Name:         "ReferenceArchitecture." + stepKey + ".Octopus.ServerUrl",
 		Label:        "Octopus Server URL",
 		HelpText:     "The Octopus server URL.",
 		DefaultValue: "#{Octopus.Web.ServerUri}",
@@ -139,7 +139,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 	})
 	parameters = append(parameters, steptemplate.StepTemplateParameters{
 		Id:           s.createStableGuid("ReferenceArchitecture." + stepKey + ".Octopus.ApiKey"),
-		Name:         "ReferenceArchitecture.Octopus.ApiKey",
+		Name:         "ReferenceArchitecture." + stepKey + ".Octopus.ApiKey",
 		Label:        "Octopus API Key",
 		HelpText:     "The Octopus API key. See the [Octopus docs](https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key) for more details on creating an API Key.",
 		DefaultValue: "",
@@ -149,7 +149,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 	})
 	parameters = append(parameters, steptemplate.StepTemplateParameters{
 		Id:           s.createStableGuid("ReferenceArchitecture." + stepKey + ".Octopus.SpaceId"),
-		Name:         "ReferenceArchitecture.Octopus.SpaceId",
+		Name:         "ReferenceArchitecture." + stepKey + ".Octopus.SpaceId",
 		Label:        "Octopus Space ID",
 		HelpText:     "The Octopus space ID.",
 		DefaultValue: "",
