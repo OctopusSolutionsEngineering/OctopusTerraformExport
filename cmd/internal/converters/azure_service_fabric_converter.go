@@ -136,6 +136,7 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Name = resource.Name
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + resourceName + ".deployment_targets[0].id}"
@@ -194,6 +195,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
+	thisResource.Name = target.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${" + octopusdeployAzureServiceFabricClusterDeploymentResourceType + "." + targetName + ".id}"
 	thisResource.Parameters = []data.ResourceParameter{

@@ -67,6 +67,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = projectTrigger.Name
 	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
 	thisResource.Id = projectTrigger.Id
 	thisResource.ResourceType = c.GetGroupResourceType(projectId)

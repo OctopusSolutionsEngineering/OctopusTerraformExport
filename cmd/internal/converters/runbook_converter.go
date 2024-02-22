@@ -162,6 +162,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 	thisResource.FileName = "space_population/" + runbookName + ".tf"
 	thisResource.Id = runbook.Id
+	thisResource.Name = runbook.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {

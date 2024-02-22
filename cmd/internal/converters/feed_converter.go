@@ -115,6 +115,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, statel
 
 	thisResource := data.ResourceDetails{}
 
+	thisResource.Name = resource.Name
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()

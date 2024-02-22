@@ -135,6 +135,7 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *data.
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployListeningTentacleDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -192,6 +193,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
+	thisResource.Name = target.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {

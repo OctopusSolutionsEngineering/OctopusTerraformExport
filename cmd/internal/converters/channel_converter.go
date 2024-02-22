@@ -122,6 +122,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	}
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = channel.Name
 	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = channel.Id

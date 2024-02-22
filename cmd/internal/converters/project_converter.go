@@ -108,6 +108,7 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *data.Resourc
 
 	thisResource.FileName = "space_population/parent_project.tf"
 	thisResource.Id = project.Id
+	thisResource.Name = project.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployProjectsDataType + ".parent_project.projects[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -257,6 +258,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	thisResource.Parameters = c.getStepTemplateParameters(projectName, project, dependencies)
 	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
+	thisResource.Name = project.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
 

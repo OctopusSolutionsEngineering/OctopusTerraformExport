@@ -120,6 +120,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = gitCredentials.Name
 	thisResource.FileName = "space_population/" + gitCredentialsName + ".tf"
 	thisResource.Id = gitCredentials.Id
 	thisResource.ResourceType = c.GetResourceType()

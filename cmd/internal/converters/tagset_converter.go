@@ -71,6 +71,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + tagSetName + ".tf"
 	thisResource.Id = tagSet.Id
+	thisResource.Name = tagSet.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${" + octopusdeployTagSetResourceType + "." + tagSetName + ".id}"
 
@@ -128,6 +129,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 		tagResource := data.ResourceDetails{}
 		tagResource.FileName = "space_population/" + tagName + ".tf"
 		tagResource.Id = tag.Id
+		tagResource.Name = tag.Name
 		tagResource.ResourceType = "Tags"
 		tagResource.Lookup = c.getLookup(stateless, tagSetName, tagName)
 		tagResource.Dependency = c.getDependency(stateless, tagName)

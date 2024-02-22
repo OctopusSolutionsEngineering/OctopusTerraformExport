@@ -136,6 +136,7 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *dat
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployAzureWebAppDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -191,6 +192,7 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = target.Name
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
 	thisResource.ResourceType = c.GetResourceType()

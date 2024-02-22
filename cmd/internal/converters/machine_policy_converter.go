@@ -102,6 +102,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = machinePolicy.Name
 	thisResource.FileName = "space_population/" + policyName + ".tf"
 	thisResource.Id = machinePolicy.Id
 	thisResource.ResourceType = c.GetResourceType()

@@ -352,13 +352,15 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		}
 
 		thisResource.Id = v.Id
+		thisResource.Name = v.Name
 		thisResource.ResourceType = c.GetResourceType()
 		thisResource.Lookup = "${" + octopusdeployVariableResourceType + "." + resourceName + ".id}"
 		if v.IsSensitive {
 			thisResource.Parameters = []data.ResourceParameter{
 				{
-					Label:         "Sensitive variable " + v.Name + " password",
-					Description:   "The sensitive value associated with the variable \"" + v.Name + "\" in the belonging to " + parentName + v.Scope.ScopeDescription("(", ")"),
+					Label: "Sensitive variable " + v.Name + " password",
+					Description: "The sensitive value associated with the variable \"" + v.Name + "\" in the belonging to " +
+						parentName + v.Scope.ScopeDescription(" (", ")", dependencies),
 					ResourceName:  sanitizer.SanitizeParameterName(dependencies, v.Name, "SensitiveValue"),
 					Sensitive:     true,
 					VariableName:  resourceName,

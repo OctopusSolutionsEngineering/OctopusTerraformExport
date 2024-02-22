@@ -97,6 +97,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.Reso
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = environment.Id
+	thisResource.Name = environment.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -161,6 +162,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, st
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = environment.Name
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = environment.Id
 	thisResource.ResourceType = c.GetResourceType()

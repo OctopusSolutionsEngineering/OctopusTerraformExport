@@ -163,6 +163,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = lifecycle.Id
+	thisResource.Name = lifecycle.Name
 	thisResource.ResourceType = c.GetResourceType()
 	if forceLookup {
 		thisResource.Lookup = "${data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id}"

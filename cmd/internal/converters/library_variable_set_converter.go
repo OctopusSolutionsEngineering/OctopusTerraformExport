@@ -122,6 +122,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *d
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -208,6 +209,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {

@@ -1,6 +1,10 @@
 package octopus
 
-import "strings"
+import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/samber/lo"
+	"strings"
+)
 
 type VariableSet struct {
 	Id        *string
@@ -36,7 +40,7 @@ type Prompt struct {
 	DisplaySettings map[string]string
 }
 
-func (c *Scope) ScopeDescription(prefix string, suffix string) string {
+func (c *Scope) ScopeDescription(prefix string, suffix string, dependencies *data.ResourceDetailsCollection) string {
 	if c == nil {
 		return ""
 	}
@@ -49,7 +53,10 @@ func (c *Scope) ScopeDescription(prefix string, suffix string) string {
 	scopes := []string{}
 
 	if len(c.Environment) != 0 {
-		scopes = append(scopes, " Environments "+strings.Join(c.Environment, ","))
+		environments := lo.Map(c.Environment, func(item string, index int) string {
+			return dependencies.GetResourceName("Environments", item)
+		})
+		scopes = append(scopes, " Environments "+strings.Join(environments, ","))
 	}
 
 	if len(c.Role) != 0 {
@@ -57,19 +64,25 @@ func (c *Scope) ScopeDescription(prefix string, suffix string) string {
 	}
 
 	if len(c.Machine) != 0 {
-		scopes = append(scopes, " Machine "+strings.Join(c.Role, ","))
+		machines := lo.Map(c.Machine, func(item string, index int) string {
+			return dependencies.GetResourceName("Machines", item)
+		})
+		scopes = append(scopes, " Machine "+strings.Join(machines, ","))
 	}
 
 	if len(c.Channel) != 0 {
-		scopes = append(scopes, " Channel "+strings.Join(c.Role, ","))
+		channels := lo.Map(c.Channel, func(item string, index int) string {
+			return dependencies.GetResourceName("Channels", item)
+		})
+		scopes = append(scopes, " Channel "+strings.Join(channels, ","))
 	}
 
 	if len(c.TenantTag) != 0 {
-		scopes = append(scopes, " TenantTag "+strings.Join(c.Role, ","))
+		scopes = append(scopes, " TenantTag "+strings.Join(c.TenantTag, ","))
 	}
 
 	if len(c.Action) != 0 {
-		scopes = append(scopes, " Action "+strings.Join(c.Role, ","))
+		scopes = append(scopes, " Action "+strings.Join(c.Action, ","))
 	}
 
 	return prefix + description + strings.Join(scopes, "; ") + suffix

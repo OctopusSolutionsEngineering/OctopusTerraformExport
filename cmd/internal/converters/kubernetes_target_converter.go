@@ -137,6 +137,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *data
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -194,6 +195,7 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
+	thisResource.Name = target.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = c.getLookup(stateless, targetName)
 	thisResource.Dependency = c.getDependency(stateless, targetName)

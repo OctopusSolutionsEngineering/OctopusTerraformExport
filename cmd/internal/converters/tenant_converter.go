@@ -198,6 +198,7 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + tenantName + ".tf"
 	thisResource.Id = tenant.Id
+	thisResource.Name = tenant.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if lookup {

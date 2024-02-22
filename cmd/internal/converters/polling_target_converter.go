@@ -135,6 +135,7 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *data.Re
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployPollingTentacleDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -190,6 +191,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
+	thisResource.Name = target.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {

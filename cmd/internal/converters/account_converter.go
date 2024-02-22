@@ -104,6 +104,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *data.Resource
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data.octopusdeploy_accounts." + resourceName + ".accounts[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -160,6 +161,7 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = account.Id
+	thisResource.Name = account.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if account.AccountType == "AmazonWebServicesAccount" {

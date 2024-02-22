@@ -26,6 +26,8 @@ type ResourceParameter struct {
 type ResourceDetails struct {
 	// Id is the octopus ID of the exported resource
 	Id string
+	// Name is the name of the resource
+	Name string
 	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
 	// Lookup is the ID of the resource created or looked up by Terraform
@@ -103,6 +105,21 @@ func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id str
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return r.Count
+		}
+	}
+
+	zap.L().Error("Failed to resolve lookup " + id + " of type " + resourceType)
+
+	return ""
+}
+
+// GetResourceName returns the terraform name attribute for a given resource type and id.
+// The returned string is used only for the depends_on field, as it may reference to a collection of resources
+// rather than a single ID.
+func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id string) string {
+	for _, r := range c.Resources {
+		if r.Id == id && r.ResourceType == resourceType {
+			return r.Name
 		}
 	}
 

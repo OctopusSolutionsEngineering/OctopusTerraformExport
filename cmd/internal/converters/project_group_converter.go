@@ -123,6 +123,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 	thisResource.FileName = "space_population/projectgroup_" + projectName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if forceLookup {

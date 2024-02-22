@@ -141,6 +141,7 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *dat
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
+	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + resourceName + ".deployment_targets[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -196,6 +197,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"
 	thisResource.Id = target.Id
+	thisResource.Name = target.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {

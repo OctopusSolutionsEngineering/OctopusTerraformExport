@@ -121,6 +121,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus2.WorkerPool, _ bool, lookup bool
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = pool.Id
+	thisResource.Name = pool.Name
 	thisResource.ResourceType = c.GetResourceType()
 
 	if pool.WorkerPoolType == "DynamicWorkerPool" {

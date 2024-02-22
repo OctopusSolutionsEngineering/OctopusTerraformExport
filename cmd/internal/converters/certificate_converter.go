@@ -105,6 +105,7 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *data.Reso
 
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
 	thisResource.Id = certificate.Id
+	thisResource.Name = certificate.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates[0].id}"
 	thisResource.ToHcl = func() (string, error) {
@@ -149,6 +150,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
 
 	thisResource := data.ResourceDetails{}
+	thisResource.Name = certificate.Name
 	thisResource.FileName = "space_population/" + certificateName + ".tf"
 	thisResource.Id = certificate.Id
 	thisResource.ResourceType = c.GetResourceType()
