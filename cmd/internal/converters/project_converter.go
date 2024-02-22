@@ -265,6 +265,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			"? data." + octopusdeployProjectsDataType + "." + projectName + ".projects[0].id " +
 			": " + octopusdeployProjectResourceType + "." + projectName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectResourceType + "." + projectName + "}"
+		thisResource.Count = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProjectResourceType + "." + projectName + ".id}"
 	}
@@ -323,7 +324,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 		if stateless {
 			c.writeData(file, "${var."+projectName+"_name}", projectName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer(thisResource.Count)
 		}
 
 		c.writeProjectNameVariable(file, projectName, project.Name)

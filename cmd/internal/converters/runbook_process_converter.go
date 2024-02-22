@@ -48,15 +48,12 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	resource := octopus.RunbookProcess{}
 	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
-	runbook := octopus.Runbook{}
-	_, err = c.Client.GetResourceById("Runbooks", resource.RunbookId, &runbook)
-
 	if err != nil {
 		return err
 	}
 
-	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
+	runbook := octopus.Runbook{}
+	_, err = c.Client.GetResourceById("Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
 		return err
@@ -69,7 +66,7 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, &project, true, false, stateless, runbookName, dependencies)
+	return c.toHcl(resource, runbook.ProjectId, true, false, stateless, runbookName, dependencies)
 }
 
 func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
@@ -84,15 +81,12 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	resource := octopus.RunbookProcess{}
 	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
-	runbook := octopus.Runbook{}
-	_, err = c.Client.GetResourceById("Runbooks", resource.RunbookId, &runbook)
-
 	if err != nil {
 		return err
 	}
 
-	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
+	runbook := octopus.Runbook{}
+	_, err = c.Client.GetResourceById("Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
 		return err
@@ -105,12 +99,11 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, &project, false, true, false, runbookName, dependencies)
+	return c.toHcl(resource, runbook.ProjectId, false, true, false, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project *octopus.Project, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectId string, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbookName)
-	projectName := sanitizer2.SanitizeName(project.Name)
 
 	thisResource := data.ResourceDetails{}
 
@@ -220,8 +213,8 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project 
 		}
 
 		if stateless {
-			// only create the runbook process if the project does not exist
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
+			// only create the runbook process if the project was created
+			terraformResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", projectId))
 		}
 
 		file := hclwrite.NewEmptyFile()

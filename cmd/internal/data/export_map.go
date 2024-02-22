@@ -33,6 +33,9 @@ type ResourceDetails struct {
 	// Dependency provides a way for one resource to depend on this resource. Usually the same of the Lookup, but can be
 	// a reference to a group of resources in stateless mode.
 	Dependency string
+	// Count stores the HCL assigned to the count attribute. This is useful when child resources need to have the same
+	// count value as a parent.
+	Count string
 	// FileName is the file contains the exported resource
 	FileName string
 	// ToHCL is a function that generates the HCL from the Octopus resource
@@ -85,6 +88,21 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return r.Lookup
+		}
+	}
+
+	zap.L().Error("Failed to resolve lookup " + id + " of type " + resourceType)
+
+	return ""
+}
+
+// GetResourceCount returns the terraform count attribute for a given resource type and id.
+// The returned string is used only for the depends_on field, as it may reference to a collection of resources
+// rather than a single ID.
+func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id string) string {
+	for _, r := range c.Resources {
+		if r.Id == id && r.ResourceType == resourceType {
+			return r.Count
 		}
 	}
 

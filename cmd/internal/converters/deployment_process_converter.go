@@ -334,8 +334,8 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 		}
 
 		if stateless {
-			// only create the runbook process if the project does not exist
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + sanitizer.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
+			// only create the deployment process if the project was created
+			terraformResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 		}
 
 		file.Body().AppendBlock(block)
