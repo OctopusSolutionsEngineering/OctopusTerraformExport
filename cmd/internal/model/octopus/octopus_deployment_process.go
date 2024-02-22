@@ -34,6 +34,7 @@ type Action struct {
 	Packages                      []Package
 	Condition                     *string
 	Properties                    map[string]any
+	Inputs                        map[string]any
 }
 
 type Container struct {

@@ -6777,7 +6777,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				machineCollection := octopus.GeneralCollection[octopus.Machine]{}
-				err = octopusClient.GetAllResources("Machines", &projectCollection)
+				err = octopusClient.GetAllResources("Machines", &machineCollection)
 
 				if err != nil {
 					return err
@@ -6811,7 +6811,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 
 				if len(scopedVar[0].Scope.Machine) != 9 {
 					machineTypes := lo.Map(machineCollection.Items, func(item octopus.Machine, index int) string {
-						return item.Endpoint.CommunicationStyle
+						return item.Id + " " + item.Endpoint.CommunicationStyle
 					})
 
 					return errors.New("The project must have 1 variable called \"test\" scoped to nine machines " +
@@ -6868,7 +6868,7 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 				}
 
 				machineCollection := octopus.GeneralCollection[octopus.Machine]{}
-				err = octopusClient.GetAllResources("Machines", &projectCollection)
+				err = octopusClient.GetAllResources("Machines", &machineCollection)
 
 				if err != nil {
 					return err

@@ -21,12 +21,6 @@ data "octopusdeploy_kubernetes_cluster_deployment_targets" "test" {
   take         = 1
 }
 
-data "octopusdeploy_deployment_targets" "cloud_region" {
-  partial_name = "CloudRegion"
-  skip         = 0
-  take         = 1
-}
-
 data "octopusdeploy_deployment_targets" "ssh" {
   partial_name = "Ssh"
   skip         = 0
@@ -108,7 +102,7 @@ resource "octopusdeploy_variable" "scoped_var" {
   scope {
     machines = [
       data.octopusdeploy_kubernetes_cluster_deployment_targets.test.kubernetes_cluster_deployment_targets[0].id,
-      data.octopusdeploy_deployment_targets.cloud_region.deployment_targets[0].id,
+      data.octopusdeploy_deployment_targets.cloud.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.ssh.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.polling.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.listening.deployment_targets[0].id,
@@ -116,7 +110,6 @@ resource "octopusdeploy_variable" "scoped_var" {
       data.octopusdeploy_deployment_targets.azure.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.service_facbric.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.webapp.deployment_targets[0].id,
-      data.octopusdeploy_deployment_targets.cloud.deployment_targets[0].id,
     ]
   }
 }

@@ -290,13 +290,13 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		}
 
 		// Export azure cloud service targets
-		err = c.exportAzureCloudServiceTargets(recursive, stateless, lookup, &v, dependencies)
+		err = c.exportAzureCloudServiceTargets(recursive, lookup, stateless, &v, dependencies)
 		if err != nil {
 			return err
 		}
 
 		// Export azure service fabric targets
-		err = c.exportAzureServiceFabricTargets(recursive, stateless, lookup, &v, dependencies)
+		err = c.exportAzureServiceFabricTargets(recursive, lookup, stateless, &v, dependencies)
 		if err != nil {
 			return err
 		}
@@ -623,10 +623,10 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependenc
 		len(variable.Scope.TenantTag) != 0 {
 
 		return &terraform.TerraformProjectVariableScope{
-			Actions:      dependencies.GetResources("Actions", variable.Scope.Action...),
-			Channels:     dependencies.GetResources("Channels", variable.Scope.Channel...),
-			Environments: dependencies.GetResources("Environments", variable.Scope.Environment...),
-			Machines:     dependencies.GetResources("Machines", variable.Scope.Machine...),
+			Actions:      actions,
+			Channels:     channels,
+			Environments: environments,
+			Machines:     machines,
 			Roles:        variable.Scope.Role,
 			TenantTags:   variable.Scope.TenantTag,
 		}

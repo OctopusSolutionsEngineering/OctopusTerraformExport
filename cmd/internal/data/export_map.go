@@ -130,11 +130,17 @@ func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, i
 // GetResources returns the Terraform references for resources of the given type and with the supplied ids.
 func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...string) []string {
 	lookups := []string{}
-	for _, r := range c.Resources {
-		for _, i := range ids {
+	for _, i := range ids {
+		found := false
+		for _, r := range c.Resources {
 			if r.Id == i && r.ResourceType == resourceType {
 				lookups = append(lookups, r.Lookup)
+				found = true
+				continue
 			}
+		}
+		if !found {
+			zap.L().Error("Failed to resolve " + i + " of type " + resourceType)
 		}
 	}
 

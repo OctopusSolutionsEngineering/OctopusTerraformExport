@@ -131,10 +131,6 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 		return nil
 	}
 
-	if !c.isAzureServiceFabricCluster(resource) {
-		return nil
-	}
-
 	thisResource := data.ResourceDetails{}
 
 	resourceName := "target_" + sanitizer.SanitizeName(resource.Name)

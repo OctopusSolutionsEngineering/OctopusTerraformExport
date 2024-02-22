@@ -234,6 +234,12 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 
 		for _, s := range resource.Steps {
 			for _, a := range s.Actions {
+
+				if len(a.Inputs) != 0 {
+					zap.L().Error("Action " + strutil.EmptyIfNil(a.Name) + " has Items, which indicates that it is from the new step framework. These steps are not supported and are not exported.")
+					continue
+				}
+
 				properties := a.Properties
 				sanitizedProperties, variables := sanitizer2.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)

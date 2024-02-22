@@ -216,6 +216,11 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 
 			for j, a := range s.Actions {
 
+				if len(a.Inputs) != 0 {
+					zap.L().Error("Action " + strutil.EmptyIfNil(a.Name) + " has Items, which indicates that it is from the new step framework. These steps are not supported and are not exported.")
+					continue
+				}
+
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
 				actionResource.Id = a.Id
