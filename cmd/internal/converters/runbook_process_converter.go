@@ -127,17 +127,30 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 		}
 
 		for i, s := range resource.Steps {
+			validActions := lo.Filter(s.Actions, func(item octopus.Action, index int) bool {
+				if len(item.Inputs) != 0 {
+					zap.L().Error("Action " + strutil.EmptyIfNil(item.Name) + " has Items, which indicates that it is from the new step framework. These steps are not supported and are not exported.")
+					return false
+				}
+				return true
+			})
+
+			// Don't write empty steps
+			if len(validActions) == 0 {
+				continue
+			}
+
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:               s.Name,
 				PackageRequirement: s.PackageRequirement,
 				Properties:         c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
 				Condition:          s.Condition,
 				StartTrigger:       s.StartTrigger,
-				Action:             make([]terraform.TerraformAction, len(s.Actions)),
+				Action:             make([]terraform.TerraformAction, len(validActions)),
 				TargetRoles:        c.OctopusActionProcessor.GetRoles(s.Properties),
 			}
 
-			for j, a := range s.Actions {
+			for j, a := range validActions {
 
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
@@ -233,13 +246,10 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 		}
 
 		for _, s := range resource.Steps {
-			for _, a := range s.Actions {
-
-				if len(a.Inputs) != 0 {
-					zap.L().Error("Action " + strutil.EmptyIfNil(a.Name) + " has Items, which indicates that it is from the new step framework. These steps are not supported and are not exported.")
-					continue
-				}
-
+			validActions := lo.Filter(s.Actions, func(item octopus.Action, index int) bool {
+				return len(item.Inputs) == 0
+			})
+			for _, a := range validActions {
 				properties := a.Properties
 				sanitizedProperties, variables := sanitizer2.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
