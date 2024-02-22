@@ -1844,7 +1844,7 @@ func TestVariableSetExport(t *testing.T) {
 		"../test/terraform/18-variableset/space_population",
 		[]string{},
 		[]string{
-			"-var=library_variable_set_variables_test_test_secretvariable_1=blah",
+			"-var=variables_test_test_secretvariable_1=blah",
 		},
 		args2.Arguments{
 			ExcludeLibraryVariableSets:      []string{"Test2"},
@@ -1965,7 +1965,7 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 		"../test/terraform/18-variableset/space_population",
 		[]string{},
 		[]string{
-			"-var=library_variable_set_variables_test_test_secretvariable_1=blah",
+			"-var=variables_test_test_secretvariable_1=blah",
 		},
 		args2.Arguments{
 			ExcludeLibraryVariableSetsExcept: []string{"Test"},
