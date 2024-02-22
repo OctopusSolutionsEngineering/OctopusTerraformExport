@@ -177,16 +177,31 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 	// That said, the variables themselves should only recursively export dependencies if we are
 	// exporting a single project.
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-		err := c.VariableSetConverter.ToHclByIdAndName(
-			resource.VariableSetId,
-			recursive,
-			strutil.EmptyIfNil(resource.ContentType)+" "+resource.Name,
-			c.getParentLookup(stateless, resourceName),
-			c.getParentCount(stateless, resourceName),
-			dependencies)
+		if stateless {
+			err := c.VariableSetConverter.ToHclStatelessByIdAndName(
+				resource.VariableSetId,
+				recursive,
+				strutil.EmptyIfNil(resource.ContentType)+" "+resource.Name,
+				c.getParentLookup(stateless, resourceName),
+				c.getParentCount(stateless, resourceName),
+				dependencies)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+		} else {
+
+			err := c.VariableSetConverter.ToHclByIdAndName(
+				resource.VariableSetId,
+				recursive,
+				strutil.EmptyIfNil(resource.ContentType)+" "+resource.Name,
+				c.getParentLookup(stateless, resourceName),
+				c.getParentCount(stateless, resourceName),
+				dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
 
 	}

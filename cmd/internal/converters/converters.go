@@ -106,6 +106,14 @@ type ConverterByIdWithNameAndParent interface {
 	// parentCount is an HCL interpolation that resolves to 1 or 0 based on whether the parent is created or not in a stateless module.
 	// dependencies is the collection of exported resources.
 	ToHclByIdAndName(id string, recursive bool, name string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error
+	// ToHclStatelessByIdAndName converts a resource with a reference to a parent object
+	// id is the ID of the resource to convert.
+	// recursive indicates if the dependencies of this resource should also be exported.
+	// name is the name of the resource to convert.
+	// parentLookup is an HCL interpolation that resolves the parents ID.
+	// parentCount is an HCL interpolation that resolves to 1 or 0 based on whether the parent is created or not in a stateless module.
+	// dependencies is the collection of exported resources.
+	ToHclStatelessByIdAndName(id string, recursive bool, name string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent, and

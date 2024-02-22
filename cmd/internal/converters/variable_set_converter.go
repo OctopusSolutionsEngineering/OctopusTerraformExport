@@ -170,6 +170,14 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 }
 
 func (c *VariableSetConverter) ToHclByIdAndName(id string, recursive bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, recursive, false, parentName, parentLookup, parentCount, dependencies)
+}
+
+func (c *VariableSetConverter) ToHclStatelessByIdAndName(id string, recursive bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, recursive, true, parentName, parentLookup, parentCount, dependencies)
+}
+
+func (c *VariableSetConverter) toHclByIdAndName(id string, recursive bool, stateless bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -192,7 +200,7 @@ func (c *VariableSetConverter) ToHclByIdAndName(id string, recursive bool, paren
 	}
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, recursive, false, false, false, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, recursive, false, stateless, false, parentName, parentLookup, parentCount, dependencies)
 }
 
 // ToHclLookupByIdAndName exports the variable set as a complete resource, but will reference external resources like accounts,
