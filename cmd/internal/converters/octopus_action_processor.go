@@ -14,24 +14,30 @@ import (
 // OctopusActionProcessor exposes a bunch of common functions for exporting the processes associated with
 // projects and runbooks.
 type OctopusActionProcessor struct {
-	FeedConverter           ConverterAndLookupById
-	AccountConverter        ConverterAndLookupById
-	WorkerPoolConverter     ConverterAndLookupById
-	EnvironmentConverter    ConverterAndLookupById
-	GitCredentialsConverter ConverterAndLookupById
+	FeedConverter           ConverterAndLookupWithStatelessById
+	AccountConverter        ConverterAndLookupWithStatelessById
+	WorkerPoolConverter     ConverterAndLookupWithStatelessById
+	EnvironmentConverter    ConverterAndLookupWithStatelessById
+	GitCredentialsConverter ConverterAndLookupWithStatelessById
 	DetachProjectTemplates  bool
 	WorkerPoolProcessor     OctopusWorkerPoolProcessor
 }
 
-func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 
 	for _, step := range steps {
 		for _, action := range step.Actions {
 
 			if strutil.NilIfEmptyPointer(action.Container.FeedId) != nil {
 				if recursive {
-					if err := c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies); err != nil {
-						return err
+					if stateless {
+						if err := c.FeedConverter.ToHclStatelessById(strutil.EmptyIfNil(action.Container.FeedId), dependencies); err != nil {
+							return err
+						}
+					} else {
+						if err := c.FeedConverter.ToHclById(strutil.EmptyIfNil(action.Container.FeedId), dependencies); err != nil {
+							return err
+						}
 					}
 				} else if lookup {
 					if err := c.FeedConverter.ToHclLookupById(strutil.EmptyIfNil(action.Container.FeedId), dependencies); err != nil {
@@ -45,7 +51,11 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 				if pack.FeedId != nil && regexes.FeedRegex.MatchString(strutil.EmptyIfNil(pack.FeedId)) {
 					var err error
 					if recursive {
-						err = c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+						if stateless {
+							err = c.FeedConverter.ToHclStatelessById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+						} else {
+							err = c.FeedConverter.ToHclById(strutil.EmptyIfNil(pack.FeedId), dependencies)
+						}
 					} else if lookup {
 						err = c.FeedConverter.ToHclLookupById(strutil.EmptyIfNil(pack.FeedId), dependencies)
 					}
@@ -60,7 +70,11 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 				for _, feed := range regexes.FeedRegex.FindAllString(fmt.Sprint(prop), -1) {
 					var err error
 					if recursive {
-						err = c.FeedConverter.ToHclById(feed, dependencies)
+						if stateless {
+							err = c.FeedConverter.ToHclStatelessById(feed, dependencies)
+						} else {
+							err = c.FeedConverter.ToHclById(feed, dependencies)
+						}
 					} else if lookup {
 						err = c.FeedConverter.ToHclLookupById(feed, dependencies)
 					}
@@ -76,7 +90,7 @@ func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, steps [
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 
 	for _, step := range steps {
 		for _, action := range step.Actions {
@@ -84,7 +98,11 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 				for _, account := range regexes.AccountRegex.FindAllString(fmt.Sprint(prop), -1) {
 					var err error
 					if recursive {
-						err = c.AccountConverter.ToHclById(account, dependencies)
+						if stateless {
+							err = c.AccountConverter.ToHclStatelessById(account, dependencies)
+						} else {
+							err = c.AccountConverter.ToHclById(account, dependencies)
+						}
 					} else if lookup {
 						err = c.AccountConverter.ToHclLookupById(account, dependencies)
 					}
@@ -100,7 +118,7 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, step
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)
@@ -112,7 +130,11 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 			if workerPoolId != "" {
 
 				if recursive {
-					err = c.WorkerPoolConverter.ToHclById(workerPoolId, dependencies)
+					if stateless {
+						err = c.WorkerPoolConverter.ToHclStatelessById(workerPoolId, dependencies)
+					} else {
+						err = c.WorkerPoolConverter.ToHclById(workerPoolId, dependencies)
+					}
 				} else if lookup {
 					err = c.WorkerPoolConverter.ToHclLookupById(workerPoolId, dependencies)
 				}
@@ -293,13 +315,17 @@ func (c OctopusActionProcessor) GetRoles(properties map[string]string) []string 
 	return []string{}
 }
 
-func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			for _, environment := range action.Environments {
 				var err error
 				if recursive {
-					err = c.EnvironmentConverter.ToHclById(environment, dependencies)
+					if stateless {
+						err = c.EnvironmentConverter.ToHclStatelessById(environment, dependencies)
+					} else {
+						err = c.EnvironmentConverter.ToHclById(environment, dependencies)
+					}
 				} else if lookup {
 					err = c.EnvironmentConverter.ToHclLookupById(environment, dependencies)
 				}

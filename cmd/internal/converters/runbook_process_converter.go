@@ -29,6 +29,14 @@ type RunbookProcessConverter struct {
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, runbookName, false, dependencies)
+}
+
+func (c RunbookProcessConverter) ToHclStatelessByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, runbookName, true, dependencies)
+}
+
+func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -51,7 +59,7 @@ func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string,
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, true, false, runbookName, dependencies)
+	return c.toHcl(resource, true, false, stateless, runbookName, dependencies)
 }
 
 func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
@@ -77,15 +85,15 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, false, true, runbookName, dependencies)
+	return c.toHcl(resource, false, true, false, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursive bool, lookup bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbookName)
 
 	thisResource := data.ResourceDetails{}
 
-	err := c.exportDependencies(recursive, lookup, resource, dependencies)
+	err := c.exportDependencies(recursive, lookup, stateless, resource, dependencies)
 
 	if err != nil {
 		return err
@@ -240,27 +248,27 @@ func (c RunbookProcessConverter) GetResourceType() string {
 	return "RunbookProcesses"
 }
 
-func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
-	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, resource.Steps, dependencies)
+	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked feeds
-	err = c.OctopusActionProcessor.ExportFeeds(recursive, lookup, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportFeeds(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked worker pools
-	err = c.OctopusActionProcessor.ExportWorkerPools(recursive, lookup, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportWorkerPools(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked environments
-	err = c.OctopusActionProcessor.ExportEnvironments(recursive, lookup, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportEnvironments(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}

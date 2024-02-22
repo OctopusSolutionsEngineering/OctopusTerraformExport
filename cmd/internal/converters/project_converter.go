@@ -765,7 +765,11 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 		if lookup {
 			err = c.DeploymentProcessConverter.ToHclLookupByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
 		} else {
-			err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+			if stateless {
+				err = c.DeploymentProcessConverter.ToHclStatelessByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+			} else {
+				err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+			}
 		}
 
 		if err != nil {
@@ -784,7 +788,12 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 		if lookup {
 			err = c.DeploymentProcessConverter.ToHclLookupByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
 		} else {
-			err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+			if stateless {
+				err = c.DeploymentProcessConverter.ToHclStatelessByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+			} else {
+				err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+			}
+
 		}
 
 		if err != nil {

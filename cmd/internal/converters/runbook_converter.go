@@ -34,8 +34,6 @@ type RunbookConverter struct {
 	IgnoreProjectChanges         bool
 }
 
-// ToHclByIdWithLookups exports a self-contained representation of the runbook where external resources like
-// environments, lifecycles, feeds, accounts, projects etc are resolved with data lookups.
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
@@ -72,6 +70,15 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 }
 
 func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+
+	return c.toHclByIdAndName(projectId, projectName, false, dependencies)
+}
+
+func (c *RunbookConverter) ToHclStatelessByIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(projectId, projectName, true, dependencies)
+}
+
+func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -81,7 +88,7 @@ func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Runbook: " + resource.Id)
-		err = c.toHcl(resource, projectName, true, false, false, dependencies)
+		err = c.toHcl(resource, projectName, true, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -277,7 +284,11 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 		if lookup {
 			err = c.RunbookProcessConverter.ToHclLookupByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
 		} else {
-			err = c.RunbookProcessConverter.ToHclByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+			if stateless {
+				err = c.RunbookProcessConverter.ToHclStatelessByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+			} else {
+				err = c.RunbookProcessConverter.ToHclByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+			}
 		}
 
 		if err != nil {

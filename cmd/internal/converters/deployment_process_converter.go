@@ -30,6 +30,14 @@ type DeploymentProcessConverter struct {
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndBranch(parentId, branch, false, dependencies)
+}
+
+func (c DeploymentProcessConverter) ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndBranch(parentId, branch, true, dependencies)
+}
+
+func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
 	}
@@ -59,7 +67,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch s
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
+	return c.toHcl(resource, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -92,10 +100,18 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), false, true, project.Name, dependencies)
+	return c.toHcl(resource, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, "", false, dependencies)
+}
+
+func (c DeploymentProcessConverter) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, "", true, dependencies)
+}
+
+func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -125,7 +141,7 @@ func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, depend
 	}
 
 	zap.L().Info("Deployment Process: " + resource.Id)
-	return c.toHcl(resource, project.HasCacConfigured(), true, false, project.Name, dependencies)
+	return c.toHcl(resource, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
@@ -157,15 +173,15 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 		return err
 	}
 
-	return c.toHcl(resource, project.HasCacConfigured(), false, true, project.Name, dependencies)
+	return c.toHcl(resource, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := data.ResourceDetails{}
 
-	err := c.exportDependencies(recursive, lookup, resource, dependencies)
+	err := c.exportDependencies(recursive, lookup, stateless, resource, dependencies)
 
 	if err != nil {
 		return err
@@ -329,27 +345,27 @@ func (c DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
-	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, resource.Steps, dependencies)
+	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked feeds
-	err = c.OctopusActionProcessor.ExportFeeds(recursive, lookup, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportFeeds(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked worker pools
-	err = c.OctopusActionProcessor.ExportWorkerPools(recursive, lookup, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportWorkerPools(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked environments
-	err = c.OctopusActionProcessor.ExportEnvironments(recursive, lookup, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportEnvironments(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
