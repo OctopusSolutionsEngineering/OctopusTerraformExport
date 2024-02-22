@@ -683,8 +683,8 @@ func (c *VariableSetConverter) exportFeeds(recursive bool, lookup bool, stateles
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, feed := range regexes.FeedRegex.FindAllString(*value, -1) {
@@ -725,8 +725,8 @@ func (c *VariableSetConverter) exportAzureCloudServiceTargets(recursive bool, lo
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -753,8 +753,8 @@ func (c *VariableSetConverter) exportAzureServiceFabricTargets(recursive bool, l
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -781,8 +781,8 @@ func (c *VariableSetConverter) exportAzureWebAppTargets(recursive bool, lookup b
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -809,8 +809,8 @@ func (c *VariableSetConverter) exportCloudRegionTargets(recursive bool, lookup b
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -837,8 +837,8 @@ func (c *VariableSetConverter) exportKubernetesTargets(recursive bool, lookup bo
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -865,8 +865,8 @@ func (c *VariableSetConverter) exportListeningTargets(recursive bool, lookup boo
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -893,8 +893,8 @@ func (c *VariableSetConverter) exportOfflineDropTargets(recursive bool, lookup b
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -921,8 +921,8 @@ func (c *VariableSetConverter) exportPollingTargets(recursive bool, lookup bool,
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -949,8 +949,8 @@ func (c *VariableSetConverter) exportSshTargets(recursive bool, lookup bool, sta
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range variable.Scope.Machine {
@@ -977,8 +977,8 @@ func (c *VariableSetConverter) exportEnvironments(recursive bool, lookup bool, s
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, e := range c.filterEnvironmentScope(variable.Scope.Environment) {
@@ -1005,8 +1005,8 @@ func (c *VariableSetConverter) exportCertificates(recursive bool, lookup bool, s
 		return nil
 	}
 
-	if recursive == lookup {
-		return errors.New("one, and only one, of recursive and lookup must be true")
+	if recursive && lookup {
+		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
 	for _, cert := range regexes.CertificatesRegex.FindAllString(*value, -1) {
