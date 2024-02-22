@@ -164,6 +164,25 @@ func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	return c.toHcl(resource, false, true, false, dependencies)
 }
 
+func (c *ProjectConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	project := octopus.Project{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+
+	if err != nil {
+		return err
+	}
+
+	return c.toHcl(project, true, false, true, dependencies)
+}
+
 func (c *ProjectConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil

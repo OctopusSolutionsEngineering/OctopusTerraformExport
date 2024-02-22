@@ -65,6 +65,10 @@ func main() {
 		errorExit("excludeAllGitCredentials requires excludeCaCProjectSettings to be true")
 	}
 
+	if parseArgs.LookupProjectDependencies && parseArgs.Stateless {
+		errorExit("lookupProjectDependencies can not be used with stepTemplate")
+	}
+
 	if parseArgs.ProjectName != "" {
 		parseArgs.ProjectId, err = ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectName)
 
@@ -1138,26 +1142,56 @@ func ConvertProjectToTerraform(args args.Arguments) error {
 		ExcludeProjectsExcept:     nil,
 	}
 
-	var err error
 	if args.LookupProjectDependencies {
-		err = projectConverter.ToHclByIdWithLookups(args.ProjectId, &dependencies)
+		err := projectConverter.ToHclByIdWithLookups(args.ProjectId, &dependencies)
+
+		if err != nil {
+			return err
+		}
 	} else {
-		err = projectConverter.ToHclById(args.ProjectId, &dependencies)
+		if args.Stateless {
+			err := projectConverter.ToHclStatelessById(args.ProjectId, &dependencies)
+
+			if err != nil {
+				return err
+			}
+		} else {
+			err := projectConverter.ToHclById(args.ProjectId, &dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	if err != nil {
-		return err
+	if args.Stateless {
+		templateGenerator := generators.StepTemplateGenerator{}
+		templateContent, err := templateGenerator.Generate(&dependencies, args.StepTemplateName, args.StepTemplateKey, args.StepTemplateDescription)
+
+		if err != nil {
+			return err
+		}
+
+		err = writeFiles(map[string]string{"step_template.json": string(templateContent[:])}, args.Destination, args.Console)
+
+		if err != nil {
+			return err
+		}
+	} else {
+		hcl, err := processResources(dependencies.Resources)
+
+		if err != nil {
+			return err
+		}
+
+		err = writeFiles(strutil.UnEscapeDollarInMap(hcl), args.Destination, args.Console)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	hcl, err := processResources(dependencies.Resources)
-
-	if err != nil {
-		return err
-	}
-
-	err = writeFiles(strutil.UnEscapeDollarInMap(hcl), args.Destination, args.Console)
-
-	return err
+	return nil
 }
 
 // processResources creates a map of file names to file content

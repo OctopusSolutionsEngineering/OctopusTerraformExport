@@ -18,6 +18,14 @@ type ConverterById interface {
 	ToHclById(id string, dependencies *data.ResourceDetailsCollection) error
 }
 
+// ConverterToStatelessById converts an individual resource by its ID
+type ConverterToStatelessById interface {
+	// ToHclStatelessById converts a single resource to a stateless representation by its ID. This is used when
+	// converting a single project, and then converting anything that the project references (like feeds, accounts,
+	// environments etc).
+	ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error
+}
+
 // ConverterByIdWithLookups converts an individual resource by its ID, with all external resources referenced
 // as lookups
 type ConverterByIdWithLookups interface {
@@ -47,6 +55,7 @@ type ConverterAndWithLookupsById interface {
 	ConverterById
 	ConverterLookupById
 	ConverterByIdWithLookups
+	ConverterToStatelessById
 }
 
 // ConverterByIdWithName converts an individual resource by its ID, and uses the supplied name for the Terraform resource
