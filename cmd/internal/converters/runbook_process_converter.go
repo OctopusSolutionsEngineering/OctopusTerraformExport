@@ -56,7 +56,7 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", runbook.ProjectId, &resource)
+	_, err = c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", runbook.ProjectId, &resource)
+	_, err = c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -110,6 +110,7 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 
 func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project *octopus.Project, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbookName)
+	projectName := sanitizer2.SanitizeName(project.Name)
 
 	thisResource := data.ResourceDetails{}
 
@@ -220,7 +221,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project 
 
 		if stateless {
 			// only create the runbook process if the project does not exist
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + sanitizer2.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
 		}
 
 		file := hclwrite.NewEmptyFile()

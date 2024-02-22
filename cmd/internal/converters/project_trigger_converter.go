@@ -76,7 +76,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
 		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
-			"? \"\" " +
+			"? null " +
 			": " + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "}"
 	} else {
