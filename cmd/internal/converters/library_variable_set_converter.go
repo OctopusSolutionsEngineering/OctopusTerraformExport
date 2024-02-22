@@ -67,7 +67,15 @@ func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *dat
 	return nil
 }
 
+func (c *LibraryVariableSetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c *LibraryVariableSetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -84,7 +92,7 @@ func (c *LibraryVariableSetConverter) ToHclById(id string, dependencies *data.Re
 	}
 
 	zap.L().Info("Library Variable Set: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

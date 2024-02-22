@@ -56,7 +56,15 @@ func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *data.Res
 	return nil
 }
 
+func (c GitCredentialsConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c GitCredentialsConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c GitCredentialsConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllGitCredentials {
 		return nil
 	}
@@ -77,7 +85,7 @@ func (c GitCredentialsConverter) ToHclById(id string, dependencies *data.Resourc
 	}
 
 	zap.L().Info("Git Credentials: " + resource.Id)
-	return c.toHcl(resource, true, false, false, dependencies)
+	return c.toHcl(resource, true, false, stateless, dependencies)
 }
 
 func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

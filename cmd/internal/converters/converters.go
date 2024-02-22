@@ -49,6 +49,13 @@ type ConverterAndLookupById interface {
 	ConverterLookupById
 }
 
+// ConverterAndLookupById converts an individual resource by ID to HCL and to a data lookup
+type ConverterAndLookupWithStatelessById interface {
+	ConverterById
+	ConverterLookupById
+	ConverterToStatelessById
+}
+
 // ConverterAndWithLookupsById converts an individual resource by ID to HCL, either exporting all dependencies,
 // or looking up all dependencies
 type ConverterAndWithLookupsById interface {
@@ -124,6 +131,11 @@ type ConverterByProjectId interface {
 	ToHclByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error
 }
 
+// ConverterToStatelessByProjectId converts objects to stateless representations based on their relationship to a project
+type ConverterToStatelessByProjectId interface {
+	ToHclStatelessByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error
+}
+
 // ConverterLookupByProjectId converts objects to data lookups based on their relationship to a project
 type ConverterLookupByProjectId interface {
 	ToHclLookupByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error
@@ -132,6 +144,7 @@ type ConverterLookupByProjectId interface {
 // ConverterAndLookupByProjectId converts objects to HCL and data lookups based on their relationship to a project
 type ConverterAndLookupByProjectId interface {
 	ConverterByProjectId
+	ConverterToStatelessByProjectId
 	ConverterLookupByProjectId
 }
 

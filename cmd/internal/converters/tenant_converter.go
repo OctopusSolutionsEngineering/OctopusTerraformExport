@@ -67,7 +67,15 @@ func (c *TenantConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	return nil
 }
 
+func (c *TenantConverter) ToHclStatelessByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectId(projectId, true, dependencies)
+}
+
 func (c *TenantConverter) ToHclByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectId(projectId, false, dependencies)
+}
+
+func (c *TenantConverter) toHclByProjectId(projectId string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
@@ -77,7 +85,7 @@ func (c *TenantConverter) ToHclByProjectId(projectId string, dependencies *data.
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Tenant: " + resource.Id)
-		err = c.toHcl(resource, true, false, false, dependencies)
+		err = c.toHcl(resource, true, false, stateless, dependencies)
 		if err != nil {
 			return nil
 		}

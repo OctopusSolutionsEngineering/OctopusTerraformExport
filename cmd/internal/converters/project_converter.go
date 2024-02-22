@@ -24,10 +24,10 @@ const octopusdeployProjectResourceType = "octopusdeploy_project"
 
 type ProjectConverter struct {
 	Client                       client.OctopusClient
-	LifecycleConverter           ConverterAndLookupById
-	GitCredentialsConverter      ConverterAndLookupById
-	LibraryVariableSetConverter  ConverterAndLookupById
-	ProjectGroupConverter        ConverterAndLookupById
+	LifecycleConverter           ConverterAndLookupWithStatelessById
+	GitCredentialsConverter      ConverterAndLookupWithStatelessById
+	LibraryVariableSetConverter  ConverterAndLookupWithStatelessById
+	ProjectGroupConverter        ConverterAndLookupWithStatelessById
 	DeploymentProcessConverter   ConverterAndLookupByIdAndNameOrBranch
 	TenantConverter              ConverterAndLookupByProjectId
 	ProjectTriggerConverter      ConverterByProjectIdWithName
@@ -231,7 +231,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	projectName := "project_" + sanitizer.SanitizeName(project.Name)
 
 	if recursive {
-		err := c.exportDependencies(project, dependencies)
+		err := c.exportDependencies(project, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -896,7 +896,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 	}
 
 	// Export the tenants
-	err = c.TenantConverter.ToHclLookupByProjectId(project.Id, dependencies)
+	err = c.TenantConverter.ToHclByProjectId(project.Id, dependencies)
 
 	if err != nil {
 		return err
@@ -914,43 +914,83 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 	return nil
 }
 
-func (c *ProjectConverter) exportDependencies(project octopus.Project, dependencies *data.ResourceDetailsCollection) error {
+func (c *ProjectConverter) exportDependencies(project octopus.Project, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Export the project group
-	err := c.ProjectGroupConverter.ToHclById(project.ProjectGroupId, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the library sets
-	for _, v := range project.IncludedLibraryVariableSetIds {
-		err := c.LibraryVariableSetConverter.ToHclById(v, dependencies)
+	if stateless {
+		err := c.ProjectGroupConverter.ToHclStatelessById(project.ProjectGroupId, dependencies)
 
 		if err != nil {
 			return err
 		}
-	}
 
-	// Export the lifecycles
-	err = c.LifecycleConverter.ToHclById(project.LifecycleId, dependencies)
+		// Export the library sets
+		for _, v := range project.IncludedLibraryVariableSetIds {
+			err := c.LibraryVariableSetConverter.ToHclStatelessById(v, dependencies)
 
-	if err != nil {
-		return err
-	}
+			if err != nil {
+				return err
+			}
+		}
 
-	// Export the tenants
-	err = c.TenantConverter.ToHclByProjectId(project.Id, dependencies)
-
-	if err != nil {
-		return err
-	}
-
-	// Export the git credentials
-	if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
-		err = c.GitCredentialsConverter.ToHclById(project.PersistenceSettings.Credentials.Id, dependencies)
+		// Export the lifecycles
+		err = c.LifecycleConverter.ToHclStatelessById(project.LifecycleId, dependencies)
 
 		if err != nil {
 			return err
+		}
+
+		// Export the tenants
+		err = c.TenantConverter.ToHclStatelessByProjectId(project.Id, dependencies)
+
+		if err != nil {
+			return err
+		}
+
+		// Export the git credentials
+		if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
+			err = c.GitCredentialsConverter.ToHclStatelessById(project.PersistenceSettings.Credentials.Id, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		err := c.ProjectGroupConverter.ToHclById(project.ProjectGroupId, dependencies)
+
+		if err != nil {
+			return err
+		}
+
+		// Export the library sets
+		for _, v := range project.IncludedLibraryVariableSetIds {
+			err := c.LibraryVariableSetConverter.ToHclById(v, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		// Export the lifecycles
+		err = c.LifecycleConverter.ToHclById(project.LifecycleId, dependencies)
+
+		if err != nil {
+			return err
+		}
+
+		// Export the tenants
+		err = c.TenantConverter.ToHclByProjectId(project.Id, dependencies)
+
+		if err != nil {
+			return err
+		}
+
+		// Export the git credentials
+		if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
+			err = c.GitCredentialsConverter.ToHclById(project.PersistenceSettings.Credentials.Id, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 

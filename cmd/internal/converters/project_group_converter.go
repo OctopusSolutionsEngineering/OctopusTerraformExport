@@ -48,7 +48,16 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.Resou
 	return nil
 }
 
+func (c ProjectGroupConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c ProjectGroupConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c ProjectGroupConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+
 	if id == "" {
 		return nil
 	}
@@ -65,7 +74,7 @@ func (c ProjectGroupConverter) ToHclById(id string, dependencies *data.ResourceD
 	}
 
 	zap.L().Info("Project Group: " + resource.Id)
-	return c.toHcl(resource, false, false, false, dependencies)
+	return c.toHcl(resource, false, false, stateless, dependencies)
 }
 
 func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

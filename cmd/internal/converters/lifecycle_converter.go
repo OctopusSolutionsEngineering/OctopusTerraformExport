@@ -49,7 +49,15 @@ func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.Resource
 	return nil
 }
 
+func (c LifecycleConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c LifecycleConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c LifecycleConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Channels can have empty strings for the lifecycle ID
 	if id == "" {
 		return nil
@@ -67,7 +75,7 @@ func (c LifecycleConverter) ToHclById(id string, dependencies *data.ResourceDeta
 	}
 
 	zap.L().Info("Lifecycle: " + resource.Id)
-	return c.toHcl(resource, true, false, false, dependencies)
+	return c.toHcl(resource, true, false, stateless, dependencies)
 
 }
 
