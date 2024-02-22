@@ -74,7 +74,15 @@ func (c KubernetesTargetConverter) isKubernetesTarget(resource octopus.Kubernete
 	return resource.Endpoint.CommunicationStyle == "Kubernetes"
 }
 
+func (c KubernetesTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c KubernetesTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c KubernetesTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -95,7 +103,7 @@ func (c KubernetesTargetConverter) ToHclById(id string, dependencies *data.Resou
 	}
 
 	zap.L().Info("Kubernetes Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

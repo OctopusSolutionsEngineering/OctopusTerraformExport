@@ -73,7 +73,15 @@ func (c AzureWebAppTargetConverter) isAzureWebApp(resource octopus.AzureWebAppRe
 	return resource.Endpoint.CommunicationStyle == "AzureWebApp"
 }
 
+func (c AzureWebAppTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c AzureWebAppTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -94,7 +102,7 @@ func (c AzureWebAppTargetConverter) ToHclById(id string, dependencies *data.Reso
 	}
 
 	zap.L().Info("Azure Web App Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

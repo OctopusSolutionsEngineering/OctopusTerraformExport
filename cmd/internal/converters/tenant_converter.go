@@ -23,7 +23,7 @@ const octopusdeployTenantResourceType = "octopusdeploy_tenant"
 type TenantConverter struct {
 	Client                  client.OctopusClient
 	TenantVariableConverter ConverterByTenantId
-	EnvironmentConverter    ConverterById
+	EnvironmentConverter    ConverterAndLookupWithStatelessById
 	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
 	ExcludeTenantTagSets    args.ExcludeTenantTagSets
 	ExcludeTenantTags       args.ExcludeTenantTags
@@ -174,7 +174,11 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 		// Export the tenant environments
 		for _, environments := range tenant.ProjectEnvironments {
 			for _, environment := range environments {
-				err = c.EnvironmentConverter.ToHclById(environment, dependencies)
+				if stateless {
+					err = c.EnvironmentConverter.ToHclStatelessById(environment, dependencies)
+				} else {
+					err = c.EnvironmentConverter.ToHclById(environment, dependencies)
+				}
 			}
 		}
 

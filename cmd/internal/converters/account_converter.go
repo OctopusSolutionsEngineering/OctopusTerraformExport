@@ -54,7 +54,15 @@ func (c AccountConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	return nil
 }
 
+func (c AccountConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c AccountConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c AccountConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -71,7 +79,7 @@ func (c AccountConverter) ToHclById(id string, dependencies *data.ResourceDetail
 	}
 
 	zap.L().Info("Account: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c AccountConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

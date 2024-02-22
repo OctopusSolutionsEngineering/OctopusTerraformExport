@@ -74,7 +74,15 @@ func (c AzureServiceFabricTargetConverter) isAzureServiceFabricCluster(resource 
 	return resource.Endpoint.CommunicationStyle == "AzureServiceFabricCluster"
 }
 
+func (c AzureServiceFabricTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c AzureServiceFabricTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -95,7 +103,7 @@ func (c AzureServiceFabricTargetConverter) ToHclById(id string, dependencies *da
 	}
 
 	zap.L().Info("Azure Service Fabric Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

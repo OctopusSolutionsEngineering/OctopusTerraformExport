@@ -59,7 +59,15 @@ func (c FeedConverter) allToHcl(stateless bool, dependencies *data.ResourceDetai
 	return nil
 }
 
+func (c FeedConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c FeedConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c FeedConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -76,7 +84,7 @@ func (c FeedConverter) ToHclById(id string, dependencies *data.ResourceDetailsCo
 	}
 
 	zap.L().Info("Feed: " + resource.Id)
-	return c.toHcl(resource, true, false, false, dependencies)
+	return c.toHcl(resource, true, false, stateless, dependencies)
 }
 
 func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

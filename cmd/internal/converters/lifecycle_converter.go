@@ -18,7 +18,7 @@ const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
 
 type LifecycleConverter struct {
 	Client               client.OctopusClient
-	EnvironmentConverter ConverterById
+	EnvironmentConverter ConverterAndLookupWithStatelessById
 }
 
 func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
@@ -124,18 +124,34 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 		// The environments are a dependency that we need to lookup
 		for _, phase := range lifecycle.Phases {
 			for _, auto := range phase.AutomaticDeploymentTargets {
-				err := c.EnvironmentConverter.ToHclById(auto, dependencies)
-
-				if err != nil {
-					return err
+				if stateless {
+					err := c.EnvironmentConverter.ToHclStatelessById(auto, dependencies)
+					if err != nil {
+						return err
+					}
+				} else {
+					err := c.EnvironmentConverter.ToHclById(auto, dependencies)
+					if err != nil {
+						return err
+					}
 				}
+
 			}
 			for _, optional := range phase.OptionalDeploymentTargets {
-				err := c.EnvironmentConverter.ToHclById(optional, dependencies)
+				if stateless {
+					err := c.EnvironmentConverter.ToHclStatelessById(optional, dependencies)
 
-				if err != nil {
-					return err
+					if err != nil {
+						return err
+					}
+				} else {
+					err := c.EnvironmentConverter.ToHclById(optional, dependencies)
+
+					if err != nil {
+						return err
+					}
 				}
+
 			}
 		}
 	}

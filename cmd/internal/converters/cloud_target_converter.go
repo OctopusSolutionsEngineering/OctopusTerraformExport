@@ -72,7 +72,15 @@ func (c CloudRegionTargetConverter) isCloudTarget(resource octopus.CloudRegionRe
 	return resource.Endpoint.CommunicationStyle == "None"
 }
 
+func (c CloudRegionTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c CloudRegionTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -93,7 +101,7 @@ func (c CloudRegionTargetConverter) ToHclById(id string, dependencies *data.Reso
 	}
 
 	zap.L().Info("Cloud Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

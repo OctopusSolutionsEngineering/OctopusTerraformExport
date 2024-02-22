@@ -73,7 +73,15 @@ func (c SshTargetConverter) isSsh(resource octopus.SshEndpointResource) bool {
 	return resource.Endpoint.CommunicationStyle == "Ssh"
 }
 
+func (c SshTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c SshTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c SshTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllTargets {
 		return nil
 	}
@@ -98,7 +106,7 @@ func (c SshTargetConverter) ToHclById(id string, dependencies *data.ResourceDeta
 	}
 
 	zap.L().Info("SSH Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c SshTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

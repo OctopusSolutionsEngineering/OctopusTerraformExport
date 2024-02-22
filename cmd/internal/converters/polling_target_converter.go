@@ -72,7 +72,15 @@ func (c PollingTargetConverter) isPollingTarget(resource octopus.PollingEndpoint
 	return resource.Endpoint.CommunicationStyle == "TentacleActive"
 }
 
+func (c PollingTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c PollingTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c PollingTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -93,7 +101,7 @@ func (c PollingTargetConverter) ToHclById(id string, dependencies *data.Resource
 	}
 
 	zap.L().Info("Polling Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

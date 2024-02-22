@@ -74,7 +74,15 @@ func (c OfflineDropTargetConverter) isOfflineTarget(resource octopus.OfflineDrop
 	return resource.Endpoint.CommunicationStyle == "OfflineDrop"
 }
 
+func (c OfflineDropTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c OfflineDropTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -95,7 +103,7 @@ func (c OfflineDropTargetConverter) ToHclById(id string, dependencies *data.Reso
 	}
 
 	zap.L().Info("Offline Drop Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

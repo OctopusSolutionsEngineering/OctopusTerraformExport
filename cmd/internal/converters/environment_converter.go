@@ -47,8 +47,15 @@ func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *data.Resour
 
 	return nil
 }
+func (c EnvironmentConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
 
 func (c EnvironmentConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c EnvironmentConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -65,7 +72,7 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *data.ResourceDe
 	}
 
 	zap.L().Info("Environment: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

@@ -23,8 +23,8 @@ const octopusdeployRunbookResourceType = "octopusdeploy_runbook"
 type RunbookConverter struct {
 	Client                       client.OctopusClient
 	RunbookProcessConverter      ConverterAndLookupByIdAndName
-	EnvironmentConverter         ConverterAndLookupById
-	ProjectConverter             ConverterAndLookupById
+	EnvironmentConverter         ConverterAndLookupWithStatelessById
+	ProjectConverter             ConverterAndLookupWithStatelessById
 	ExcludedRunbooks             args.ExcludeRunbooks
 	ExcludeRunbooksRegex         args.ExcludeRunbooks
 	ExcludeRunbooksExcept        args.ExcludeRunbooks
@@ -147,7 +147,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
 	runbookName := "runbook_" + resourceNameSuffix
 
-	err := c.exportChildDependencies(recursive, lookups, runbook, resourceNameSuffix, dependencies)
+	err := c.exportChildDependencies(recursive, lookups, stateless, runbook, resourceNameSuffix, dependencies)
 
 	if err != nil {
 		return err
@@ -252,7 +252,7 @@ func (c *RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terr
 	}
 }
 
-func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, runbook octopus.Runbook, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, runbook octopus.Runbook, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	// It is not valid to have lookup be false and recursive be true, as the only supported export of a runbook is
 	// with lookup being true.
 	if lookup && recursive {
@@ -288,7 +288,11 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 	for _, e := range runbook.Environments {
 		var err error
 		if recursive {
-			err = c.EnvironmentConverter.ToHclById(e, dependencies)
+			if stateless {
+				err = c.EnvironmentConverter.ToHclStatelessById(e, dependencies)
+			} else {
+				err = c.EnvironmentConverter.ToHclById(e, dependencies)
+			}
 		} else if lookup {
 			err = c.EnvironmentConverter.ToHclLookupById(e, dependencies)
 		}

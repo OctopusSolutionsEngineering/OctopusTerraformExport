@@ -20,7 +20,7 @@ const octopusdeployChannelResourceType = "octopusdeploy_channel"
 
 type ChannelConverter struct {
 	Client               client.OctopusClient
-	LifecycleConverter   ConverterAndLookupById
+	LifecycleConverter   ConverterAndLookupWithStatelessById
 	ExcludeTenantTags    args.ExcludeTenantTags
 	ExcludeTenantTagSets args.ExcludeTenantTagSets
 	Excluder             ExcludeByName
@@ -106,8 +106,12 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	if channel.LifecycleId != "" {
 		var err error
 		if recursive {
-			// The lifecycle is a dependency that we need to lookup
-			err = c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
+			if stateless {
+				err = c.LifecycleConverter.ToHclStatelessById(channel.LifecycleId, dependencies)
+			} else {
+				err = c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
+			}
+
 		} else if lookup {
 			err = c.LifecycleConverter.ToHclLookupById(channel.LifecycleId, dependencies)
 		}

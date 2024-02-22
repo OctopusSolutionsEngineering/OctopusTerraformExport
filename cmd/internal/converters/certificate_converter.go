@@ -55,7 +55,15 @@ func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.Resour
 	return nil
 }
 
+func (c CertificateConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c CertificateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c CertificateConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -72,7 +80,7 @@ func (c CertificateConverter) ToHclById(id string, dependencies *data.ResourceDe
 	}
 
 	zap.L().Info("Certificate: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c CertificateConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

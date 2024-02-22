@@ -72,7 +72,15 @@ func (c ListeningTargetConverter) isListeningTarget(resource octopus.ListeningEn
 	return resource.Endpoint.CommunicationStyle == "TentaclePassive"
 }
 
+func (c ListeningTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c ListeningTargetConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c ListeningTargetConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -93,7 +101,7 @@ func (c ListeningTargetConverter) ToHclById(id string, dependencies *data.Resour
 	}
 
 	zap.L().Info("Listening Target: " + resource.Id)
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {

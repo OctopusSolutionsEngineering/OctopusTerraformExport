@@ -49,7 +49,15 @@ func (c WorkerPoolConverter) allToHcl(stateless bool, dependencies *data.Resourc
 	return nil
 }
 
+func (c WorkerPoolConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
 func (c WorkerPoolConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c WorkerPoolConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -66,7 +74,7 @@ func (c WorkerPoolConverter) ToHclById(id string, dependencies *data.ResourceDet
 	}
 
 	zap.L().Info("Worker Pool: " + resource.Id)
-	return c.toHcl(resource, true, false, false, dependencies)
+	return c.toHcl(resource, true, false, stateless, dependencies)
 }
 
 func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
