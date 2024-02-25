@@ -20,9 +20,9 @@ const octopusdeploySshConnectionDeploymentTargetResourceType = "octopusdeploy_ss
 
 type SshTargetConverter struct {
 	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	AccountConverter       ConverterById
-	EnvironmentConverter   ConverterById
+	MachinePolicyConverter ConverterWithStatelessById
+	AccountConverter       ConverterAndLookupWithStatelessById
+	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
 	ExcludeTargets         args.ExcludeTargets
 	ExcludeTargetsRegex    args.ExcludeTargets
@@ -190,10 +190,14 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 	}
 
 	if recursive {
-		err := c.exportDependencies(target, dependencies)
-
-		if err != nil {
-			return err
+		if stateless {
+			if err := c.exportStatelessDependencies(target, dependencies); err != nil {
+				return nil
+			}
+		} else {
+			if err := c.exportDependencies(target, dependencies); err != nil {
+				return nil
+			}
 		}
 	}
 
@@ -308,6 +312,34 @@ func (c SshTargetConverter) exportDependencies(target octopus.SshEndpointResourc
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
 		err = c.EnvironmentConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c SshTargetConverter) exportStatelessDependencies(target octopus.SshEndpointResource, dependencies *data.ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the accounts
+	err = c.AccountConverter.ToHclStatelessById(target.Endpoint.AccountId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = c.EnvironmentConverter.ToHclStatelessById(e, dependencies)
 
 		if err != nil {
 			return err

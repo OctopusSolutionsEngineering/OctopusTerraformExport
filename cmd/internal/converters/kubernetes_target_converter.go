@@ -20,10 +20,10 @@ const octopusdeployKubernetesClusterDeploymentTargetResourceType = "octopusdeplo
 
 type KubernetesTargetConverter struct {
 	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	AccountConverter       ConverterById
-	CertificateConverter   ConverterById
-	EnvironmentConverter   ConverterById
+	MachinePolicyConverter ConverterWithStatelessById
+	AccountConverter       ConverterAndLookupWithStatelessById
+	EnvironmentConverter   ConverterAndLookupWithStatelessById
+	CertificateConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
 	ExcludeTargets         args.ExcludeTargets
 	ExcludeTargetsRegex    args.ExcludeTargets
@@ -183,10 +183,14 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 	}
 
 	if recursive {
-		err := c.exportDependencies(target, dependencies)
-
-		if err != nil {
-			return err
+		if stateless {
+			if err := c.exportStatelessDependencies(target, dependencies); err != nil {
+				return err
+			}
+		} else {
+			if err := c.exportDependencies(target, dependencies); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -446,6 +450,52 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
 		err = c.EnvironmentConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c KubernetesTargetConverter) exportStatelessDependencies(target octopus.KubernetesEndpointResource, dependencies *data.ResourceDetailsCollection) error {
+	// The machine policies need to be exported
+	err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the accounts
+	if target.Endpoint.Authentication.AccountId != nil {
+		err = c.AccountConverter.ToHclStatelessById(*target.Endpoint.Authentication.AccountId, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the certificate
+	if target.Endpoint.Authentication.ClientCertificate != nil {
+		err = c.CertificateConverter.ToHclStatelessById(*target.Endpoint.Authentication.ClientCertificate, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if target.Endpoint.ClusterCertificate != nil {
+		err = c.CertificateConverter.ToHclStatelessById(*target.Endpoint.ClusterCertificate, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = c.EnvironmentConverter.ToHclStatelessById(e, dependencies)
 
 		if err != nil {
 			return err

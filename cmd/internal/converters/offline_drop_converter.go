@@ -20,8 +20,8 @@ const octopusdeployOfflinePackageDropDeploymentTargetResourceType = "octopusdepl
 
 type OfflineDropTargetConverter struct {
 	Client                    client.OctopusClient
-	MachinePolicyConverter    ConverterById
-	EnvironmentConverter      ConverterById
+	MachinePolicyConverter    ConverterWithStatelessById
+	EnvironmentConverter      ConverterAndLookupWithStatelessById
 	ExcludeAllTargets         bool
 	ExcludeTargets            args.ExcludeTargets
 	ExcludeTargetsRegex       args.ExcludeTargets
@@ -185,10 +185,14 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 	}
 
 	if recursive {
-		err := c.exportDependencies(target, dependencies)
-
-		if err != nil {
-			return err
+		if stateless {
+			if err := c.exportStatelessDependencies(target, dependencies); err != nil {
+				return err
+			}
+		} else {
+			if err := c.exportDependencies(target, dependencies); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -298,6 +302,27 @@ func (c OfflineDropTargetConverter) exportDependencies(target octopus.OfflineDro
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
 		err = c.EnvironmentConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c OfflineDropTargetConverter) exportStatelessDependencies(target octopus.OfflineDropResource, dependencies *data.ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = c.EnvironmentConverter.ToHclStatelessById(e, dependencies)
 
 		if err != nil {
 			return err

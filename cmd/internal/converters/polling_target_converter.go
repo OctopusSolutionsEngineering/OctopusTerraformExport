@@ -20,8 +20,8 @@ const octopusdeployPollingTentacleDeploymentTargetResourceType = "octopusdeploy_
 
 type PollingTargetConverter struct {
 	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	EnvironmentConverter   ConverterById
+	MachinePolicyConverter ConverterWithStatelessById
+	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
 	ExcludeTargets         args.ExcludeTargets
 	ExcludeTargetsRegex    args.ExcludeTargets
@@ -179,10 +179,14 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 	}
 
 	if recursive {
-		err := c.exportDependencies(target, dependencies)
-
-		if err != nil {
-			return err
+		if stateless {
+			if err := c.exportStatelessDependencies(target, dependencies); err != nil {
+				return err
+			}
+		} else {
+			if err := c.exportDependencies(target, dependencies); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -293,6 +297,27 @@ func (c PollingTargetConverter) exportDependencies(target octopus.PollingEndpoin
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
 		err = c.EnvironmentConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c PollingTargetConverter) exportStatelessDependencies(target octopus.PollingEndpointResource, dependencies *data.ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = c.EnvironmentConverter.ToHclStatelessById(e, dependencies)
 
 		if err != nil {
 			return err

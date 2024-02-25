@@ -20,9 +20,9 @@ const azureCloudServiceDeploymentResourceType = "octopusdeploy_azure_cloud_servi
 
 type AzureCloudServiceTargetConverter struct {
 	Client                 client.OctopusClient
-	MachinePolicyConverter ConverterById
-	AccountConverter       ConverterById
-	EnvironmentConverter   ConverterById
+	MachinePolicyConverter ConverterWithStatelessById
+	AccountConverter       ConverterAndLookupWithStatelessById
+	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
 	ExcludeTargets         args.ExcludeTargets
 	ExcludeTargetsRegex    args.ExcludeTargets
@@ -203,10 +203,14 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 
 	if c.isAzureCloudService(target) {
 		if recursive {
-			err := c.exportDependencies(target, dependencies)
-
-			if err != nil {
-				return err
+			if stateless {
+				if err := c.exportStatelessDependencies(target, dependencies); err != nil {
+					return err
+				}
+			} else {
+				if err := c.exportDependencies(target, dependencies); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -293,24 +297,40 @@ func (c AzureCloudServiceTargetConverter) GetResourceType() string {
 func (c AzureCloudServiceTargetConverter) exportDependencies(target octopus.AzureCloudServiceResource, dependencies *data.ResourceDetailsCollection) error {
 
 	// The machine policies need to be exported
-	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
+	if err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies); err != nil {
 		return err
 	}
 
 	// Export the accounts
-	err = c.AccountConverter.ToHclById(target.Endpoint.AccountId, dependencies)
-
-	if err != nil {
+	if err := c.AccountConverter.ToHclById(target.Endpoint.AccountId, dependencies); err != nil {
 		return err
 	}
 
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
-		err = c.EnvironmentConverter.ToHclById(e, dependencies)
+		if err := c.EnvironmentConverter.ToHclById(e, dependencies); err != nil {
+			return err
+		}
+	}
 
-		if err != nil {
+	return nil
+}
+
+func (c AzureCloudServiceTargetConverter) exportStatelessDependencies(target octopus.AzureCloudServiceResource, dependencies *data.ResourceDetailsCollection) error {
+
+	// The machine policies need to be exported
+	if err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies); err != nil {
+		return err
+	}
+
+	// Export the accounts
+	if err := c.AccountConverter.ToHclStatelessById(target.Endpoint.AccountId, dependencies); err != nil {
+		return err
+	}
+
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		if err := c.EnvironmentConverter.ToHclStatelessById(e, dependencies); err != nil {
 			return err
 		}
 	}
