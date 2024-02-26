@@ -407,7 +407,7 @@ func (c *ProjectConverter) writeGitUrlVar(projectName string, project octopus.Pr
 func (c *ProjectConverter) getStepTemplateParameters(projectName string, project octopus.Project, dependencies *data.ResourceDetailsCollection) []data.ResourceParameter {
 	parameters := []data.ResourceParameter{}
 
-	if project.PersistenceSettings.Credentials.Type == "UsernamePassword" {
+	if project.PersistenceSettings.Credentials.Type == "UsernamePassword" && !c.ExcludeCaCProjectSettings {
 		parameters = append(parameters, data.ResourceParameter{
 			VariableName:  projectName + "_git_password",
 			Label:         "Project " + project.Name + " Git password",
