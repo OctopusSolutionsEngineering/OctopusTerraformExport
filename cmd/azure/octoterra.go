@@ -35,6 +35,14 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Clean up the file when we are done
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			zap.L().Error(err.Error())
+		}
+	}(file.Name())
+
 	filename := filepath.Base(file.Name())
 	extension := filepath.Ext(filename)
 	filenameWithoutExtension := filename[0 : len(filename)-len(extension)]
