@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/strings/slices"
 	"regexp"
 )
@@ -32,6 +33,7 @@ type RunbookConverter struct {
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 	Excluder                     ExcludeByName
 	IgnoreProjectChanges         bool
+	ErrGroup                     *errgroup.Group
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {

@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_project_variable"
@@ -31,10 +32,11 @@ type TenantVariableConverter struct {
 	ExcludeProjectsExcept     args.ExcludeProjects
 	ExcludeProjectsRegex      args.ExcludeProjectsRegex
 	ExcludeAllProjects        bool
+	ErrGroup                  *errgroup.Group
 }
 
-func (c TenantVariableConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c TenantVariableConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c TenantVariableConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

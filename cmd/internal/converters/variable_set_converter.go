@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/strings/slices"
 	"net/url"
 	"strings"
@@ -57,6 +58,7 @@ type VariableSetConverter struct {
 	ExcludeVariableEnvironmentScopes    args.ExcludeVariableEnvironmentScopes
 	excludeVariableEnvironmentScopesIds []string
 	Excluder                            ExcludeByName
+	ErrGroup                            *errgroup.Group
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {

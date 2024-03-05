@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployGitCredentialDataType = "octopusdeploy_git_credentials"
@@ -22,10 +23,11 @@ type GitCredentialsConverter struct {
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
 	ExcludeAllGitCredentials  bool
+	ErrGroup                  *errgroup.Group
 }
 
-func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c GitCredentialsConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

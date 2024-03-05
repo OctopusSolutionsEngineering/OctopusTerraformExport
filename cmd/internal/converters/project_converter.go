@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"regexp"
 	"strings"
 )
@@ -50,10 +51,11 @@ type ProjectConverter struct {
 	Excluder                     ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
 	LookupOnlyMode bool
+	ErrGroup       errgroup.Group
 }
 
-func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c *ProjectConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

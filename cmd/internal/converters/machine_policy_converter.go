@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"strconv"
 	"strings"
 	"time"
@@ -20,11 +21,12 @@ const octopusdeployMachinePoliciesDataType = "octopusdeploy_machine_policies"
 const octopusdeployMachinePolicyResourceType = "octopusdeploy_machine_policy"
 
 type MachinePolicyConverter struct {
-	Client client.OctopusClient
+	Client   client.OctopusClient
+	ErrGroup *errgroup.Group
 }
 
-func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c MachinePolicyConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

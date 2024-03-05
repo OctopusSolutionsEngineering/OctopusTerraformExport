@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"regexp"
 	"strings"
 )
@@ -33,10 +34,11 @@ type LibraryVariableSetConverter struct {
 	DummySecretVariableValues               bool
 	DummySecretGenerator                    DummySecretGenerator
 	Excluder                                ExcludeByName
+	ErrGroup                                *errgroup.Group
 }
 
-func (c *LibraryVariableSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c *LibraryVariableSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployTagSetResourceType = "octopusdeploy_tag_set"
@@ -23,10 +24,11 @@ type TagSetConverter struct {
 	ExcludeTenantTags    args.ExcludeTenantTags
 	ExcludeTenantTagSets args.ExcludeTenantTagSets
 	Excluder             ExcludeByName
+	ErrGroup             *errgroup.Group
 }
 
-func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c *TagSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

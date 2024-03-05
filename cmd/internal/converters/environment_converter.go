@@ -11,17 +11,19 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployEnvironmentsDataType = "octopusdeploy_environments"
 const octopusdeployEnvironmentsResourceType = "octopusdeploy_environment"
 
 type EnvironmentConverter struct {
-	Client client.OctopusClient
+	Client   client.OctopusClient
+	ErrGroup *errgroup.Group
 }
 
-func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c EnvironmentConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

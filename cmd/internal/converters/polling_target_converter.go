@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployPollingTentacleDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -30,10 +31,11 @@ type PollingTargetConverter struct {
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
+	ErrGroup               *errgroup.Group
 }
 
-func (c PollingTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c PollingTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c PollingTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

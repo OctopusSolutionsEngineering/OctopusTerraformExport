@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"os"
 	"runtime/pprof"
 	"strings"
@@ -139,6 +140,9 @@ func ConvertRunbookNameToId(url string, space string, apiKey string, projectId s
 }
 
 func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
+	group := errgroup.Group{}
+	group.SetLimit(10)
+
 	octopusClient := client.OctopusApiClient{
 		Url:    args.Url,
 		Space:  args.Space,
@@ -165,8 +169,14 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		}.ToHcl("space_creation", false, &dependencies)
 	}
 
-	machinePolicyConverter := converters.MachinePolicyConverter{Client: octopusClient}
-	environmentConverter := converters.EnvironmentConverter{Client: octopusClient}
+	machinePolicyConverter := converters.MachinePolicyConverter{
+		Client:   octopusClient,
+		ErrGroup: &group,
+	}
+	environmentConverter := converters.EnvironmentConverter{
+		Client:   octopusClient,
+		ErrGroup: &group,
+	}
 	tenantVariableConverter := converters.TenantVariableConverter{
 		Client:                    octopusClient,
 		ExcludeTenants:            args.ExcludeTenants,
@@ -180,12 +190,14 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
 		ExcludeAllProjects:        args.ExcludeAllProjects,
 		ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
+		ErrGroup:                  &group,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:               octopusClient,
 		Excluder:             converters.DefaultExcluder{},
 		ExcludeTenantTags:    args.ExcludeTenantTags,
 		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		ErrGroup:             &group,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  octopusClient,
@@ -204,6 +216,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTenantTags:       args.ExcludeTenantTags,
 		ExcludeTenantTagSets:    args.ExcludeTenantTagSets,
 		ExcludeProjectsExcept:   args.ExcludeProjectsExcept,
+		ErrGroup:                &group,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    octopusClient,
@@ -215,17 +228,20 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
+		ErrGroup:                  &group,
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
 		Client:               octopusClient,
 		EnvironmentConverter: environmentConverter,
+		ErrGroup:             &group,
 	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
+		ErrGroup:                  &group,
 	}
 	channelConverter := converters.ChannelConverter{
 		Client:               octopusClient,
@@ -233,9 +249,13 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTenantTags:    args.ExcludeTenantTags,
 		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 		Excluder:             converters.DefaultExcluder{},
+		ErrGroup:             &group,
 	}
 
-	projectGroupConverter := converters.ProjectGroupConverter{Client: octopusClient}
+	projectGroupConverter := converters.ProjectGroupConverter{
+		Client:   octopusClient,
+		ErrGroup: &group,
+	}
 
 	certificateConverter := converters.CertificateConverter{
 		Client:                    octopusClient,
@@ -245,6 +265,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
+		ErrGroup:                  &group,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: octopusClient}
 
@@ -252,6 +273,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ErrGroup:                  &group,
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
@@ -268,6 +290,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -283,6 +306,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -297,6 +321,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -311,6 +336,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -325,6 +351,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
@@ -341,6 +368,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:      args.ExcludeTargetsExcept,
+		ErrGroup:                  &group,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -356,6 +384,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -372,6 +401,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargetsExcept:      args.ExcludeTargetsExcept,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ErrGroup:                  &group,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -387,6 +417,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		ErrGroup:               &group,
 	}
 
 	variableSetConverter := converters.VariableSetConverter{
@@ -416,6 +447,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		DummySecretVariableValues:         args.DummySecretVariableValues,
 		DummySecretGenerator:              dummySecretGenerator,
 		Excluder:                          converters.DefaultExcluder{},
+		ErrGroup:                          &group,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           octopusClient,
@@ -427,12 +459,14 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		DummySecretVariableValues:        args.DummySecretVariableValues,
 		DummySecretGenerator:             dummySecretGenerator,
 		Excluder:                         converters.DefaultExcluder{},
+		ErrGroup:                         &group,
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
 		LookupDefaultWorkerPool: args.LookUpDefaultWorkerPools,
 		Client:                  octopusClient,
+		ErrGroup:                &group,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -463,6 +497,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		ExcludeAllRunbooks:    false,
 		ProjectConverter:      nil,
 		IgnoreProjectChanges:  false,
+		ErrGroup:              &group,
 	}
 
 	spaceConverter := converters.SpaceConverter{
@@ -534,6 +569,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		AzureServiceFabricTargetConverter: azureServiceFabricTargetConverter,
 		AzureWebAppTargetConverter:        azureWebAppTargetConverter,
 		FeedConverter:                     feedConverter,
+		ErrGroup:                          &group,
 	}
 
 	if args.Stateless {

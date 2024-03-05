@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"golang.org/x/sync/errgroup"
 )
 
 // SpaceConverter creates the files required to create a new space. These files are used in a separate
@@ -39,6 +40,7 @@ type SpaceConverter struct {
 	AzureCloudServiceTargetConverter  Converter
 	AzureServiceFabricTargetConverter Converter
 	AzureWebAppTargetConverter        Converter
+	ErrGroup                          *errgroup.Group
 }
 
 // AllToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
@@ -52,167 +54,75 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	}
 
 	// Convert the feeds
-	err = c.FeedConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.FeedConverter.AllToHcl(dependencies)
 
 	// Convert the accounts
-	err = c.AccountConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.AccountConverter.AllToHcl(dependencies)
 
 	// Convert the environments
-	err = c.EnvironmentConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.EnvironmentConverter.AllToHcl(dependencies)
 
 	// Convert the library variables
-	err = c.LibraryVariableSetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.LibraryVariableSetConverter.AllToHcl(dependencies)
 
 	// Convert the lifecycles
-	err = c.LifecycleConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.LifecycleConverter.AllToHcl(dependencies)
 
 	// Convert the worker pools
-	err = c.WorkerPoolConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.WorkerPoolConverter.AllToHcl(dependencies)
 
 	// Convert the tag sets
-	err = c.TagSetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.TagSetConverter.AllToHcl(dependencies)
 
 	// Convert the git credentials
-	err = c.GitCredentialsConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.GitCredentialsConverter.AllToHcl(dependencies)
 
 	// Convert the projects groups
-	err = c.ProjectGroupConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.ProjectGroupConverter.AllToHcl(dependencies)
 
 	// Convert the projects
-	err = c.ProjectConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.ProjectConverter.AllToHcl(dependencies)
 
 	// Convert the tenants
-	err = c.TenantConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.TenantConverter.AllToHcl(dependencies)
 
 	// Convert the certificates
-	err = c.CertificateConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.CertificateConverter.AllToHcl(dependencies)
 
 	// Convert the tenant variables
-	err = c.TenantVariableConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.TenantVariableConverter.AllToHcl(dependencies)
 
 	// Convert the machine policies
-	err = c.MachinePolicyConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.MachinePolicyConverter.AllToHcl(dependencies)
 
 	// Convert the k8s targets
-	err = c.KubernetesTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.KubernetesTargetConverter.AllToHcl(dependencies)
 
 	// Convert the ssh targets
-	err = c.SshTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.SshTargetConverter.AllToHcl(dependencies)
 
 	// Convert the ssh targets
-	err = c.ListeningTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.ListeningTargetConverter.AllToHcl(dependencies)
 
 	// Convert the polling targets
-	err = c.PollingTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.PollingTargetConverter.AllToHcl(dependencies)
 
 	// Convert the cloud region targets
-	err = c.CloudRegionTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.CloudRegionTargetConverter.AllToHcl(dependencies)
 
 	// Convert the cloud region targets
-	err = c.OfflineDropTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.OfflineDropTargetConverter.AllToHcl(dependencies)
 
 	// Convert the azure cloud service targets
-	err = c.AzureCloudServiceTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.AzureCloudServiceTargetConverter.AllToHcl(dependencies)
 
 	// Convert the azure cloud service targets
-	err = c.AzureServiceFabricTargetConverter.AllToHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.AzureServiceFabricTargetConverter.AllToHcl(dependencies)
 
 	// Convert the azure web app targets
-	err = c.AzureWebAppTargetConverter.AllToHcl(dependencies)
+	c.AzureWebAppTargetConverter.AllToHcl(dependencies)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.ErrGroup.Wait()
 }
 
 // AllToStatelessHcl is a bulk export that takes advantage of the collection endpoints to download and export everything

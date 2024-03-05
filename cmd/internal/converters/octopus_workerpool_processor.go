@@ -3,6 +3,7 @@ package converters
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"golang.org/x/sync/errgroup"
 )
 
 // OctopusWorkerPoolProcessor exposes a bunch of common functions for exporting the processes associated with
@@ -11,6 +12,7 @@ type OctopusWorkerPoolProcessor struct {
 	WorkerPoolConverter     ConverterAndLookupById
 	LookupDefaultWorkerPool bool
 	Client                  client.OctopusClient
+	ErrGroup                *errgroup.Group
 }
 
 // ResolveWorkerPoolId looks up the default worker pool if the action does not specify a pool. This allows

@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"strings"
 )
 
@@ -24,6 +25,7 @@ type ChannelConverter struct {
 	ExcludeTenantTags    args.ExcludeTenantTags
 	ExcludeTenantTagSets args.ExcludeTenantTagSets
 	Excluder             ExcludeByName
+	ErrGroup             *errgroup.Group
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {

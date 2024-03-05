@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployWorkerPoolsDataType = "octopusdeploy_worker_pools"
@@ -18,11 +19,12 @@ const octopusdeployStaticWorkerPoolResourcePool = "octopusdeploy_static_worker_p
 const octopusdeployDynamicWorkerPoolResourceType = "octopusdeploy_dynamic_worker_pool"
 
 type WorkerPoolConverter struct {
-	Client client.OctopusClient
+	Client   client.OctopusClient
+	ErrGroup errgroup.Group
 }
 
-func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c WorkerPoolConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {

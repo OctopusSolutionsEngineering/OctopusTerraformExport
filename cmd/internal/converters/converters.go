@@ -226,7 +226,7 @@ type ConvertToHclLookupByResource[C any] interface {
 // Converter converts all objects in bulk
 type Converter interface {
 	// AllToHcl converts all the resources of a given type to HCL. This is used when converting a space.
-	AllToHcl(dependencies *data.ResourceDetailsCollection) error
+	AllToHcl(dependencies *data.ResourceDetailsCollection)
 	// AllToStatelessHcl converts all the resources of a given type to a stateless HCL module suitable for a step template.
 	AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error
 }

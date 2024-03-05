@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const octopusdeployLifecyclesDataType = "octopusdeploy_lifecycles"
@@ -19,10 +20,11 @@ const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
 type LifecycleConverter struct {
 	Client               client.OctopusClient
 	EnvironmentConverter ConverterAndLookupWithStatelessById
+	ErrGroup             *errgroup.Group
 }
 
-func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(false, dependencies)
+func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c LifecycleConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
