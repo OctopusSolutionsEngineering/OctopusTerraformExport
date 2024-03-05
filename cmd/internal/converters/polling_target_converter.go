@@ -38,8 +38,8 @@ func (c PollingTargetConverter) AllToHcl(dependencies *data.ResourceDetailsColle
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c PollingTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c PollingTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

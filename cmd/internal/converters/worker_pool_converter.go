@@ -27,8 +27,8 @@ func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollecti
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c WorkerPoolConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c WorkerPoolConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c WorkerPoolConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

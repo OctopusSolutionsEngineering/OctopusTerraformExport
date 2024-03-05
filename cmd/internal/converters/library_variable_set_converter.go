@@ -41,8 +41,8 @@ func (c *LibraryVariableSetConverter) AllToHcl(dependencies *data.ResourceDetail
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

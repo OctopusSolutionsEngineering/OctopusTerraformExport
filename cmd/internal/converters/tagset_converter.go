@@ -31,8 +31,8 @@ func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection)
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c *TagSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c *TagSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

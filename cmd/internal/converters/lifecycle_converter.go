@@ -27,8 +27,8 @@ func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollectio
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c LifecycleConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c LifecycleConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

@@ -131,167 +131,75 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
 
 	// Convert the feeds
-	err := c.FeedConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.FeedConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the accounts
-	err = c.AccountConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.AccountConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the environments
-	err = c.EnvironmentConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.EnvironmentConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the library variables
-	err = c.LibraryVariableSetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.LibraryVariableSetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the lifecycles
-	err = c.LifecycleConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.LifecycleConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the worker pools
-	err = c.WorkerPoolConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.WorkerPoolConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the tag sets
-	err = c.TagSetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.TagSetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the git credentials
-	err = c.GitCredentialsConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.GitCredentialsConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the projects groups
-	err = c.ProjectGroupConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.ProjectGroupConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the projects
-	err = c.ProjectConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.ProjectConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the tenants
-	err = c.TenantConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.TenantConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the certificates
-	err = c.CertificateConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.CertificateConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the tenant variables
-	err = c.TenantVariableConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.TenantVariableConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the machine policies
-	err = c.MachinePolicyConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.MachinePolicyConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the k8s targets
-	err = c.KubernetesTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.KubernetesTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the ssh targets
-	err = c.SshTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.SshTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the ssh targets
-	err = c.ListeningTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.ListeningTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the polling targets
-	err = c.PollingTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.PollingTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the cloud region targets
-	err = c.CloudRegionTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.CloudRegionTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the cloud region targets
-	err = c.OfflineDropTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.OfflineDropTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the azure cloud service targets
-	err = c.AzureCloudServiceTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.AzureCloudServiceTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the azure cloud service targets
-	err = c.AzureServiceFabricTargetConverter.AllToStatelessHcl(dependencies)
-
-	if err != nil {
-		return err
-	}
+	c.AzureServiceFabricTargetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the azure web app targets
-	err = c.AzureWebAppTargetConverter.AllToStatelessHcl(dependencies)
+	c.AzureWebAppTargetConverter.AllToStatelessHcl(dependencies)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.ErrGroup.Wait()
 }
 
 func (c SpaceConverter) getResourceType() string {

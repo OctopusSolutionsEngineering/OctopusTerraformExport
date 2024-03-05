@@ -39,8 +39,8 @@ func (c SshTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollectio
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c SshTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c SshTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

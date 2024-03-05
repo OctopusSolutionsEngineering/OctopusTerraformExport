@@ -40,8 +40,8 @@ func (c KubernetesTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCo
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c KubernetesTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c KubernetesTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

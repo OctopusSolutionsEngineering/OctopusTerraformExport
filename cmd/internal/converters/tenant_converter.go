@@ -45,8 +45,8 @@ func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection)
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c *TenantConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c *TenantConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c *TenantConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {

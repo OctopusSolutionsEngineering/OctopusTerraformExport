@@ -58,8 +58,8 @@ func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c *ProjectConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c *ProjectConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
@@ -79,12 +79,11 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceD
 			continue
 		}
 
-		zap.L().Info("Project: " + resource.Id)
-		err = c.toHcl(resource, false, false, stateless, dependencies)
+		c.ErrGroup.Go(func() error {
+			zap.L().Info("Project: " + resource.Id)
+			return c.toHcl(resource, false, false, stateless, dependencies)
+		})
 
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

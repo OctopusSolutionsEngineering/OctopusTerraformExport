@@ -39,8 +39,8 @@ func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *data.ResourceDe
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c AzureCloudServiceTargetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c AzureCloudServiceTargetConverter) isAzureCloudService(resource octopus.AzureCloudServiceResource) bool {

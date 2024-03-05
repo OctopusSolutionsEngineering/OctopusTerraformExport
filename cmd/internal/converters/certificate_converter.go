@@ -33,8 +33,8 @@ func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollect
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c CertificateConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) error {
-	return c.allToHcl(true, dependencies)
+func (c CertificateConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
