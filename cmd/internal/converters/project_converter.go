@@ -51,7 +51,7 @@ type ProjectConverter struct {
 	Excluder                     ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
 	LookupOnlyMode bool
-	ErrGroup       errgroup.Group
+	ErrGroup       *errgroup.Group
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {

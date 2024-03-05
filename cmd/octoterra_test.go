@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -3139,19 +3140,19 @@ func TestCertificateExportWithDummyValues(t *testing.T) {
 					found = true
 
 					if v.Notes != "A test certificate" {
-						return errors.New("The tenant must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
+						return errors.New("The certificate must be have a description of \"A test certificate\" (was \"" + v.Notes + "\")")
 					}
 
 					if v.TenantedDeploymentParticipation != "Untenanted" {
-						return errors.New("The tenant must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
+						return errors.New("The certificate must be have a tenant participation of \"Untenanted\" (was \"" + v.TenantedDeploymentParticipation + "\")")
 					}
 
 					if v.SubjectDistinguishedName != "CN=test.com" {
-						return errors.New("The tenant must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
+						return errors.New("The certificate must be have a subject distinguished name of \"CN=test.com\" (was \"" + v.SubjectDistinguishedName + "\")")
 					}
 
 					if len(v.EnvironmentIds) != 0 {
-						return errors.New("The tenant must have one project environment")
+						return errors.New("The certificate must have one environment")
 					}
 
 					if len(v.TenantTags) != 0 {
@@ -7334,7 +7335,7 @@ func TestTenantCommonVarsExport(t *testing.T) {
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						return errors.New("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment, (was " + strconv.Itoa(len(v.ProjectEnvironments)) + ")")
 					}
 
 					for _, u := range v.ProjectEnvironments {
@@ -7712,7 +7713,7 @@ func TestTenantsWithExcludedProjectExport(t *testing.T) {
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						return errors.New("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment, (was " + strconv.Itoa(len(v.ProjectEnvironments)) + ")")
 					}
 
 					for _, u := range v.ProjectEnvironments {
@@ -7842,7 +7843,7 @@ func TestTenantsWithExcludedProjectRegexExport(t *testing.T) {
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						return errors.New("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment, (was " + strconv.Itoa(len(v.ProjectEnvironments)) + ")")
 					}
 
 					for _, u := range v.ProjectEnvironments {
@@ -7910,7 +7911,7 @@ func TestTenantsWithExcludedProjectExceptExport(t *testing.T) {
 					}
 
 					if len(v.ProjectEnvironments) != 1 {
-						return errors.New("The tenant must have one project environment")
+						return errors.New("The tenant must have one project environment, (was " + strconv.Itoa(len(v.ProjectEnvironments)) + ")")
 					}
 
 					for _, u := range v.ProjectEnvironments {

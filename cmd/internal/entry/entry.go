@@ -267,7 +267,10 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		TagSetConverter:           &tagsetConverter,
 		ErrGroup:                  &group,
 	}
-	workerPoolConverter := converters.WorkerPoolConverter{Client: octopusClient}
+	workerPoolConverter := converters.WorkerPoolConverter{
+		Client:   octopusClient,
+		ErrGroup: &group,
+	}
 
 	feedConverter := converters.FeedConverter{
 		Client:                    octopusClient,
@@ -554,6 +557,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 			DummySecretVariableValues: args.DummySecretVariableValues,
 			DummySecretGenerator:      dummySecretGenerator,
 			Excluder:                  converters.DefaultExcluder{},
+			ErrGroup:                  &group,
 		},
 		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,

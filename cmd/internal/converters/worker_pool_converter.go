@@ -20,7 +20,7 @@ const octopusdeployDynamicWorkerPoolResourceType = "octopusdeploy_dynamic_worker
 
 type WorkerPoolConverter struct {
 	Client   client.OctopusClient
-	ErrGroup errgroup.Group
+	ErrGroup *errgroup.Group
 }
 
 func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
