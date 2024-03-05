@@ -16,7 +16,7 @@ RUN go mod download
 COPY . /app
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.Version=${Version}'" -o /octoterra cmd/octoterra.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.Version=${Version}'" -o /octoterra cmd/cli/octoterra.go
 
 # Create the execution image
 FROM alpine:latest

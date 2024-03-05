@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/collections"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"runtime/pprof"
 	"strings"
+	"sync"
 )
 
 // Entry takes the arguments, exports the Octopus resources to HCL in strings and returns the strings mapped to file names.
@@ -1133,9 +1135,11 @@ func ConvertProjectToTerraform(args args.Arguments) (map[string]string, error) {
 
 // processResources creates a map of file names to file content
 func processResources(resources []data.ResourceDetails) (map[string]string, error) {
-	zap.L().Info("Generating HCL")
+	zap.L().Info("Generating HCL (this can take a little while)")
 
-	fileMap := map[string]string{}
+	var wg sync.WaitGroup
+	var fileMap sync.Map
+	hclErrors := collections.SafeErrorSlice{}
 
 	for _, r := range resources {
 		// Some resources are already resolved by their parent, but exist in the resource details map as a lookup.
@@ -1144,16 +1148,33 @@ func processResources(resources []data.ResourceDetails) (map[string]string, erro
 			continue
 		}
 
-		hcl, err := r.ToHcl()
+		wg.Add(1)
 
-		if err != nil {
-			return nil, err
-		}
+		resource := r
+		go func() {
+			defer wg.Done()
+			hcl, err := resource.ToHcl()
 
-		if len(strings.TrimSpace(hcl)) != 0 {
-			fileMap[r.FileName] = hcl
-		}
+			if err != nil {
+				hclErrors.Append(err)
+			} else {
+				if len(strings.TrimSpace(hcl)) != 0 {
+					fileMap.Store(resource.FileName, hcl)
+				}
+			}
+		}()
 	}
 
-	return fileMap, nil
+	wg.Wait()
+	if len(hclErrors.GetCopy()) != 0 {
+		return nil, errors.Join(hclErrors.GetCopy()...)
+	}
+
+	result := map[string]string{}
+	fileMap.Range(func(key, value interface{}) bool {
+		result[key.(string)] = value.(string)
+		return true
+	})
+
+	return result, nil
 }

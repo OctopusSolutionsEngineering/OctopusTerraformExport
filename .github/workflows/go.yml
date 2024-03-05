@@ -210,22 +210,22 @@ jobs:
         with:
           name: Dependencies Updates
           path: dependencyUpdates.txt
-      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_amd64 cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_amd64 cmd/cli/octoterra.go
         env:
           GOOS: linux
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_macos_amd64 cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_macos_amd64 cmd/cli/octoterra.go
         env:
           GOOS: darwin
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_macos_arm64 cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_macos_arm64 cmd/cli/octoterra.go
         env:
           GOOS: darwin
           GOARCH: arm64
@@ -297,7 +297,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/octoterra.go
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
           GOOS: windows
           GOARCH: amd64
