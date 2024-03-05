@@ -1136,6 +1136,7 @@ func ConvertProjectToTerraform(args args.Arguments) (map[string]string, error) {
 // processResources creates a map of file names to file content
 func processResources(resources []data.ResourceDetails) (map[string]string, error) {
 	zap.L().Info("Generating HCL (this can take a little while)")
+	defer zap.L().Info("Done Generating HCL")
 
 	var wg sync.WaitGroup
 	var fileMap sync.Map
