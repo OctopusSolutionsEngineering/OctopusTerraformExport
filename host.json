@@ -8,12 +8,15 @@
       }
     }
   },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
+  },
   "customHandler": {
     "description": {
       "defaultExecutablePath": "octoterra_linux_amd64_azure",
       "workingDirectory": "",
       "arguments": []
-    },
-    "enableForwardingHttpRequest": true
+    }
   }
 }
