@@ -334,10 +334,6 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		c.writeProjectNameVariable(file, projectName, project.Name)
 		c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), project.Name, octopusdeployProjectResourceType, projectName))
-
 		// write any variables used to define the value of tenant template secrets
 		for _, variable := range variables {
 			block := gohcl.EncodeAsBlock(variable, "variable")

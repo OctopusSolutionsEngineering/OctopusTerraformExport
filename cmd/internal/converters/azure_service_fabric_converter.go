@@ -267,10 +267,6 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployAzureServiceFabricClusterDeploymentResourceType, targetName))
-
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)

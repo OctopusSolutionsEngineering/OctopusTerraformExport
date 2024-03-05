@@ -205,10 +205,6 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 ? 0 : 1}")
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), gitCredentials.Name, octopusdeployGitCredentialResourceType, gitCredentialsName))
-
 		gitCertBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		// When using dummy values, we expect the secrets will be updated later

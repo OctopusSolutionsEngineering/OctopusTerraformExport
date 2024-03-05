@@ -264,10 +264,6 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployKubernetesClusterDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployKubernetesClusterDeploymentTargetResourceType, targetName))
-
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {

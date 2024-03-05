@@ -185,10 +185,6 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + resourceName + ".projects) != 0 ? 0 : 1}")
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), channel.Name, octopusdeployChannelResourceType, resourceName))
-
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {

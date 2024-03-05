@@ -193,10 +193,6 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, octopusdeployDynamicWorkerPoolResourceType, resourceName))
-
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
@@ -236,10 +232,6 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 			c.writeData(file, pool, resourceName)
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 ? 0 : 1}")
 		}
-
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), pool.Name, octopusdeployStaticWorkerPoolResourcePool, resourceName))
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 

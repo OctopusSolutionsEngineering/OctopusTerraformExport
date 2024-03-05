@@ -247,10 +247,6 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployOfflinePackageDropDeploymentTargetDataType + "." + targetName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), target.Name, octopusdeployOfflinePackageDropDeploymentTargetResourceType, targetName))
-
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {

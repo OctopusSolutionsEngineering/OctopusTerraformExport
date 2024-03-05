@@ -178,10 +178,6 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployMachinePoliciesDataType + "." + policyName + ".machine_policies) != 0 ? 0 : 1}")
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), machinePolicy.Name, octopusdeployMachinePolicyResourceType, policyName))
-
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {

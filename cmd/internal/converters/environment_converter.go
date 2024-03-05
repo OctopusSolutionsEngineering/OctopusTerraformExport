@@ -175,10 +175,6 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, st
 
 		file := hclwrite.NewEmptyFile()
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), environment.Name, octopusdeployEnvironmentsResourceType, resourceName))
-
 		terraformResource := terraform.TerraformEnvironment{
 			Type:                       octopusdeployEnvironmentsResourceType,
 			Name:                       resourceName,

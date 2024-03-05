@@ -201,10 +201,6 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployDockerContainerRegistryResourceType, resourceName))
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -296,10 +292,6 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 				c.writeData(file, resource.Name, "AwsElasticContainerRegistry", resourceName)
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
 			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployAwsElasticContainerRegistryResourceType, resourceName))
 
 			if resource.SecretKey != nil && resource.SecretKey.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
@@ -400,10 +392,6 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployMavenFeedResourceType, resourceName))
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -500,10 +488,6 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployGithubRepositoryFeedResourceType, resourceName))
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -599,10 +583,6 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployHelmFeedResourceType, resourceName))
-
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{
 					Name:        passwordName,
@@ -696,10 +676,6 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 				c.writeData(file, resource.Name, "NuGet", resourceName)
 				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
 			}
-
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeploy_nuget_feed_resource_type, resourceName))
 
 			if resource.Password != nil && resource.Password.HasValue {
 				secretVariableResource := terraform2.TerraformVariable{

@@ -268,10 +268,6 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 
 		file := hclwrite.NewEmptyFile()
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, "Spaces", space.Name, "octopusdeploy_space", spaceName))
-
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusSpaceName, "output"))

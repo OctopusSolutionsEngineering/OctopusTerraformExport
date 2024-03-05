@@ -205,10 +205,6 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), runbook.Name, octopusdeployRunbookResourceType, runbookName))
-
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if c.IgnoreProjectChanges {

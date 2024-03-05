@@ -286,10 +286,6 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 		terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployCertificateDataType + "." + certificateName + ".certificates) != 0 ? 0 : 1}")
 	}
 
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), certificate.Name, octopusdeployCertificateResourceType, certificateName))
-
 	targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 	err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, targetBlock, dependencies, recursive)
 

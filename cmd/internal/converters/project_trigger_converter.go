@@ -106,10 +106,6 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, projectTriggerName))
-
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {

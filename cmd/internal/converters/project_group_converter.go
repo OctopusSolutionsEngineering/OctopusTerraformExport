@@ -166,10 +166,6 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 			c.writeProjectNameVariable(file, projectName, resource.Name)
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployProjectGroupResourceType, projectName))
-
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {

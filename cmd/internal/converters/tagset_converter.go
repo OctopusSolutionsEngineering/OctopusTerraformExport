@@ -101,10 +101,6 @@ func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependen
 			c.writeData(file, tagSet, tagSetName)
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tagSet.Name, octopusdeployTagSetResourceType, tagSetName))
-
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {

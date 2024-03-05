@@ -267,10 +267,6 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 				c.writeData(file, target, targetName)
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), azureCloudServiceDeploymentResourceType, target.Name, targetName))
-
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {

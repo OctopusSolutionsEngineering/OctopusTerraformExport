@@ -253,10 +253,6 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 		terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? 0 : 1}")
 	}
 
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), resource.Name, octopusdeployLibraryVariableSetsResourceType, resourceName))
-
 	block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 	if stateless {

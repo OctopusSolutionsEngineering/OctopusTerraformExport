@@ -306,10 +306,6 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 			c.writeData(file, account, resourceName)
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_aws_account", account.Name, resourceName))
-
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -398,10 +394,6 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			c.writeData(file, account, resourceName)
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_service_principal", account.Name, resourceName))
-
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -479,10 +471,6 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 		if stateless {
 			c.writeData(file, account, resourceName)
 		}
-
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_azure_subscription_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -566,10 +554,6 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 			c.writeData(file, account, resourceName)
 		}
 
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_gcp_account", account.Name, resourceName))
-
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
@@ -651,10 +635,6 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 		if stateless {
 			c.writeData(file, account, resourceName)
 		}
-
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_token_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -739,10 +719,6 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 		if stateless {
 			c.writeData(file, account, resourceName)
 		}
-
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_username_password_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
@@ -839,10 +815,6 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 		if stateless {
 			c.writeData(file, account, resourceName)
 		}
-
-		// Add a comment with the import command
-		baseUrl, _ := c.Client.GetSpaceBaseUrl()
-		file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), "octopusdeploy_ssh_key_account", account.Name, resourceName))
 
 		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 

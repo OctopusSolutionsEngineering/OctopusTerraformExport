@@ -255,10 +255,6 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 				c.writeData(file, tenant, tenantName)
 			}
 
-			// Add a comment with the import command
-			baseUrl, _ := c.Client.GetSpaceBaseUrl()
-			file.Body().AppendUnstructuredTokens(hcl.WriteImportComments(baseUrl, c.GetResourceType(), tenant.Name, octopusdeployTenantResourceType, tenantName))
-
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 			if stateless {
