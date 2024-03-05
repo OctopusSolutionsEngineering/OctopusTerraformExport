@@ -222,7 +222,7 @@ jobs:
           CGO_ENABLED: 0
       # Note you must exclude the local.settings.json file from the zip. Otherwise, you get errors like:
       # Microsoft.Azure.WebJobs.Script: WorkerConfig for runtime: custom not found.
-      - run: zip -r octoterra_azure.zip . -x local.settings.json
+      - run: zip -r octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip . -x local.settings.json
         working-directory: functions
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
@@ -255,7 +255,26 @@ jobs:
             octoterra_windows_amd64.exe
             octoterra_macos_amd64
             octoterra_macos_arm64
-            functions/octoterra_azure.zip
+            functions/octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+      - name: Push packages to Octopus Deploy
+        uses: OctopusDeploy/push-package-action@v3
+        env:
+          OCTOPUS_API_KEY: ${{ secrets.COPILOT_OCTOPUS_API }}
+          OCTOPUS_URL: ${{ secrets.COPILOT_OCTOPUS_URL }}
+          OCTOPUS_SPACE: ${{ secrets.COPILOT_OCTOPUS_SPACE }}
+        with:
+          packages: functions/octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+          overwrite_mode: OverwriteExisting
+      - name: Create Octopus Release
+        uses: OctopusDeploy/create-release-action@v3
+        env:
+          OCTOPUS_API_KEY: ${{ secrets.COPILOT_OCTOPUS_API }}
+          OCTOPUS_URL: ${{ secrets.COPILOT_OCTOPUS_URL }}
+          OCTOPUS_SPACE: ${{ secrets.COPILOT_OCTOPUS_SPACE }}
+        with:
+          project: Octopus Octoterra Function
+          packages: octoterra_azure:${{ steps.determine_version.outputs.semVer }}
+          release_number: ${{ steps.determine_version.outputs.semVer }}+run${{ github.run_number }}-attempt${{ github.run_attempt }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
