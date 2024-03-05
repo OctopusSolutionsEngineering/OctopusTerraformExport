@@ -10,6 +10,7 @@ import (
 )
 
 type Arguments struct {
+	Profiling                        bool
 	ConfigFile                       string
 	ConfigPath                       string
 	Version                          bool
@@ -312,6 +313,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.ConfigFile, "configFile", "octoterra", "The name of the configuration file to use. Do not include the extension. Defaults to octoterra")
 	flags.StringVar(&arguments.ConfigPath, "configPath", ".", "The path of the configuration file to use. Defaults to the current directory")
 
+	flags.BoolVar(&arguments.Profiling, "profiling", false, "Enable profiling. Run \"pprof -http=:8080 octoterra.prof\" to view the results.")
 	flags.BoolVar(&arguments.Version, "version", false, "Print the version")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")

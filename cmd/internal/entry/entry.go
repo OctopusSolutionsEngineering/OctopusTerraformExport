@@ -9,11 +9,25 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"go.uber.org/zap"
+	"os"
+	"runtime/pprof"
 	"strings"
 )
 
 // Entry takes the arguments, exports the Octopus resources to HCL in strings and returns the strings mapped to file names.
 func Entry(parseArgs args.Arguments) (map[string]string, error) {
+
+	if parseArgs.Profiling {
+		f, err := os.Create("octoterra.prof")
+		if err != nil {
+			return nil, err
+		}
+		err = pprof.StartCPUProfile(f)
+		if err != nil {
+			return nil, err
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	if len(parseArgs.ProjectName) != 0 {
 
