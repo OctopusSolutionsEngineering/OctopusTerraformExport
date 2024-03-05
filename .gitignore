@@ -14,9 +14,8 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-octoterra
 octoterra.exe
-octoterra_linux_amd64_azure
+functions/octoterra_linux_amd64_azure
 
 **/.terraform.lock.hcl
 **/.terraform.tfstate.lock.info
