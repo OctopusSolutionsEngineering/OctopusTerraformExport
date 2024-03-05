@@ -215,6 +215,12 @@ jobs:
           GOOS: linux
           GOARCH: amd64
           CGO_ENABLED: 0
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_amd64_azure cmd/azure/octoterra.go
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 0
+      - run: zip octoterra_azure.zip octoterra_linux_amd64_azure host.json
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
           GOOS: windows
@@ -246,6 +252,7 @@ jobs:
             octoterra_windows_amd64.exe
             octoterra_macos_amd64
             octoterra_macos_arm64
+            octoterra_azure.zip
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
