@@ -4,6 +4,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 	"io"
 	"log"
@@ -13,6 +14,18 @@ import (
 	"strings"
 )
 
+type AzureFunctionRequestDataReq struct {
+	Body string `json:"Body"`
+}
+
+type AzureFunctionRequestData struct {
+	Req AzureFunctionRequestDataReq `json:"req"`
+}
+
+type AzureFunctionRequest struct {
+	Data AzureFunctionRequestData `json:"Data"`
+}
+
 func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	respBytes, err := io.ReadAll(r.Body)
 
@@ -21,6 +34,14 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//var requestBody AzureFunctionRequest
+	//err = json.Unmarshal(respBytes, &requestBody)
+	//
+	//if err != nil {
+	//	handleError(err, w)
+	//	return
+	//}
+
 	file, err := os.CreateTemp("", "*.json")
 
 	if err != nil {
@@ -28,7 +49,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.WriteFile(file.Name(), respBytes, 0644)
+	err = os.WriteFile(file.Name(), []byte(respBytes), 0644)
 
 	if err != nil {
 		handleError(err, w)
@@ -62,10 +83,11 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var sb strings.Builder
-	for _, str := range files {
+	for _, str := range strutil.UnEscapeDollarInMap(files) {
 		sb.WriteString(str + "\n\n")
 	}
 
+	w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
 	w.WriteHeader(200)
 	if _, err := w.Write([]byte(sb.String())); err != nil {
 		zap.L().Error(err.Error())
@@ -88,6 +110,11 @@ func main() {
 		listenAddr = ":" + val
 	}
 	http.HandleFunc("/api/octoterra", octoterraHandler)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header()["Content-Type"] = []string{"application/json; charset=utf-8"}
+		w.WriteHeader(200)
+		w.Write([]byte("{\"Hello\": \"" + r.RequestURI + "\"}"))
+	})
 	log.Printf("About to listen on %s. Go to https://127.0.0.1%s/", listenAddr, listenAddr)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }

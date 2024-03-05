@@ -220,7 +220,7 @@ jobs:
           GOOS: linux
           GOARCH: amd64
           CGO_ENABLED: 0
-      - run: zip octoterra_azure.zip .
+      - run: zip -r octoterra_azure.zip .
         working-directory: functions
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
