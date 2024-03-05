@@ -3,6 +3,7 @@ package data
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
+	"sync"
 )
 
 type ToHcl func() (string, error)
@@ -48,10 +49,15 @@ type ResourceDetails struct {
 
 type ResourceDetailsCollection struct {
 	Resources []ResourceDetails
+	// A mutex to protect lookups
+	mu sync.Mutex
 }
 
 // HasResource returns true if the resource with the id and resourceType exist in the collection, and false otherwise
 func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return true
@@ -63,6 +69,9 @@ func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) 
 
 // AddResource adds a resource to the collection
 func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.Resources == nil {
 		c.Resources = []ResourceDetails{}
 	}
@@ -72,6 +81,9 @@ func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
 
 // GetAllResource returns a slice of resources in the collection of type resourceType
 func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []ResourceDetails {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	resources := make([]ResourceDetails, 0)
 	for _, r := range c.Resources {
 		if r.ResourceType == resourceType {
@@ -87,6 +99,9 @@ func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []Resour
 // but we treat a mostly valid output as a "graceful fallback" rather than failing hard, as the resulting text
 // can still be edited by hand.
 func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return r.Lookup
@@ -102,6 +117,9 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 // The returned string is used only for the depends_on field, as it may reference to a collection of resources
 // rather than a single ID.
 func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return r.Count
@@ -117,6 +135,9 @@ func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id str
 // The returned string is used only for the depends_on field, as it may reference to a collection of resources
 // rather than a single ID.
 func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return r.Name
@@ -132,6 +153,9 @@ func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id stri
 // The returned string is used only for the depends_on field, as it may reference to a collection of resources
 // rather than a single ID.
 func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, id string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			// return the dependency field if it was defined, otherwise fall back to the lookup field
@@ -146,6 +170,9 @@ func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, i
 
 // GetResources returns the Terraform references for resources of the given type and with the supplied ids.
 func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...string) []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	lookups := []string{}
 	for _, i := range ids {
 		found := false
@@ -166,6 +193,9 @@ func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...str
 
 // GetResourcePointer returns the Terraform reference for a given resource type and id as a string pointer.
 func (c *ResourceDetailsCollection) GetResourcePointer(resourceType string, id *string) *string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if id != nil {
 		for _, r := range c.Resources {
 			if r.Id == *id && r.ResourceType == resourceType {
