@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/test"
 	"github.com/google/uuid"
@@ -157,7 +158,7 @@ func exportSpaceImportAndTest(
 				return err
 			}
 
-			return writeFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
+			return output.WriteFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
 		},
 		testFunc)
 }
@@ -283,7 +284,7 @@ func exportProjectImportAndTest(
 				return err
 			}
 
-			return writeFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
+			return output.WriteFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
 		},
 		testFunc)
 }
@@ -419,7 +420,7 @@ func exportProjectLookupImportAndTest(
 				return err
 			}
 
-			return writeFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
+			return output.WriteFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
 		},
 		testFunc)
 }

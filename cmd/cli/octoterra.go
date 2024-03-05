@@ -3,12 +3,11 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/writers"
 	"go.uber.org/zap"
 	"os"
 )
@@ -18,14 +17,14 @@ var Version = "development"
 func main() {
 	logger.BuildLogger()
 
-	parseArgs, output, err := args.ParseArgs(os.Args[1:])
+	parseArgs, argsErrors, err := args.ParseArgs(os.Args[1:])
 
 	if errors.Is(err, flag.ErrHelp) {
-		zap.L().Error(output)
+		zap.L().Error(argsErrors)
 		os.Exit(2)
 	} else if err != nil {
 		zap.L().Error("got error: " + err.Error())
-		zap.L().Error("output:\n" + output)
+		zap.L().Error("argsErrors:\n" + argsErrors)
 		os.Exit(1)
 	}
 
@@ -70,7 +69,7 @@ func main() {
 		errorExit(err.Error())
 	}
 
-	err = writeFiles(strutil.UnEscapeDollarInMap(files), parseArgs.Destination, parseArgs.Console)
+	err = output.WriteFiles(strutil.UnEscapeDollarInMap(files), parseArgs.Destination, parseArgs.Console)
 
 	if err != nil {
 		errorExit(err.Error())
@@ -83,25 +82,4 @@ func errorExit(message string) {
 	}
 	zap.L().Error(message)
 	os.Exit(1)
-}
-
-func writeFiles(files map[string]string, dest string, console bool) error {
-	if dest != "" {
-		writer := writers.NewFileWriter(dest)
-		_, err := writer.Write(files)
-		if err != nil {
-			return err
-		}
-	}
-
-	if console || dest == "" {
-		consoleWriter := writers.ConsoleWriter{}
-		output, err := consoleWriter.Write(files)
-		if err != nil {
-			return err
-		}
-		fmt.Println(output)
-	}
-
-	return nil
 }
