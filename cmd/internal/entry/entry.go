@@ -491,6 +491,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 			Excluder:             converters.DefaultExcluder{},
 			TagSetConverter:      &tagsetConverter,
+			LimitAttributeLength: args.LimitAttributeLength,
 		},
 		EnvironmentConverter:  environmentConverter,
 		ExcludedRunbooks:      nil,
@@ -536,6 +537,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 				ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 				Excluder:             converters.DefaultExcluder{},
 				TagSetConverter:      &tagsetConverter,
+				LimitAttributeLength: args.LimitAttributeLength,
 			},
 			TenantConverter: &tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{

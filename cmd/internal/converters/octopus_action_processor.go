@@ -221,6 +221,19 @@ func (c OctopusActionProcessor) DetachStepTemplates(properties map[string]string
 	return sanitisedProperties
 }
 
+// LimitPropertyLength trims property bag values to a max length, if length is greater or equal to 0
+func (c OctopusActionProcessor) LimitPropertyLength(length int, properties map[string]string) map[string]string {
+	if length <= 0 {
+		return properties
+	}
+
+	sanitisedProperties := map[string]string{}
+	for k, v := range properties {
+		sanitisedProperties[k] = v[0:length]
+	}
+	return sanitisedProperties
+}
+
 // RemoveUnnecessaryStepFields removes generic property bag values that have more specific terraform properties
 func (c OctopusActionProcessor) RemoveUnnecessaryStepFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}

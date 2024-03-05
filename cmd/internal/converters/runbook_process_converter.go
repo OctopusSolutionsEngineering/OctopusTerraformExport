@@ -26,6 +26,7 @@ type RunbookProcessConverter struct {
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength   int
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
@@ -243,6 +244,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
+				sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, sanitizedProperties)
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 
 				for _, propertyVariables := range variables {

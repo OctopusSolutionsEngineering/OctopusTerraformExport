@@ -27,6 +27,7 @@ type DeploymentProcessConverter struct {
 	ExcludeTenantTagSets   args.ExcludeTenantTagSets
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength   int
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -324,6 +325,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
+				sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, sanitizedProperties)
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 
 				for _, propertyVariables := range variables {
