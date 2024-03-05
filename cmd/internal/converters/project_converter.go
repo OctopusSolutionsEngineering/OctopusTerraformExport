@@ -79,6 +79,7 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceD
 			continue
 		}
 
+		resource := resource
 		c.ErrGroup.Go(func() error {
 			zap.L().Info("Project: " + resource.Id)
 			return c.toHcl(resource, false, false, stateless, dependencies)
