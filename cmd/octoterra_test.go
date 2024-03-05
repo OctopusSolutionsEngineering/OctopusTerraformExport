@@ -6,6 +6,7 @@ import (
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -150,7 +151,13 @@ func exportSpaceImportAndTest(
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 			}
 
-			return ConvertSpaceToTerraform(args)
+			files, err := entry.ConvertSpaceToTerraform(args)
+
+			if err != nil {
+				return err
+			}
+
+			return writeFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
 		},
 		testFunc)
 }
@@ -210,7 +217,7 @@ func exportProjectImportAndTest(
 		[]string{},
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			projectId, err := ConvertProjectNameToId(url, space, test.ApiKey, projectName)
+			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName)
 
 			if err != nil {
 				return err
@@ -270,7 +277,13 @@ func exportProjectImportAndTest(
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 			}
 
-			return ConvertProjectToTerraform(args)
+			files, err := entry.ConvertProjectToTerraform(args)
+
+			if err != nil {
+				return err
+			}
+
+			return writeFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
 		},
 		testFunc)
 }
@@ -344,14 +357,14 @@ func exportProjectLookupImportAndTest(
 		prepopulateSpaceVars,
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			projectId, err := ConvertProjectNameToId(url, space, test.ApiKey, projectName)
+			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName)
 			if err != nil {
 				return err
 			}
 
 			runbookId := ""
 			if argumnets.RunbookName != "" {
-				runbookId, err = ConvertRunbookNameToId(url, space, test.ApiKey, projectId, argumnets.RunbookName)
+				runbookId, err = entry.ConvertRunbookNameToId(url, space, test.ApiKey, projectId, argumnets.RunbookName)
 
 				if err != nil {
 					return err
@@ -395,11 +408,18 @@ func exportProjectLookupImportAndTest(
 				RunbookName:                      "",
 			}
 
+			var files map[string]string = nil
 			if args.RunbookId != "" {
-				return ConvertRunbookToTerraform(args)
+				files, err = entry.ConvertRunbookToTerraform(args)
+			} else {
+				files, err = entry.ConvertProjectToTerraform(args)
 			}
 
-			return ConvertProjectToTerraform(args)
+			if err != nil {
+				return err
+			}
+
+			return writeFiles(strutil.UnEscapeDollarInMap(files), args.Destination, args.Console)
 		},
 		testFunc)
 }
