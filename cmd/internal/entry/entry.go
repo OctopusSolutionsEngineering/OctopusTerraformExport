@@ -548,7 +548,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 			RunbookConverter:          &runbookConverter,
 			IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
 			ExcludeCaCProjectSettings: args.ExcludeCaCProjectSettings,
-			ExcludeAllRunbooks:        false,
+			ExcludeAllRunbooks:        args.ExcludeAllRunbooks,
 			IgnoreProjectChanges:      args.IgnoreProjectChanges,
 			IgnoreProjectGroupChanges: false,
 			IgnoreProjectNameChanges:  false,
