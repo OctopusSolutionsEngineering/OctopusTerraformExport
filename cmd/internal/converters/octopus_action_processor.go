@@ -229,7 +229,11 @@ func (c OctopusActionProcessor) LimitPropertyLength(length int, properties map[s
 
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		sanitisedProperties[k] = v[0:length]
+		if len(v) > length {
+			sanitisedProperties[k] = v[0 : length-1]
+		} else {
+			sanitisedProperties[k] = v
+		}
 	}
 	return sanitisedProperties
 }
