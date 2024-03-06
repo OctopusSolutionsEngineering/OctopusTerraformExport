@@ -8,6 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"regexp"
 	"strings"
 )
 
@@ -221,16 +222,29 @@ func (c OctopusActionProcessor) DetachStepTemplates(properties map[string]string
 	return sanitisedProperties
 }
 
-// LimitPropertyLength trims property bag values to a max length, if length is greater or equal to 0
-func (c OctopusActionProcessor) LimitPropertyLength(length int, properties map[string]string) map[string]string {
+// LimitPropertyLength trims property bag values to a max length, if length is greater or equal to 0.
+// If retainVariables is true, any variable references in the property are extracted and retained for context.
+// The purpose of this is to reduce the length of the resulting HCL when used as context in a RAG query against
+// an LLM. It has no valid use when generating HCL that is expected to be applied to an Octopus instance.
+func (c OctopusActionProcessor) LimitPropertyLength(length int, retainVariables bool, properties map[string]string) map[string]string {
 	if length <= 0 {
 		return properties
 	}
+
+	// Regex that matches Octostache and script functions referencing variables
+	variableRe := regexp.MustCompile(`#\{.*?}|\$OctopusParameters\[.*?]|Octopus.Parameters\[.*?]|get_octopusvariable ".*?"|get_octopusvariable\(.*?\)`)
 
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
 		if len(v) > length {
 			sanitisedProperties[k] = v[0 : length-1]
+			if retainVariables {
+				matches := variableRe.FindAllString(v, -1)
+				if len(matches) > 0 {
+					sanitisedProperties[k] += " " + strings.Join(matches, " ")
+				}
+			}
+
 		} else {
 			sanitisedProperties[k] = v
 		}
