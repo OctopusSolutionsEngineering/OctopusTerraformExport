@@ -26,8 +26,7 @@ func (t Template) GetDefaultValueString() *string {
 }
 
 type Project struct {
-	Id                              string
-	Name                            string
+	NameId
 	Slug                            *string
 	Description                     *string
 	AutoCreateRelease               bool

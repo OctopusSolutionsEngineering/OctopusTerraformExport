@@ -1,8 +1,7 @@
 package octopus
 
 type Tenant struct {
-	Id                  string
-	Name                string
+	NameId
 	SpaceId             *string
 	Description         *string
 	ClonedFromTenantId  *string

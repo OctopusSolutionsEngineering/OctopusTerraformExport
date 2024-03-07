@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"os"
 	"strings"
@@ -14,6 +17,7 @@ type Arguments struct {
 	ConfigFile                       string
 	ConfigPath                       string
 	Version                          bool
+	IgnoreInvalidExcludeExcept       bool
 	Url                              string
 	ApiKey                           string
 	Space                            string
@@ -314,8 +318,8 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.ConfigFile, "configFile", "octoterra", "The name of the configuration file to use. Do not include the extension. Defaults to octoterra")
 	flags.StringVar(&arguments.ConfigPath, "configPath", ".", "The path of the configuration file to use. Defaults to the current directory")
 	flags.IntVar(&arguments.LimitAttributeLength, "limitAttributeLength", 0, "For internal use only. Limits the length of the attribute names.")
-
 	flags.BoolVar(&arguments.Profiling, "profiling", false, "Enable profiling. Run \"pprof -http=:8080 octoterra.prof\" to view the results.")
+	flags.BoolVar(&arguments.IgnoreInvalidExcludeExcept, "ignoreInvalidExcludeExcept", false, "Ensures that resource names passed to the 'Exclude<ResourceType>Except' arguments are valid, and if they are not, removes those names from the list. This is useful when an external system attempts to filter results but places incorrect values into 'Exclude<ResourceType>Except' arguments. It may result in all resources being returned if no valid resources names are included in the 'Exclude<ResourceType>Except' arguments.")
 	flags.BoolVar(&arguments.Version, "version", false, "Print the version")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
@@ -414,6 +418,77 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	}
 
 	return arguments, buf.String(), nil
+}
+
+// validateExcludeExceptArgs removes any resource named in a Exclude<ResourceType>Except argument that does not
+// exist in the Octopus instance. This is mostly used when external systems attempt to filter the results but
+// may place incorrect values into the Exclude<ResourceType>Except arguments.
+func validateExcludeExceptArgs(arguments Arguments) (funcErr error) {
+	if !arguments.IgnoreInvalidExcludeExcept {
+		return
+	}
+
+	octopusClient := client.OctopusApiClient{
+		Url:    arguments.Url,
+		Space:  arguments.Space,
+		ApiKey: arguments.ApiKey,
+	}
+
+	filteredProjects, err := filterNamedResource[octopus.Project](octopusClient, "Projects", arguments.ExcludeProjectsExcept)
+
+	if err != nil {
+		return nil
+	}
+
+	arguments.ExcludeProjectsExcept = filteredProjects
+
+	filteredTenants, err := filterNamedResource[octopus.Tenant](octopusClient, "Tenants", arguments.ExcludeTenantsExcept)
+
+	if err != nil {
+		return nil
+	}
+
+	arguments.ExcludeTenantsExcept = filteredTenants
+
+	filteredMachines, err := filterNamedResource[octopus.Machine](octopusClient, "Machines", arguments.ExcludeTargetsExcept)
+
+	if err != nil {
+		return nil
+	}
+
+	arguments.ExcludeTargetsExcept = filteredMachines
+
+	filteredRunbooks, err := filterNamedResource[octopus.Machine](octopusClient, "Runbooks", arguments.ExcludeRunbooksExcept)
+
+	if err != nil {
+		return nil
+	}
+
+	arguments.ExcludeRunbooksExcept = filteredRunbooks
+
+	filteredVariableSets, err := filterNamedResource[octopus.Machine](octopusClient, "LibraryVariableSets", arguments.ExcludeLibraryVariableSetsExcept)
+
+	if err != nil {
+		return nil
+	}
+
+	arguments.ExcludeLibraryVariableSetsExcept = filteredVariableSets
+
+	return nil
+}
+
+func filterNamedResource[K octopus.NamedResource](octopusClient client.OctopusApiClient, resourceType string, filter []string) (results []string, funcErr error) {
+	filtered := lo.Filter(filter, func(resource string, index int) bool {
+		collection := octopus.GeneralCollection[K]{}
+		if err := octopusClient.GetAllResources(resourceType, &collection, []string{"partialName", resource}); err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+		return lo.ContainsBy[K](collection.Items, func(item K) bool {
+			return item.GetName() == resource
+		})
+	})
+
+	return filtered, funcErr
 }
 
 // Inspired by https://github.com/carolynvs/stingoftheviper
