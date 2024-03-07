@@ -27,3 +27,6 @@ results.xml
 *.zip
 *.tar.gz
 *.prof
+
+octoterra.json
+octoterra.yaml
