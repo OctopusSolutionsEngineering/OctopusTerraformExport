@@ -417,6 +417,10 @@ func ParseArgs(args []string) (Arguments, string, error) {
 		arguments.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
 	}
 
+	if err := validateExcludeExceptArgs(arguments); err != nil {
+		return Arguments{}, "", err
+	}
+
 	return arguments, buf.String(), nil
 }
 
