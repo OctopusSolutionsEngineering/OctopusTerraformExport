@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
 
       - name: Download JUnit Summary from Previous Workflow
         id: download-artifact
