@@ -59,6 +59,27 @@ func Entry(parseArgs args.Arguments) (map[string]string, error) {
 		parseArgs.RunbookId = runbookId
 	}
 
+	dependencies, err := getDependencies(parseArgs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if parseArgs.Stateless {
+		templateGenerator := generators.StepTemplateGenerator{}
+		templateContent, err := templateGenerator.Generate(dependencies, parseArgs.StepTemplateName, parseArgs.StepTemplateKey, parseArgs.StepTemplateDescription)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]string{"step_template.json": string(templateContent[:])}, nil
+	} else {
+		return ProcessResources(dependencies.Resources)
+	}
+}
+
+func getDependencies(parseArgs args.Arguments) (*data.ResourceDetailsCollection, error) {
 	if parseArgs.RunbookId != "" {
 		zap.L().Info("Exporting runbook " + parseArgs.RunbookId + " in space " + parseArgs.Space)
 		files, err := ConvertRunbookToTerraform(parseArgs)
@@ -139,7 +160,7 @@ func ConvertRunbookNameToId(url string, space string, apiKey string, projectId s
 	return "", errors.New("did not find runbook with name " + runbookName + " for the project " + projectId + " in space " + space)
 }
 
-func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
+func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollection, error) {
 	group := errgroup.Group{}
 	group.SetLimit(10)
 
@@ -592,21 +613,10 @@ func ConvertSpaceToTerraform(args args.Arguments) (map[string]string, error) {
 		}
 	}
 
-	if args.Stateless {
-		templateGenerator := generators.StepTemplateGenerator{}
-		templateContent, err := templateGenerator.Generate(&dependencies, args.StepTemplateName, args.StepTemplateKey, args.StepTemplateDescription)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return map[string]string{"step_template.json": string(templateContent[:])}, nil
-	} else {
-		return processResources(dependencies.Resources)
-	}
+	return &dependencies, nil
 }
 
-func ConvertRunbookToTerraform(args args.Arguments) (map[string]string, error) {
+func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
 		Url:    args.Url,
@@ -737,10 +747,10 @@ func ConvertRunbookToTerraform(args args.Arguments) (map[string]string, error) {
 		return nil, err
 	}
 
-	return processResources(dependencies.Resources)
+	return &dependencies, nil
 }
 
-func ConvertProjectToTerraform(args args.Arguments) (map[string]string, error) {
+func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
 		Url:    args.Url,
@@ -1161,22 +1171,11 @@ func ConvertProjectToTerraform(args args.Arguments) (map[string]string, error) {
 		}
 	}
 
-	if args.Stateless {
-		templateGenerator := generators.StepTemplateGenerator{}
-		templateContent, err := templateGenerator.Generate(&dependencies, args.StepTemplateName, args.StepTemplateKey, args.StepTemplateDescription)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return map[string]string{"step_template.json": string(templateContent[:])}, nil
-	} else {
-		return processResources(dependencies.Resources)
-	}
+	return &dependencies, nil
 }
 
-// processResources creates a map of file names to file content
-func processResources(resources []data.ResourceDetails) (map[string]string, error) {
+// ProcessResources creates a map of file names to file content
+func ProcessResources(resources []data.ResourceDetails) (map[string]string, error) {
 	zap.L().Info("Generating HCL (this can take a little while)")
 	defer zap.L().Info("Done Generating HCL")
 

@@ -45,6 +45,10 @@ func main() {
 		errorExit("runbookName requires either a single projectId or projectName to be set")
 	}
 
+	if (parseArgs.RunbookName != "" || parseArgs.RunbookId != "") && parseArgs.Stateless {
+		errorExit("runbooks can not be used with stepTemplate")
+	}
+
 	if parseArgs.Stateless {
 		if parseArgs.StepTemplateKey == "" {
 			errorExit("stepTemplate requires stepTemplateKey to be defined (e.g. EKS, AKS, Lambda, WebApp)")

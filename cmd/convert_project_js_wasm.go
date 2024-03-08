@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 	"sort"
@@ -18,7 +20,64 @@ import (
 func main() {
 	c := make(chan bool)
 	js.Global().Set("convertProject", convertProject())
+	js.Global().Set("convertSpace", convertSpace())
 	<-c
+}
+
+func convertSpace() js.Func {
+	return js.FuncOf(func(this js.Value, funcArgs []js.Value) any {
+		if len(funcArgs) < 2 {
+			zap.L().Error("Must pass in url, space")
+		}
+
+		handler := js.FuncOf(func(this js.Value, jsargs []js.Value) interface{} {
+			resolve := jsargs[0]
+			reject := jsargs[1]
+
+			arguments := args.Arguments{
+				Url:                              funcArgs[0].String(),
+				Space:                            funcArgs[1].String(),
+				ExcludeAllProjects:               funcArgs[2].Bool(),
+				ExcludeProjectsExcept:            strings.Split(funcArgs[3].String(), ","),
+				ExcludeAllTargets:                funcArgs[4].Bool(),
+				ExcludeTargetsExcept:             strings.Split(funcArgs[5].String(), ","),
+				ExcludeAllRunbooks:               funcArgs[6].Bool(),
+				ExcludeRunbooksExcept:            strings.Split(funcArgs[7].String(), ","),
+				ExcludeAllLibraryVariableSets:    funcArgs[8].Bool(),
+				ExcludeLibraryVariableSetsExcept: strings.Split(funcArgs[9].String(), ","),
+				ExcludeAllTenants:                funcArgs[10].Bool(),
+				ExcludeTenantsExcept:             strings.Split(funcArgs[11].String(), ","),
+			}
+
+			go func() {
+				dependencies, err := entry.ConvertSpaceToTerraform(arguments)
+
+				if err != nil {
+					reject.Invoke(err.Error())
+				}
+
+				files, err := processJavaScriptResources(dependencies.Resources)
+
+				if err != nil {
+					reject.Invoke(err.Error())
+				}
+
+				hclBlob := ""
+
+				for _, h := range strutil.UnEscapeDollarInMap(files) {
+					hclBlob += h + "\n"
+				}
+
+				resolve.Invoke(hclBlob)
+			}()
+
+			return nil
+		})
+
+		// Create and return the Promise object
+		promiseConstructor := js.Global().Get("Promise")
+		return promiseConstructor.New(handler)
+	})
 }
 
 func convertProject() js.Func {
