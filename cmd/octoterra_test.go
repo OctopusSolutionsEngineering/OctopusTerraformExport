@@ -6,6 +6,7 @@ import (
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -153,7 +154,13 @@ func exportSpaceImportAndTest(
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 			}
 
-			files, err := entry.ConvertSpaceToTerraform(args)
+			dependencies, err := entry.ConvertSpaceToTerraform(args)
+
+			if err != nil {
+				return err
+			}
+
+			files, err := entry.ProcessResources(dependencies.Resources)
 
 			if err != nil {
 				return err
@@ -279,7 +286,13 @@ func exportProjectImportAndTest(
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 			}
 
-			files, err := entry.ConvertProjectToTerraform(args)
+			dependencies, err := entry.ConvertProjectToTerraform(args)
+
+			if err != nil {
+				return err
+			}
+
+			files, err := entry.ProcessResources(dependencies.Resources)
 
 			if err != nil {
 				return err
@@ -410,12 +423,18 @@ func exportProjectLookupImportAndTest(
 				RunbookName:                      "",
 			}
 
-			var files map[string]string = nil
+			var dependencies *data.ResourceDetailsCollection = nil
 			if args.RunbookId != "" {
-				files, err = entry.ConvertRunbookToTerraform(args)
+				dependencies, err = entry.ConvertRunbookToTerraform(args)
 			} else {
-				files, err = entry.ConvertProjectToTerraform(args)
+				dependencies, err = entry.ConvertProjectToTerraform(args)
 			}
+
+			if err != nil {
+				return err
+			}
+
+			files, err := entry.ProcessResources(dependencies.Resources)
 
 			if err != nil {
 				return err
