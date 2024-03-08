@@ -55,6 +55,10 @@ jobs:
           if_no_artifact_found: warn
           branch: main
 
+      - name: Install Dependencies
+        run: go get ./...
+        shell: bash
+
       - name: Split integration tests
         id: test_split
         uses: hashicorp-forge/go-test-split-action@v1
