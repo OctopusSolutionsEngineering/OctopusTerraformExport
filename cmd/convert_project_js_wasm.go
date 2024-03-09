@@ -51,6 +51,8 @@ func convertSpace() js.Func {
 				ExcludeTenantsExcept:             strings.Split(funcArgs[11].String(), ","),
 				ExcludeAllEnvironments:           funcArgs[12].Bool(),
 				ExcludeEnvironmentsExcept:        strings.Split(funcArgs[13].String(), ","),
+				ExcludeAllFeeds:                  funcArgs[14].Bool(),
+				ExcludeFeedsExcept:               strings.Split(funcArgs[15].String(), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,
@@ -181,7 +183,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		TagSetConverter:      &tagsetConverter,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
-	feedConverter := converters.FeedConverter{Client: client}
+	feedConverter := converters.FeedConverter{
+		Client:   client,
+		Excluder: converters.DefaultExcluder{},
+	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
 		Client:                 client,

@@ -55,6 +55,11 @@ type Arguments struct {
 	ExcludeEnvironmentsExcept StringSliceArgs
 	ExcludeAllEnvironments    bool
 
+	ExcludeFeeds       StringSliceArgs
+	ExcludeFeedsRegex  StringSliceArgs
+	ExcludeFeedsExcept StringSliceArgs
+	ExcludeAllFeeds    bool
+
 	IgnoreProjectChanges             bool
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
@@ -380,6 +385,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeEnvironments, "excludeEnvironments", "An environment to be excluded when exporting a single project. WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeEnvironmentsRegex, "excludeEnvironmentsRegex", "A environment to be excluded when exporting a single project based on regex match. WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeEnvironmentsExcept, "excludeEnvironmentsExcept", "All environments except those defined with excludeEnvironmentsExcept are excluded.  WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllFeeds, "excludeAllFeeds", false, "Exclude all feeds.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeFeeds, "excludeFeeds", "A feed to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeFeedsRegex, "excludeFeedsRegex", "A feed to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeFeedsExcept, "excludeFeedsExcept", "All environments except those defined with excludeFeedsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
 	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeAllProjectVariables", false, "Exclude all project variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported. WARNING: steps that used this variable may no longer function correctly.")

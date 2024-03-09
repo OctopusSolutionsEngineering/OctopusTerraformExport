@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -27,6 +28,11 @@ type FeedConverter struct {
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
 	ErrGroup                  *errgroup.Group
+	ExcludeFeeds              args.StringSliceArgs
+	ExcludeFeedsRegex         args.StringSliceArgs
+	ExcludeFeedsExcept        args.StringSliceArgs
+	ExcludeAllFeeds           bool
+	Excluder                  ExcludeByName
 }
 
 func (c FeedConverter) GetResourceType() string {
@@ -50,6 +56,10 @@ func (c FeedConverter) allToHcl(stateless bool, dependencies *data.ResourceDetai
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {
+			continue
+		}
+
 		zap.L().Info("Feed: " + resource.Id)
 		err = c.toHcl(resource, false, false, stateless, dependencies)
 
@@ -105,10 +115,18 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDet
 		return err
 	}
 
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {
+		return nil
+	}
+
 	return c.toHcl(resource, false, true, false, dependencies)
 }
 
 func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {
+		return nil
+	}
+
 	forceLookup := lookup ||
 		strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" ||
 		strutil.EmptyIfNil(resource.FeedType) == "OctopusProject"

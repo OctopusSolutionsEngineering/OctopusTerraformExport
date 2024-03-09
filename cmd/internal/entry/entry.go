@@ -303,6 +303,11 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
 		ErrGroup:                  &group,
+		ExcludeFeeds:              args.ExcludeFeeds,
+		ExcludeFeedsRegex:         args.ExcludeFeedsRegex,
+		ExcludeFeedsExcept:        args.ExcludeFeedsExcept,
+		ExcludeAllFeeds:           args.ExcludeAllFeeds,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
@@ -708,6 +713,11 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeFeeds:              args.ExcludeFeeds,
+		ExcludeFeedsRegex:         args.ExcludeFeedsRegex,
+		ExcludeFeedsExcept:        args.ExcludeFeedsExcept,
+		ExcludeAllFeeds:           args.ExcludeAllFeeds,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: octopusClient}
 
@@ -1003,6 +1013,11 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
+		ExcludeFeeds:              args.ExcludeFeeds,
+		ExcludeFeedsRegex:         args.ExcludeFeedsRegex,
+		ExcludeFeedsExcept:        args.ExcludeFeedsExcept,
+		ExcludeAllFeeds:           args.ExcludeAllFeeds,
+		Excluder:                  converters.DefaultExcluder{},
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{Client: octopusClient}
 
