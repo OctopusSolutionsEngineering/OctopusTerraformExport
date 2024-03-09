@@ -16,7 +16,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"regexp"
 	"strings"
 )
 
@@ -24,31 +23,30 @@ const octopusdeployProjectsDataType = "octopusdeploy_projects"
 const octopusdeployProjectResourceType = "octopusdeploy_project"
 
 type ProjectConverter struct {
-	Client                       client.OctopusClient
-	LifecycleConverter           ConverterAndLookupWithStatelessById
-	GitCredentialsConverter      ConverterAndLookupWithStatelessById
-	LibraryVariableSetConverter  ConverterAndLookupWithStatelessById
-	ProjectGroupConverter        ConverterAndLookupWithStatelessById
-	DeploymentProcessConverter   ConverterAndLookupByIdAndNameOrBranch
-	TenantConverter              ConverterAndLookupByProjectId
-	ProjectTriggerConverter      ConverterByProjectIdWithName
-	VariableSetConverter         ConverterAndLookupByProjectIdAndName
-	ChannelConverter             ConverterAndLookupByProjectIdWithTerraDependencies
-	RunbookConverter             ConverterAndLookupByIdAndName
-	IgnoreCacManagedValues       bool
-	ExcludeCaCProjectSettings    bool
-	ExcludeAllRunbooks           bool
-	IgnoreProjectChanges         bool
-	IgnoreProjectGroupChanges    bool
-	IgnoreProjectNameChanges     bool
-	ExcludeProjects              args.ExcludeProjects
-	ExcludeProjectsExcept        args.ExcludeProjects
-	ExcludeProjectsRegex         args.ExcludeProjectsRegex
-	ExcludeAllProjects           bool
-	excludeRunbooksRegexCompiled []*regexp.Regexp
-	DummySecretVariableValues    bool
-	DummySecretGenerator         DummySecretGenerator
-	Excluder                     ExcludeByName
+	Client                      client.OctopusClient
+	LifecycleConverter          ConverterAndLookupWithStatelessById
+	GitCredentialsConverter     ConverterAndLookupWithStatelessById
+	LibraryVariableSetConverter ConverterAndLookupWithStatelessById
+	ProjectGroupConverter       ConverterAndLookupWithStatelessById
+	DeploymentProcessConverter  ConverterAndLookupByIdAndNameOrBranch
+	TenantConverter             ConverterAndLookupByProjectId
+	ProjectTriggerConverter     ConverterByProjectIdWithName
+	VariableSetConverter        ConverterAndLookupByProjectIdAndName
+	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
+	RunbookConverter            ConverterAndLookupByIdAndName
+	IgnoreCacManagedValues      bool
+	ExcludeCaCProjectSettings   bool
+	ExcludeAllRunbooks          bool
+	IgnoreProjectChanges        bool
+	IgnoreProjectGroupChanges   bool
+	IgnoreProjectNameChanges    bool
+	ExcludeProjects             args.ExcludeProjects
+	ExcludeProjectsExcept       args.ExcludeProjects
+	ExcludeProjectsRegex        args.ExcludeProjectsRegex
+	ExcludeAllProjects          bool
+	DummySecretVariableValues   bool
+	DummySecretGenerator        DummySecretGenerator
+	Excluder                    ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
 	LookupOnlyMode bool
 	ErrGroup       *errgroup.Group
