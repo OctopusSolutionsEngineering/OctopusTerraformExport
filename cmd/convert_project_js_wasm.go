@@ -48,6 +48,8 @@ func convertSpace() js.Func {
 				ExcludeLibraryVariableSetsExcept: strings.Split(funcArgs[9].String(), ","),
 				ExcludeAllTenants:                funcArgs[10].Bool(),
 				ExcludeTenantsExcept:             strings.Split(funcArgs[11].String(), ","),
+				ExcludeAllEnvironments:           funcArgs[12].Bool(),
+				ExcludeEnvironmentsExcept:        strings.Split(funcArgs[13].String(), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 			}
@@ -131,7 +133,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 
 	converters.TerraformProviderGenerator{}.ToHcl("space_population", true, &dependencies)
 
-	environmentConverter := converters.EnvironmentConverter{Client: client}
+	environmentConverter := converters.EnvironmentConverter{
+		Client:   client,
+		Excluder: converters.DefaultExcluder{},
+	}
 	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
 	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
 	tagsetConverter := converters.TagSetConverter{Client: client}

@@ -49,6 +49,12 @@ type Arguments struct {
 	ExcludeLibraryVariableSetsRegex  ExcludeLibraryVariableSets
 	ExcludeLibraryVariableSetsExcept ExcludeLibraryVariableSets
 	ExcludeAllLibraryVariableSets    bool
+
+	ExcludeEnvironments       StringSliceArgs
+	ExcludeEnvironmentsRegex  StringSliceArgs
+	ExcludeEnvironmentsExcept StringSliceArgs
+	ExcludeAllEnvironments    bool
+
 	IgnoreProjectChanges             bool
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
@@ -280,8 +286,6 @@ func (i *ExcludeRunbooks) String() string {
 	return "excluded runbooks"
 }
 
-type ExcludeLibraryVariableSets []string
-
 func (i *ExcludeRunbooks) Set(value string) error {
 	trimmed := strings.TrimSpace(value)
 
@@ -293,11 +297,30 @@ func (i *ExcludeRunbooks) Set(value string) error {
 	return nil
 }
 
+type ExcludeLibraryVariableSets []string
+
 func (i *ExcludeLibraryVariableSets) String() string {
 	return "excluded library variable sets"
 }
 
 func (i *ExcludeLibraryVariableSets) Set(value string) error {
+	trimmed := strings.TrimSpace(value)
+
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	*i = append(*i, trimmed)
+	return nil
+}
+
+type StringSliceArgs []string
+
+func (i *StringSliceArgs) String() string {
+	return "A collection of stinrs passed as arguments"
+}
+
+func (i *StringSliceArgs) Set(value string) error {
 	trimmed := strings.TrimSpace(value)
 
 	if len(trimmed) == 0 {
@@ -352,6 +375,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project. WARNING: projects that linked this library variable set will no longer include these variables.")
 	flags.Var(&arguments.ExcludeLibraryVariableSetsRegex, "excludeLibraryVariableSetRegex", "A library variable set to be excluded when exporting a single project based on regex match. WARNING: projects that linked this library variable set will no longer include these variables.")
 	flags.Var(&arguments.ExcludeLibraryVariableSetsExcept, "excludeLibraryVariableSetsExcept", "All library variable sets except those defined with excludeAllLibraryVariableSets are excluded. WARNING: projects that linked other library variable set will no longer include these variables.")
+
+	flags.BoolVar(&arguments.ExcludeAllEnvironments, "excludeAllEnvironments", false, "Exclude all environments.  WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeEnvironments, "excludeEnvironments", "An environment to be excluded when exporting a single project. WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeEnvironmentsRegex, "excludeEnvironmentsRegex", "A environment to be excluded when exporting a single project based on regex match. WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeEnvironmentsExcept, "excludeEnvironmentsExcept", "All environments except those defined with excludeEnvironmentsExcept are excluded.  WARNING: this can have unexpected side effects, such as variables becoming unscoped. The exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
 	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeAllProjectVariables", false, "Exclude all project variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported. WARNING: steps that used this variable may no longer function correctly.")

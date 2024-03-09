@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -18,8 +19,13 @@ const octopusdeployEnvironmentsDataType = "octopusdeploy_environments"
 const octopusdeployEnvironmentsResourceType = "octopusdeploy_environment"
 
 type EnvironmentConverter struct {
-	Client   client.OctopusClient
-	ErrGroup *errgroup.Group
+	Client                    client.OctopusClient
+	ErrGroup                  *errgroup.Group
+	ExcludeEnvironments       args.StringSliceArgs
+	ExcludeEnvironmentsRegex  args.StringSliceArgs
+	ExcludeEnvironmentsExcept args.StringSliceArgs
+	ExcludeAllEnvironments    bool
+	Excluder                  ExcludeByName
 }
 
 func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -39,6 +45,10 @@ func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *data.Resour
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {
+			continue
+		}
+
 		zap.L().Info("Environment: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -91,6 +101,10 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.Reso
 
 	if err != nil {
 		return err
+	}
+
+	if c.Excluder.IsResourceExcludedWithRegex(environment.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {
+		return nil
 	}
 
 	thisResource := data.ResourceDetails{}
@@ -161,6 +175,10 @@ func (c EnvironmentConverter) getCount(stateless bool, resourceName string) *str
 }
 
 func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.Excluder.IsResourceExcludedWithRegex(environment.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {
+		return nil
+	}
+
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
 	thisResource := data.ResourceDetails{}

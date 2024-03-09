@@ -195,8 +195,13 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ErrGroup: &group,
 	}
 	environmentConverter := converters.EnvironmentConverter{
-		Client:   octopusClient,
-		ErrGroup: &group,
+		Client:                    octopusClient,
+		ExcludeEnvironments:       args.ExcludeEnvironments,
+		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
+		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
+		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
+		Excluder:                  converters.DefaultExcluder{},
+		ErrGroup:                  &group,
 	}
 	tenantVariableConverter := converters.TenantVariableConverter{
 		Client:                    octopusClient,
@@ -635,7 +640,14 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
 	}.ToHcl("space_population", true, &dependencies)
 
-	environmentConverter := converters.EnvironmentConverter{Client: octopusClient}
+	environmentConverter := converters.EnvironmentConverter{
+		Client:                    octopusClient,
+		ExcludeEnvironments:       args.ExcludeEnvironments,
+		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
+		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
+		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
+		Excluder:                  converters.DefaultExcluder{},
+	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
@@ -769,7 +781,14 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
 	}.ToHcl("space_population", true, &dependencies)
 
-	environmentConverter := converters.EnvironmentConverter{Client: octopusClient}
+	environmentConverter := converters.EnvironmentConverter{
+		Client:                    octopusClient,
+		ExcludeEnvironments:       args.ExcludeEnvironments,
+		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
+		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
+		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
+		Excluder:                  converters.DefaultExcluder{},
+	}
 	lifecycleConverter := converters.LifecycleConverter{Client: octopusClient, EnvironmentConverter: environmentConverter}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    octopusClient,
