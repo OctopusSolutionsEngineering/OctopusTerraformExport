@@ -24,8 +24,15 @@ func (e DefaultExcluder) IsResourceExcluded(resourceName string, excludeAll bool
 		return true
 	}
 
-	if excludeAllButThese != nil && len(excludeAllButThese) != 0 && slices.Index(excludeAllButThese, resourceName) == -1 {
-		return true
+	if excludeAllButThese != nil && len(excludeAllButThese) != 0 {
+		// Ignore any empty strings
+		filteredList := lo.Filter(excludeAllButThese, func(item string, index int) bool {
+			return strings.TrimSpace(item) != ""
+		})
+
+		if len(filteredList) != 0 && slices.Index(filteredList, resourceName) == -1 {
+			return true
+		}
 	}
 
 	return false
@@ -40,16 +47,34 @@ func (e DefaultExcluder) IsResourceExcludedWithRegex(resourceName string, exclud
 		return true
 	}
 
-	if excludeThese != nil && slices.Index(excludeThese, resourceName) != -1 {
-		return true
+	if excludeThese != nil {
+		// Ignore any empty strings
+		filteredList := lo.Filter(excludeThese, func(item string, index int) bool {
+			return strings.TrimSpace(item) != ""
+		})
+
+		if len(filteredList) != 0 && slices.Index(filteredList, resourceName) != -1 {
+			return true
+		}
 	}
 
-	if excludeAllButThese != nil && len(excludeAllButThese) != 0 && slices.Index(excludeAllButThese, resourceName) == -1 {
-		return true
+	if excludeAllButThese != nil && len(excludeAllButThese) != 0 {
+		// Ignore any empty strings
+		filteredList := lo.Filter(excludeAllButThese, func(item string, index int) bool {
+			return strings.TrimSpace(item) != ""
+		})
+
+		if len(filteredList) != 0 && slices.Index(filteredList, resourceName) == -1 {
+			return true
+		}
 	}
 
 	if excludeTheseRegexes != nil {
 		matched := lo.ContainsBy(excludeTheseRegexes, func(item string) bool {
+			if strings.TrimSpace(item) == "" {
+				return false
+			}
+
 			r, err := regexp.Compile(item)
 
 			if err != nil {

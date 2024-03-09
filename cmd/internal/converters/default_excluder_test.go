@@ -45,6 +45,10 @@ func TestExcludeByRegex(t *testing.T) {
 		t.Fatalf("Resource must not be excluded")
 	}
 
+	if excluder.IsResourceExcludedWithRegex("blah", false, []string{}, []string{"resource|test"}, []string{""}) {
+		t.Fatalf("Resource must not be excluded")
+	}
+
 	if excluder.IsResourceExcludedWithRegex("resource", false, []string{}, []string{"invalid("}, nil) {
 		t.Fatalf("Resource must not be excluded")
 	}
@@ -66,6 +70,10 @@ func TestExcludeByEmptyNameException(t *testing.T) {
 	excluder := DefaultExcluder{}
 
 	if excluder.IsResourceExcluded("resource", false, nil, []string{}) {
+		t.Fatalf("Resource must not be excluded")
+	}
+
+	if excluder.IsResourceExcluded("resource", false, nil, []string{""}) {
 		t.Fatalf("Resource must not be excluded")
 	}
 

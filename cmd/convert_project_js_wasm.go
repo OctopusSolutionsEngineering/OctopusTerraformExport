@@ -53,6 +53,7 @@ func convertSpace() js.Func {
 				ExcludeEnvironmentsExcept:        strings.Split(funcArgs[13].String(), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
+				IgnoreInvalidExcludeExcept:       true,
 			}
 
 			argsJson, _ := json.Marshal(arguments)
