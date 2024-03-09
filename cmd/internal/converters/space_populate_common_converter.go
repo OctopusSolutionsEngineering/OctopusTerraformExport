@@ -54,6 +54,10 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 }
 
 func (c TerraformProviderGenerator) createTerraformConfig(directory string, dependencies *data.ResourceDetailsCollection) {
+	if c.ExcludeProvider {
+		return
+	}
+
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = directory + "/config.tf"
 	thisResource.Id = ""

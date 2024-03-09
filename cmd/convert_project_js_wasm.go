@@ -27,8 +27,9 @@ func main() {
 
 func convertSpace() js.Func {
 	return js.FuncOf(func(this js.Value, funcArgs []js.Value) any {
-		if len(funcArgs) < 2 {
-			zap.L().Error("Must pass in url, space")
+		if len(funcArgs) < 13 {
+			zap.L().Error("Must pass in all the required variables")
+			return nil
 		}
 
 		handler := js.FuncOf(func(this js.Value, jsargs []js.Value) interface{} {
