@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -48,6 +49,9 @@ func convertSpace() js.Func {
 				ExcludeAllTenants:                funcArgs[10].Bool(),
 				ExcludeTenantsExcept:             strings.Split(funcArgs[11].String(), ","),
 			}
+
+			argsJson, _ := json.Marshal(arguments)
+			zap.L().Info(string(argsJson))
 
 			go func() {
 				dependencies, err := entry.ConvertSpaceToTerraform(arguments)
