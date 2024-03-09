@@ -1,6 +1,8 @@
 module github.com/OctopusSolutionsEngineering/OctopusTerraformExport
 
-go 1.19
+go 1.21
+
+toolchain go1.21.3
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.33.3
