@@ -569,6 +569,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 
 	spaceConverter := converters.SpaceConverter{
 		Client:                      &octopusClient,
+		ExcludeSpaceCreation:        args.ExcludeSpaceCreation,
 		AccountConverter:            accountConverter,
 		EnvironmentConverter:        environmentConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,

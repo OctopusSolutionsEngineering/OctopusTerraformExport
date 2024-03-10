@@ -15,6 +15,7 @@ import (
 type Arguments struct {
 	Profiling                        bool
 	ExcludeTerraformVariables        bool
+	ExcludeSpaceCreation             bool
 	ConfigFile                       string
 	ConfigPath                       string
 	Version                          bool
@@ -181,6 +182,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.IntVar(&arguments.LimitAttributeLength, "limitAttributeLength", 0, "For internal use only. Limits the length of the attribute names.")
 	flags.BoolVar(&arguments.Profiling, "profiling", false, "Enable profiling. Run \"pprof -http=:8080 octoterra.prof\" to view the results.")
 	flags.BoolVar(&arguments.ExcludeTerraformVariables, "excludeTerraformVariables", false, "This option means the exported module does not expose Terraform variables for common inputs like the value of project or library variables set variables. This reduces the size of the Terraform configuration files, but makes the module less configurable because values are hard coded.")
+	flags.BoolVar(&arguments.ExcludeSpaceCreation, "excludeSpaceCreation", false, "This option excludes the Terraform configuration that is used to create the space.")
 	flags.BoolVar(&arguments.IgnoreInvalidExcludeExcept, "ignoreInvalidExcludeExcept", false, "Ensures that resource names passed to the 'Exclude<ResourceType>Except' arguments are valid, and if they are not, removes those names from the list. This is useful when an external system attempts to filter results but places incorrect values into 'Exclude<ResourceType>Except' arguments. It may result in all resources being returned if no valid resources names are included in the 'Exclude<ResourceType>Except' arguments.")
 	flags.BoolVar(&arguments.Version, "version", false, "Print the version")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")

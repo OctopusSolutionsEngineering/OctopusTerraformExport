@@ -41,16 +41,19 @@ type SpaceConverter struct {
 	AzureServiceFabricTargetConverter Converter
 	AzureWebAppTargetConverter        Converter
 	ErrGroup                          *errgroup.Group
+	ExcludeSpaceCreation              bool
 }
 
 // AllToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
 // with no filter and with the least number of network calls.
 func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) error {
 
-	err := c.createSpaceTf(dependencies)
+	if !c.ExcludeSpaceCreation {
+		err := c.createSpaceTf(dependencies)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Convert the feeds
