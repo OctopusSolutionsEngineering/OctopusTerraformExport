@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -18,8 +19,13 @@ const octopusdeployProjectGroupsDataType = "octopusdeploy_project_groups"
 const octopusdeployProjectGroupResourceType = "octopusdeploy_project_group"
 
 type ProjectGroupConverter struct {
-	Client   client.OctopusClient
-	ErrGroup *errgroup.Group
+	Client                     client.OctopusClient
+	ErrGroup                   *errgroup.Group
+	ExcludeProjectGroups       args.StringSliceArgs
+	ExcludeProjectGroupsRegex  args.StringSliceArgs
+	ExcludeProjectGroupsExcept args.StringSliceArgs
+	ExcludeAllProjectGroups    bool
+	Excluder                   ExcludeByName
 }
 
 func (c ProjectGroupConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -31,6 +37,10 @@ func (c ProjectGroupConverter) AllToStatelessHcl(dependencies *data.ResourceDeta
 }
 
 func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllProjectGroups {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -39,6 +49,10 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.Resou
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
+			continue
+		}
+
 		zap.L().Info("Project Group: " + resource.Id)
 		err = c.toHcl(resource, false, false, stateless, dependencies)
 
@@ -75,6 +89,10 @@ func (c ProjectGroupConverter) toHclById(id string, stateless bool, dependencies
 		return err
 	}
 
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
+		return nil
+	}
+
 	zap.L().Info("Project Group: " + resource.Id)
 	return c.toHcl(resource, false, false, stateless, dependencies)
 }
@@ -93,6 +111,10 @@ func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *data.Res
 
 	if err != nil {
 		return err
+	}
+
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
+		return nil
 	}
 
 	return c.toHcl(resource, false, true, false, dependencies)
@@ -117,6 +139,10 @@ func (c ProjectGroupConverter) writeData(file *hclwrite.File, name string, resou
 }
 
 func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
+		return nil
+	}
+
 	thisResource := data.ResourceDetails{}
 
 	forceLookup := lookup || resource.Name == "Default Project Group"

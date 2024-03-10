@@ -60,6 +60,11 @@ type Arguments struct {
 	ExcludeFeedsExcept StringSliceArgs
 	ExcludeAllFeeds    bool
 
+	ExcludeProjectGroups       StringSliceArgs
+	ExcludeProjectGroupsRegex  StringSliceArgs
+	ExcludeProjectGroupsExcept StringSliceArgs
+	ExcludeAllProjectGroups    bool
+
 	ExcludeAccounts       StringSliceArgs
 	ExcludeAccountsRegex  StringSliceArgs
 	ExcludeAccountsExcept StringSliceArgs
@@ -222,6 +227,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeAccounts, "excludeAccounts", "A feed to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeAccountsRegex, "excludeAccountsRegex", "An account to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeAccountsExcept, "excludeAccountsExcept", "All accounts except those defined with excludeAccountsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllProjectGroups, "excludeAllProjectGroups", false, "Exclude all project groups.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeProjectGroups, "excludeProjectGroups", "A project group to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeProjectGroupsRegex, "excludeProjectGroupsRegex", "A project group to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeProjectGroupsExcept, "excludeProjectGroupsExcept", "All project groups except those defined with excludeProjectGroupsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
 	flags.BoolVar(&arguments.ExcludeAllCertificates, "excludeAllCertificates", false, "Exclude all Certificates.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeCertificates, "excludeCertificates", "A certificate to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")

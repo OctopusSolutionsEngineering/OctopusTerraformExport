@@ -296,8 +296,13 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
-		Client:   &octopusClient,
-		ErrGroup: &group,
+		Client:                     &octopusClient,
+		ErrGroup:                   &group,
+		ExcludeProjectGroups:       args.ExcludeProjectGroups,
+		ExcludeProjectGroupsRegex:  args.ExcludeProjectGroupsRegex,
+		ExcludeProjectGroupsExcept: args.ExcludeProjectsExcept,
+		ExcludeAllProjectGroups:    args.ExcludeAllProjectGroups,
+		Excluder:                   converters.DefaultExcluder{},
 	}
 
 	certificateConverter := converters.CertificateConverter{
@@ -873,7 +878,15 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Excluder:             converters.DefaultExcluder{},
 	}
 
-	projectGroupConverter := converters.ProjectGroupConverter{Client: &octopusClient}
+	projectGroupConverter := converters.ProjectGroupConverter{
+		Client:                     &octopusClient,
+		ErrGroup:                   nil,
+		ExcludeProjectGroups:       args.ExcludeProjectGroups,
+		ExcludeProjectGroupsRegex:  args.ExcludeProjectGroupsRegex,
+		ExcludeProjectGroupsExcept: args.ExcludeProjectsExcept,
+		ExcludeAllProjectGroups:    args.ExcludeAllProjectGroups,
+		Excluder:                   converters.DefaultExcluder{},
+	}
 	tenantVariableConverter := converters.TenantVariableConverter{
 		Client:                    &octopusClient,
 		ExcludeTenants:            args.ExcludeTenants,

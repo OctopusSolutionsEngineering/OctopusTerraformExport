@@ -81,6 +81,8 @@ func convertSpace() js.Func {
 				ExcludeMachinePoliciesExcept:     strings.Split(getStringArg(funcArgs, 25), ","),
 				ExcludeAllTenantTagSets:          getBoolArg(funcArgs, 26),
 				ExcludeTenantTagSetsExcept:       strings.Split(getStringArg(funcArgs, 27), ","),
+				ExcludeAllProjectGroups:          getBoolArg(funcArgs, 28),
+				ExcludeProjectGroupsExcept:       strings.Split(getStringArg(funcArgs, 29), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,
@@ -184,7 +186,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ExcludeTenantTagSets: nil,
 	}
 
-	projectGroupConverter := converters.ProjectGroupConverter{Client: &client}
+	projectGroupConverter := converters.ProjectGroupConverter{
+		Client:   &client,
+		Excluder: converters.DefaultExcluder{},
+	}
 	tenantVariableConverter := converters.TenantVariableConverter{
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
