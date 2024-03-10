@@ -275,12 +275,6 @@ func ParseArgs(args []string) (Arguments, string, error) {
 
 	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
 
-	/*
-		Missing exclude options for environments, machine policies, accounts, certificates, workerpools, lifecycles, feeds, gitcreds.
-		These have some interesting implications though. For example, if you exclude an account used by a target, what happens to the target? Or you
-		exclude a lifecycle used by a project?
-	*/
-
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", true, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
 	flags.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
