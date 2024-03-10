@@ -815,7 +815,10 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 	if project.VariableSetId != nil {
 		var err error
 		if lookup {
-			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(project.Id, project.Name, "${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
+			err = c.VariableSetConverter.ToHclLookupByProjectIdAndName(
+				project.Id,
+				project.Name,
+				"${"+octopusdeployProjectResourceType+"."+projectName+".id}", dependencies)
 		} else {
 			err = c.VariableSetConverter.ToHclByProjectIdAndName(
 				project.Id,
