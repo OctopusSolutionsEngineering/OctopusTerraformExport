@@ -27,6 +27,10 @@ type CertificateConverter struct {
 	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group
+	ExcludeCertificates       args.StringSliceArgs
+	ExcludeCertificatesRegex  args.StringSliceArgs
+	ExcludeCertificatesExcept args.StringSliceArgs
+	ExcludeAllCertificates    bool
 }
 
 func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -38,6 +42,10 @@ func (c CertificateConverter) AllToStatelessHcl(dependencies *data.ResourceDetai
 }
 
 func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllCertificates {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.Certificate]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -46,6 +54,10 @@ func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.Resour
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
+			return nil
+		}
+
 		zap.L().Info("Certificate: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -81,6 +93,10 @@ func (c CertificateConverter) toHclById(id string, stateless bool, dependencies 
 		return err
 	}
 
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
+		return nil
+	}
+
 	zap.L().Info("Certificate: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -99,6 +115,10 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *data.Reso
 
 	if err != nil {
 		return err
+	}
+
+	if c.Excluder.IsResourceExcludedWithRegex(certificate.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
+		return nil
 	}
 
 	thisResource := data.ResourceDetails{}
@@ -143,6 +163,10 @@ func (c CertificateConverter) writeData(file *hclwrite.File, resource octopus.Ce
 }
 
 func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.Excluder.IsResourceExcludedWithRegex(certificate.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
+		return nil
+	}
+
 	/*
 		Note we don't export the tenants or environments that this certificate might be exposed to.
 		It is assumed the exported project links up all required environments, and the certificate
