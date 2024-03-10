@@ -95,12 +95,12 @@ type Arguments struct {
 }
 
 // GetBackend forces the use of a local backend for stateless exports
-func (a *Arguments) GetBackend() string {
-	if a.Stateless {
+func (arguments *Arguments) GetBackend() string {
+	if arguments.Stateless {
 		return ""
 	}
 
-	return a.BackendBlock
+	return arguments.BackendBlock
 }
 
 type Projects []string

@@ -76,14 +76,14 @@ func convertSpace() js.Func {
 				IgnoreInvalidExcludeExcept:       true,
 			}
 
-			if err := arguments.ValidateExcludeExceptArgs(); err != nil {
-				reject.Invoke(err.Error())
-			}
-
 			argsJson, _ := json.Marshal(arguments)
 			zap.L().Info(string(argsJson))
 
 			go func() {
+				if err := arguments.ValidateExcludeExceptArgs(); err != nil {
+					reject.Invoke(err.Error())
+				}
+
 				dependencies, err := entry.ConvertSpaceToTerraform(arguments)
 
 				if err != nil {

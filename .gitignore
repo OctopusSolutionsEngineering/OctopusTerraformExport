@@ -29,6 +29,7 @@ results.xml
 *.prof
 
 octoterra.json
+octoterra*.json
 octoterra.yaml
 
 octoterra
