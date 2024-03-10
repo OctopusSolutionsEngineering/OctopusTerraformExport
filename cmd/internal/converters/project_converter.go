@@ -822,6 +822,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 				project.Name,
 				parentLookup,
 				parentCount,
+				recursive,
 				dependencies)
 		}
 

@@ -122,7 +122,7 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId str
 // ToHclByProjectIdAndName is called when returning variables from projects. This is because the variable set ID
 // defined on a CaC enabled project is not available from the global /variablesets endpoint, and can only be
 // accessed from the project resource.
-func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
 	if projectId == "" {
 		return nil
 	}
@@ -144,7 +144,7 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, false, parentCount != nil, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, recursive, false, parentCount != nil, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error {
