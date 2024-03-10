@@ -76,6 +76,10 @@ func convertSpace() js.Func {
 				IgnoreInvalidExcludeExcept:       true,
 			}
 
+			if err := arguments.ValidateExcludeExceptArgs(); err != nil {
+				reject.Invoke(err.Error())
+			}
+
 			argsJson, _ := json.Marshal(arguments)
 			zap.L().Info(string(argsJson))
 

@@ -465,17 +465,17 @@ func ParseArgs(args []string) (Arguments, string, error) {
 		arguments.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
 	}
 
-	if err := validateExcludeExceptArgs(&arguments); err != nil {
+	if err := arguments.ValidateExcludeExceptArgs(); err != nil {
 		return Arguments{}, "", err
 	}
 
 	return arguments, buf.String(), nil
 }
 
-// validateExcludeExceptArgs removes any resource named in a Exclude<ResourceType>Except argument that does not
+// ValidateExcludeExceptArgs removes any resource named in a Exclude<ResourceType>Except argument that does not
 // exist in the Octopus instance. This is mostly used when external systems attempt to filter the results but
 // may place incorrect values into the Exclude<ResourceType>Except arguments.
-func validateExcludeExceptArgs(arguments *Arguments) (funcErr error) {
+func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 	if !arguments.IgnoreInvalidExcludeExcept {
 		return
 	}
@@ -489,7 +489,7 @@ func validateExcludeExceptArgs(arguments *Arguments) (funcErr error) {
 	filteredProjects, err := filterNamedResource[octopus.Project](octopusClient, "Projects", arguments.ExcludeProjectsExcept)
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	arguments.ExcludeProjectsExcept = filteredProjects
@@ -505,7 +505,7 @@ func validateExcludeExceptArgs(arguments *Arguments) (funcErr error) {
 	filteredMachines, err := filterNamedResource[octopus.Machine](octopusClient, "Machines", arguments.ExcludeTargetsExcept)
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	arguments.ExcludeTargetsExcept = filteredMachines
@@ -513,7 +513,7 @@ func validateExcludeExceptArgs(arguments *Arguments) (funcErr error) {
 	filteredRunbooks, err := filterNamedResource[octopus.Machine](octopusClient, "Runbooks", arguments.ExcludeRunbooksExcept)
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	arguments.ExcludeRunbooksExcept = filteredRunbooks
@@ -521,12 +521,12 @@ func validateExcludeExceptArgs(arguments *Arguments) (funcErr error) {
 	filteredVariableSets, err := filterNamedResource[octopus.Machine](octopusClient, "LibraryVariableSets", arguments.ExcludeLibraryVariableSetsExcept)
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	arguments.ExcludeLibraryVariableSetsExcept = filteredVariableSets
 
-	return nil
+	return err
 }
 
 func filterNamedResource[K octopus.NamedResource](octopusClient client.OctopusApiClient, resourceType string, filter []string) (results []string, funcErr error) {

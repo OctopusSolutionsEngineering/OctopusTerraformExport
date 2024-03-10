@@ -729,7 +729,7 @@ func (c *ProjectConverter) getGitBranch(projectId string) (*octopus.Branch, erro
 		})
 
 		if len(branches) != 0 {
-			branch = collection.Items[0]
+			branch = branches[0]
 		}
 
 		return &branch, nil
