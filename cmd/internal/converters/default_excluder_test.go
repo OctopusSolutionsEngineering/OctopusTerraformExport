@@ -85,8 +85,8 @@ func TestExcludeByEmptyNameException(t *testing.T) {
 func TestExcludeByBlankNameException(t *testing.T) {
 	excluder := DefaultExcluder{}
 
-	if !excluder.IsResourceExcluded("resource", false, nil, []string{""}) {
-		t.Fatalf("Resource must be excluded")
+	if excluder.IsResourceExcluded("resource", false, nil, []string{""}) {
+		t.Fatalf("Resource must not be excluded")
 	}
 }
 
