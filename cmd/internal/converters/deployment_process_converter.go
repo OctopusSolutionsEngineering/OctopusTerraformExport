@@ -23,8 +23,8 @@ type DeploymentProcessConverter struct {
 	OctopusActionProcessor OctopusActionProcessor
 	IgnoreProjectChanges   bool
 	WorkerPoolProcessor    OctopusWorkerPoolProcessor
-	ExcludeTenantTags      args.ExcludeTenantTags
-	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	ExcludeTenantTags      args.StringSliceArgs
+	ExcludeTenantTagSets   args.StringSliceArgs
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	LimitAttributeLength   int

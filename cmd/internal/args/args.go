@@ -40,14 +40,14 @@ type Arguments struct {
 	DummySecretVariableValues        bool
 	ProviderVersion                  string
 	ExcludeAllRunbooks               bool
-	ExcludeRunbooks                  ExcludeRunbooks
-	ExcludeRunbooksRegex             ExcludeRunbooks
-	ExcludeRunbooksExcept            ExcludeRunbooks
+	ExcludeRunbooks                  StringSliceArgs
+	ExcludeRunbooksRegex             StringSliceArgs
+	ExcludeRunbooksExcept            StringSliceArgs
 	ExcludeProvider                  bool
 	IncludeOctopusOutputVars         bool
-	ExcludeLibraryVariableSets       ExcludeLibraryVariableSets
-	ExcludeLibraryVariableSetsRegex  ExcludeLibraryVariableSets
-	ExcludeLibraryVariableSetsExcept ExcludeLibraryVariableSets
+	ExcludeLibraryVariableSets       StringSliceArgs
+	ExcludeLibraryVariableSetsRegex  StringSliceArgs
+	ExcludeLibraryVariableSetsExcept StringSliceArgs
 	ExcludeAllLibraryVariableSets    bool
 
 	ExcludeEnvironments       StringSliceArgs
@@ -75,33 +75,49 @@ type Arguments struct {
 	ExcludeLifecyclesExcept StringSliceArgs
 	ExcludeAllLifecycles    bool
 
+	ExcludeWorkerpools       StringSliceArgs
+	ExcludeWorkerpoolsRegex  StringSliceArgs
+	ExcludeWorkerpoolsExcept StringSliceArgs
+	ExcludeAllWorkerpools    bool
+
+	ExcludeMachinePolicies       StringSliceArgs
+	ExcludeMachinePoliciesRegex  StringSliceArgs
+	ExcludeMachinePoliciesExcept StringSliceArgs
+	ExcludeAllMachinePolicies    bool
+
 	IgnoreProjectChanges             bool
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
 	IgnoreProjectNameChanges         bool
 	ExcludeAllProjectVariables       bool
-	ExcludeProjectVariables          ExcludeVariables
-	ExcludeProjectVariablesExcept    ExcludeVariables
-	ExcludeProjectVariablesRegex     ExcludeVariables
-	ExcludeVariableEnvironmentScopes ExcludeVariableEnvironmentScopes
+	ExcludeProjectVariables          StringSliceArgs
+	ExcludeProjectVariablesExcept    StringSliceArgs
+	ExcludeProjectVariablesRegex     StringSliceArgs
+	ExcludeVariableEnvironmentScopes StringSliceArgs
 	LookUpDefaultWorkerPools         bool
-	ExcludeTenantTags                ExcludeTenantTags
-	ExcludeTenantTagSets             ExcludeTenantTagSets
-	ExcludeTenants                   ExcludeTenants
-	ExcludeTenantsRegex              ExcludeTenants
-	ExcludeTenantsWithTags           ExcludeTenantsWithTags
-	ExcludeTenantsExcept             ExcludeTenantsExcept
-	ExcludeAllTenants                bool
-	ExcludeProjects                  ExcludeProjects
-	ExcludeProjectsExcept            ExcludeProjects
-	ExcludeProjectsRegex             ExcludeProjectsRegex
-	ExcludeAllProjects               bool
-	ExcludeAllTargets                bool
-	ExcludeTargets                   ExcludeTargets
-	ExcludeTargetsRegex              ExcludeTargets
-	ExcludeTargetsExcept             ExcludeTargets
-	ExcludeAllGitCredentials         bool
-	LimitAttributeLength             int
+
+	ExcludeTenantTags StringSliceArgs
+
+	ExcludeTenantTagSets       StringSliceArgs
+	ExcludeTenantTagSetsRegex  StringSliceArgs
+	ExcludeTenantTagSetsExcept StringSliceArgs
+	ExcludeAllTenantTagSets    bool
+
+	ExcludeTenants           StringSliceArgs
+	ExcludeTenantsRegex      StringSliceArgs
+	ExcludeTenantsWithTags   StringSliceArgs
+	ExcludeTenantsExcept     StringSliceArgs
+	ExcludeAllTenants        bool
+	ExcludeProjects          StringSliceArgs
+	ExcludeProjectsExcept    StringSliceArgs
+	ExcludeProjectsRegex     StringSliceArgs
+	ExcludeAllProjects       bool
+	ExcludeAllTargets        bool
+	ExcludeTargets           StringSliceArgs
+	ExcludeTargetsRegex      StringSliceArgs
+	ExcludeTargetsExcept     StringSliceArgs
+	ExcludeAllGitCredentials bool
+	LimitAttributeLength     int
 }
 
 // GetBackend forces the use of a local backend for stateless exports
@@ -130,214 +146,10 @@ func (i *Projects) Set(value string) error {
 	return nil
 }
 
-type ExcludeTargets []string
-
-func (i *ExcludeTargets) String() string {
-	return "excluded targets"
-}
-
-func (i *ExcludeTargets) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeProjects []string
-
-func (i *ExcludeProjects) String() string {
-	return "excluded projects"
-}
-
-func (i *ExcludeProjects) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeProjectsRegex []string
-
-func (i *ExcludeProjectsRegex) String() string {
-	return "excluded projects"
-}
-
-func (i *ExcludeProjectsRegex) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeTenantsExcept []string
-
-func (i *ExcludeTenantsExcept) String() string {
-	return "exclude tenants except"
-}
-
-func (i *ExcludeTenantsExcept) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeTenants []string
-
-func (i *ExcludeTenants) String() string {
-	return "excluded tenants"
-}
-
-func (i *ExcludeTenants) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeTenantTags []string
-
-func (i *ExcludeTenantTags) String() string {
-	return "excluded tenant tags"
-}
-
-func (i *ExcludeTenantTags) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeTenantTagSets []string
-
-func (i *ExcludeTenantTagSets) String() string {
-	return "excluded tenant tag sets"
-}
-
-func (i *ExcludeTenantTagSets) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeTenantsWithTags []string
-
-func (i *ExcludeTenantsWithTags) String() string {
-	return "excluded tenantwith tag"
-}
-
-func (i *ExcludeTenantsWithTags) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeVariableEnvironmentScopes []string
-
-func (i *ExcludeVariableEnvironmentScopes) String() string {
-	return "excluded variable environment scopes"
-}
-
-func (i *ExcludeVariableEnvironmentScopes) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeVariables []string
-
-func (i *ExcludeVariables) String() string {
-	return "excluded variables"
-}
-
-func (i *ExcludeVariables) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeRunbooks []string
-
-func (i *ExcludeRunbooks) String() string {
-	return "excluded runbooks"
-}
-
-func (i *ExcludeRunbooks) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
-type ExcludeLibraryVariableSets []string
-
-func (i *ExcludeLibraryVariableSets) String() string {
-	return "excluded library variable sets"
-}
-
-func (i *ExcludeLibraryVariableSets) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
-}
-
 type StringSliceArgs []string
 
 func (i *StringSliceArgs) String() string {
-	return "A collection of stinrs passed as arguments"
+	return "A collection of strings passed as arguments"
 }
 
 func (i *StringSliceArgs) Set(value string) error {
@@ -421,6 +233,16 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeLifecyclesRegex, "excludeLifecyclesRegex", "A lifecycle to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeLifecyclesExcept, "excludeLifecyclesExcept", "All lifecycles except those defined with excludeLifecyclesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
+	flags.BoolVar(&arguments.ExcludeAllWorkerpools, "excludeAllWorkerPools", false, "Exclude all worker pools.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeWorkerpools, "excludeWorkerPools", "A worker pool to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeWorkerpoolsRegex, "excludeWorkerPoolsRegex", "A worker pool to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeWorkerpoolsExcept, "excludeWorkerPoolsExcept", "All worker pools except those defined with excludeWorkerpoolsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllMachinePolicies, "excludeAllMachinePolicies", false, "Exclude all machine policies.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeMachinePolicies, "excludeMachinePolicies", "A machine policy to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeMachinePoliciesRegex, "excludeMachinePoliciesRegex", "A machine policy to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeMachinePoliciesExcept, "excludeMachinePoliciesExcept", "All machine policies except those defined with excludeMachinePoliciesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
 	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeAllProjectVariables", false, "Exclude all project variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariablesExcept, "excludeProjectVariableExcept", "All project variables except those defined with excludeProjectVariableExcept are excluded. WARNING: steps that used other variables may no longer function correctly.")
@@ -430,8 +252,10 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	// missing all, regex, except
 	flags.Var(&arguments.ExcludeTenantTags, "excludeTenantTags", "Exclude an individual tenant tag from being exported. Tags are in the format \"taggroup/tagname\". WARNING: Steps that were set to run on tenants with excluded tags will no longer have that condition applied.")
 
-	// missing all, regex, except
 	flags.Var(&arguments.ExcludeTenantTagSets, "excludeTenantTagSets", "Exclude a tenant tag set from being exported. WARNING: Steps that were set to run on tenants with excluded tags will no longer have that condition applied.")
+	flags.BoolVar(&arguments.ExcludeAllTenantTagSets, "excludeAllTenantTagSets", false, "Exclude all tenant tag sets from being exported. WARNING: Resources scoped to tenant tag sets will be unscoped.")
+	flags.Var(&arguments.ExcludeTenantTagSetsRegex, "excludeTenantTagSetsRegex", "Exclude tenant tag sets from being exported based on a regex. WARNING: Resources scoped to tenant tag sets will be unscoped")
+	flags.Var(&arguments.ExcludeTenantTagSetsExcept, "excludeTenantTagSetsExcept", "Exclude all tenant tag sets except for those define in this list. WARNING: Resources scoped to tenant tag sets will be unscoped")
 
 	flags.BoolVar(&arguments.ExcludeAllTenants, "excludeAllTenants", false, "Exclude all tenants from being exported.")
 	flags.Var(&arguments.ExcludeTenants, "excludeTenants", "Exclude a tenant from being exported.")

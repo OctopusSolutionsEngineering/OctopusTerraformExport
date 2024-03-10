@@ -24,13 +24,13 @@ type AzureServiceFabricTargetConverter struct {
 	MachinePolicyConverter    ConverterWithStatelessById
 	EnvironmentConverter      ConverterAndLookupWithStatelessById
 	ExcludeAllTargets         bool
-	ExcludeTargets            args.ExcludeTargets
-	ExcludeTargetsRegex       args.ExcludeTargets
-	ExcludeTargetsExcept      args.ExcludeTargets
+	ExcludeTargets            args.StringSliceArgs
+	ExcludeTargetsRegex       args.StringSliceArgs
+	ExcludeTargetsExcept      args.StringSliceArgs
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
-	ExcludeTenantTags         args.ExcludeTenantTags
-	ExcludeTenantTagSets      args.ExcludeTenantTagSets
+	ExcludeTenantTags         args.StringSliceArgs
+	ExcludeTenantTagSets      args.StringSliceArgs
 	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group

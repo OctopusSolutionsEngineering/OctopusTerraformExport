@@ -75,6 +75,12 @@ func convertSpace() js.Func {
 				ExcludeCertificatesExcept:        strings.Split(getStringArg(funcArgs, 19), ","),
 				ExcludeAllLifecycles:             getBoolArg(funcArgs, 20),
 				ExcludeLifecyclesExcept:          strings.Split(getStringArg(funcArgs, 21), ","),
+				ExcludeAllWorkerpools:            getBoolArg(funcArgs, 22),
+				ExcludeWorkerpoolsExcept:         strings.Split(getStringArg(funcArgs, 23), ","),
+				ExcludeAllMachinePolicies:        getBoolArg(funcArgs, 24),
+				ExcludeMachinePoliciesExcept:     strings.Split(getStringArg(funcArgs, 25), ","),
+				ExcludeAllTenantTagSets:          getBoolArg(funcArgs, 26),
+				ExcludeTenantTagSetsExcept:       strings.Split(getStringArg(funcArgs, 27), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,
@@ -191,7 +197,15 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Excluder:                converters.DefaultExcluder{},
 	}
 
-	machinePolicyConverter := converters.MachinePolicyConverter{Client: &client}
+	machinePolicyConverter := converters.MachinePolicyConverter{
+		Client:                       &client,
+		ErrGroup:                     nil,
+		ExcludeMachinePolicies:       nil,
+		ExcludeMachinePoliciesRegex:  nil,
+		ExcludeMachinePoliciesExcept: nil,
+		ExcludeAllMachinePolicies:    false,
+		Excluder:                     converters.DefaultExcluder{},
+	}
 	accountConverter := converters.AccountConverter{
 		Client:               &client,
 		EnvironmentConverter: lifecycleConverter,
@@ -208,7 +222,15 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Excluder:             converters.DefaultExcluder{},
 		TagSetConverter:      &tagsetConverter,
 	}
-	workerPoolConverter := converters.WorkerPoolConverter{Client: &client}
+	workerPoolConverter := converters.WorkerPoolConverter{
+		Client:                   &client,
+		ErrGroup:                 nil,
+		ExcludeWorkerpools:       nil,
+		ExcludeWorkerpoolsRegex:  nil,
+		ExcludeWorkerpoolsExcept: nil,
+		ExcludeAllWorkerpools:    false,
+		Excluder:                 converters.DefaultExcluder{},
+	}
 	feedConverter := converters.FeedConverter{
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},

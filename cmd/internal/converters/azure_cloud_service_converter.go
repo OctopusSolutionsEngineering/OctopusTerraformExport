@@ -25,11 +25,11 @@ type AzureCloudServiceTargetConverter struct {
 	AccountConverter       ConverterAndLookupWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
-	ExcludeTargets         args.ExcludeTargets
-	ExcludeTargetsRegex    args.ExcludeTargets
-	ExcludeTargetsExcept   args.ExcludeTargets
-	ExcludeTenantTags      args.ExcludeTenantTags
-	ExcludeTenantTagSets   args.ExcludeTenantTagSets
+	ExcludeTargets         args.StringSliceArgs
+	ExcludeTargetsRegex    args.StringSliceArgs
+	ExcludeTargetsExcept   args.StringSliceArgs
+	ExcludeTenantTags      args.StringSliceArgs
+	ExcludeTenantTagSets   args.StringSliceArgs
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group

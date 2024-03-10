@@ -26,9 +26,9 @@ const octopusdeployScriptModuleResourceType = "octopusdeploy_script_module"
 type LibraryVariableSetConverter struct {
 	Client                                  client.OctopusClient
 	VariableSetConverter                    ConverterByIdWithNameAndParent
-	Excluded                                args.ExcludeLibraryVariableSets
-	ExcludeLibraryVariableSetsRegex         args.ExcludeLibraryVariableSets
-	ExcludeLibraryVariableSetsExcept        args.ExcludeLibraryVariableSets
+	Excluded                                args.StringSliceArgs
+	ExcludeLibraryVariableSetsRegex         args.StringSliceArgs
+	ExcludeLibraryVariableSetsExcept        args.StringSliceArgs
 	ExcludeAllLibraryVariableSets           bool
 	excludeLibraryVariableSetsRegexCompiled []*regexp.Regexp
 	DummySecretVariableValues               bool

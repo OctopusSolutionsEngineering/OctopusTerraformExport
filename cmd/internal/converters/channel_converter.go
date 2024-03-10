@@ -22,8 +22,8 @@ const octopusdeployChannelResourceType = "octopusdeploy_channel"
 type ChannelConverter struct {
 	Client               client.OctopusClient
 	LifecycleConverter   ConverterAndLookupWithStatelessById
-	ExcludeTenantTags    args.ExcludeTenantTags
-	ExcludeTenantTagSets args.ExcludeTenantTagSets
+	ExcludeTenantTags    args.StringSliceArgs
+	ExcludeTenantTagSets args.StringSliceArgs
 	Excluder             ExcludeByName
 	ErrGroup             *errgroup.Group
 }

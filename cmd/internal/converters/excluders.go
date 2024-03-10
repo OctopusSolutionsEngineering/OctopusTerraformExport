@@ -7,5 +7,5 @@ import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/intern
 type ExcludeByName interface {
 	IsResourceExcluded(resourceName string, excludeAll bool, excludeThese []string, excludeAllButThese []string) bool
 	IsResourceExcludedWithRegex(resourceName string, excludeAll bool, excludeThese []string, excludeTheseRegexes []string, excludeAllButThese []string) bool
-	FilteredTenantTags(tenantTags []string, excludeTenantTags args.ExcludeTenantTags, excludeTenantTagSets args.ExcludeTenantTagSets) []string
+	FilteredTenantTags(tenantTags []string, excludeTenantTags args.StringSliceArgs, excludeTenantTagSets args.StringSliceArgs) []string
 }

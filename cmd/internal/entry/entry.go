@@ -191,8 +191,13 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{
-		Client:   &octopusClient,
-		ErrGroup: &group,
+		Client:                       &octopusClient,
+		ErrGroup:                     &group,
+		ExcludeMachinePolicies:       args.ExcludeMachinePolicies,
+		ExcludeMachinePoliciesRegex:  args.ExcludeMachinePoliciesRegex,
+		ExcludeMachinePoliciesExcept: args.ExcludeMachinePoliciesExcept,
+		ExcludeAllMachinePolicies:    args.ExcludeAllMachinePolicies,
+		Excluder:                     converters.DefaultExcluder{},
 	}
 	environmentConverter := converters.EnvironmentConverter{
 		Client:                    &octopusClient,
@@ -219,11 +224,14 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ErrGroup:                  &group,
 	}
 	tagsetConverter := converters.TagSetConverter{
-		Client:               &octopusClient,
-		Excluder:             converters.DefaultExcluder{},
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
-		ErrGroup:             &group,
+		Client:                     &octopusClient,
+		Excluder:                   converters.DefaultExcluder{},
+		ExcludeTenantTags:          args.ExcludeTenantTags,
+		ExcludeTenantTagSets:       args.ExcludeTenantTagSets,
+		ErrGroup:                   &group,
+		ExcludeTenantTagSetsRegex:  args.ExcludeTenantTagSetsRegex,
+		ExcludeTenantTagSetsExcept: args.ExcludeTenantTagSetsExcept,
+		ExcludeAllTenantTagSets:    args.ExcludeAllTenantTagSets,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  &octopusClient,
@@ -307,8 +315,13 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeAllCertificates:    args.ExcludeAllCertificates,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{
-		Client:   &octopusClient,
-		ErrGroup: &group,
+		Client:                   &octopusClient,
+		ErrGroup:                 &group,
+		ExcludeWorkerpools:       args.ExcludeWorkerpools,
+		ExcludeWorkerpoolsRegex:  args.ExcludeWorkerpoolsRegex,
+		ExcludeWorkerpoolsExcept: args.ExcludeWorkerpoolsExcept,
+		ExcludeAllWorkerpools:    args.ExcludeAllWorkerpools,
+		Excluder:                 converters.DefaultExcluder{},
 	}
 
 	feedConverter := converters.FeedConverter{
@@ -672,10 +685,14 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
 	}
 	tagsetConverter := converters.TagSetConverter{
-		Client:               &octopusClient,
-		Excluder:             converters.DefaultExcluder{},
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		Client:                     &octopusClient,
+		Excluder:                   converters.DefaultExcluder{},
+		ExcludeTenantTags:          args.ExcludeTenantTags,
+		ExcludeTenantTagSets:       args.ExcludeTenantTagSets,
+		ExcludeTenantTagSetsRegex:  args.ExcludeTenantTagSetsRegex,
+		ExcludeTenantTagSetsExcept: args.ExcludeTenantTagSetsExcept,
+		ExcludeAllTenantTagSets:    args.ExcludeAllTenantTagSets,
+		ErrGroup:                   nil,
 	}
 
 	tenantVariableConverter := converters.TenantVariableConverter{
@@ -736,7 +753,14 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAllFeeds:           args.ExcludeAllFeeds,
 		Excluder:                  converters.DefaultExcluder{},
 	}
-	workerPoolConverter := converters.WorkerPoolConverter{Client: &octopusClient}
+	workerPoolConverter := converters.WorkerPoolConverter{
+		Client:                   &octopusClient,
+		ExcludeWorkerpools:       args.ExcludeWorkerpools,
+		ExcludeWorkerpoolsRegex:  args.ExcludeWorkerpoolsRegex,
+		ExcludeWorkerpoolsExcept: args.ExcludeWorkerpoolsExcept,
+		ExcludeAllWorkerpools:    args.ExcludeAllWorkerpools,
+		Excluder:                 converters.DefaultExcluder{},
+	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
@@ -832,10 +856,14 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
 	}
 	tagsetConverter := converters.TagSetConverter{
-		Client:               &octopusClient,
-		Excluder:             converters.DefaultExcluder{},
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
+		Client:                     &octopusClient,
+		ExcludeTenantTags:          args.ExcludeTenantTags,
+		ExcludeTenantTagSets:       args.ExcludeTenantTagSets,
+		ExcludeTenantTagSetsRegex:  args.ExcludeTenantTagSetsRegex,
+		ExcludeTenantTagSetsExcept: args.ExcludeTenantTagSetsExcept,
+		ExcludeAllTenantTagSets:    args.ExcludeAllTenantTagSets,
+		Excluder:                   converters.DefaultExcluder{},
+		ErrGroup:                   nil,
 	}
 	channelConverter := converters.ChannelConverter{
 		Client:               &octopusClient,
@@ -878,7 +906,14 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeProjects:         args.ExcludeProjects,
 	}
 
-	machinePolicyConverter := converters.MachinePolicyConverter{Client: &octopusClient}
+	machinePolicyConverter := converters.MachinePolicyConverter{
+		Client:                       &octopusClient,
+		ExcludeMachinePolicies:       args.ExcludeMachinePolicies,
+		ExcludeMachinePoliciesRegex:  args.ExcludeMachinePoliciesRegex,
+		ExcludeMachinePoliciesExcept: args.ExcludeMachinePoliciesExcept,
+		ExcludeAllMachinePolicies:    args.ExcludeAllMachinePolicies,
+		Excluder:                     converters.DefaultExcluder{},
+	}
 	accountConverter := converters.AccountConverter{
 		Client:                    &octopusClient,
 		EnvironmentConverter:      environmentConverter,
@@ -1054,7 +1089,14 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAllFeeds:           args.ExcludeAllFeeds,
 		Excluder:                  converters.DefaultExcluder{},
 	}
-	workerPoolConverter := converters.WorkerPoolConverter{Client: &octopusClient}
+	workerPoolConverter := converters.WorkerPoolConverter{
+		Client:                   &octopusClient,
+		ExcludeWorkerpools:       args.ExcludeWorkerpools,
+		ExcludeWorkerpoolsRegex:  args.ExcludeWorkerpoolsRegex,
+		ExcludeWorkerpoolsExcept: args.ExcludeWorkerpoolsExcept,
+		ExcludeAllWorkerpools:    args.ExcludeAllWorkerpools,
+		Excluder:                 converters.DefaultExcluder{},
+	}
 
 	variableSetConverter := converters.VariableSetConverter{
 		Client:                            &octopusClient,

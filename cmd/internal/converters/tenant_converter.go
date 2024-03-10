@@ -26,17 +26,17 @@ type TenantConverter struct {
 	TenantVariableConverter ConverterByTenantId
 	EnvironmentConverter    ConverterAndLookupWithStatelessById
 	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
-	ExcludeTenantTagSets    args.ExcludeTenantTagSets
-	ExcludeTenantTags       args.ExcludeTenantTags
-	ExcludeTenants          args.ExcludeTenants
-	ExcludeTenantsRegex     args.ExcludeTenants
-	ExcludeTenantsWithTags  args.ExcludeTenantsWithTags
-	ExcludeTenantsExcept    args.ExcludeTenantsExcept
+	ExcludeTenantTagSets    args.StringSliceArgs
+	ExcludeTenantTags       args.StringSliceArgs
+	ExcludeTenants          args.StringSliceArgs
+	ExcludeTenantsRegex     args.StringSliceArgs
+	ExcludeTenantsWithTags  args.StringSliceArgs
+	ExcludeTenantsExcept    args.StringSliceArgs
 	ExcludeAllTenants       bool
 	Excluder                ExcludeByName
-	ExcludeProjects         args.ExcludeProjects
-	ExcludeProjectsExcept   args.ExcludeProjects
-	ExcludeProjectsRegex    args.ExcludeProjectsRegex
+	ExcludeProjects         args.StringSliceArgs
+	ExcludeProjectsExcept   args.StringSliceArgs
+	ExcludeProjectsRegex    args.StringSliceArgs
 	ExcludeAllProjects      bool
 	ErrGroup                *errgroup.Group
 }

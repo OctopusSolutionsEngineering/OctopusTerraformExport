@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -21,8 +22,13 @@ const octopusdeployMachinePoliciesDataType = "octopusdeploy_machine_policies"
 const octopusdeployMachinePolicyResourceType = "octopusdeploy_machine_policy"
 
 type MachinePolicyConverter struct {
-	Client   client.OctopusClient
-	ErrGroup *errgroup.Group
+	Client                       client.OctopusClient
+	ErrGroup                     *errgroup.Group
+	ExcludeMachinePolicies       args.StringSliceArgs
+	ExcludeMachinePoliciesRegex  args.StringSliceArgs
+	ExcludeMachinePoliciesExcept args.StringSliceArgs
+	ExcludeAllMachinePolicies    bool
+	Excluder                     ExcludeByName
 }
 
 func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -34,6 +40,10 @@ func (c MachinePolicyConverter) AllToStatelessHcl(dependencies *data.ResourceDet
 }
 
 func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllMachinePolicies {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.MachinePolicy]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -42,6 +52,10 @@ func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *data.Reso
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllMachinePolicies, c.ExcludeMachinePolicies, c.ExcludeMachinePoliciesRegex, c.ExcludeMachinePoliciesExcept) {
+			continue
+		}
+
 		zap.L().Info("Machine Policy: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -77,6 +91,10 @@ func (c MachinePolicyConverter) toHclById(id string, stateless bool, dependencie
 		return err
 	}
 
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllMachinePolicies, c.ExcludeMachinePolicies, c.ExcludeMachinePoliciesRegex, c.ExcludeMachinePoliciesExcept) {
+		return nil
+	}
+
 	zap.L().Info("Machine Policy: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -100,6 +118,10 @@ func (c MachinePolicyConverter) writeData(file *hclwrite.File, resource octopus2
 }
 
 func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+
+	if c.Excluder.IsResourceExcludedWithRegex(machinePolicy.Name, c.ExcludeAllMachinePolicies, c.ExcludeMachinePolicies, c.ExcludeMachinePoliciesRegex, c.ExcludeMachinePoliciesExcept) {
+		return nil
+	}
 
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 

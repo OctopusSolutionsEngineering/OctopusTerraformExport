@@ -21,16 +21,16 @@ const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_pro
 
 type TenantVariableConverter struct {
 	Client                    client.OctopusClient
-	ExcludeTenants            args.ExcludeTenants
-	ExcludeTenantsWithTags    args.ExcludeTenantsWithTags
-	ExcludeTenantsExcept      args.ExcludeTenantsExcept
+	ExcludeTenants            args.StringSliceArgs
+	ExcludeTenantsWithTags    args.StringSliceArgs
+	ExcludeTenantsExcept      args.StringSliceArgs
 	ExcludeAllTenants         bool
 	Excluder                  ExcludeByName
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
-	ExcludeProjects           args.ExcludeProjects
-	ExcludeProjectsExcept     args.ExcludeProjects
-	ExcludeProjectsRegex      args.ExcludeProjectsRegex
+	ExcludeProjects           args.StringSliceArgs
+	ExcludeProjectsExcept     args.StringSliceArgs
+	ExcludeProjectsRegex      args.StringSliceArgs
 	ExcludeAllProjects        bool
 	ErrGroup                  *errgroup.Group
 }

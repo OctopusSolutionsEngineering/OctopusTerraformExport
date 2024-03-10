@@ -20,11 +20,14 @@ const octopusdeployTagResourceType = "octopusdeploy_tag"
 const octopusdeployTagSetsData = "octopusdeploy_tag_sets"
 
 type TagSetConverter struct {
-	Client               client.OctopusClient
-	ExcludeTenantTags    args.ExcludeTenantTags
-	ExcludeTenantTagSets args.ExcludeTenantTagSets
-	Excluder             ExcludeByName
-	ErrGroup             *errgroup.Group
+	Client                     client.OctopusClient
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	ExcludeTenantTagSetsRegex  args.StringSliceArgs
+	ExcludeTenantTagSetsExcept args.StringSliceArgs
+	ExcludeAllTenantTagSets    bool
+	Excluder                   ExcludeByName
+	ErrGroup                   *errgroup.Group
 }
 
 func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -36,6 +39,10 @@ func (c *TagSetConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCo
 }
 
 func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTenantTagSets {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.TagSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -44,6 +51,10 @@ func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTenantTagSets, c.ExcludeTenantTagSets, c.ExcludeTenantTagSetsRegex, c.ExcludeTenantTagSetsExcept) {
+			continue
+		}
+
 		zap.L().Info("Tagset: " + resource.Id)
 		err = c.toHcl(resource, stateless, dependencies)
 
@@ -64,7 +75,7 @@ func (c *TagSetConverter) GetResourceType() string {
 }
 
 func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependencies *data.ResourceDetailsCollection) error {
-	if c.Excluder.IsResourceExcluded(tagSet.Name, false, c.ExcludeTenantTagSets, nil) {
+	if c.Excluder.IsResourceExcludedWithRegex(tagSet.Name, c.ExcludeAllTenantTagSets, c.ExcludeTenantTagSets, c.ExcludeTenantTagSetsRegex, c.ExcludeTenantTagSetsExcept) {
 		return nil
 	}
 

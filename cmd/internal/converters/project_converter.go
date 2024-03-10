@@ -40,9 +40,9 @@ type ProjectConverter struct {
 	IgnoreProjectChanges        bool
 	IgnoreProjectGroupChanges   bool
 	IgnoreProjectNameChanges    bool
-	ExcludeProjects             args.ExcludeProjects
-	ExcludeProjectsExcept       args.ExcludeProjects
-	ExcludeProjectsRegex        args.ExcludeProjectsRegex
+	ExcludeProjects             args.StringSliceArgs
+	ExcludeProjectsExcept       args.StringSliceArgs
+	ExcludeProjectsRegex        args.StringSliceArgs
 	ExcludeAllProjects          bool
 	DummySecretVariableValues   bool
 	DummySecretGenerator        DummySecretGenerator

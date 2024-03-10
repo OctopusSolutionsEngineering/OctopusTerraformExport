@@ -21,8 +21,8 @@ type AccountConverter struct {
 	TenantConverter           ConverterById
 	DummySecretVariableValues bool
 	DummySecretGenerator      DummySecretGenerator
-	ExcludeTenantTags         args.ExcludeTenantTags
-	ExcludeTenantTagSets      args.ExcludeTenantTagSets
+	ExcludeTenantTags         args.StringSliceArgs
+	ExcludeTenantTagSets      args.StringSliceArgs
 	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group

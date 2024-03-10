@@ -50,12 +50,12 @@ type VariableSetConverter struct {
 	DefaultSecretVariableValues         bool
 	DummySecretVariableValues           bool
 	ExcludeAllProjectVariables          bool
-	ExcludeProjectVariables             args.ExcludeVariables
-	ExcludeProjectVariablesExcept       args.ExcludeVariables
-	ExcludeProjectVariablesRegex        args.ExcludeVariables
+	ExcludeProjectVariables             args.StringSliceArgs
+	ExcludeProjectVariablesExcept       args.StringSliceArgs
+	ExcludeProjectVariablesRegex        args.StringSliceArgs
 	IgnoreProjectChanges                bool
 	DummySecretGenerator                DummySecretGenerator
-	ExcludeVariableEnvironmentScopes    args.ExcludeVariableEnvironmentScopes
+	ExcludeVariableEnvironmentScopes    args.StringSliceArgs
 	excludeVariableEnvironmentScopesIds []string
 	Excluder                            ExcludeByName
 	ErrGroup                            *errgroup.Group

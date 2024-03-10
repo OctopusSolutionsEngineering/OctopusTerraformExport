@@ -92,7 +92,7 @@ func (e DefaultExcluder) IsResourceExcludedWithRegex(resourceName string, exclud
 	return false
 }
 
-func (e DefaultExcluder) FilteredTenantTags(tenantTags []string, excludeTenantTags args.ExcludeTenantTags, excludeTenantTagSets args.ExcludeTenantTagSets) []string {
+func (e DefaultExcluder) FilteredTenantTags(tenantTags []string, excludeTenantTags args.StringSliceArgs, excludeTenantTagSets args.StringSliceArgs) []string {
 	if tenantTags == nil {
 		return []string{}
 	}

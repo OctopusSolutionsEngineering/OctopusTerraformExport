@@ -26,9 +26,9 @@ type RunbookConverter struct {
 	RunbookProcessConverter      ConverterAndLookupByIdAndName
 	EnvironmentConverter         ConverterAndLookupWithStatelessById
 	ProjectConverter             ConverterAndLookupWithStatelessById
-	ExcludedRunbooks             args.ExcludeRunbooks
-	ExcludeRunbooksRegex         args.ExcludeRunbooks
-	ExcludeRunbooksExcept        args.ExcludeRunbooks
+	ExcludedRunbooks             args.StringSliceArgs
+	ExcludeRunbooksRegex         args.StringSliceArgs
+	ExcludeRunbooksExcept        args.StringSliceArgs
 	ExcludeAllRunbooks           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 	Excluder                     ExcludeByName
