@@ -30,15 +30,15 @@ type DeploymentProcessConverter struct {
 	LimitAttributeLength   int
 }
 
-func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndBranch(parentId, branch, false, dependencies)
+func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndBranch(parentId, branch, recursive, false, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndBranch(parentId, branch, true, dependencies)
+	return c.toHclByIdAndBranch(parentId, branch, true, true, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 		return err
 	}
 
-	return c.toHcl(resource, project, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
+	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -104,15 +104,15 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", false, dependencies)
+func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, "", recursive, false, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", true, dependencies)
+	return c.toHclByIdAndName(id, "", true, true, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -142,7 +142,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, statel
 	}
 
 	zap.L().Info("Deployment Process: " + resource.Id)
-	return c.toHcl(resource, project, project.HasCacConfigured(), true, false, stateless, project.Name, dependencies)
+	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
 }
 
 func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {

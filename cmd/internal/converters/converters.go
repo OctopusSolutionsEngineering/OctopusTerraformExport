@@ -73,7 +73,7 @@ type ConverterAndWithLookupsById interface {
 
 // ConverterByIdWithName converts an individual resource by its ID, and uses the supplied name for the Terraform resource
 type ConverterByIdWithName interface {
-	ToHclByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByIdAndName(id string, name string, recursive bool, dependencies *data.ResourceDetailsCollection) error
 	ToHclStatelessByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
 }
 
@@ -87,7 +87,7 @@ type ConverterLookupByIdWithName interface {
 // references external resources via a data source lookup
 type ConverterLookupByIdWithBranch interface {
 	ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
-	ToHclByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error
 	ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
 }
 

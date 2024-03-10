@@ -461,6 +461,8 @@ func (o *OctopusApiClient) bodyToString(body io.Reader) (string, error) {
 }
 
 func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
+	zap.L().Debug("Getting " + resourceType)
+
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {

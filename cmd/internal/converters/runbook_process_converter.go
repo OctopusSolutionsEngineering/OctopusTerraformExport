@@ -29,15 +29,15 @@ type RunbookProcessConverter struct {
 	LimitAttributeLength   int
 }
 
-func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, runbookName, false, dependencies)
+func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(id, runbookName, recursive, false, dependencies)
 }
 
 func (c RunbookProcessConverter) ToHclStatelessByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, runbookName, true, dependencies)
+	return c.toHclByIdAndName(id, runbookName, true, true, dependencies)
 }
 
-func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -67,7 +67,7 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, runbook.ProjectId, true, false, stateless, runbookName, dependencies)
+	return c.toHcl(resource, runbook.ProjectId, recursive, false, stateless, runbookName, dependencies)
 }
 
 func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {

@@ -144,7 +144,7 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, true, false, parentCount != nil, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, false, false, parentCount != nil, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error {

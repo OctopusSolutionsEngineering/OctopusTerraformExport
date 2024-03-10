@@ -767,7 +767,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 			if stateless {
 				err = c.DeploymentProcessConverter.ToHclStatelessByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
 			} else {
-				err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+				err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, recursive, dependencies)
 			}
 		}
 
@@ -790,7 +790,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 			if stateless {
 				err = c.DeploymentProcessConverter.ToHclStatelessByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
 			} else {
-				err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, dependencies)
+				err = c.DeploymentProcessConverter.ToHclByIdAndBranch(project.Id, branch.CanonicalName, recursive, dependencies)
 			}
 
 		}
@@ -871,7 +871,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 			if stateless {
 				err = c.RunbookConverter.ToHclStatelessByIdAndName(project.Id, project.Name, dependencies)
 			} else {
-				err = c.RunbookConverter.ToHclByIdAndName(project.Id, project.Name, dependencies)
+				err = c.RunbookConverter.ToHclByIdAndName(project.Id, project.Name, recursive, dependencies)
 			}
 		}
 
