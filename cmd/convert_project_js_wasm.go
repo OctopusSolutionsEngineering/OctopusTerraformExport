@@ -25,10 +25,26 @@ func main() {
 	<-c
 }
 
+func getStringArg(funcArgs []js.Value, index int) string {
+	if len(funcArgs) <= index {
+		return ""
+	}
+
+	return funcArgs[index].String()
+}
+
+func getBoolArg(funcArgs []js.Value, index int) bool {
+	if len(funcArgs) <= index {
+		return false
+	}
+
+	return funcArgs[index].Bool()
+}
+
 func convertSpace() js.Func {
 	return js.FuncOf(func(this js.Value, funcArgs []js.Value) any {
-		if len(funcArgs) < 18 {
-			zap.L().Error("Must pass in all the required variables")
+		if len(funcArgs) < 2 {
+			zap.L().Error("Must pass url and space")
 			return nil
 		}
 
@@ -40,21 +56,21 @@ func convertSpace() js.Func {
 				Url:                              funcArgs[0].String(),
 				Space:                            funcArgs[1].String(),
 				ExcludeAllProjects:               funcArgs[2].Bool(),
-				ExcludeProjectsExcept:            strings.Split(funcArgs[3].String(), ","),
-				ExcludeAllTargets:                funcArgs[4].Bool(),
-				ExcludeTargetsExcept:             strings.Split(funcArgs[5].String(), ","),
-				ExcludeAllRunbooks:               funcArgs[6].Bool(),
-				ExcludeRunbooksExcept:            strings.Split(funcArgs[7].String(), ","),
-				ExcludeAllLibraryVariableSets:    funcArgs[8].Bool(),
-				ExcludeLibraryVariableSetsExcept: strings.Split(funcArgs[9].String(), ","),
-				ExcludeAllTenants:                funcArgs[10].Bool(),
-				ExcludeTenantsExcept:             strings.Split(funcArgs[11].String(), ","),
-				ExcludeAllEnvironments:           funcArgs[12].Bool(),
-				ExcludeEnvironmentsExcept:        strings.Split(funcArgs[13].String(), ","),
-				ExcludeAllFeeds:                  funcArgs[14].Bool(),
-				ExcludeFeedsExcept:               strings.Split(funcArgs[15].String(), ","),
-				ExcludeAllAccounts:               funcArgs[16].Bool(),
-				ExcludeAccountsExcept:            strings.Split(funcArgs[17].String(), ","),
+				ExcludeProjectsExcept:            strings.Split(getStringArg(funcArgs, 3), ","),
+				ExcludeAllTargets:                getBoolArg(funcArgs, 4),
+				ExcludeTargetsExcept:             strings.Split(getStringArg(funcArgs, 5), ","),
+				ExcludeAllRunbooks:               getBoolArg(funcArgs, 6),
+				ExcludeRunbooksExcept:            strings.Split(getStringArg(funcArgs, 7), ","),
+				ExcludeAllLibraryVariableSets:    getBoolArg(funcArgs, 8),
+				ExcludeLibraryVariableSetsExcept: strings.Split(getStringArg(funcArgs, 9), ","),
+				ExcludeAllTenants:                getBoolArg(funcArgs, 10),
+				ExcludeTenantsExcept:             strings.Split(getStringArg(funcArgs, 11), ","),
+				ExcludeAllEnvironments:           getBoolArg(funcArgs, 12),
+				ExcludeEnvironmentsExcept:        strings.Split(getStringArg(funcArgs, 13), ","),
+				ExcludeAllFeeds:                  getBoolArg(funcArgs, 14),
+				ExcludeFeedsExcept:               strings.Split(getStringArg(funcArgs, 15), ","),
+				ExcludeAllAccounts:               getBoolArg(funcArgs, 16),
+				ExcludeAccountsExcept:            strings.Split(getStringArg(funcArgs, 17), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,
