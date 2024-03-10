@@ -46,6 +46,10 @@ func (c *LibraryVariableSetConverter) AllToStatelessHcl(dependencies *data.Resou
 }
 
 func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllLibraryVariableSets {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

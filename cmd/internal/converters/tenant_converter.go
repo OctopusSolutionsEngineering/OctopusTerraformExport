@@ -50,6 +50,10 @@ func (c *TenantConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCo
 }
 
 func (c *TenantConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTenants {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -78,6 +82,10 @@ func (c *TenantConverter) ToHclByProjectId(projectId string, dependencies *data.
 }
 
 func (c *TenantConverter) toHclByProjectId(projectId string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTenants {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
@@ -96,6 +104,10 @@ func (c *TenantConverter) toHclByProjectId(projectId string, stateless bool, dep
 }
 
 func (c *TenantConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTenants {
+		return nil
+	}
+
 	resource := octopus2.Tenant{}
 	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
@@ -112,6 +124,10 @@ func (c *TenantConverter) ToHclById(id string, dependencies *data.ResourceDetail
 }
 
 func (c *TenantConverter) ToHclLookupByProjectId(projectId string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllTenants {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.Tenant]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
@@ -149,11 +165,6 @@ func (c *TenantConverter) writeData(file *hclwrite.File, resource octopus2.Tenan
 func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants
-	if c.Excluder.IsResourceExcluded(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsExcept) {
-		return nil
-	}
-
-	// Ignore excluded runbooks
 	if c.Excluder.IsResourceExcludedWithRegex(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsRegex, c.ExcludeTenantsExcept) {
 		return nil
 	}

@@ -48,6 +48,10 @@ func (c FeedConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColle
 }
 
 func (c FeedConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllFeeds {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.Feed]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

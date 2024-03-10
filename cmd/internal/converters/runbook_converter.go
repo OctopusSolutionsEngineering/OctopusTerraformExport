@@ -37,6 +37,10 @@ type RunbookConverter struct {
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllRunbooks {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
@@ -72,7 +76,6 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 }
 
 func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-
 	return c.toHclByIdAndName(projectId, projectName, recursive, false, dependencies)
 }
 
@@ -81,6 +84,10 @@ func (c *RunbookConverter) ToHclStatelessByIdAndName(projectId string, projectNa
 }
 
 func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllRunbooks {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -101,6 +108,10 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 }
 
 func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllRunbooks {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 

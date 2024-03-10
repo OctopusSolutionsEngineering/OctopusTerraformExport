@@ -41,6 +41,10 @@ func (c AccountConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCo
 }
 
 func (c AccountConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllAccounts {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.Account]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 

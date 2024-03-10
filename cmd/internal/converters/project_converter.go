@@ -65,6 +65,10 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceD
 		return errors.New("this function can not be called whe LookupOnlyMode is true")
 	}
 
+	if c.ExcludeAllProjects {
+		return nil
+	}
+
 	collection := octopus.GeneralCollection[octopus.Project]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
