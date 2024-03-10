@@ -487,6 +487,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 
 	variableSetConverter := converters.VariableSetConverter{
 		Client:                            &octopusClient,
+		LimitAttributeLength:              args.LimitAttributeLength,
 		ChannelConverter:                  channelConverter,
 		EnvironmentConverter:              environmentConverter,
 		TagSetConverter:                   &tagsetConverter,
@@ -1118,6 +1119,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 
 	variableSetConverter := converters.VariableSetConverter{
 		Client:                            &octopusClient,
+		LimitAttributeLength:              args.LimitAttributeLength,
 		ChannelConverter:                  channelConverter,
 		EnvironmentConverter:              environmentConverter,
 		TagSetConverter:                   &tagsetConverter,
@@ -1150,6 +1152,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
 		Client:                            &octopusClient,
+		LimitAttributeLength:              args.LimitAttributeLength,
 		ChannelConverter:                  channelConverter,
 		EnvironmentConverter:              environmentConverter,
 		TagSetConverter:                   &tagsetConverter,

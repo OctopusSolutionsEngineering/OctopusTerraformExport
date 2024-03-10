@@ -8,7 +8,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"regexp"
 	"strings"
 )
 
@@ -231,23 +230,9 @@ func (c OctopusActionProcessor) LimitPropertyLength(length int, retainVariables 
 		return properties
 	}
 
-	// Regex that matches Octostache and script functions referencing variables
-	variableRe := regexp.MustCompile(`#\{.*?}|\$OctopusParameters\[.*?]|Octopus.Parameters\[.*?]|get_octopusvariable ".*?"|get_octopusvariable\(.*?\)`)
-
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if len(v) > length {
-			sanitisedProperties[k] = v[0 : length-1]
-			if retainVariables {
-				matches := variableRe.FindAllString(v, -1)
-				if len(matches) > 0 {
-					sanitisedProperties[k] += " " + strings.Join(matches, " ")
-				}
-			}
-
-		} else {
-			sanitisedProperties[k] = v
-		}
+		sanitisedProperties[k] = LimitAttributeLength(length, retainVariables, v)
 	}
 	return sanitisedProperties
 }

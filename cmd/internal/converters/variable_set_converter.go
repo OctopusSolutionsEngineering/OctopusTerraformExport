@@ -60,6 +60,7 @@ type VariableSetConverter struct {
 	Excluder                            ExcludeByName
 	ErrGroup                            *errgroup.Group
 	ExcludeTerraformVariables           bool
+	LimitAttributeLength                int
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
@@ -507,7 +508,7 @@ func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.F
 			Nullable:    true,
 			Sensitive:   false,
 			Description: "The value associated with the variable " + variable.Name,
-			Default:     strutil.StrPointer(strutil.EmptyIfNil(value)),
+			Default:     strutil.StrPointer(LimitAttributeLength(c.LimitAttributeLength, true, strutil.EmptyIfNil(value))),
 		}
 
 		block := gohcl.EncodeAsBlock(regularVariable, "variable")
