@@ -255,6 +255,10 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
 		ErrGroup:                  &group,
+		ExcludeAccounts:           args.ExcludeAccounts,
+		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
+		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
+		ExcludeAllAccounts:        args.ExcludeAllAccounts,
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
@@ -707,6 +711,10 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
+		ExcludeAccounts:           args.ExcludeAccounts,
+		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
+		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
+		ExcludeAllAccounts:        args.ExcludeAllAccounts,
 	}
 
 	feedConverter := converters.FeedConverter{
@@ -863,6 +871,10 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
+		ExcludeAccounts:           args.ExcludeAccounts,
+		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
+		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
+		ExcludeAllAccounts:        args.ExcludeAllAccounts,
 	}
 	certificateConverter := converters.CertificateConverter{
 		Client:                    octopusClient,

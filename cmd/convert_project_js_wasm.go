@@ -27,7 +27,7 @@ func main() {
 
 func convertSpace() js.Func {
 	return js.FuncOf(func(this js.Value, funcArgs []js.Value) any {
-		if len(funcArgs) < 13 {
+		if len(funcArgs) < 18 {
 			zap.L().Error("Must pass in all the required variables")
 			return nil
 		}
@@ -53,6 +53,8 @@ func convertSpace() js.Func {
 				ExcludeEnvironmentsExcept:        strings.Split(funcArgs[13].String(), ","),
 				ExcludeAllFeeds:                  funcArgs[14].Bool(),
 				ExcludeFeedsExcept:               strings.Split(funcArgs[15].String(), ","),
+				ExcludeAllAccounts:               funcArgs[16].Bool(),
+				ExcludeAccountsExcept:            strings.Split(funcArgs[17].String(), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,

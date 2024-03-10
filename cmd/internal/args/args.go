@@ -60,6 +60,11 @@ type Arguments struct {
 	ExcludeFeedsExcept StringSliceArgs
 	ExcludeAllFeeds    bool
 
+	ExcludeAccounts       StringSliceArgs
+	ExcludeAccountsRegex  StringSliceArgs
+	ExcludeAccountsExcept StringSliceArgs
+	ExcludeAllAccounts    bool
+
 	IgnoreProjectChanges             bool
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
@@ -389,7 +394,12 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.ExcludeAllFeeds, "excludeAllFeeds", false, "Exclude all feeds.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeFeeds, "excludeFeeds", "A feed to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeFeedsRegex, "excludeFeedsRegex", "A feed to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
-	flags.Var(&arguments.ExcludeFeedsExcept, "excludeFeedsExcept", "All environments except those defined with excludeFeedsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeFeedsExcept, "excludeFeedsExcept", "All feeds except those defined with excludeFeedsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllAccounts, "excludeAllAccounts", false, "Exclude all Accounts.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeAccounts, "excludeAccounts", "A feed to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeAccountsRegex, "excludeAccountsRegex", "A feed to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeAccountsExcept, "excludeAccountsExcept", "All accounts except those defined with excludeAccountsExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
 	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeAllProjectVariables", false, "Exclude all project variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported. WARNING: steps that used this variable may no longer function correctly.")

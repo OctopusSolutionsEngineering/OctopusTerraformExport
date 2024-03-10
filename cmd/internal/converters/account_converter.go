@@ -26,6 +26,10 @@ type AccountConverter struct {
 	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group
+	ExcludeAccounts           args.StringSliceArgs
+	ExcludeAccountsRegex      args.StringSliceArgs
+	ExcludeAccountsExcept     args.StringSliceArgs
+	ExcludeAllAccounts        bool
 }
 
 func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -45,6 +49,10 @@ func (c AccountConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllAccounts, c.ExcludeAccounts, c.ExcludeAccountsRegex, c.ExcludeAccountsExcept) {
+			continue
+		}
+
 		zap.L().Info("Account: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -100,6 +108,10 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *data.Resource
 		return err
 	}
 
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllAccounts, c.ExcludeAccounts, c.ExcludeAccountsRegex, c.ExcludeAccountsExcept) {
+		return nil
+	}
+
 	thisResource := data.ResourceDetails{}
 
 	resourceName := "account_" + sanitizer.SanitizeName(resource.Name)
@@ -149,6 +161,10 @@ func (c AccountConverter) buildData(resourceName string, resource octopus.Accoun
 // Terraform state is not maintained between apply commands)
 // dependencies maintains the collection of exported Terraform resources
 func (c AccountConverter) toHcl(account octopus.Account, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.Excluder.IsResourceExcludedWithRegex(account.Name, c.ExcludeAllAccounts, c.ExcludeAccounts, c.ExcludeAccountsRegex, c.ExcludeAccountsExcept) {
+		return nil
+	}
+
 	if recursive {
 		err := c.exportDependencies(account, dependencies)
 
