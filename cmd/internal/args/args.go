@@ -510,7 +510,7 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 
 	arguments.ExcludeTargetsExcept = filteredMachines
 
-	filteredRunbooks, err := filterNamedResource[octopus.Machine](octopusClient, "Runbooks", arguments.ExcludeRunbooksExcept)
+	filteredRunbooks, err := filterNamedResource[octopus.Runbook](octopusClient, "Runbooks", arguments.ExcludeRunbooksExcept)
 
 	if err != nil {
 		return err
@@ -518,7 +518,7 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 
 	arguments.ExcludeRunbooksExcept = filteredRunbooks
 
-	filteredVariableSets, err := filterNamedResource[octopus.Machine](octopusClient, "LibraryVariableSets", arguments.ExcludeLibraryVariableSetsExcept)
+	filteredVariableSets, err := filterNamedResource[octopus.LibraryVariableSet](octopusClient, "LibraryVariableSets", arguments.ExcludeLibraryVariableSetsExcept)
 
 	if err != nil {
 		return err

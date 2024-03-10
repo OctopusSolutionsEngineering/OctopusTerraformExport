@@ -1,8 +1,7 @@
 package octopus
 
 type Runbook struct {
-	Id                         string
-	Name                       string
+	NameId
 	Slug                       *string
 	Description                *string
 	RunbookProcessId           *string

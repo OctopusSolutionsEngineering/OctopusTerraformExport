@@ -1,8 +1,7 @@
 package octopus
 
 type LibraryVariableSet struct {
-	Id            string
-	Name          string
+	NameId
 	Description   *string
 	VariableSetId string
 	ContentType   *string
