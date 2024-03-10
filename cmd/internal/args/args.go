@@ -70,6 +70,11 @@ type Arguments struct {
 	ExcludeCertificatesExcept StringSliceArgs
 	ExcludeAllCertificates    bool
 
+	ExcludeLifecycles       StringSliceArgs
+	ExcludeLifecyclesRegex  StringSliceArgs
+	ExcludeLifecyclesExcept StringSliceArgs
+	ExcludeAllLifecycles    bool
+
 	IgnoreProjectChanges             bool
 	IgnoreProjectVariableChanges     bool
 	IgnoreProjectGroupChanges        bool
@@ -410,6 +415,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeCertificates, "excludeCertificates", "A certificate to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeCertificatesRegex, "excludeCertificatesRegex", "A certificate to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeCertificatesExcept, "excludeCertificatesExcept", "All Certificates except those defined with excludeCertificatesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllLifecycles, "excludeAllLifecycles", false, "Exclude all lifecycles.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeLifecycles, "excludeLifecycles", "A lifecycle to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeLifecyclesRegex, "excludeLifecyclesRegex", "A lifecycle to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+	flags.Var(&arguments.ExcludeLifecyclesExcept, "excludeLifecyclesExcept", "All lifecycles except those defined with excludeLifecyclesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
 	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeAllProjectVariables", false, "Exclude all project variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported. WARNING: steps that used this variable may no longer function correctly.")

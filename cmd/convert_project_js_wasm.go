@@ -73,6 +73,8 @@ func convertSpace() js.Func {
 				ExcludeAccountsExcept:            strings.Split(getStringArg(funcArgs, 17), ","),
 				ExcludeAllCertificates:           getBoolArg(funcArgs, 18),
 				ExcludeCertificatesExcept:        strings.Split(getStringArg(funcArgs, 19), ","),
+				ExcludeAllLifecycles:             getBoolArg(funcArgs, 20),
+				ExcludeLifecyclesExcept:          strings.Split(getStringArg(funcArgs, 21), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,

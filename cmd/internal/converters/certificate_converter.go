@@ -55,7 +55,7 @@ func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.Resour
 
 	for _, resource := range collection.Items {
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
-			return nil
+			continue
 		}
 
 		zap.L().Info("Certificate: " + resource.Id)

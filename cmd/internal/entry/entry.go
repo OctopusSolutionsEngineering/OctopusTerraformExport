@@ -262,9 +262,14 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
-		Client:               &octopusClient,
-		EnvironmentConverter: environmentConverter,
-		ErrGroup:             &group,
+		Client:                  &octopusClient,
+		EnvironmentConverter:    environmentConverter,
+		ErrGroup:                &group,
+		ExcludeLifecycles:       args.ExcludeLifecycles,
+		ExcludeLifecyclesRegex:  args.ExcludeLifecyclesRegex,
+		ExcludeLifecyclesExcept: args.ExcludeLifecyclesExcept,
+		ExcludeAllLifecycles:    args.ExcludeAllLifecycles,
+		Excluder:                converters.DefaultExcluder{},
 	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    &octopusClient,
@@ -811,7 +816,16 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
 		Excluder:                  converters.DefaultExcluder{},
 	}
-	lifecycleConverter := converters.LifecycleConverter{Client: &octopusClient, EnvironmentConverter: environmentConverter}
+	lifecycleConverter := converters.LifecycleConverter{
+		Client:                  &octopusClient,
+		EnvironmentConverter:    environmentConverter,
+		ErrGroup:                nil,
+		ExcludeLifecycles:       args.ExcludeLifecycles,
+		ExcludeLifecyclesRegex:  args.ExcludeLifecyclesRegex,
+		ExcludeLifecyclesExcept: args.ExcludeLifecyclesExcept,
+		ExcludeAllLifecycles:    args.ExcludeAllLifecycles,
+		Excluder:                converters.DefaultExcluder{},
+	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    &octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,

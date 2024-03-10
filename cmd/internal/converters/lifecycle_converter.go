@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -18,9 +19,14 @@ const octopusdeployLifecyclesDataType = "octopusdeploy_lifecycles"
 const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
 
 type LifecycleConverter struct {
-	Client               client.OctopusClient
-	EnvironmentConverter ConverterAndLookupWithStatelessById
-	ErrGroup             *errgroup.Group
+	Client                  client.OctopusClient
+	EnvironmentConverter    ConverterAndLookupWithStatelessById
+	ErrGroup                *errgroup.Group
+	ExcludeLifecycles       args.StringSliceArgs
+	ExcludeLifecyclesRegex  args.StringSliceArgs
+	ExcludeLifecyclesExcept args.StringSliceArgs
+	ExcludeAllLifecycles    bool
+	Excluder                ExcludeByName
 }
 
 func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -32,6 +38,10 @@ func (c LifecycleConverter) AllToStatelessHcl(dependencies *data.ResourceDetails
 }
 
 func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllLifecycles {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.Lifecycle]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -40,6 +50,10 @@ func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.Resource
 	}
 
 	for _, resource := range collection.Items {
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
+			continue
+		}
+
 		zap.L().Info("Lifecycle: " + resource.Id)
 		err = c.toHcl(resource, false, false, stateless, dependencies)
 
@@ -76,6 +90,10 @@ func (c LifecycleConverter) toHclById(id string, stateless bool, dependencies *d
 		return err
 	}
 
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
+		return nil
+	}
+
 	zap.L().Info("Lifecycle: " + resource.Id)
 	return c.toHcl(resource, true, false, stateless, dependencies)
 
@@ -96,6 +114,10 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.Resour
 
 	if err != nil {
 		return err
+	}
+
+	if c.Excluder.IsResourceExcludedWithRegex(lifecycle.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
+		return nil
 	}
 
 	return c.toHcl(lifecycle, false, true, false, dependencies)
@@ -121,6 +143,10 @@ func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus2.Lif
 }
 
 func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+
+	if c.Excluder.IsResourceExcludedWithRegex(lifecycle.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
+		return nil
+	}
 
 	if recursive {
 		// The environments are a dependency that we need to lookup
