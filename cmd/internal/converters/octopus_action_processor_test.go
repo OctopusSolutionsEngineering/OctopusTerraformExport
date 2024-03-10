@@ -14,3 +14,16 @@ func TestLimitAttributeLength(t *testing.T) {
 		t.Fatalf("Property was not processed correctly")
 	}
 }
+
+func TestLimitAttributeLengthZero(t *testing.T) {
+	processor := OctopusActionProcessor{}
+	properties := map[string]string{
+		"MyProperty": "This is a very long property that should be limited #{Variable1} $OctopusParameters['Variable2'] get_octopusvariable \"Variable3\" get_octopusvariable('Variable4')",
+	}
+
+	processedProperties := processor.LimitPropertyLength(0, true, properties)
+
+	if processedProperties["MyProperty"] != "This is a very long property that should be limited #{Variable1} $OctopusParameters['Variable2'] get_octopusvariable \"Variable3\" get_octopusvariable('Variable4')" {
+		t.Fatalf("Property was not processed correctly")
+	}
+}
