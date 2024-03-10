@@ -48,8 +48,9 @@ type ProjectConverter struct {
 	DummySecretGenerator        DummySecretGenerator
 	Excluder                    ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
-	LookupOnlyMode bool
-	ErrGroup       *errgroup.Group
+	LookupOnlyMode            bool
+	ErrGroup                  *errgroup.Group
+	ExcludeTerraformVariables bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -278,10 +279,15 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 	thisResource.ToHcl = func() (string, error) {
 
+		file := hclwrite.NewEmptyFile()
+
+		resourceName := c.writeProjectNameVariable(file, projectName, project.Name)
+		description := c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
+
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
-			ResourceName:                           "${var." + projectName + "_name}",
+			ResourceName:                           resourceName,
 			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no way to reference the package
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
@@ -299,6 +305,9 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
 			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+		hcl.WriteUnquotedAttribute(block, "description", "\""+description+"\"")
 
 		// There is no point ignoring changes for stateless exports
 		if !c.IgnoreProjectChanges && !stateless {
@@ -326,15 +335,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			}
 		}
 
-		file := hclwrite.NewEmptyFile()
-
 		if stateless {
 			c.writeData(file, "${var."+projectName+"_name}", projectName)
 			terraformResource.Count = strutil.StrPointer(thisResource.Count)
 		}
-
-		c.writeProjectNameVariable(file, projectName, project.Name)
-		c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
 
 		// write any variables used to define the value of tenant template secrets
 		for _, variable := range variables {
@@ -369,13 +373,9 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			}
 		}
 
-		block := gohcl.EncodeAsBlock(terraformResource, "resource")
-
 		if stateless {
 			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
-
-		hcl.WriteUnquotedAttribute(block, "description", "\"${var."+projectName+"_description_prefix}${var."+projectName+"_description}${var."+projectName+"_description_suffix}\"")
 
 		if c.IgnoreProjectChanges {
 			hcl.WriteLifecycleAllAttribute(block)
@@ -500,7 +500,11 @@ func (c *ProjectConverter) GetResourceType() string {
 	return "Projects"
 }
 
-func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
+func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) string {
+	if c.ExcludeTerraformVariables {
+		return projectResourceName
+	}
+
 	sanitizedProjectName := sanitizer.SanitizeName(projectName)
 
 	secretVariableResource := terraform.TerraformVariable{
@@ -515,9 +519,15 @@ func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, project
 	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
+
+	return "${var." + projectName + "_name}"
 }
 
-func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) {
+func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) string {
+	if c.ExcludeTerraformVariables {
+		return projectResourceDescription
+	}
+
 	sanitizedProjectName := sanitizer.SanitizeName(projectResourceName)
 
 	descriptionPrefixVariable := terraform.TerraformVariable{
@@ -562,6 +572,8 @@ func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, 
 	block := gohcl.EncodeAsBlock(descriptionVariable, "variable")
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
+
+	return "\"${var." + projectName + "_description_prefix}${var." + projectName + "_description}${var." + projectName + "_description_suffix}\""
 }
 
 func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string, stateless bool) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []data.ResourceDetails) {

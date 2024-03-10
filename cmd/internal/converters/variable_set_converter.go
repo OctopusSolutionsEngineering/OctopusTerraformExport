@@ -59,6 +59,7 @@ type VariableSetConverter struct {
 	excludeVariableEnvironmentScopesIds []string
 	Excluder                            ExcludeByName
 	ErrGroup                            *errgroup.Group
+	ExcludeTerraformVariables           bool
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
@@ -378,63 +379,22 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			value = c.getCertificates(value, dependencies)
 			value = c.getWorkerPools(value, dependencies)
 
+			normalValue := c.writeTerraformVariablesForString(file, v, resourceName, value)
+			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, resourceName)
+
 			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
 				Type:           octopusdeployVariableResourceType,
 				Count:          parentCount,
 				OwnerId:        parentLookup,
-				Value:          value,
+				Value:          normalValue,
 				ResourceName:   v.Name,
 				ResourceType:   v.Type,
 				Description:    v.Description,
-				SensitiveValue: c.convertSecretValue(v, resourceName),
+				SensitiveValue: sensitiveValue,
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
 				Scope:          c.convertScope(v, dependencies),
-			}
-
-			if v.IsSensitive {
-				var defaultValue *string = nil
-
-				// Dummy values take precedence over default values
-				if c.DummySecretVariableValues {
-					defaultValue = c.DummySecretGenerator.GetDummySecret()
-				} else if c.DefaultSecretVariableValues {
-					defaultValueLookup := "#{" + v.Name + "}"
-					defaultValue = &defaultValueLookup
-				}
-
-				secretVariableResource := terraform.TerraformVariable{
-					Name:        resourceName,
-					Type:        "string",
-					Nullable:    true,
-					Sensitive:   true,
-					Description: "The secret variable value associated with the variable " + v.Name,
-					Default:     defaultValue,
-				}
-
-				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-				hcl.WriteUnquotedAttribute(block, "type", "string")
-
-				file.Body().AppendBlock(block)
-			} else if v.Type == "String" && !hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
-				// Use a second terraform variable to allow the octopus variable to be defined at apply time.
-				// Note this only applies to string variables, as other types likely reference resources
-				// that are being created by terraform, and these dynamic values can not be used as default
-				// variable values.
-				terraformResource.Value = c.convertValue(v, resourceName)
-				regularVariable := terraform.TerraformVariable{
-					Name:        resourceName,
-					Type:        "string",
-					Nullable:    true,
-					Sensitive:   false,
-					Description: "The value associated with the variable " + v.Name,
-					Default:     strutil.StrPointer(strutil.EmptyIfNil(value)),
-				}
-
-				block := gohcl.EncodeAsBlock(regularVariable, "variable")
-				hcl.WriteUnquotedAttribute(block, "type", "string")
-				file.Body().AppendBlock(block)
 			}
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -488,6 +448,73 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			return string(file.Bytes()), nil
 		}
 		dependencies.AddResource(thisResource)
+	}
+
+	return nil
+}
+
+func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.File, variable octopus.Variable, resourceName string) *string {
+	if variable.IsSensitive {
+		// We don't know the value of secrets, so the value is just nil
+		if c.ExcludeTerraformVariables {
+			return nil
+		}
+
+		var defaultValue *string = nil
+
+		// Dummy values take precedence over default values
+		if c.DummySecretVariableValues {
+			defaultValue = c.DummySecretGenerator.GetDummySecret()
+		} else if c.DefaultSecretVariableValues {
+			defaultValueLookup := "#{" + variable.Name + "}"
+			defaultValue = &defaultValueLookup
+		}
+
+		secretVariableResource := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    true,
+			Sensitive:   true,
+			Description: "The secret variable value associated with the variable " + variable.Name,
+			Default:     defaultValue,
+		}
+
+		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+
+		file.Body().AppendBlock(block)
+
+		return c.convertSecretValue(variable, resourceName)
+	}
+
+	return nil
+}
+
+func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.File, variable octopus.Variable, resourceName string, value *string) *string {
+	if variable.Type == "String" && !hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
+		if c.ExcludeTerraformVariables {
+			return value
+		}
+
+		// Use a second terraform variable to allow the octopus variable to be defined at apply time.
+		// Note this only applies to string variables, as other types likely reference resources
+		// that are being created by terraform, and these dynamic values can not be used as default
+		// variable values.
+
+		regularVariable := terraform.TerraformVariable{
+			Name:        resourceName,
+			Type:        "string",
+			Nullable:    true,
+			Sensitive:   false,
+			Description: "The value associated with the variable " + variable.Name,
+			Default:     strutil.StrPointer(strutil.EmptyIfNil(value)),
+		}
+
+		block := gohcl.EncodeAsBlock(regularVariable, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
+		file.Body().AppendBlock(block)
+
+		return c.convertValue(variable, resourceName)
 	}
 
 	return nil

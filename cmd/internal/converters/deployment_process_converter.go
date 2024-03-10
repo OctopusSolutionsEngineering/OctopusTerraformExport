@@ -19,15 +19,16 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client                 client.OctopusClient
-	OctopusActionProcessor OctopusActionProcessor
-	IgnoreProjectChanges   bool
-	WorkerPoolProcessor    OctopusWorkerPoolProcessor
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	LimitAttributeLength   int
+	Client                    client.OctopusClient
+	OctopusActionProcessor    OctopusActionProcessor
+	IgnoreProjectChanges      bool
+	WorkerPoolProcessor       OctopusWorkerPoolProcessor
+	ExcludeTenantTags         args.StringSliceArgs
+	ExcludeTenantTagSets      args.StringSliceArgs
+	Excluder                  ExcludeByName
+	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength      int
+	ExcludeTerraformVariables bool
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -259,13 +260,12 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 				}
 
 				for _, p := range a.Packages {
-					variableName := c.writePackageIdVariable(
+					variableReference := c.writePackageIdVariable(
 						file,
 						strutil.EmptyIfNil(p.PackageId),
 						projectName,
 						strutil.EmptyIfNil(a.Name),
 						strutil.EmptyIfNil(p.Name))
-					variableReference := "${var." + variableName + "}"
 
 					// Don't look up a feed id that is a variable reference
 					feedId := p.FeedId
@@ -382,6 +382,10 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 }
 
 func (c DeploymentProcessConverter) writePackageIdVariable(file *hclwrite.File, defaultValue string, projectName string, stepName string, packageName string) string {
+	if c.ExcludeTerraformVariables {
+		return defaultValue
+	}
+
 	sanitizedProjectName := sanitizer.SanitizeName(projectName)
 	sanitizedPackageName := sanitizer.SanitizeName(packageName)
 	sanitizedStepName := sanitizer.SanitizeName(stepName)
@@ -407,5 +411,5 @@ func (c DeploymentProcessConverter) writePackageIdVariable(file *hclwrite.File, 
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
 
-	return variableName
+	return "${var." + variableName + "}"
 }

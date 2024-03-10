@@ -513,6 +513,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		DummySecretGenerator:              dummySecretGenerator,
 		Excluder:                          converters.DefaultExcluder{},
 		ErrGroup:                          &group,
+		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -593,13 +594,14 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 					WorkerPoolProcessor:     workerPoolProcessor,
 					GitCredentialsConverter: gitCredentialsConverter,
 				},
-				IgnoreProjectChanges: false,
-				WorkerPoolProcessor:  workerPoolProcessor,
-				ExcludeTenantTags:    args.ExcludeTenantTags,
-				ExcludeTenantTagSets: args.ExcludeTenantTagSets,
-				Excluder:             converters.DefaultExcluder{},
-				TagSetConverter:      &tagsetConverter,
-				LimitAttributeLength: args.LimitAttributeLength,
+				IgnoreProjectChanges:      false,
+				WorkerPoolProcessor:       workerPoolProcessor,
+				ExcludeTenantTags:         args.ExcludeTenantTags,
+				ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+				Excluder:                  converters.DefaultExcluder{},
+				TagSetConverter:           &tagsetConverter,
+				LimitAttributeLength:      args.LimitAttributeLength,
+				ExcludeTerraformVariables: args.ExcludeTerraformVariables,
 			},
 			TenantConverter: &tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -622,6 +624,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 			DummySecretGenerator:      dummySecretGenerator,
 			Excluder:                  converters.DefaultExcluder{},
 			ErrGroup:                  &group,
+			ExcludeTerraformVariables: args.ExcludeTerraformVariables,
 		},
 		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -774,9 +777,10 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	projectConverter := &converters.ProjectConverter{
-		LookupOnlyMode: true,
-		Client:         &octopusClient,
-		Excluder:       converters.DefaultExcluder{},
+		LookupOnlyMode:            true,
+		Client:                    &octopusClient,
+		Excluder:                  converters.DefaultExcluder{},
+		ExcludeTerraformVariables: args.ExcludeTerraformVariables,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -1140,6 +1144,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
 		Excluder:                          converters.DefaultExcluder{},
+		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -1171,6 +1176,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              false,
 		Excluder:                          converters.DefaultExcluder{},
+		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
@@ -1239,12 +1245,13 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 				WorkerPoolProcessor:     workerPoolProcessor,
 				GitCredentialsConverter: gitCredentialsConverter,
 			},
-			IgnoreProjectChanges: args.IgnoreProjectChanges,
-			WorkerPoolProcessor:  workerPoolProcessor,
-			ExcludeTenantTags:    args.ExcludeTenantTags,
-			ExcludeTenantTagSets: args.ExcludeTenantTagSets,
-			Excluder:             converters.DefaultExcluder{},
-			TagSetConverter:      &tagsetConverter,
+			IgnoreProjectChanges:      args.IgnoreProjectChanges,
+			WorkerPoolProcessor:       workerPoolProcessor,
+			ExcludeTenantTags:         args.ExcludeTenantTags,
+			ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+			Excluder:                  converters.DefaultExcluder{},
+			TagSetConverter:           &tagsetConverter,
+			ExcludeTerraformVariables: args.ExcludeTerraformVariables,
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -1265,6 +1272,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAllProjects:        false,
 		ExcludeProjectsRegex:      nil,
 		ExcludeProjectsExcept:     nil,
+		ExcludeTerraformVariables: args.ExcludeTerraformVariables,
 	}
 
 	if args.LookupProjectDependencies {
