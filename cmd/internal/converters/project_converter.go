@@ -307,7 +307,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
-		hcl.WriteUnquotedAttribute(block, "description", "\""+description+"\"")
+		hcl.WriteUnquotedAttribute(block, "description", description)
 
 		// There is no point ignoring changes for stateless exports
 		if !c.IgnoreProjectChanges && !stateless {
@@ -525,7 +525,7 @@ func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, project
 
 func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) string {
 	if c.ExcludeTerraformVariables {
-		return projectResourceDescription
+		return "\"" + strings.ReplaceAll(projectResourceDescription, "\"", "\\\"") + "\""
 	}
 
 	sanitizedProjectName := sanitizer.SanitizeName(projectResourceName)
