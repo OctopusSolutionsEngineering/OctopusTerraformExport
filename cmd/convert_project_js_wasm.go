@@ -160,36 +160,36 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	converters.TerraformProviderGenerator{}.ToHcl("space_population", true, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
-		Client:   client,
+		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
 	}
-	lifecycleConverter := converters.LifecycleConverter{Client: client, EnvironmentConverter: environmentConverter}
-	gitCredentialsConverter := converters.GitCredentialsConverter{Client: client}
-	tagsetConverter := converters.TagSetConverter{Client: client}
+	lifecycleConverter := converters.LifecycleConverter{Client: &client, EnvironmentConverter: environmentConverter}
+	gitCredentialsConverter := converters.GitCredentialsConverter{Client: &client}
+	tagsetConverter := converters.TagSetConverter{Client: &client}
 	channelConverter := converters.ChannelConverter{
-		Client:               client,
+		Client:               &client,
 		LifecycleConverter:   lifecycleConverter,
 		Excluder:             converters.DefaultExcluder{},
 		ExcludeTenantTags:    nil,
 		ExcludeTenantTagSets: nil,
 	}
 
-	projectGroupConverter := converters.ProjectGroupConverter{Client: client}
+	projectGroupConverter := converters.ProjectGroupConverter{Client: &client}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:   client,
+		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
 	}
 	tenantConverter := converters.TenantConverter{
-		Client:                  client,
+		Client:                  &client,
 		TenantVariableConverter: tenantVariableConverter,
 		EnvironmentConverter:    environmentConverter,
 		TagSetConverter:         &tagsetConverter,
 		Excluder:                converters.DefaultExcluder{},
 	}
 
-	machinePolicyConverter := converters.MachinePolicyConverter{Client: client}
+	machinePolicyConverter := converters.MachinePolicyConverter{Client: &client}
 	accountConverter := converters.AccountConverter{
-		Client:               client,
+		Client:               &client,
 		EnvironmentConverter: lifecycleConverter,
 		TenantConverter:      &tenantConverter,
 		ExcludeTenantTags:    nil,
@@ -198,20 +198,20 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		TagSetConverter:      &tagsetConverter,
 	}
 	certificateConverter := converters.CertificateConverter{
-		Client:               client,
+		Client:               &client,
 		ExcludeTenantTags:    nil,
 		ExcludeTenantTagSets: nil,
 		Excluder:             converters.DefaultExcluder{},
 		TagSetConverter:      &tagsetConverter,
 	}
-	workerPoolConverter := converters.WorkerPoolConverter{Client: client}
+	workerPoolConverter := converters.WorkerPoolConverter{Client: &client}
 	feedConverter := converters.FeedConverter{
-		Client:   client,
+		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
@@ -223,7 +223,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
@@ -234,7 +234,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
@@ -244,7 +244,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
@@ -254,7 +254,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
@@ -264,7 +264,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
@@ -274,7 +274,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
@@ -285,7 +285,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
@@ -295,7 +295,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
-		Client:                 client,
+		Client:                 &client,
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
@@ -306,7 +306,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	variableSetConverter := converters.VariableSetConverter{
-		Client:                            client,
+		Client:                            &client,
 		ChannelConverter:                  channelConverter,
 		EnvironmentConverter:              environmentConverter,
 		TagSetConverter:                   &tagsetConverter,
@@ -326,7 +326,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Excluder:                          converters.DefaultExcluder{},
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
-		Client:               client,
+		Client:               &client,
 		VariableSetConverter: &variableSetConverter,
 		Excluder:             converters.DefaultExcluder{},
 	}
@@ -334,13 +334,13 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
 		LookupDefaultWorkerPool: false,
-		Client:                  client,
+		Client:                  &client,
 	}
 
 	runbookConverter := converters.RunbookConverter{
-		Client: client,
+		Client: &client,
 		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client: client,
+			Client: &client,
 			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,
 				AccountConverter:       accountConverter,
@@ -367,13 +367,13 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 
 	err := (&converters.ProjectConverter{
 		ExcludeAllRunbooks:          false,
-		Client:                      client,
+		Client:                      &client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client: client,
+			Client: &client,
 			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,
 				AccountConverter:       accountConverter,
@@ -391,7 +391,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
-			Client: client,
+			Client: &client,
 		},
 		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,

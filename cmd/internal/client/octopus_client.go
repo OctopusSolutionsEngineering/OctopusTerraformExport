@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -29,9 +30,16 @@ type OctopusApiClient struct {
 	Url    string
 	ApiKey string
 	Space  string
+	// spaceId is what Space resolves to after a lookup. We cache the result to save on future lookups.
+	spaceId string
+	// mu is the mutex to lock the update of the SpaceId parameter
+	mu sync.Mutex
+	// cache is a map of resource types to a map of ids with the resource as a string
+	cache   map[string]map[string][]byte
+	cacheMu sync.Mutex
 }
 
-func (o OctopusApiClient) lookupSpaceAsId() (bool, error) {
+func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return false, errors.New("space can not be empty")
 	}
@@ -56,7 +64,7 @@ func (o OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	return res.StatusCode != 404, nil
 }
 
-func (o OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) {
+func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("space can not be empty")
 	}
@@ -106,38 +114,56 @@ func (o OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) 
 	return "", errors.New("did not find space with name " + o.Space)
 }
 
-func (o OctopusApiClient) getSpaceUrl() (string, error) {
+func (o *OctopusApiClient) getSpaceUrl() (string, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("getSpaceUrl - space can not be empty")
 	}
 
+	if o.spaceId != "" {
+		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.spaceId), nil
+	}
+
 	spaceId, err := o.lookupSpaceAsName()
 	if err == nil {
+		o.spaceId = spaceId
 		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId), nil
 	}
 
 	spaceIdValid, err := o.lookupSpaceAsId()
 	if spaceIdValid && err == nil {
+		o.spaceId = o.Space
 		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space), nil
 	}
 
 	return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
 }
 
-func (o OctopusApiClient) GetSpaceBaseUrl() (string, error) {
+func (o *OctopusApiClient) GetSpaceBaseUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("GetSpaceBaseUrl - space can not be empty")
 	}
 
 	// Sometimes looking up a space that was just created failed, so add a retry
 	return retry.DoWithData(func() (string, error) {
+		o.mu.Lock()
+		defer o.mu.Unlock()
+
+		if o.spaceId != "" {
+			return fmt.Sprintf("%s/api/%s", o.Url, o.spaceId), nil
+		}
+
 		spaceId, err := o.lookupSpaceAsName()
 		if err == nil {
+			o.spaceId = spaceId
 			return fmt.Sprintf("%s/api/%s", o.Url, spaceId), nil
 		}
 
 		spaceIdValid, err := o.lookupSpaceAsId()
 		if spaceIdValid && err == nil {
+			o.spaceId = o.Space
 			return fmt.Sprintf("%s/api/%s", o.Url, o.Space), nil
 		}
 
@@ -145,7 +171,7 @@ func (o OctopusApiClient) GetSpaceBaseUrl() (string, error) {
 	}, retry.Attempts(3), retry.Delay(1*time.Second))
 }
 
-func (o OctopusApiClient) getSpaceRequest() (*http.Request, error) {
+func (o *OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 	spaceUrl, err := o.getSpaceUrl()
 
 	if err != nil {
@@ -165,7 +191,7 @@ func (o OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 	return req, nil
 }
 
-func (o OctopusApiClient) getRequest(resourceType string, id string) (*http.Request, error) {
+func (o *OctopusApiClient) getRequest(resourceType string, id string) (*http.Request, error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -187,7 +213,7 @@ func (o OctopusApiClient) getRequest(resourceType string, id string) (*http.Requ
 	return req, nil
 }
 
-func (o OctopusApiClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
+func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -220,7 +246,7 @@ func (o OctopusApiClient) getCollectionRequest(resourceType string, queryParams 
 	return req, nil
 }
 
-func (o OctopusApiClient) GetSpace(resources *octopus2.Space) (funcErr error) {
+func (o *OctopusApiClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	req, err := o.getSpaceRequest()
 
 	if err != nil {
@@ -246,7 +272,7 @@ func (o OctopusApiClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
-func (o OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
+func (o *OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces", o.Url)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -286,7 +312,7 @@ func (o OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
 	return collection.Items, nil
 }
 
-func (o OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
+func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
 	// Get the details of the space
@@ -422,7 +448,7 @@ func (o OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	return err
 }
 
-func (o OctopusApiClient) bodyToString(body io.Reader) (string, error) {
+func (o *OctopusApiClient) bodyToString(body io.Reader) (string, error) {
 	buf := new(strings.Builder)
 	_, err := io.Copy(buf, body)
 	if err != nil {
@@ -431,7 +457,7 @@ func (o OctopusApiClient) bodyToString(body io.Reader) (string, error) {
 	return buf.String(), nil
 }
 
-func (o OctopusApiClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
+func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exists bool, funcErr error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
 
 	if err != nil {
@@ -497,7 +523,25 @@ func (o OctopusApiClient) GetResource(resourceType string, resources any) (exist
 	return true, nil
 }
 
-func (o OctopusApiClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
+func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
+	o.cacheMu.Lock()
+	defer o.cacheMu.Unlock()
+
+	// return from the cache
+	if val, ok := o.cache[resourceType]; ok {
+		if val, ok := val[id]; ok {
+			err := o.unmarshal(resources, val)
+
+			if err != nil {
+				return false, err
+			}
+
+			return true, nil
+		}
+	}
+
+	zap.L().Debug("Getting " + resourceType + " " + id)
+
 	req, err := o.getRequest(resourceType, id)
 
 	if err != nil {
@@ -530,17 +574,48 @@ func (o OctopusApiClient) GetResourceById(resourceType string, id string, resour
 		return false, err
 	}
 
-	err = json.Unmarshal(body, resources)
+	o.cacheResult(resourceType, id, body)
+
+	err = o.unmarshal(resources, body)
 
 	if err != nil {
-		zap.L().Error(string(body))
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (o OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
+func (o *OctopusApiClient) cacheResult(resourceType string, id string, body []byte) {
+	// Only projects and tenants are resolved by other resources. Tenant variables lookup tenants
+	// to see if they have been excluded. Many resources look up projects to see if they exist and
+	// if they have been excluded. Caching these resources saves repeat calls to the API.
+	if resourceType != "Projects" && resourceType != "Tenants" {
+		return
+	}
+
+	if o.cache == nil {
+		o.cache = map[string]map[string][]byte{}
+	}
+
+	if _, ok := o.cache[resourceType]; !ok {
+		o.cache[resourceType] = map[string][]byte{}
+	}
+
+	o.cache[resourceType][id] = body
+}
+
+func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
+	err := json.Unmarshal(body, resources)
+
+	if err != nil {
+		zap.L().Error(string(body))
+		return err
+	}
+
+	return nil
+}
+
+func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
 	req, err := o.getCollectionRequest(resourceType, queryParams...)
 
 	if err != nil {
