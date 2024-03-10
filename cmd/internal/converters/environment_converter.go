@@ -37,6 +37,10 @@ func (c EnvironmentConverter) AllToStatelessHcl(dependencies *data.ResourceDetai
 }
 
 func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllEnvironments {
+		return nil
+	}
+
 	collection := octopus2.GeneralCollection[octopus2.Environment]{}
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
@@ -68,6 +72,10 @@ func (c EnvironmentConverter) ToHclById(id string, dependencies *data.ResourceDe
 }
 
 func (c EnvironmentConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludeAllEnvironments {
+		return nil
+	}
+
 	if id == "" {
 		return nil
 	}
