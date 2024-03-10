@@ -570,7 +570,7 @@ func (c *VariableSetConverter) convertEnvironmentsToIds() {
 
 			// for each input environment name, convert it to an ID
 			environments := octopus.GeneralCollection[octopus.Environment]{}
-			err := c.Client.GetAllResources("Environments", &environments, []string{"partialName", envName})
+			err := c.Client.GetAllResources("Environments", &environments)
 			if err == nil {
 				// partial matches can have false positives, so do a second filter to do an exact match
 				filteredList := lo.FilterMap(environments.Items, func(env octopus.Environment, index int) (string, bool) {

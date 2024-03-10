@@ -37,6 +37,9 @@ type OctopusApiClient struct {
 	// cache is a map of resource types to a map of ids with the resource as a string
 	cache   map[string]map[string][]byte
 	cacheMu sync.Mutex
+	// collectionCache is a map of resource types to their collections
+	collectionCache   map[string][]byte
+	collectionCacheMu sync.Mutex
 }
 
 func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
@@ -524,20 +527,17 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 }
 
 func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
-	o.cacheMu.Lock()
-	defer o.cacheMu.Unlock()
+	cacheHit := o.readCache(resourceType, id)
+	if cacheHit != nil {
+		zap.L().Debug("Cache hit on " + resourceType + " " + id)
 
-	// return from the cache
-	if val, ok := o.cache[resourceType]; ok {
-		if val, ok := val[id]; ok {
-			err := o.unmarshal(resources, val)
+		err := o.unmarshal(resources, cacheHit)
 
-			if err != nil {
-				return false, err
-			}
-
-			return true, nil
+		if err != nil {
+			return false, err
 		}
+
+		return true, nil
 	}
 
 	zap.L().Debug("Getting " + resourceType + " " + id)
@@ -585,6 +585,19 @@ func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resou
 	return true, nil
 }
 
+func (o *OctopusApiClient) readCache(resourceType string, id string) []byte {
+	o.cacheMu.Lock()
+	defer o.cacheMu.Unlock()
+
+	if val, ok := o.cache[resourceType]; ok {
+		if val, ok := val[id]; ok {
+			return val
+		}
+	}
+
+	return nil
+}
+
 func (o *OctopusApiClient) cacheResult(resourceType string, id string, body []byte) {
 	// Only projects and tenants are resolved by other resources. Tenant variables lookup tenants
 	// to see if they have been excluded. Many resources look up projects to see if they exist and
@@ -592,6 +605,9 @@ func (o *OctopusApiClient) cacheResult(resourceType string, id string, body []by
 	if resourceType != "Projects" && resourceType != "Tenants" {
 		return
 	}
+
+	o.cacheMu.Lock()
+	defer o.cacheMu.Unlock()
 
 	if o.cache == nil {
 		o.cache = map[string]map[string][]byte{}
@@ -616,6 +632,21 @@ func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
 }
 
 func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
+	cacheHit := o.readCollectionCache(resourceType)
+	if cacheHit != nil {
+		zap.L().Debug("Cache hit on " + resourceType)
+
+		err := json.Unmarshal(cacheHit, resources)
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	zap.L().Debug("Getting collection " + resourceType)
+
 	req, err := o.getCollectionRequest(resourceType, queryParams...)
 
 	if err != nil {
@@ -631,6 +662,7 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 	if res.StatusCode != 200 {
 		return nil
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -638,5 +670,41 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 		}
 	}(res.Body)
 
-	return json.NewDecoder(res.Body).Decode(resources)
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return err
+	}
+
+	o.cacheCollectionResult(resourceType, body)
+
+	return o.unmarshal(resources, body)
+}
+
+func (o *OctopusApiClient) readCollectionCache(resourceType string) []byte {
+	o.collectionCacheMu.Lock()
+	defer o.collectionCacheMu.Unlock()
+
+	if val, ok := o.collectionCache[resourceType]; ok {
+		return val
+	}
+
+	return nil
+}
+
+func (o *OctopusApiClient) cacheCollectionResult(resourceType string, body []byte) {
+	// Only worker pools and tag sets are looked up by other resources. Worker pools may be looked
+	// up to find the default worker pool. Tag sets are looked up to add terraform dependencies.
+	if resourceType != "WorkerPools" && resourceType != "TagSets" && resourceType != "Environments" {
+		return
+	}
+
+	o.collectionCacheMu.Lock()
+	defer o.collectionCacheMu.Unlock()
+
+	if o.collectionCache == nil {
+		o.collectionCache = map[string][]byte{}
+	}
+
+	o.collectionCache[resourceType] = body
 }
