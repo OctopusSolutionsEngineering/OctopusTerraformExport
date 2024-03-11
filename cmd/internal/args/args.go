@@ -31,6 +31,7 @@ type Arguments struct {
 	RunbookName                 string
 	LookupProjectDependencies   bool
 	Stateless                   bool
+	StatelessAdditionalParams   StringSliceArgs
 	StepTemplateName            string
 	StepTemplateKey             string
 	StepTemplateDescription     string
@@ -208,6 +209,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
 	flags.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
 	flags.BoolVar(&arguments.Stateless, "stepTemplate", false, "Create an Octopus step template")
+	flags.Var(&arguments.StatelessAdditionalParams, "stepTemplateAdditionalParameters", "Indicates that a non-secret variable should be exposed as a parameter. The format of this option is \"ProjectName:VariableName\". This option is only used with the -stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateName, "stepTemplateName", "", "Step template name. Only used with the stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateKey, "stepTemplateKey", "", "Step template key used when building parameter names. Only used with the stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateDescription, "stepTemplateDescription", "", "Step template description used when building parameter names. Only used with the stepTemplate option.")

@@ -61,6 +61,7 @@ type VariableSetConverter struct {
 	ErrGroup                            *errgroup.Group
 	ExcludeTerraformVariables           bool
 	LimitAttributeLength                int
+	StatelessAdditionalParams           args.StringSliceArgs
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -363,12 +364,24 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			thisResource.Parameters = []data.ResourceParameter{
 				{
 					Label: "Sensitive variable " + v.Name + " password",
-					Description: "The sensitive value associated with the variable \"" + v.Name + "\" in the belonging to " +
+					Description: "The sensitive value associated with the variable \"" + v.Name + "\" belonging to " +
 						parentName + v.Scope.ScopeDescription(" (", ")", dependencies),
 					ResourceName:  sanitizer.SanitizeParameterName(dependencies, v.Name, "SensitiveValue"),
 					Sensitive:     true,
 					VariableName:  resourceName,
 					ParameterType: "SensitiveValue",
+				},
+			}
+		} else if slices.Contains(c.StatelessAdditionalParams, parentName+":"+v.Name) {
+			thisResource.Parameters = []data.ResourceParameter{
+				{
+					Label: "Variable " + v.Name + " value",
+					Description: "The value associated with the variable \"" + v.Name + "\" belonging to " +
+						parentName + v.Scope.ScopeDescription(" (", ")", dependencies),
+					ResourceName:  sanitizer.SanitizeParameterName(dependencies, v.Name, "SensitiveValue"),
+					Sensitive:     true,
+					VariableName:  resourceName,
+					ParameterType: "SingleLineText",
 				},
 			}
 		}

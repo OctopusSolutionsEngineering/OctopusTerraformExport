@@ -364,6 +364,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 		Excluder:                          converters.DefaultExcluder{},
+		StatelessAdditionalParams:         args.StatelessAdditionalParams,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:               &client,
