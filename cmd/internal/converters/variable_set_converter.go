@@ -565,7 +565,13 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 
 		display := terraform.TerraformProjectVariableDisplay{}
 		if controlType, ok := prompt.DisplaySettings["Octopus.ControlType"]; ok {
-			display.ControlType = &controlType
+			display.ControlType = strutil.StrPointer("SingleLineText")
+
+			// The provider only recognises the following options. Notably, it does not recognise "Sensitive".
+			// We do our best, but fall back to "SingleLineText".
+			if slices.Index([]string{"SingleLineText", "MultiLineText", "Checkbox", "Select"}, controlType) != -1 {
+				display.ControlType = &controlType
+			}
 		}
 
 		selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
