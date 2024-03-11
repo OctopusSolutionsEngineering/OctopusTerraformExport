@@ -306,9 +306,6 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			VersioningStrategy:                     c.convertVersioningStrategy(project),
 		}
 
-		block := gohcl.EncodeAsBlock(terraformResource, "resource")
-		hcl.WriteUnquotedAttribute(block, "description", description)
-
 		// There is no point ignoring changes for stateless exports
 		if !c.IgnoreProjectChanges && !stateless {
 			ignoreList := []string{}
@@ -339,6 +336,9 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			c.writeData(file, "${var."+projectName+"_name}", projectName)
 			terraformResource.Count = strutil.StrPointer(thisResource.Count)
 		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+		hcl.WriteUnquotedAttribute(block, "description", description)
 
 		// write any variables used to define the value of tenant template secrets
 		for _, variable := range variables {
