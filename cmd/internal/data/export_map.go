@@ -15,6 +15,7 @@ type ResourceParameter struct {
 	ResourceName  string
 	ParameterType string
 	Sensitive     bool
+	DefaultValue  string
 }
 
 // ResourceDetails is used to capture the dependencies required by the root resources that was

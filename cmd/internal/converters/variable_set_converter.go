@@ -382,6 +382,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					Sensitive:     true,
 					VariableName:  resourceName,
 					ParameterType: "SingleLineText",
+					DefaultValue:  strutil.EmptyIfNil(v.Value),
 				},
 			}
 		}

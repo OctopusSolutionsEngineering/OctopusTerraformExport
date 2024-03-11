@@ -166,7 +166,7 @@ func (s StepTemplateGenerator) createStepTemplateParameters(collection *data.Res
 				Name:         name,
 				Label:        parameter.Label,
 				HelpText:     parameter.Description,
-				DefaultValue: "",
+				DefaultValue: parameter.DefaultValue,
 				DisplaySettings: steptemplate.StepTemplateParameterDisplaySettings{
 					OctopusControlType: s.getControlType(parameter),
 				},
