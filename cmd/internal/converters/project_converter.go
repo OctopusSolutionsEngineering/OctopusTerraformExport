@@ -573,7 +573,7 @@ func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, 
 	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
 
-	return "\"${var." + projectName + "_description_prefix}${var." + projectName + "_description}${var." + projectName + "_description_suffix}\""
+	return "\"${var." + sanitizedProjectName + "_description_prefix}${var." + sanitizedProjectName + "_description}${var." + sanitizedProjectName + "_description_suffix}\""
 }
 
 func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, projectName string, stateless bool) ([]terraform.TerraformTemplate, []terraform.TerraformVariable, []data.ResourceDetails) {

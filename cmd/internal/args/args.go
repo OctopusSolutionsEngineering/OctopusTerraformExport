@@ -13,40 +13,67 @@ import (
 )
 
 type Arguments struct {
-	Profiling                        bool
-	ExcludeTerraformVariables        bool
-	ExcludeSpaceCreation             bool
-	ConfigFile                       string
-	ConfigPath                       string
-	Version                          bool
-	IgnoreInvalidExcludeExcept       bool
-	Url                              string
-	ApiKey                           string
-	Space                            string
-	Destination                      string
-	Console                          bool
-	ProjectId                        Projects
-	ProjectName                      Projects
-	RunbookId                        string
-	RunbookName                      string
-	LookupProjectDependencies        bool
-	Stateless                        bool
-	StepTemplateName                 string
-	StepTemplateKey                  string
-	StepTemplateDescription          string
-	IgnoreCacManagedValues           bool
-	ExcludeCaCProjectSettings        bool
-	BackendBlock                     string
-	DetachProjectTemplates           bool
-	DefaultSecretVariableValues      bool
-	DummySecretVariableValues        bool
-	ProviderVersion                  string
-	ExcludeAllRunbooks               bool
-	ExcludeRunbooks                  StringSliceArgs
-	ExcludeRunbooksRegex             StringSliceArgs
-	ExcludeRunbooksExcept            StringSliceArgs
-	ExcludeProvider                  bool
-	IncludeOctopusOutputVars         bool
+	Profiling                   bool
+	ExcludeTerraformVariables   bool
+	ExcludeSpaceCreation        bool
+	ConfigFile                  string
+	ConfigPath                  string
+	Version                     bool
+	IgnoreInvalidExcludeExcept  bool
+	Url                         string
+	ApiKey                      string
+	Space                       string
+	Destination                 string
+	Console                     bool
+	ProjectId                   Projects
+	ProjectName                 Projects
+	RunbookId                   string
+	RunbookName                 string
+	LookupProjectDependencies   bool
+	Stateless                   bool
+	StepTemplateName            string
+	StepTemplateKey             string
+	StepTemplateDescription     string
+	IgnoreCacManagedValues      bool
+	ExcludeCaCProjectSettings   bool
+	BackendBlock                string
+	DetachProjectTemplates      bool
+	DefaultSecretVariableValues bool
+	DummySecretVariableValues   bool
+	ProviderVersion             string
+	ExcludeProvider             bool
+	IncludeOctopusOutputVars    bool
+	LimitAttributeLength        int
+
+	IgnoreProjectChanges             bool
+	IgnoreProjectVariableChanges     bool
+	IgnoreProjectGroupChanges        bool
+	IgnoreProjectNameChanges         bool
+	ExcludeAllProjectVariables       bool
+	ExcludeProjectVariables          StringSliceArgs
+	ExcludeProjectVariablesExcept    StringSliceArgs
+	ExcludeProjectVariablesRegex     StringSliceArgs
+	ExcludeVariableEnvironmentScopes StringSliceArgs
+	LookUpDefaultWorkerPools         bool
+
+	/*
+		We expose a lot of options to exclude resources from the export.
+
+		Some of these exclusions are "natural" in that you can simply not export them and the resulting Terraform configuration will be (mostly) valid.
+		For example, you can exclude targets and runbooks and the only impact is that some scoped variables may become unscoped. Or you can exclude
+		projects and only "Deploy a Release" steps will be impacted.
+
+		Other exclusions are "core" in that they are tightly coupled to many other resources. For example, excluding environments, lifecycles,
+		project groups, accounts etc. will likely leave the resulting Terraform configuration in an invalid state.
+
+		Warnings have been added to the CLI help command to identify some of the side-effects of the various exclusions.
+	*/
+
+	ExcludeAllRunbooks    bool
+	ExcludeRunbooks       StringSliceArgs
+	ExcludeRunbooksRegex  StringSliceArgs
+	ExcludeRunbooksExcept StringSliceArgs
+
 	ExcludeLibraryVariableSets       StringSliceArgs
 	ExcludeLibraryVariableSetsRegex  StringSliceArgs
 	ExcludeLibraryVariableSetsExcept StringSliceArgs
@@ -92,17 +119,6 @@ type Arguments struct {
 	ExcludeMachinePoliciesExcept StringSliceArgs
 	ExcludeAllMachinePolicies    bool
 
-	IgnoreProjectChanges             bool
-	IgnoreProjectVariableChanges     bool
-	IgnoreProjectGroupChanges        bool
-	IgnoreProjectNameChanges         bool
-	ExcludeAllProjectVariables       bool
-	ExcludeProjectVariables          StringSliceArgs
-	ExcludeProjectVariablesExcept    StringSliceArgs
-	ExcludeProjectVariablesRegex     StringSliceArgs
-	ExcludeVariableEnvironmentScopes StringSliceArgs
-	LookUpDefaultWorkerPools         bool
-
 	ExcludeTenantTags StringSliceArgs
 
 	ExcludeTenantTagSets       StringSliceArgs
@@ -110,21 +126,22 @@ type Arguments struct {
 	ExcludeTenantTagSetsExcept StringSliceArgs
 	ExcludeAllTenantTagSets    bool
 
-	ExcludeTenants           StringSliceArgs
-	ExcludeTenantsRegex      StringSliceArgs
-	ExcludeTenantsWithTags   StringSliceArgs
-	ExcludeTenantsExcept     StringSliceArgs
-	ExcludeAllTenants        bool
-	ExcludeProjects          StringSliceArgs
-	ExcludeProjectsExcept    StringSliceArgs
-	ExcludeProjectsRegex     StringSliceArgs
-	ExcludeAllProjects       bool
+	ExcludeTenants         StringSliceArgs
+	ExcludeTenantsRegex    StringSliceArgs
+	ExcludeTenantsWithTags StringSliceArgs
+	ExcludeTenantsExcept   StringSliceArgs
+	ExcludeAllTenants      bool
+
+	ExcludeProjects       StringSliceArgs
+	ExcludeProjectsExcept StringSliceArgs
+	ExcludeProjectsRegex  StringSliceArgs
+	ExcludeAllProjects    bool
+
 	ExcludeAllTargets        bool
 	ExcludeTargets           StringSliceArgs
 	ExcludeTargetsRegex      StringSliceArgs
 	ExcludeTargetsExcept     StringSliceArgs
 	ExcludeAllGitCredentials bool
-	LimitAttributeLength     int
 }
 
 // GetBackend forces the use of a local backend for stateless exports

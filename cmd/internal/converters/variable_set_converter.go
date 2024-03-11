@@ -492,11 +492,11 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 }
 
 func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.File, variable octopus.Variable, resourceName string, value *string) *string {
-	if variable.Type == "String" && !hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
-		if c.ExcludeTerraformVariables {
-			return value
-		}
+	if c.ExcludeTerraformVariables {
+		return value
+	}
 
+	if variable.Type == "String" && !hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
 		// Use a second terraform variable to allow the octopus variable to be defined at apply time.
 		// Note this only applies to string variables, as other types likely reference resources
 		// that are being created by terraform, and these dynamic values can not be used as default
@@ -518,7 +518,7 @@ func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.F
 		return c.convertValue(variable, resourceName)
 	}
 
-	return nil
+	return value
 }
 
 func (c *VariableSetConverter) GetResourceType() string {
@@ -561,33 +561,38 @@ func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.T
 }
 
 func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
-	if prompt.DisplaySettings != nil {
-
-		display := terraform.TerraformProjectVariableDisplay{}
-		if controlType, ok := prompt.DisplaySettings["Octopus.ControlType"]; ok {
-			display.ControlType = &controlType
-		}
-
-		selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
-		if selectOptions, ok := prompt.DisplaySettings["Octopus.SelectOptions"]; ok {
-			for _, o := range strings.Split(selectOptions, "\n") {
-				split := strings.Split(o, "|")
-				if len(split) == 2 {
-					selectOptionsSlice = append(
-						selectOptionsSlice,
-						terraform.TerraformProjectVariableDisplaySelectOption{
-							DisplayName: split[0],
-							Value:       split[1],
-						})
-				}
-			}
-		}
-		display.SelectOption = &selectOptionsSlice
-
-		return &display
+	if prompt.DisplaySettings == nil || len(prompt.DisplaySettings) == 0 {
+		return nil
 	}
 
-	return nil
+	display := terraform.TerraformProjectVariableDisplay{}
+	if controlType, ok := prompt.DisplaySettings["Octopus.ControlType"]; ok {
+		display.ControlType = strutil.StrPointer("SingleLineText")
+
+		// The provider only recognises the following options. Notably, it does not recognise "Sensitive".
+		// We do our best, but fall back to "SingleLineText".
+		if slices.Index([]string{"SingleLineText", "MultiLineText", "Checkbox", "Select"}, controlType) != -1 {
+			display.ControlType = &controlType
+		}
+	}
+
+	selectOptionsSlice := []terraform.TerraformProjectVariableDisplaySelectOption{}
+	if selectOptions, ok := prompt.DisplaySettings["Octopus.SelectOptions"]; ok {
+		for _, o := range strings.Split(selectOptions, "\n") {
+			split := strings.Split(o, "|")
+			if len(split) == 2 {
+				selectOptionsSlice = append(
+					selectOptionsSlice,
+					terraform.TerraformProjectVariableDisplaySelectOption{
+						DisplayName: split[0],
+						Value:       split[1],
+					})
+			}
+		}
+	}
+	display.SelectOption = &selectOptionsSlice
+
+	return &display
 }
 
 func (c *VariableSetConverter) convertEnvironmentsToIds() {
