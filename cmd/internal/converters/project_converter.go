@@ -872,6 +872,15 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 				project.Name,
 				"${"+octopusdeployProjectResourceType+"."+projectName+".id}",
 				dependencies)
+		} else if stateless {
+			err = c.VariableSetConverter.ToHclStatelessByProjectIdBranchAndName(
+				project.Id,
+				branch.CanonicalName,
+				project.Name,
+				parentLookup,
+				parentCount,
+				recursive,
+				dependencies)
 		} else {
 			err = c.VariableSetConverter.ToHclByProjectIdBranchAndName(
 				project.Id,

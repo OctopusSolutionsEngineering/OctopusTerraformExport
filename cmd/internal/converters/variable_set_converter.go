@@ -65,6 +65,14 @@ type VariableSetConverter struct {
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectIdBranchAndName(projectId, branch, parentName, parentLookup, parentCount, recursive, false, dependencies)
+}
+
+func (c *VariableSetConverter) ToHclStatelessByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectIdBranchAndName(projectId, branch, parentName, parentLookup, parentCount, recursive, true, dependencies)
+}
+
+func (c *VariableSetConverter) toHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if projectId == "" {
 		return nil
 	}
@@ -90,7 +98,7 @@ func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, b
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, recursive, false, false, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, recursive, false, stateless, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error {

@@ -177,6 +177,7 @@ type ConverterLookupByProjectIdAndName interface {
 // ConverterByProjectIdBranchAndName converts objects based on their relationship to a project branch, with the ability to reference the parent
 type ConverterByProjectIdBranchAndName interface {
 	ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error
+	ToHclStatelessByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByProjectIdBranchAndName converts objects to data lookups based on their relationship to a project, with the ability to reference the parent
