@@ -63,7 +63,7 @@ type VariableSetConverter struct {
 	LimitAttributeLength                int
 }
 
-func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
+func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
 	if projectId == "" {
 		return nil
 	}
@@ -89,7 +89,7 @@ func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, b
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, false, false, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
+	return c.toHcl(resource, recursive, false, false, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error {
