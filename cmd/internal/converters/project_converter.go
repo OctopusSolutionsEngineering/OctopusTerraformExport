@@ -764,9 +764,15 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
 		}, dependencies)
 	} else {
-		err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
-			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-		}, dependencies)
+		if stateless {
+			err = c.ChannelConverter.ToHclStatelessByProjectIdWithTerraDependencies(project.Id, map[string]string{
+				"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
+			}, dependencies)
+		} else {
+			err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
+				"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
+			}, dependencies)
+		}
 	}
 
 	if err != nil {

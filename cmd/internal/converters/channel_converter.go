@@ -29,6 +29,14 @@ type ChannelConverter struct {
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectIdWithTerraDependencies(projectId, terraformDependencies, false, dependencies)
+}
+
+func (c ChannelConverter) ToHclStatelessByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectIdWithTerraDependencies(projectId, terraformDependencies, true, dependencies)
+}
+
+func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.Channel]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -46,7 +54,7 @@ func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string
 	for _, resource := range collection.Items {
 		zap.L().Info("Channel: " + resource.Id)
 		project := octopus.Project{}
-		err = c.toHcl(resource, project, true, false, false, terraformDependencies, dependencies)
+		err = c.toHcl(resource, project, true, false, stateless, terraformDependencies, dependencies)
 
 		if err != nil {
 			return err

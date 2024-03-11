@@ -195,6 +195,7 @@ type ConverterAndLookupByProjectIdAndName interface {
 // ConverterByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies
 type ConverterByProjectIdWithTerraDependencies interface {
 	ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error
+	ToHclStatelessByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByProjectIdWithTerraDependencies converts objects based on their relationship to a project, with manual terraform dependencies, and using a lookup for dependencies
