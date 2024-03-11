@@ -703,6 +703,11 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *t
 		return nil
 	}
 
+	// Don't define a versioning strategy if it is not set
+	if project.VersioningStrategy.Template == "" {
+		return nil
+	}
+
 	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
 	// needs to know the name of the step and package to base the versioning on, and the deployment process
 	// needs to know the project to attach itself to. If the versioning strategy is set to use packages,
