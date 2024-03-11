@@ -89,7 +89,7 @@ func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, b
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
 
 	zap.L().Info("VariableSet: " + strutil.EmptyIfNil(resource.Id))
-	return c.toHcl(resource, false, false, false, ignoreSecrets, parentName, parentLookup, nil, dependencies)
+	return c.toHcl(resource, false, false, false, ignoreSecrets, parentName, parentLookup, parentCount, dependencies)
 }
 
 func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, dependencies *data.ResourceDetailsCollection) error {
