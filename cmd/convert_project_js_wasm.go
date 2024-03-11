@@ -177,9 +177,16 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
 	}
-	lifecycleConverter := converters.LifecycleConverter{Client: &client, EnvironmentConverter: environmentConverter}
+	lifecycleConverter := converters.LifecycleConverter{
+		Client:               &client,
+		EnvironmentConverter: environmentConverter,
+		Excluder:             converters.DefaultExcluder{},
+	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{Client: &client}
-	tagsetConverter := converters.TagSetConverter{Client: &client}
+	tagsetConverter := converters.TagSetConverter{
+		Client:   &client,
+		Excluder: converters.DefaultExcluder{},
+	}
 	channelConverter := converters.ChannelConverter{
 		Client:               &client,
 		LifecycleConverter:   lifecycleConverter,
