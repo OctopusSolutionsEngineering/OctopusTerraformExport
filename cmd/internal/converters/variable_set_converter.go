@@ -561,7 +561,7 @@ func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.T
 }
 
 func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
-	if prompt.DisplaySettings != nil {
+	if prompt.DisplaySettings != nil || len(prompt.DisplaySettings) != 0 {
 
 		display := terraform.TerraformProjectVariableDisplay{}
 		if controlType, ok := prompt.DisplaySettings["Octopus.ControlType"]; ok {
