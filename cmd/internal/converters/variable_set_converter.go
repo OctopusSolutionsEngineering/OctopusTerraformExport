@@ -379,7 +379,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					Description: "The value associated with the variable \"" + v.Name + "\" belonging to " +
 						parentName + v.Scope.ScopeDescription(" (", ")", dependencies),
 					ResourceName:  sanitizer.SanitizeParameterName(dependencies, v.Name, "SensitiveValue"),
-					Sensitive:     true,
+					Sensitive:     false,
 					VariableName:  resourceName,
 					ParameterType: "SingleLineText",
 					DefaultValue:  strutil.EmptyIfNil(v.Value),
