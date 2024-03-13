@@ -26,6 +26,7 @@ type EnvironmentConverter struct {
 	ExcludeEnvironmentsExcept args.StringSliceArgs
 	ExcludeAllEnvironments    bool
 	Excluder                  ExcludeByName
+	IncludeIds                bool
 }
 
 func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -204,6 +205,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, st
 		terraformResource := terraform.TerraformEnvironment{
 			Type:                       octopusdeployEnvironmentsResourceType,
 			Name:                       resourceName,
+			Id:                         strutil.InputPointerIfEnabled(c.IncludeIds, &environment.Id),
 			Count:                      c.getCount(stateless, resourceName),
 			SpaceId:                    nil,
 			ResourceName:               environment.Name,

@@ -207,6 +207,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
 		Excluder:                  converters.DefaultExcluder{},
 		ErrGroup:                  &group,
+		IncludeIds:                args.IncludeIds,
 	}
 	tenantVariableConverter := converters.TenantVariableConverter{
 		Client:                    &octopusClient,
@@ -581,6 +582,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		GitCredentialsConverter:     gitCredentialsConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		ProjectConverter: &converters.ProjectConverter{
+			IncludeIds:                  args.IncludeIds,
 			Client:                      &octopusClient,
 			LifecycleConverter:          lifecycleConverter,
 			GitCredentialsConverter:     gitCredentialsConverter,
@@ -689,6 +691,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
 		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
 		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
 	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    &octopusClient,
@@ -780,6 +783,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	projectConverter := &converters.ProjectConverter{
+		IncludeIds:                args.IncludeIds,
 		LookupOnlyMode:            true,
 		Client:                    &octopusClient,
 		Excluder:                  converters.DefaultExcluder{},
@@ -851,6 +855,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
 		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
 		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
 	}
 	lifecycleConverter := converters.LifecycleConverter{
 		Client:                  &octopusClient,
@@ -1235,6 +1240,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	projectConverter := converters.ProjectConverter{
+		IncludeIds:                  args.IncludeIds,
 		ExcludeAllRunbooks:          args.ExcludeAllRunbooks,
 		Client:                      &octopusClient,
 		LifecycleConverter:          lifecycleConverter,

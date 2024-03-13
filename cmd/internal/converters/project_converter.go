@@ -51,6 +51,7 @@ type ProjectConverter struct {
 	LookupOnlyMode            bool
 	ErrGroup                  *errgroup.Group
 	ExcludeTerraformVariables bool
+	IncludeIds                bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -288,6 +289,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
 			ResourceName:                           resourceName,
+			Id:                                     strutil.InputPointerIfEnabled(c.IncludeIds, &project.Id),
 			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no way to reference the package
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,

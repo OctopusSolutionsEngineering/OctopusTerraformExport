@@ -5,6 +5,7 @@ type TerraformEnvironment struct {
 	Name                                   string                                           `hcl:"name,label"`
 	Count                                  *string                                          `hcl:"count"`
 	SpaceId                                *string                                          `hcl:"space_id"`
+	Id                                     *string                                          `hcl:"id"`
 	ResourceName                           string                                           `hcl:"name"`
 	Description                            *string                                          `hcl:"description"`
 	AllowDynamicInfrastructure             bool                                             `hcl:"allow_dynamic_infrastructure"`

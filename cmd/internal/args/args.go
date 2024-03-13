@@ -56,6 +56,7 @@ type Arguments struct {
 	ExcludeProjectVariablesRegex     StringSliceArgs
 	ExcludeVariableEnvironmentScopes StringSliceArgs
 	LookUpDefaultWorkerPools         bool
+	IncludeIds                       bool
 
 	/*
 		We expose a lot of options to exclude resources from the export.
@@ -203,6 +204,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.ExcludeSpaceCreation, "excludeSpaceCreation", false, "This option excludes the Terraform configuration that is used to create the space.")
 	flags.BoolVar(&arguments.IgnoreInvalidExcludeExcept, "ignoreInvalidExcludeExcept", false, "Ensures that resource names passed to the 'Exclude<ResourceType>Except' arguments are valid, and if they are not, removes those names from the list. This is useful when an external system attempts to filter results but places incorrect values into 'Exclude<ResourceType>Except' arguments. It may result in all resources being returned if no valid resources names are included in the 'Exclude<ResourceType>Except' arguments.")
 	flags.BoolVar(&arguments.Version, "version", false, "Print the version")
+	flags.BoolVar(&arguments.IncludeIds, "includeIds", false, "Include the \"id\" field on generated resources. Note that this is almost always unnecessary and undesirable.")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
 	flags.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")

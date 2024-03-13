@@ -66,6 +66,14 @@ func NilIfFalse(input bool) *bool {
 	return &input
 }
 
+func InputPointerIfEnabled(enabled bool, input *string) *string {
+	if enabled {
+		return input
+	}
+
+	return nil
+}
+
 func DefaultIfEmpty(input string, defaultValue string) string {
 	if input == "" {
 		return defaultValue
