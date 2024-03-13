@@ -4,6 +4,7 @@ type TerraformAwsAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
 	Count                           *string  `hcl:"count"`
+	Id                              *string  `hcl:"id"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`
 	Description                     *string  `hcl:"description"`
@@ -18,6 +19,7 @@ type TerraformAwsAccount struct {
 type TerraformAzureServicePrincipal struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
 	Count                           *string  `hcl:"count"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`
@@ -37,6 +39,7 @@ type TerraformAzureServicePrincipal struct {
 type TerraformAzureSubscription struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
 	Count                           *string  `hcl:"count"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`
@@ -59,6 +62,7 @@ type TerraformAzureSubscription struct {
 type TerraformGcpAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
 	Count                           *string  `hcl:"count"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`
@@ -73,6 +77,7 @@ type TerraformGcpAccount struct {
 type TerraformSshAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
 	Count                           *string  `hcl:"count"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`
@@ -89,6 +94,7 @@ type TerraformSshAccount struct {
 type TerraformTokenAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
 	Count                           *string  `hcl:"count"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`
@@ -103,6 +109,7 @@ type TerraformTokenAccount struct {
 type TerraformUsernamePasswordAccount struct {
 	Type                            string   `hcl:"type,label"`
 	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
 	Count                           *string  `hcl:"count"`
 	SpaceId                         *string  `hcl:"space_id"`
 	ResourceName                    string   `hcl:"name"`

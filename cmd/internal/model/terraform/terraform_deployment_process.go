@@ -3,6 +3,7 @@ package terraform
 type TerraformDeploymentProcess struct {
 	Type      string                          `hcl:"type,label"`
 	Name      string                          `hcl:"name,label"`
+	Id        *string                         `hcl:"id"`
 	Count     *string                         `hcl:"count"`
 	ProjectId string                          `hcl:"project_id"`
 	Step      []TerraformStep                 `hcl:"step,block"`

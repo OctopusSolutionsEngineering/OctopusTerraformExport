@@ -3,6 +3,7 @@ package terraform
 type TerraformPollingTentacleDeploymentTarget struct {
 	Type         string   `hcl:"type,label"`
 	Name         string   `hcl:"name,label"`
+	Id           *string  `hcl:"id"`
 	Count        *string  `hcl:"count"`
 	Environments []string `hcl:"environments"`
 	ResourceName string   `hcl:"name"`

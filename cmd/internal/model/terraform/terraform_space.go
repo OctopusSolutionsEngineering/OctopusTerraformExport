@@ -3,6 +3,7 @@ package terraform
 type TerraformSpace struct {
 	Type                     string   `hcl:"type,label"`
 	Name                     string   `hcl:"name,label"`
+	Id                       *string  `hcl:"id"`
 	Description              *string  `hcl:"description"`
 	ResourceName             *string  `hcl:"name"`
 	IsDefault                bool     `hcl:"is_default"`

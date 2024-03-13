@@ -3,6 +3,7 @@ package terraform
 type TerraformScriptModule struct {
 	Type         string                      `hcl:"type,label"`
 	Name         string                      `hcl:"name,label"`
+	Id           *string                     `hcl:"id"`
 	Count        *string                     `hcl:"count"`
 	Description  *string                     `hcl:"description"`
 	ResourceName string                      `hcl:"name"`

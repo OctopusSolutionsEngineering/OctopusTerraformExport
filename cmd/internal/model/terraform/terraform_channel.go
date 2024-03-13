@@ -3,6 +3,7 @@ package terraform
 type TerraformChannel struct {
 	Type         string          `hcl:"type,label"`
 	Name         string          `hcl:"name,label"`
+	Id           *string         `hcl:"id"`
 	Count        *string         `hcl:"count"`
 	SpaceId      *string         `hcl:"space_id"`
 	LifecycleId  *string         `hcl:"lifecycle_id"`
