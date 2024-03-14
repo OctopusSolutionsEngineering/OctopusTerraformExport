@@ -252,6 +252,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTenantTagSets:    args.ExcludeTenantTagSets,
 		ExcludeProjectsExcept:   args.ExcludeProjectsExcept,
 		ErrGroup:                &group,
+		IncludeIds:              args.IncludeIds,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    &octopusClient,
@@ -294,6 +295,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
 		Excluder:             converters.DefaultExcluder{},
 		ErrGroup:             &group,
+		IncludeIds:           args.IncludeIds,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -739,6 +741,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeProjectsRegex:    args.ExcludeProjectsRegex,
 		ExcludeAllProjects:      args.ExcludeAllProjects,
 		ExcludeProjects:         args.ExcludeProjects,
+		IncludeIds:              args.IncludeIds,
 	}
 
 	accountConverter := converters.AccountConverter{
@@ -929,6 +932,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeProjectsRegex:    args.ExcludeProjectsRegex,
 		ExcludeAllProjects:      args.ExcludeAllProjects,
 		ExcludeProjects:         args.ExcludeProjects,
+		IncludeIds:              args.IncludeIds,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{

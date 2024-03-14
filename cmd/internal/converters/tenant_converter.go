@@ -39,6 +39,7 @@ type TenantConverter struct {
 	ExcludeProjectsRegex    args.StringSliceArgs
 	ExcludeAllProjects      bool
 	ErrGroup                *errgroup.Group
+	IncludeIds              bool
 }
 
 func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -244,9 +245,9 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 			terraformResource := terraform.TerraformTenant{
 				Type:               octopusdeployTenantResourceType,
 				Name:               tenantName,
+				Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &tenant.Id),
 				Count:              count,
 				ResourceName:       tenant.Name,
-				Id:                 nil,
 				ClonedFromTenantId: nil,
 				Description:        strutil.NilIfEmptyPointer(tenant.Description),
 				TenantTags:         c.Excluder.FilteredTenantTags(tenant.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

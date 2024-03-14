@@ -26,6 +26,7 @@ type ChannelConverter struct {
 	ExcludeTenantTagSets args.StringSliceArgs
 	Excluder             ExcludeByName
 	ErrGroup             *errgroup.Group
+	IncludeIds           bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -177,6 +178,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			terraformResource := terraform.TerraformChannel{
 				Type:         octopusdeployChannelResourceType,
 				Name:         resourceName,
+				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &channel.Id),
 				ResourceName: channel.Name,
 				Description:  channel.Description,
 				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),
