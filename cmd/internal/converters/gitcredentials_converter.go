@@ -24,6 +24,7 @@ type GitCredentialsConverter struct {
 	DummySecretGenerator      DummySecretGenerator
 	ExcludeAllGitCredentials  bool
 	ErrGroup                  *errgroup.Group
+	IncludeIds                bool
 }
 
 func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -192,6 +193,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		terraformResource := terraform2.TerraformGitCredentials{
 			Type:         octopusdeployGitCredentialResourceType,
 			Name:         gitCredentialsName,
+			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &gitCredentials.Id),
 			Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
 			ResourceName: gitCredentials.Name,
 			ResourceType: gitCredentials.Details.Type,

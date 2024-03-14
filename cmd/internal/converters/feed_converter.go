@@ -33,6 +33,7 @@ type FeedConverter struct {
 	ExcludeFeedsExcept        args.StringSliceArgs
 	ExcludeAllFeeds           bool
 	Excluder                  ExcludeByName
+	IncludeIds                bool
 }
 
 func (c FeedConverter) GetResourceType() string {
@@ -208,6 +209,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 			terraformResource := terraform2.TerraformDockerFeed{
 				Type:                              octopusdeployDockerContainerRegistryResourceType,
 				Name:                              resourceName,
+				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				ResourceName:                      resource.Name,
 				RegistryPath:                      resource.RegistryPath,
 				Username:                          strutil.NilIfEmptyPointer(resource.Username),
@@ -301,6 +303,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 			terraformResource := terraform2.TerraformEcrFeed{
 				Type:                              octopusdeployAwsElasticContainerRegistryResourceType,
 				Name:                              resourceName,
+				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				ResourceName:                      resource.Name,
 				AccessKey:                         resource.AccessKey,
 				SecretKey:                         &password,
@@ -398,6 +401,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformMavenFeed{
 				Type:                              octopusdeployMavenFeedResourceType,
+				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
@@ -494,6 +498,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 			password := "${var." + passwordName + "}"
 			terraformResource := terraform2.TerraformGitHubRepoFeed{
 				Type:                              octopusdeployGithubRepositoryFeedResourceType,
+				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
@@ -591,6 +596,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 
 			terraformResource := terraform2.TerraformHelmFeed{
 				Type:                              octopusdeployHelmFeedResourceType,
+				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
@@ -682,6 +688,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 
 			terraformResource := terraform2.TerraformNuGetFeed{
 				Type:                              octopusdeploy_nuget_feed_resource_type,
+				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,

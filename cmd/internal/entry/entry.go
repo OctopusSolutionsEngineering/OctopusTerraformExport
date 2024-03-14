@@ -269,6 +269,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
 		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
 		ExcludeAllAccounts:        args.ExcludeAllAccounts,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
@@ -287,6 +288,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
 		ErrGroup:                  &group,
+		IncludeIds:                args.IncludeIds,
 	}
 	channelConverter := converters.ChannelConverter{
 		Client:               &octopusClient,
@@ -342,6 +344,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeFeedsExcept:        args.ExcludeFeedsExcept,
 		ExcludeAllFeeds:           args.ExcludeAllFeeds,
 		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
@@ -420,6 +423,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ErrGroup:               &group,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
@@ -453,6 +457,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ErrGroup:               &group,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -470,6 +475,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		DummySecretGenerator:      dummySecretGenerator,
 		ErrGroup:                  &group,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -486,6 +492,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ErrGroup:               &group,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	variableSetConverter := converters.VariableSetConverter{
@@ -699,6 +706,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Client:                    &octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
+		IncludeIds:                args.IncludeIds,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:                     &octopusClient,
@@ -758,6 +766,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
 		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
 		ExcludeAllAccounts:        args.ExcludeAllAccounts,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	feedConverter := converters.FeedConverter{
@@ -769,6 +778,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeFeedsExcept:        args.ExcludeFeedsExcept,
 		ExcludeAllFeeds:           args.ExcludeAllFeeds,
 		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,
@@ -874,6 +884,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Client:                    &octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
+		IncludeIds:                args.IncludeIds,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:                     &octopusClient,
@@ -957,6 +968,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
 		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
 		ExcludeAllAccounts:        args.ExcludeAllAccounts,
+		IncludeIds:                args.IncludeIds,
 	}
 	certificateConverter := converters.CertificateConverter{
 		Client:                    &octopusClient,
@@ -1044,6 +1056,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
@@ -1075,6 +1088,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
 		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -1091,6 +1105,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:      args.ExcludeTargetsExcept,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -1106,6 +1121,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	feedConverter := converters.FeedConverter{
@@ -1117,6 +1133,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeFeedsExcept:        args.ExcludeFeedsExcept,
 		ExcludeAllFeeds:           args.ExcludeAllFeeds,
 		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,

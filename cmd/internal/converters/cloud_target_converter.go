@@ -32,6 +32,7 @@ type CloudRegionTargetConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	IncludeIds             bool
 }
 
 func (c CloudRegionTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -212,6 +213,7 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 		terraformResource := terraform.TerraformCloudRegionDeploymentTarget{
 			Type:                            octopusdeployCloudRegionResourceType,
 			Name:                            targetName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 			ResourceName:                    target.Name,
 			Roles:                           target.Roles,

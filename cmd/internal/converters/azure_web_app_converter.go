@@ -33,6 +33,7 @@ type AzureWebAppTargetConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	IncludeIds             bool
 }
 
 func (c AzureWebAppTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -218,6 +219,7 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 		terraformResource := terraform.TerraformAzureWebAppDeploymentTarget{
 			Type:                            octopusdeployAzureWebAppDeploymentTargetResourceType,
 			Name:                            targetName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 			ResourceName:                    target.Name,
 			Roles:                           target.Roles,

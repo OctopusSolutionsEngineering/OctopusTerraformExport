@@ -30,6 +30,7 @@ type AccountConverter struct {
 	ExcludeAccountsRegex      args.StringSliceArgs
 	ExcludeAccountsExcept     args.StringSliceArgs
 	ExcludeAllAccounts        bool
+	IncludeIds                bool
 }
 
 func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -307,6 +308,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 		terraformResource := terraform.TerraformAwsAccount{
 			Type:                            "octopusdeploy_aws_account",
 			Name:                            resourceName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			ResourceName:                    account.Name,
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
@@ -392,6 +394,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			Type:                            "octopusdeploy_azure_service_principal",
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -470,6 +473,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			Type:                            "octopusdeploy_azure_subscription_account",
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -557,6 +561,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 			Type:                            "octopusdeploy_gcp_account",
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -639,6 +644,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 			Type:                            "octopusdeploy_token_account",
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -722,6 +728,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			Type:                            "octopusdeploy_username_password_account",
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -814,6 +821,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 			Type:                            "octopusdeploy_ssh_key_account",
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

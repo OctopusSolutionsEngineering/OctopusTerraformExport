@@ -33,6 +33,7 @@ type AzureCloudServiceTargetConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	IncludeIds             bool
 }
 
 func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -231,6 +232,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 			terraformResource := terraform.TerraformAzureCloudServiceDeploymentTarget{
 				Type:                            azureCloudServiceDeploymentResourceType,
 				Name:                            targetName,
+				Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 				ResourceName:                    target.Name,
 				Roles:                           target.Roles,
