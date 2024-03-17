@@ -226,7 +226,9 @@ jobs:
           CGO_ENABLED: 0
       # Note you must exclude the local.settings.json file from the zip. Otherwise, you get errors like:
       # Microsoft.Azure.WebJobs.Script: WorkerConfig for runtime: custom not found.
-      - run: zip -r octoterra_linux_amd64_azure.zip . -x local.settings.json
+      - run: |
+          zip -r octoterra_linux_amd64_azure.zip . -x local.settings.json
+          cp octoterra_linux_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
         working-directory: functions
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
