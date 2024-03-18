@@ -83,6 +83,8 @@ func convertSpace() js.Func {
 				ExcludeTenantTagSetsExcept:       strings.Split(getStringArg(funcArgs, 27), ","),
 				ExcludeAllProjectGroups:          getBoolArg(funcArgs, 28),
 				ExcludeProjectGroupsExcept:       strings.Split(getStringArg(funcArgs, 29), ","),
+				ExcludeAllSteps:                  getBoolArg(funcArgs, 29),
+				ExcludeStepsExcept:               strings.Split(getStringArg(funcArgs, 30), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,

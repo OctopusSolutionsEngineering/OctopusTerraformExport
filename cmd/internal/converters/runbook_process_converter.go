@@ -27,6 +27,10 @@ type RunbookProcessConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	LimitAttributeLength   int
+	ExcludeAllSteps        bool
+	ExcludeSteps           args.StringSliceArgs
+	ExcludeStepsRegex      args.StringSliceArgs
+	ExcludeStepsExcept     args.StringSliceArgs
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -130,6 +134,10 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 		}
 
 		for i, s := range validSteps {
+			if c.Excluder.IsResourceExcludedWithRegex(strutil.EmptyIfNil(s.Name), c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept) {
+				continue
+			}
+
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:               s.Name,
 				PackageRequirement: s.PackageRequirement,

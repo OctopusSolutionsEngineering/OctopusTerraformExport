@@ -29,6 +29,10 @@ type DeploymentProcessConverter struct {
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	LimitAttributeLength      int
 	ExcludeTerraformVariables bool
+	ExcludeAllSteps           bool
+	ExcludeSteps              args.StringSliceArgs
+	ExcludeStepsRegex         args.StringSliceArgs
+	ExcludeStepsExcept        args.StringSliceArgs
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -207,6 +211,10 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 		file := hclwrite.NewEmptyFile()
 
 		for i, s := range validSteps {
+			if c.Excluder.IsResourceExcludedWithRegex(strutil.EmptyIfNil(s.Name), c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept) {
+				continue
+			}
+
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:                s.Name,
 				PackageRequirement:  s.PackageRequirement,
