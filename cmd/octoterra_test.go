@@ -2165,7 +2165,7 @@ func TestProjectExport(t *testing.T) {
 			ExcludeProjectVariables:       []string{"Test"},
 			ExcludeProjectVariablesRegex:  []string{".*"},
 			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
-			ExcludeAllProjectVariables:    true,
+			ExcludeAllProjectVariables:    false,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
