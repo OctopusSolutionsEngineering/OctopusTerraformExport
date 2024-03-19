@@ -2165,7 +2165,7 @@ func TestProjectExport(t *testing.T) {
 			ExcludeProjectVariables:       []string{"Test"},
 			ExcludeProjectVariablesRegex:  []string{".*"},
 			ExcludeProjectVariablesExcept: []string{"DoesNotExist"},
-			ExcludeAllProjectVariables:    false,
+			ExcludeAllProjectVariables:    true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
@@ -2188,8 +2188,8 @@ func TestProjectExport(t *testing.T) {
 					variables := octopus.VariableSet{}
 					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
-					if err != nil || len(variables.Variables) != 1 {
-						return errors.New("the project must have one variable")
+					if err != nil || len(variables.Variables) != 0 {
+						return errors.New("the project must have no variables")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "Test project" {
