@@ -152,6 +152,10 @@ func exportSpaceImportAndTest(
 				ExcludeAllLibraryVariableSets:    arguments.ExcludeAllLibraryVariableSets,
 				ExcludeLibraryVariableSetsExcept: arguments.ExcludeLibraryVariableSetsExcept,
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
+				ExcludeAllProjectGroups:          arguments.ExcludeAllProjectGroups,
+				ExcludeProjectGroups:             arguments.ExcludeProjectGroups,
+				ExcludeProjectGroupsRegex:        arguments.ExcludeProjectGroupsRegex,
+				ExcludeProjectGroupsExcept:       arguments.ExcludeProjectGroupsExcept,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args)
@@ -663,7 +667,9 @@ func TestProjectGroupExport(t *testing.T) {
 		"../test/terraform/2-projectgroup/space_population",
 		[]string{},
 		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			ExcludeProjectGroupsExcept: []string{"Test"},
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)

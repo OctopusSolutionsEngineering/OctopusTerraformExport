@@ -305,7 +305,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ErrGroup:                   &group,
 		ExcludeProjectGroups:       args.ExcludeProjectGroups,
 		ExcludeProjectGroupsRegex:  args.ExcludeProjectGroupsRegex,
-		ExcludeProjectGroupsExcept: args.ExcludeProjectsExcept,
+		ExcludeProjectGroupsExcept: args.ExcludeProjectGroupsExcept,
 		ExcludeAllProjectGroups:    args.ExcludeAllProjectGroups,
 		Excluder:                   converters.DefaultExcluder{},
 	}
@@ -923,7 +923,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ErrGroup:                   nil,
 		ExcludeProjectGroups:       args.ExcludeProjectGroups,
 		ExcludeProjectGroupsRegex:  args.ExcludeProjectGroupsRegex,
-		ExcludeProjectGroupsExcept: args.ExcludeProjectsExcept,
+		ExcludeProjectGroupsExcept: args.ExcludeProjectGroupsExcept,
 		ExcludeAllProjectGroups:    args.ExcludeAllProjectGroups,
 		Excluder:                   converters.DefaultExcluder{},
 	}
