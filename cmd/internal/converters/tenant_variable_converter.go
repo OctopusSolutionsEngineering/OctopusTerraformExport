@@ -20,19 +20,23 @@ import (
 const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_project_variable"
 
 type TenantVariableConverter struct {
-	Client                    client.OctopusClient
-	ExcludeTenants            args.StringSliceArgs
-	ExcludeTenantsWithTags    args.StringSliceArgs
-	ExcludeTenantsExcept      args.StringSliceArgs
-	ExcludeAllTenants         bool
-	Excluder                  ExcludeByName
-	DummySecretVariableValues bool
-	DummySecretGenerator      DummySecretGenerator
-	ExcludeProjects           args.StringSliceArgs
-	ExcludeProjectsExcept     args.StringSliceArgs
-	ExcludeProjectsRegex      args.StringSliceArgs
-	ExcludeAllProjects        bool
-	ErrGroup                  *errgroup.Group
+	Client                       client.OctopusClient
+	ExcludeTenants               args.StringSliceArgs
+	ExcludeTenantsWithTags       args.StringSliceArgs
+	ExcludeTenantsExcept         args.StringSliceArgs
+	ExcludeAllTenants            bool
+	Excluder                     ExcludeByName
+	DummySecretVariableValues    bool
+	DummySecretGenerator         DummySecretGenerator
+	ExcludeProjects              args.StringSliceArgs
+	ExcludeProjectsExcept        args.StringSliceArgs
+	ExcludeProjectsRegex         args.StringSliceArgs
+	ExcludeAllProjects           bool
+	ErrGroup                     *errgroup.Group
+	ExcludeAllTenantVariables    bool
+	ExcludeTenantVariables       args.StringSliceArgs
+	ExcludeTenantVariablesExcept args.StringSliceArgs
+	ExcludeTenantVariablesRegex  args.StringSliceArgs
 }
 
 func (c TenantVariableConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -173,6 +177,24 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 		commonVariableIndex := 0
 
 		for id, value := range l.Variables {
+
+			libraryVariableSet := octopus.LibraryVariableSet{}
+			c.Client.GetResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
+			libraryVariableSetVariableName := lo.Filter(libraryVariableSet.Templates, func(item octopus.Template, index int) bool {
+				return item.Id == id
+			})
+
+			if len(libraryVariableSetVariableName) != 0 {
+				// Do not export excluded variables
+				if c.Excluder.IsResourceExcludedWithRegex(strutil.EmptyIfNil(libraryVariableSetVariableName[0].Name),
+					c.ExcludeAllTenantVariables,
+					c.ExcludeTenantVariables,
+					c.ExcludeTenantVariablesRegex,
+					c.ExcludeTenantVariablesExcept) {
+					continue
+				}
+			}
+
 			commonVariableIndex++
 			variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
 
