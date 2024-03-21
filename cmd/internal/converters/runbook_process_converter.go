@@ -124,7 +124,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 	thisResource.Lookup = "${octopusdeploy_runbook_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
-		validSteps := FilterSteps(resource.Steps)
+		validSteps := FilterSteps(resource.Steps, c.Excluder, c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept)
 
 		terraformResource := terraform.TerraformRunbookProcess{
 			Type:      "octopusdeploy_runbook_process",
@@ -134,10 +134,6 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 		}
 
 		for i, s := range validSteps {
-			if c.Excluder.IsResourceExcludedWithRegex(strutil.EmptyIfNil(s.Name), c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept) {
-				continue
-			}
-
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:               s.Name,
 				PackageRequirement: s.PackageRequirement,

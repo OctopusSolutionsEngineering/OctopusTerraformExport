@@ -199,7 +199,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 	thisResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
-		validSteps := FilterSteps(resource.Steps)
+		validSteps := FilterSteps(resource.Steps, c.Excluder, c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept)
 
 		terraformResource := terraform.TerraformDeploymentProcess{
 			Type:      "octopusdeploy_deployment_process",
@@ -211,10 +211,6 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 		file := hclwrite.NewEmptyFile()
 
 		for i, s := range validSteps {
-			if c.Excluder.IsResourceExcludedWithRegex(strutil.EmptyIfNil(s.Name), c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept) {
-				continue
-			}
-
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:                s.Name,
 				PackageRequirement:  s.PackageRequirement,

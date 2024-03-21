@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/samber/lo"
@@ -9,8 +10,12 @@ import (
 
 // FilterSteps removes any actions tha the terraform provider does not support (yet), and removes any
 // empty steps that result from this filtering process.
-func FilterSteps(steps []octopus.Step) []octopus.Step {
+func FilterSteps(steps []octopus.Step, Excluder ExcludeByName, ExcludeAllSteps bool, ExcludeSteps args.StringSliceArgs, ExcludeStepsRegex args.StringSliceArgs, ExcludeStepsExcept args.StringSliceArgs) []octopus.Step {
 	return lo.Filter(steps, func(item octopus.Step, index int) bool {
+
+		if Excluder.IsResourceExcludedWithRegex(strutil.EmptyIfNil(item.Name), ExcludeAllSteps, ExcludeSteps, ExcludeStepsRegex, ExcludeStepsExcept) {
+			return false
+		}
 
 		// Valid actions are those that are not from the new steps framework
 		validActions := lo.Filter(item.Actions, func(item octopus.Action, index int) bool {
