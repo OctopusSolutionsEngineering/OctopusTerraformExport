@@ -109,12 +109,14 @@ func convertSpace() js.Func {
 
 				if err != nil {
 					reject.Invoke(err.Error())
+					return
 				}
 
 				files, err := processJavaScriptResources(dependencies.Resources)
 
 				if err != nil {
 					reject.Invoke(err.Error())
+					return
 				}
 
 				hclBlob := ""
