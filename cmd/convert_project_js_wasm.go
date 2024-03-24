@@ -87,6 +87,8 @@ func convertSpace() js.Func {
 				ExcludeStepsExcept:               strings.Split(getStringArg(funcArgs, 31), ","),
 				ExcludeAllProjectVariables:       getBoolArg(funcArgs, 32),
 				ExcludeProjectVariablesExcept:    strings.Split(getStringArg(funcArgs, 33), ","),
+				ExcludeAllTenantVariables:        getBoolArg(funcArgs, 34),
+				ExcludeTenantVariablesExcept:     strings.Split(getStringArg(funcArgs, 35), ","),
 				ExcludeProvider:                  true,
 				LimitAttributeLength:             100,
 				IgnoreInvalidExcludeExcept:       true,
@@ -107,12 +109,14 @@ func convertSpace() js.Func {
 
 				if err != nil {
 					reject.Invoke(err.Error())
+					return
 				}
 
 				files, err := processJavaScriptResources(dependencies.Resources)
 
 				if err != nil {
 					reject.Invoke(err.Error())
+					return
 				}
 
 				hclBlob := ""

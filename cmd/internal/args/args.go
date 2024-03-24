@@ -46,18 +46,13 @@ type Arguments struct {
 	IncludeOctopusOutputVars    bool
 	LimitAttributeLength        int
 
-	IgnoreProjectChanges             bool
-	IgnoreProjectVariableChanges     bool
-	IgnoreProjectGroupChanges        bool
-	IgnoreProjectNameChanges         bool
-	ExcludeAllProjectVariables       bool
-	ExcludeProjectVariables          StringSliceArgs
-	ExcludeProjectVariablesExcept    StringSliceArgs
-	ExcludeProjectVariablesRegex     StringSliceArgs
-	ExcludeVariableEnvironmentScopes StringSliceArgs
-	LookUpDefaultWorkerPools         bool
-	IncludeIds                       bool
-	IncludeSpaceInPopulation         bool
+	IgnoreProjectChanges         bool
+	IgnoreProjectVariableChanges bool
+	IgnoreProjectGroupChanges    bool
+	IgnoreProjectNameChanges     bool
+	LookUpDefaultWorkerPools     bool
+	IncludeIds                   bool
+	IncludeSpaceInPopulation     bool
 
 	/*
 		We expose a lot of options to exclude resources from the export.
@@ -71,6 +66,17 @@ type Arguments struct {
 
 		Warnings have been added to the CLI help command to identify some of the side-effects of the various exclusions.
 	*/
+
+	ExcludeAllProjectVariables       bool
+	ExcludeProjectVariables          StringSliceArgs
+	ExcludeProjectVariablesExcept    StringSliceArgs
+	ExcludeProjectVariablesRegex     StringSliceArgs
+	ExcludeVariableEnvironmentScopes StringSliceArgs
+
+	ExcludeAllTenantVariables    bool
+	ExcludeTenantVariables       StringSliceArgs
+	ExcludeTenantVariablesExcept StringSliceArgs
+	ExcludeTenantVariablesRegex  StringSliceArgs
 
 	ExcludeAllSteps    bool
 	ExcludeSteps       StringSliceArgs
@@ -289,6 +295,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeMachinePolicies, "excludeMachinePolicies", "A machine policy to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeMachinePoliciesRegex, "excludeMachinePoliciesRegex", "A machine policy to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeMachinePoliciesExcept, "excludeMachinePoliciesExcept", "All machine policies except those defined with excludeMachinePoliciesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllTenantVariables, "excludeAllTenantVariables", false, "Exclude all tenant variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
+	flags.Var(&arguments.ExcludeTenantVariables, "excludeTenantVariables", "Exclude a tenant variable from being exported. WARNING: steps that used this variable may no longer function correctly.")
+	flags.Var(&arguments.ExcludeTenantVariablesExcept, "excludeTenantVariablesExcept", "All tenant variables except those defined with excludeTenantVariablesExcept are excluded. WARNING: steps that used other variables may no longer function correctly.")
+	flags.Var(&arguments.ExcludeTenantVariablesRegex, "excludeTenantVariablesRegex", "Exclude a tenant variable from being exported based on regex match. WARNING: steps that used this variable may no longer function correctly.")
 
 	flags.BoolVar(&arguments.ExcludeAllProjectVariables, "excludeAllProjectVariables", false, "Exclude all project variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeProjectVariables, "excludeProjectVariable", "Exclude a project variable from being exported. WARNING: steps that used this variable may no longer function correctly.")

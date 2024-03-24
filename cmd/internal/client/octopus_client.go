@@ -604,7 +604,7 @@ func (o *OctopusApiClient) cacheResult(resourceType string, id string, body []by
 	// Only projects and tenants are resolved by other resources. Tenant variables lookup tenants
 	// to see if they have been excluded. Many resources look up projects to see if they exist and
 	// if they have been excluded. Caching these resources saves repeat calls to the API.
-	if resourceType != "Projects" && resourceType != "Tenants" {
+	if resourceType != "Projects" && resourceType != "Tenants" && resourceType != "LibraryVariableSets" {
 		return
 	}
 
