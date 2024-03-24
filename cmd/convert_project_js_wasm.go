@@ -95,6 +95,7 @@ func convertSpace() js.Func {
 				ExcludeTerraformVariables:        true,
 				ExcludeSpaceCreation:             true,
 				IncludeIds:                       true,
+				IncludeSpaceInPopulation:         true,
 			}
 
 			argsJson, _ := json.Marshal(arguments)
