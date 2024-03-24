@@ -126,6 +126,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	// Convert the azure web app targets
 	c.AzureWebAppTargetConverter.AllToHcl(dependencies)
 
+	// Include the space if it was requested
+	c.SpacePopulateConverter.AllToHcl(dependencies)
+
 	return c.ErrGroup.Wait()
 }
 
