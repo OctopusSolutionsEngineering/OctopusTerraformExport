@@ -596,6 +596,12 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		TagSetConverter:             &tagsetConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
 		ProjectGroupConverter:       projectGroupConverter,
+		SpacePopulateConverter: converters.SpacePopulateConverter{
+			Client:                   &octopusClient,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			ErrGroup:                 &group,
+		},
 		ProjectConverter: &converters.ProjectConverter{
 			IncludeIds:                  args.IncludeIds,
 			Client:                      &octopusClient,

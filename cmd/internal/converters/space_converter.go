@@ -40,6 +40,7 @@ type SpaceConverter struct {
 	AzureCloudServiceTargetConverter  Converter
 	AzureServiceFabricTargetConverter Converter
 	AzureWebAppTargetConverter        Converter
+	SpacePopulateConverter            Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
