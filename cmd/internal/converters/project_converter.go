@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
@@ -527,7 +528,12 @@ func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, project
 
 func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) string {
 	if c.ExcludeTerraformVariables {
-		return "\"" + strings.ReplaceAll(projectResourceDescription, "\"", "\\\"") + "\""
+		escapedStr, err := json.Marshal(projectResourceDescription)
+		if err != nil {
+			return ""
+		}
+
+		return string(escapedStr)
 	}
 
 	sanitizedProjectName := sanitizer.SanitizeName(projectResourceName)
