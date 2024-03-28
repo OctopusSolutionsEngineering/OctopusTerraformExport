@@ -3,22 +3,22 @@ package terraform
 import "time"
 
 type TerraformMachinePolicy struct {
-	Type                                          string                             `hcl:"type,label"`
-	Name                                          string                             `hcl:"name,label"`
-	Count                                         *string                            `hcl:"count"`
-	ResourceName                                  string                             `hcl:"name"`
-	Id                                            *string                            `hcl:"id"`
-	Description                                   *string                            `hcl:"description"`
-	ConnectionConnectTimeout                      *time.Duration                     `hcl:"connection_connect_timeout"`
-	ConnectionRetryCountLimit                     *int                               `hcl:"connection_retry_count_limit"`
-	ConnectionRetrySleepInterval                  *time.Duration                     `hcl:"connection_retry_sleep_interval"`
-	ConnectionRetryTimeLimit                      *time.Duration                     `hcl:"connection_retry_time_limit"`
-	PollingRequestMaximumMessageProcessingTimeout *time.Duration                     `hcl:"polling_request_maximum_message_processing_timeout"`
-	pollingRequestQueueTimeout                    *time.Duration                     `hcl:"polling_request_queue_timeout"`
-	MachineCleanupPolicy                          TerraformMachineCleanupPolicy      `hcl:"machine_cleanup_policy,block"`
-	TerraformMachineConnectivityPolicy            TerraformMachineConnectivityPolicy `hcl:"machine_connectivity_policy,block"`
-	TerraformMachineHealthCheckPolicy             TerraformMachineHealthCheckPolicy  `hcl:"machine_health_check_policy,block"`
-	TerraformMachineUpdatePolicy                  TerraformMachineUpdatePolicy       `hcl:"machine_update_policy,block"`
+	Type                         string         `hcl:"type,label"`
+	Name                         string         `hcl:"name,label"`
+	Count                        *string        `hcl:"count"`
+	ResourceName                 string         `hcl:"name"`
+	Id                           *string        `hcl:"id"`
+	Description                  *string        `hcl:"description"`
+	ConnectionConnectTimeout     *time.Duration `hcl:"connection_connect_timeout"`
+	ConnectionRetryCountLimit    *int           `hcl:"connection_retry_count_limit"`
+	ConnectionRetrySleepInterval *time.Duration `hcl:"connection_retry_sleep_interval"`
+	ConnectionRetryTimeLimit     *time.Duration `hcl:"connection_retry_time_limit"`
+	//PollingRequestMaximumMessageProcessingTimeout *time.Duration                     `hcl:"polling_request_maximum_message_processing_timeout"`
+	pollingRequestQueueTimeout         *time.Duration                     `hcl:"polling_request_queue_timeout"`
+	MachineCleanupPolicy               TerraformMachineCleanupPolicy      `hcl:"machine_cleanup_policy,block"`
+	TerraformMachineConnectivityPolicy TerraformMachineConnectivityPolicy `hcl:"machine_connectivity_policy,block"`
+	TerraformMachineHealthCheckPolicy  TerraformMachineHealthCheckPolicy  `hcl:"machine_health_check_policy,block"`
+	TerraformMachineUpdatePolicy       TerraformMachineUpdatePolicy       `hcl:"machine_update_policy,block"`
 }
 
 type TerraformMachineCleanupPolicy struct {
