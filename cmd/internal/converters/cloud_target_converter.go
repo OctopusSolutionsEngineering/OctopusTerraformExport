@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeployCloudRegionResourceDataType = "octopusdeploy_deployment_targe
 const octopusdeployCloudRegionResourceType = "octopusdeploy_cloud_region_deployment_target"
 
 type CloudRegionTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
@@ -30,7 +31,6 @@ type CloudRegionTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
@@ -56,9 +56,26 @@ func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *data.
 		return err
 	}
 
+	// filter out environments that should not be processed
+	var filterError error = nil
 	targets := lo.Filter(collection.Items, func(item octopus.CloudRegionResource, index int) bool {
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterError = errors.Join(filterError, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isCloudTarget(item)
 	})
+
+	if filterError != nil {
+		return filterError
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Cloud Target: " + resource.Id)
@@ -104,6 +121,16 @@ func (c CloudRegionTargetConverter) toHclById(id string, stateless bool, depende
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Cloud Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -130,6 +157,16 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *dat
 	}
 
 	if !c.isCloudTarget(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -181,6 +218,16 @@ func (c CloudRegionTargetConverter) toHcl(target octopus.CloudRegionResource, re
 	}
 
 	if !c.isCloudTarget(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 

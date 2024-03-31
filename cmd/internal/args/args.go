@@ -151,10 +151,12 @@ type Arguments struct {
 	ExcludeProjectsRegex  StringSliceArgs
 	ExcludeAllProjects    bool
 
-	ExcludeAllTargets        bool
-	ExcludeTargets           StringSliceArgs
-	ExcludeTargetsRegex      StringSliceArgs
-	ExcludeTargetsExcept     StringSliceArgs
+	ExcludeAllTargets                bool
+	ExcludeTargets                   StringSliceArgs
+	ExcludeTargetsRegex              StringSliceArgs
+	ExcludeTargetsExcept             StringSliceArgs
+	ExcludeTargetsWithNoEnvironments bool
+
 	ExcludeAllGitCredentials bool
 }
 
@@ -322,6 +324,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeTenantsExcept, "excludeTenantsExcept", "Exclude all tenants except for those define in this list. The tenants in excludeTenants take precedence, so a tenant define here and in excludeTenants is excluded.")
 
 	flags.BoolVar(&arguments.ExcludeAllTargets, "excludeAllTargets", false, "Exclude all targets from being exported. WARNING: Variables that were scoped to targets will become unscoped.")
+	flags.BoolVar(&arguments.ExcludeTargetsWithNoEnvironments, "excludeTargetsWithNoEnvironments", false, "Exclude targets that have had all their environments excluded. WARNING: Variables that were scoped to targets will become unscoped.")
 	flags.Var(&arguments.ExcludeTargets, "excludeTargets", "Exclude targets from being exported. WARNING: Variables that were scoped to targets will become unscoped.")
 	flags.Var(&arguments.ExcludeTargetsRegex, "excludeTargetsRegex", "Exclude targets from being exported based on a regex. WARNING: Variables that were scoped to targets will become unscoped.")
 	flags.Var(&arguments.ExcludeTargetsExcept, "excludeTargetsExcept", "Exclude all targets except for those define in this list. The targets in excludeTargets take precedence, so a tenant define here and in excludeTargets is excluded. WARNING: Variables that were scoped to other targets will become unscoped.")

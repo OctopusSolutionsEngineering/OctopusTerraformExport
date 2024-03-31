@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeployAzureWebAppDeploymentTargetDataType = "octopusdeploy_deployme
 const octopusdeployAzureWebAppDeploymentTargetResourceType = "octopusdeploy_azure_web_app_deployment_target"
 
 type AzureWebAppTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	AccountConverter       ConverterAndLookupWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
@@ -31,7 +32,6 @@ type AzureWebAppTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
@@ -57,9 +57,26 @@ func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *data.
 		return err
 	}
 
+	// filter out environments that should not be processed
+	var filterErrors error = nil
 	targets := lo.Filter(collection.Items, func(item octopus.AzureWebAppResource, index int) bool {
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isAzureWebApp(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Azure Web App Target: " + resource.Id)
@@ -105,6 +122,16 @@ func (c AzureWebAppTargetConverter) toHclById(id string, stateless bool, depende
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Azure Web App Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -131,6 +158,16 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *dat
 	}
 
 	if !c.isAzureWebApp(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -182,6 +219,16 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 	}
 
 	if !c.isAzureWebApp(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 

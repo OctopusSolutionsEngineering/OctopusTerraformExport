@@ -1,8 +1,7 @@
 package octopus
 
 type Environment struct {
-	Id                         string
-	Name                       string
+	NameId
 	SpaceId                    string
 	Description                *string
 	SortOrder                  int
