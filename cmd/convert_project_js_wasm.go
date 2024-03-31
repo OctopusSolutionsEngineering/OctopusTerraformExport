@@ -96,6 +96,10 @@ func convertSpace() js.Func {
 				ExcludeSpaceCreation:             true,
 				IncludeIds:                       true,
 				IncludeSpaceInPopulation:         true,
+				// We exclude targets with no environments if some environments were specifically mentioned
+				// For example, if the environment "Prod" was mentioned, getBoolArg(funcArgs, 12) would be false,
+				// and we want to limit targets to just that environment.
+				ExcludeTargetsWithNoEnvironments: !getBoolArg(funcArgs, 12),
 			}
 
 			argsJson, _ := json.Marshal(arguments)
@@ -261,97 +265,160 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
-		Client:                 &client,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &client,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              nil,
+			ExcludeEnvironmentsRegex:         nil,
+			ExcludeEnvironmentsExcept:        nil,
+			ExcludeAllEnvironments:           false,
+			ExcludeTargetsWithNoEnvironments: false,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeTenantTags:      nil,
 		ExcludeTenantTagSets:   nil,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 	}
 
