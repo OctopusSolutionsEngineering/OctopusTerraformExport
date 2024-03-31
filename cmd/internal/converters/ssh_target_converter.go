@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeploySshConnectionDeploymentTargetDataType = "octopusdeploy_deploy
 const octopusdeploySshConnectionDeploymentTargetResourceType = "octopusdeploy_ssh_connection_deployment_target"
 
 type SshTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	AccountConverter       ConverterAndLookupWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
@@ -31,7 +32,6 @@ type SshTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
@@ -57,9 +57,25 @@ func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.Resource
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.SshEndpointResource, index int) bool {
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isSsh(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("SSH Target: " + resource.Id)
@@ -109,6 +125,16 @@ func (c SshTargetConverter) toHclById(id string, stateless bool, dependencies *d
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("SSH Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -139,6 +165,16 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *data.Resour
 	}
 
 	if !c.isSsh(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -190,6 +226,16 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 	}
 
 	if !c.isSsh(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 

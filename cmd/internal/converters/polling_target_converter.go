@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeployPollingTentacleDeploymentTargetDataType = "octopusdeploy_depl
 const octopusdeployPollingTentacleDeploymentTargetResourceType = "octopusdeploy_polling_tentacle_deployment_target"
 
 type PollingTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
@@ -30,7 +31,6 @@ type PollingTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
@@ -56,9 +56,25 @@ func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *data.Reso
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.PollingEndpointResource, index int) bool {
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isPollingTarget(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Polling Target: " + resource.Id)
@@ -104,6 +120,16 @@ func (c PollingTargetConverter) toHclById(id string, stateless bool, dependencie
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Polling Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -130,6 +156,16 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *data.Re
 	}
 
 	if !c.isPollingTarget(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -179,6 +215,16 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 	}
 
 	if !c.isPollingTarget(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 

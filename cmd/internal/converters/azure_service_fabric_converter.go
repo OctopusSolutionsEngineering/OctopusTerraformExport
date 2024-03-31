@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeployAzureServiceFabricClusterDeploymentDataType = "octopusdeploy_
 const octopusdeployAzureServiceFabricClusterDeploymentResourceType = "octopusdeploy_azure_service_fabric_cluster_deployment_target"
 
 type AzureServiceFabricTargetConverter struct {
-	Client                    client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter    ConverterWithStatelessById
 	EnvironmentConverter      ConverterAndLookupWithStatelessById
 	ExcludeAllTargets         bool
@@ -32,7 +33,6 @@ type AzureServiceFabricTargetConverter struct {
 	DummySecretGenerator      DummySecretGenerator
 	ExcludeTenantTags         args.StringSliceArgs
 	ExcludeTenantTagSets      args.StringSliceArgs
-	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
@@ -58,9 +58,26 @@ func (c AzureServiceFabricTargetConverter) allToHcl(stateless bool, dependencies
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.AzureServiceFabricResource, index int) bool {
+
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isAzureServiceFabricCluster(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Azure Service Fabric Target: " + resource.Id)

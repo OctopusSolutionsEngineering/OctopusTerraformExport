@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const azureCloudServiceDeploymentDataType = "octopusdeploy_deployment_targets"
 const azureCloudServiceDeploymentResourceType = "octopusdeploy_azure_cloud_service_deployment_target"
 
 type AzureCloudServiceTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	AccountConverter       ConverterAndLookupWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
@@ -31,7 +32,6 @@ type AzureCloudServiceTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
@@ -61,9 +61,25 @@ func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies 
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.AzureCloudServiceResource, index int) bool {
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isAzureCloudService(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Azure Cloud Service Target: " + resource.Id)
@@ -104,6 +120,16 @@ func (c AzureCloudServiceTargetConverter) toHclById(id string, stateless bool, d
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Azure Cloud Service Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -125,6 +151,16 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 	}
 
 	if !c.isAzureCloudService(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -205,88 +241,100 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 		return nil
 	}
 
-	if c.isAzureCloudService(target) {
-		if recursive {
-			if stateless {
-				if err := c.exportStatelessDependencies(target, dependencies); err != nil {
-					return err
-				}
-			} else {
-				if err := c.exportDependencies(target, dependencies); err != nil {
-					return err
-				}
-			}
-		}
+	err, noEnvironments := c.HasNoEnvironments(target)
 
-		targetName := "target_" + sanitizer.SanitizeName(target.Name)
-
-		thisResource := data.ResourceDetails{}
-		thisResource.Name = target.Name
-		thisResource.FileName = "space_population/" + targetName + ".tf"
-		thisResource.Id = target.Id
-		thisResource.ResourceType = c.GetResourceType()
-		thisResource.Lookup = c.getLookup(stateless, targetName)
-		thisResource.Dependency = c.getDependency(stateless, targetName)
-
-		thisResource.ToHcl = func() (string, error) {
-
-			terraformResource := terraform.TerraformAzureCloudServiceDeploymentTarget{
-				Type:                            azureCloudServiceDeploymentResourceType,
-				Name:                            targetName,
-				Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
-				Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
-				ResourceName:                    target.Name,
-				Roles:                           target.Roles,
-				AccountId:                       c.getAccount(target.Endpoint.AccountId, dependencies),
-				CloudServiceName:                target.Endpoint.CloudServiceName,
-				StorageAccountName:              target.Endpoint.StorageAccountName,
-				DefaultWorkerPoolId:             &target.Endpoint.DefaultWorkerPoolId,
-				HealthStatus:                    &target.HealthStatus,
-				IsDisabled:                      &target.IsDisabled,
-				MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
-				OperatingSystem:                 nil,
-				ShellName:                       &target.ShellName,
-				ShellVersion:                    &target.ShellVersion,
-				Slot:                            nil,
-				SpaceId:                         nil,
-				Status:                          nil,
-				StatusSummary:                   nil,
-				SwapIfPossible:                  nil,
-				TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-				TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
-				Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
-				Thumbprint:                      &target.Thumbprint,
-				Uri:                             nil,
-				UseCurrentInstanceCount:         &target.Endpoint.UseCurrentInstanceCount,
-				Endpoint: &terraform.TerraformAzureCloudServiceDeploymentTargetEndpoint{
-					DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
-					CommunicationStyle:  "AzureCloudService",
-				},
-				Count: c.getCount(stateless, targetName),
-			}
-			file := hclwrite.NewEmptyFile()
-
-			if stateless {
-				c.writeData(file, target, targetName)
-			}
-
-			block := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-			if stateless {
-				hcl.WriteLifecyclePreventDestroyAttribute(block)
-			}
-
-			err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
-			if err != nil {
-				return "", err
-			}
-			file.Body().AppendBlock(block)
-
-			return string(file.Bytes()), nil
-		}
-
-		dependencies.AddResource(thisResource)
+	if err != nil {
+		return err
 	}
+
+	if noEnvironments {
+		return nil
+	}
+
+	if !c.isAzureCloudService(target) {
+		return nil
+	}
+
+	if recursive {
+		if stateless {
+			if err := c.exportStatelessDependencies(target, dependencies); err != nil {
+				return err
+			}
+		} else {
+			if err := c.exportDependencies(target, dependencies); err != nil {
+				return err
+			}
+		}
+	}
+
+	targetName := "target_" + sanitizer.SanitizeName(target.Name)
+
+	thisResource := data.ResourceDetails{}
+	thisResource.Name = target.Name
+	thisResource.FileName = "space_population/" + targetName + ".tf"
+	thisResource.Id = target.Id
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = c.getLookup(stateless, targetName)
+	thisResource.Dependency = c.getDependency(stateless, targetName)
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformAzureCloudServiceDeploymentTarget{
+			Type:                            azureCloudServiceDeploymentResourceType,
+			Name:                            targetName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
+			ResourceName:                    target.Name,
+			Roles:                           target.Roles,
+			AccountId:                       c.getAccount(target.Endpoint.AccountId, dependencies),
+			CloudServiceName:                target.Endpoint.CloudServiceName,
+			StorageAccountName:              target.Endpoint.StorageAccountName,
+			DefaultWorkerPoolId:             &target.Endpoint.DefaultWorkerPoolId,
+			HealthStatus:                    &target.HealthStatus,
+			IsDisabled:                      &target.IsDisabled,
+			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
+			OperatingSystem:                 nil,
+			ShellName:                       &target.ShellName,
+			ShellVersion:                    &target.ShellVersion,
+			Slot:                            nil,
+			SpaceId:                         nil,
+			Status:                          nil,
+			StatusSummary:                   nil,
+			SwapIfPossible:                  nil,
+			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			TenantedDeploymentParticipation: &target.TenantedDeploymentParticipation,
+			Tenants:                         dependencies.GetResources("Tenants", target.TenantIds...),
+			Thumbprint:                      &target.Thumbprint,
+			Uri:                             nil,
+			UseCurrentInstanceCount:         &target.Endpoint.UseCurrentInstanceCount,
+			Endpoint: &terraform.TerraformAzureCloudServiceDeploymentTargetEndpoint{
+				DefaultWorkerPoolId: c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
+				CommunicationStyle:  "AzureCloudService",
+			},
+			Count: c.getCount(stateless, targetName),
+		}
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, target, targetName)
+		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
+		}
+
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, block, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

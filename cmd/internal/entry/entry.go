@@ -352,7 +352,15 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
@@ -360,7 +368,6 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -369,14 +376,21 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -386,13 +400,20 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -402,13 +423,20 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -443,7 +471,15 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
-		Client:                    &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter:    machinePolicyConverter,
 		EnvironmentConverter:      environmentConverter,
 		ExcludeAllTargets:         args.ExcludeAllTargets,
@@ -451,7 +487,6 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
-		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
@@ -461,14 +496,21 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -478,13 +520,20 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
-		Client:                    &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter:    machinePolicyConverter,
 		EnvironmentConverter:      environmentConverter,
 		ExcludeAllTargets:         args.ExcludeAllTargets,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
-		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
@@ -1040,7 +1089,15 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		CertificateConverter:   certificateConverter,
@@ -1048,7 +1105,6 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -1056,14 +1112,21 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -1072,13 +1135,20 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -1087,13 +1157,20 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		EnvironmentConverter:   environmentConverter,
 		ExcludeAllTargets:      args.ExcludeAllTargets,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
@@ -1125,7 +1202,15 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
-		Client:                    &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter:    machinePolicyConverter,
 		EnvironmentConverter:      environmentConverter,
 		ExcludeAllTargets:         args.ExcludeAllTargets,
@@ -1133,7 +1218,6 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
-		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
@@ -1142,7 +1226,15 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
-		Client:                 &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter: machinePolicyConverter,
 		AccountConverter:       accountConverter,
 		EnvironmentConverter:   environmentConverter,
@@ -1152,13 +1244,20 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ExcludeTenantTags:      args.ExcludeTenantTags,
 		ExcludeTenantTagSets:   args.ExcludeTenantTagSets,
-		Excluder:               converters.DefaultExcluder{},
 		TagSetConverter:        &tagsetConverter,
 		IncludeIds:             args.IncludeIds,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
-		Client:                    &octopusClient,
+		TargetConverter: converters.TargetConverter{
+			Client:                           &octopusClient,
+			Excluder:                         converters.DefaultExcluder{},
+			ExcludeEnvironments:              args.ExcludeEnvironments,
+			ExcludeEnvironmentsRegex:         args.ExcludeEnvironmentsRegex,
+			ExcludeEnvironmentsExcept:        args.ExcludeEnvironmentsExcept,
+			ExcludeAllEnvironments:           args.ExcludeAllEnvironments,
+			ExcludeTargetsWithNoEnvironments: args.ExcludeTargetsWithNoEnvironments,
+		},
 		MachinePolicyConverter:    machinePolicyConverter,
 		EnvironmentConverter:      environmentConverter,
 		ExcludeAllTargets:         args.ExcludeAllTargets,
@@ -1166,7 +1265,6 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
-		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,

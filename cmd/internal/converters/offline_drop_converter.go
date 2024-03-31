@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -20,7 +20,8 @@ const octopusdeployOfflinePackageDropDeploymentTargetDataType = "octopusdeploy_d
 const octopusdeployOfflinePackageDropDeploymentTargetResourceType = "octopusdeploy_offline_package_drop_deployment_target"
 
 type OfflineDropTargetConverter struct {
-	Client                    client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter    ConverterWithStatelessById
 	EnvironmentConverter      ConverterAndLookupWithStatelessById
 	ExcludeAllTargets         bool
@@ -31,7 +32,6 @@ type OfflineDropTargetConverter struct {
 	DummySecretGenerator      DummySecretGenerator
 	ExcludeTenantTags         args.StringSliceArgs
 	ExcludeTenantTagSets      args.StringSliceArgs
-	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
@@ -57,9 +57,26 @@ func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *data.
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.OfflineDropResource, index int) bool {
+
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isOfflineTarget(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Offline Drop Target: " + resource.Id)
@@ -105,6 +122,16 @@ func (c OfflineDropTargetConverter) toHclById(id string, stateless bool, depende
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Offline Drop Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -129,12 +156,18 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *dat
 		return nil
 	}
 
-	// Ignore excluded targets
-	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
-	if !c.isOfflineTarget(resource) {
+	// Ignore excluded targets
+	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
 		return nil
 	}
 
@@ -184,6 +217,16 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 	}
 
 	if !c.isOfflineTarget(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 

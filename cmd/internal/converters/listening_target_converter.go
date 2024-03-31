@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeployListeningTentacleDeploymentTargetDataType = "octopusdeploy_de
 const octopusdeployListeningTentacleDeploymentTargetResourceType = "octopusdeploy_listening_tentacle_deployment_target"
 
 type ListeningTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
 	ExcludeAllTargets      bool
@@ -30,7 +31,6 @@ type ListeningTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
@@ -56,9 +56,26 @@ func (c ListeningTargetConverter) allToHcl(stateless bool, dependencies *data.Re
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.ListeningEndpointResource, index int) bool {
+
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isListeningTarget(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Listening Target: " + resource.Id)
@@ -104,6 +121,16 @@ func (c ListeningTargetConverter) toHclById(id string, stateless bool, dependenc
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Listening Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -130,6 +157,16 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *data.
 	}
 
 	if !c.isListeningTarget(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -181,6 +218,16 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 	}
 
 	if !c.isListeningTarget(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 

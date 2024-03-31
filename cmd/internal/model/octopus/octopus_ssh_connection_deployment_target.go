@@ -1,9 +1,10 @@
 package octopus
 
 type SshEndpointResource struct {
+	Target
+
 	Id                              string
 	Name                            string
-	EnvironmentIds                  []string
 	Roles                           []string
 	TenantIds                       []string
 	TenantTags                      []string

@@ -1,8 +1,8 @@
 package converters
 
 import (
+	"errors"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -21,7 +21,8 @@ const octopusdeployKubernetesClusterDeploymentTargetDataType = "octopusdeploy_de
 const octopusdeployKubernetesClusterDeploymentTargetResourceType = "octopusdeploy_kubernetes_cluster_deployment_target"
 
 type KubernetesTargetConverter struct {
-	Client                 client.OctopusClient
+	TargetConverter
+
 	MachinePolicyConverter ConverterWithStatelessById
 	AccountConverter       ConverterAndLookupWithStatelessById
 	EnvironmentConverter   ConverterAndLookupWithStatelessById
@@ -32,7 +33,6 @@ type KubernetesTargetConverter struct {
 	ExcludeTargetsExcept   args.StringSliceArgs
 	ExcludeTenantTags      args.StringSliceArgs
 	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 }
@@ -57,9 +57,26 @@ func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.R
 		return err
 	}
 
+	var filterErrors error
 	targets := lo.Filter(collection.Items, func(item octopus.KubernetesEndpointResource, index int) bool {
+
+		err, noEnvironments := c.HasNoEnvironments(item)
+
+		if err != nil {
+			filterErrors = errors.Join(filterErrors, err)
+			return false
+		}
+
+		if noEnvironments {
+			return false
+		}
+
 		return c.isKubernetesTarget(item)
 	})
+
+	if filterErrors != nil {
+		return filterErrors
+	}
 
 	for _, resource := range targets {
 		zap.L().Info("Kubernetes Target: " + resource.Id)
@@ -105,6 +122,16 @@ func (c KubernetesTargetConverter) toHclById(id string, stateless bool, dependen
 		return nil
 	}
 
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
+		return nil
+	}
+
 	zap.L().Info("Kubernetes Target: " + resource.Id)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
@@ -131,6 +158,16 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *data
 	}
 
 	if !c.isKubernetesTarget(resource) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(resource)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
@@ -182,6 +219,16 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 	}
 
 	if !c.isKubernetesTarget(target) {
+		return nil
+	}
+
+	err, noEnvironments := c.HasNoEnvironments(target)
+
+	if err != nil {
+		return err
+	}
+
+	if noEnvironments {
 		return nil
 	}
 
