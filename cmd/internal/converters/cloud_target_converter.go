@@ -14,6 +14,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 const octopusdeployCloudRegionResourceDataType = "octopusdeploy_deployment_targets"
@@ -269,7 +270,9 @@ func (c CloudRegionTargetConverter) lookupEnvironments(envs []string, dependenci
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
-	return newEnvs
+	return lo.Filter(newEnvs, func(item string, index int) bool {
+		return strings.TrimSpace(item) != ""
+	})
 }
 
 func (c CloudRegionTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {

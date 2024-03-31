@@ -14,6 +14,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 const octopusdeployAzureWebAppDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -282,7 +283,9 @@ func (c AzureWebAppTargetConverter) lookupEnvironments(envs []string, dependenci
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
-	return newEnvs
+	return lo.Filter(newEnvs, func(item string, index int) bool {
+		return strings.TrimSpace(item) != ""
+	})
 }
 
 func (c AzureWebAppTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {

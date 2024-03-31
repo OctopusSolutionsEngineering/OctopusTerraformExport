@@ -14,6 +14,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 const octopusdeploySshConnectionDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -272,7 +273,9 @@ func (c SshTargetConverter) lookupEnvironments(envs []string, dependencies *data
 	for i, v := range envs {
 		newEnvs[i] = dependencies.GetResource("Environments", v)
 	}
-	return newEnvs
+	return lo.Filter(newEnvs, func(item string, index int) bool {
+		return strings.TrimSpace(item) != ""
+	})
 }
 
 func (c SshTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
