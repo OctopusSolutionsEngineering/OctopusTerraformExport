@@ -32,6 +32,7 @@ type PollingTargetConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	IncludeIds             bool
 }
 
 func (c PollingTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -212,6 +213,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformPollingTentacleDeploymentTarget{
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 			Type:                            octopusdeployPollingTentacleDeploymentTargetResourceType,
 			Name:                            targetName,
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),

@@ -382,6 +382,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ErrGroup:               &group,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -397,6 +398,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ErrGroup:               &group,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -412,6 +414,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
 		ErrGroup:               &group,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -445,6 +448,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:      args.ExcludeTargetsExcept,
 		ErrGroup:                  &group,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -1048,6 +1052,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -1062,6 +1067,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -1076,6 +1082,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:         args.ExcludeTargets,
 		ExcludeTargetsRegex:    args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:   args.ExcludeTargetsExcept,
+		IncludeIds:             args.IncludeIds,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -1107,6 +1114,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTargets:            args.ExcludeTargets,
 		ExcludeTargetsRegex:       args.ExcludeTargetsRegex,
 		ExcludeTargetsExcept:      args.ExcludeTargetsExcept,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{

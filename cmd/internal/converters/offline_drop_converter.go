@@ -34,6 +34,7 @@ type OfflineDropTargetConverter struct {
 	Excluder                  ExcludeByName
 	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
 	ErrGroup                  *errgroup.Group
+	IncludeIds                bool
 }
 
 func (c OfflineDropTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -218,6 +219,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformOfflineDropDeploymentTarget{
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 			Type:                            octopusdeployOfflinePackageDropDeploymentTargetResourceType,
 			Name:                            targetName,
 			ApplicationsDirectory:           target.Endpoint.ApplicationsDirectory,

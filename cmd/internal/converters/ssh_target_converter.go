@@ -33,6 +33,7 @@ type SshTargetConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	IncludeIds             bool
 }
 
 func (c SshTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -222,6 +223,7 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformSshConnectionDeploymentTarget{
+			Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 			Type:               octopusdeploySshConnectionDeploymentTargetResourceType,
 			Name:               targetName,
 			AccountId:          c.getAccount(target.Endpoint.AccountId, dependencies),

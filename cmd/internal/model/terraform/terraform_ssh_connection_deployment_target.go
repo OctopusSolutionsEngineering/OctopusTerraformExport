@@ -1,6 +1,7 @@
 package terraform
 
 type TerraformSshConnectionDeploymentTarget struct {
+	Id                 *string  `hcl:"id"`
 	Type               string   `hcl:"type,label"`
 	Name               string   `hcl:"name,label"`
 	Count              *string  `hcl:"count"`

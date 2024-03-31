@@ -32,6 +32,7 @@ type ListeningTargetConverter struct {
 	Excluder               ExcludeByName
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	IncludeIds             bool
 }
 
 func (c ListeningTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -214,6 +215,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformListeningTentacleDeploymentTarget{
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
 			Type:                            octopusdeployListeningTentacleDeploymentTargetResourceType,
 			Name:                            targetName,
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
