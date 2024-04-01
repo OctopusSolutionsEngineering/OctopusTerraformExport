@@ -18,19 +18,20 @@ import (
 )
 
 type RunbookProcessConverter struct {
-	Client                 client.OctopusClient
-	OctopusActionProcessor OctopusActionProcessor
-	IgnoreProjectChanges   bool
-	WorkerPoolProcessor    OctopusWorkerPoolProcessor
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	Excluder               ExcludeByName
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	LimitAttributeLength   int
-	ExcludeAllSteps        bool
-	ExcludeSteps           args.StringSliceArgs
-	ExcludeStepsRegex      args.StringSliceArgs
-	ExcludeStepsExcept     args.StringSliceArgs
+	Client                     client.OctopusClient
+	OctopusActionProcessor     OctopusActionProcessor
+	IgnoreProjectChanges       bool
+	WorkerPoolProcessor        OctopusWorkerPoolProcessor
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	Excluder                   ExcludeByName
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength       int
+	ExcludeAllSteps            bool
+	ExcludeSteps               args.StringSliceArgs
+	ExcludeStepsRegex          args.StringSliceArgs
+	ExcludeStepsExcept         args.StringSliceArgs
+	IgnoreInvalidExcludeExcept bool
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -124,7 +125,14 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 	thisResource.Lookup = "${octopusdeploy_runbook_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
-		validSteps := FilterSteps(resource.Steps, c.Excluder, c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept)
+		validSteps := FilterSteps(
+			resource.Steps,
+			c.IgnoreInvalidExcludeExcept,
+			c.Excluder,
+			c.ExcludeAllSteps,
+			c.ExcludeSteps,
+			c.ExcludeStepsRegex,
+			c.ExcludeStepsExcept)
 
 		terraformResource := terraform.TerraformRunbookProcess{
 			Type:      "octopusdeploy_runbook_process",

@@ -19,20 +19,21 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client                    client.OctopusClient
-	OctopusActionProcessor    OctopusActionProcessor
-	IgnoreProjectChanges      bool
-	WorkerPoolProcessor       OctopusWorkerPoolProcessor
-	ExcludeTenantTags         args.StringSliceArgs
-	ExcludeTenantTagSets      args.StringSliceArgs
-	Excluder                  ExcludeByName
-	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
-	LimitAttributeLength      int
-	ExcludeTerraformVariables bool
-	ExcludeAllSteps           bool
-	ExcludeSteps              args.StringSliceArgs
-	ExcludeStepsRegex         args.StringSliceArgs
-	ExcludeStepsExcept        args.StringSliceArgs
+	Client                     client.OctopusClient
+	OctopusActionProcessor     OctopusActionProcessor
+	IgnoreProjectChanges       bool
+	WorkerPoolProcessor        OctopusWorkerPoolProcessor
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	Excluder                   ExcludeByName
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength       int
+	ExcludeTerraformVariables  bool
+	ExcludeAllSteps            bool
+	ExcludeSteps               args.StringSliceArgs
+	ExcludeStepsRegex          args.StringSliceArgs
+	ExcludeStepsExcept         args.StringSliceArgs
+	IgnoreInvalidExcludeExcept bool
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -199,7 +200,14 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 	thisResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
-		validSteps := FilterSteps(resource.Steps, c.Excluder, c.ExcludeAllSteps, c.ExcludeSteps, c.ExcludeStepsRegex, c.ExcludeStepsExcept)
+		validSteps := FilterSteps(
+			resource.Steps,
+			c.IgnoreInvalidExcludeExcept,
+			c.Excluder,
+			c.ExcludeAllSteps,
+			c.ExcludeSteps,
+			c.ExcludeStepsRegex,
+			c.ExcludeStepsExcept)
 
 		terraformResource := terraform.TerraformDeploymentProcess{
 			Type:      "octopusdeploy_deployment_process",
