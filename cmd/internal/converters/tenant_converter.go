@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -40,6 +41,7 @@ type TenantConverter struct {
 	ExcludeAllProjects      bool
 	ErrGroup                *errgroup.Group
 	IncludeIds              bool
+	LimitResourceCount      int
 }
 
 func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -167,6 +169,11 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 
 	// Ignore excluded tenants
 	if c.Excluder.IsResourceExcludedWithRegex(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsRegex, c.ExcludeTenantsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + tenant.Id)
 		return nil
 	}
 

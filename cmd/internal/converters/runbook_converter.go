@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -34,6 +35,7 @@ type RunbookConverter struct {
 	Excluder                     ExcludeByName
 	IgnoreProjectChanges         bool
 	ErrGroup                     *errgroup.Group
+	LimitResourceCount           int
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -155,6 +157,11 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 	// Ignore excluded runbooks
 	if c.Excluder.IsResourceExcludedWithRegex(runbook.Name, c.ExcludeAllRunbooks, c.ExcludedRunbooks, c.ExcludeRunbooksRegex, c.ExcludeRunbooksExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + runbook.Id)
 		return nil
 	}
 

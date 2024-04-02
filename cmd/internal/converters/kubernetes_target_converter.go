@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -35,6 +36,7 @@ type KubernetesTargetConverter struct {
 	ExcludeTenantTagSets   args.StringSliceArgs
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
+	LimitResourceCount     int
 }
 
 func (c KubernetesTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -215,6 +217,11 @@ func (c KubernetesTargetConverter) writeData(file *hclwrite.File, resource octop
 func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + target.Id)
 		return nil
 	}
 

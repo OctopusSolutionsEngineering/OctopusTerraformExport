@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -34,6 +35,7 @@ type FeedConverter struct {
 	ExcludeAllFeeds           bool
 	Excluder                  ExcludeByName
 	IncludeIds                bool
+	LimitResourceCount        int
 }
 
 func (c FeedConverter) GetResourceType() string {
@@ -129,6 +131,11 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDet
 
 func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + resource.Id)
 		return nil
 	}
 

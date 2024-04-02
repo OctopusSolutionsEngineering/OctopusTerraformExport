@@ -45,6 +45,7 @@ type Arguments struct {
 	ExcludeProvider             bool
 	IncludeOctopusOutputVars    bool
 	LimitAttributeLength        int
+	LimitResourceCount          int
 
 	IgnoreProjectChanges         bool
 	IgnoreProjectVariableChanges bool
@@ -213,6 +214,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.ConfigFile, "configFile", "octoterra", "The name of the configuration file to use. Do not include the extension. Defaults to octoterra")
 	flags.StringVar(&arguments.ConfigPath, "configPath", ".", "The path of the configuration file to use. Defaults to the current directory")
 	flags.IntVar(&arguments.LimitAttributeLength, "limitAttributeLength", 0, "For internal use only. Limits the length of the attribute names.")
+	flags.IntVar(&arguments.LimitResourceCount, "limitResourceCount", 0, "For internal use only. Limits the number of resources of a given type that are returned. For example, a value of 30 will ensure the exported Terraform only includes up to 30 accounts, and up to 30 feeds, and up to 30 projects etc. This is used to reduce the output when octoterra is used to generate a context for an LLM.")
 	flags.BoolVar(&arguments.Profiling, "profiling", false, "Enable profiling. Run \"pprof -http=:8080 octoterra.prof\" to view the results.")
 	flags.BoolVar(&arguments.ExcludeTerraformVariables, "excludeTerraformVariables", false, "This option means the exported module does not expose Terraform variables for common inputs like the value of project or library variables set variables. This reduces the size of the Terraform configuration files, but makes the module less configurable because values are hard coded.")
 	flags.BoolVar(&arguments.ExcludeSpaceCreation, "excludeSpaceCreation", false, "This option excludes the Terraform configuration that is used to create the space.")

@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -27,6 +28,7 @@ type WorkerPoolConverter struct {
 	ExcludeWorkerpoolsExcept args.StringSliceArgs
 	ExcludeAllWorkerpools    bool
 	Excluder                 ExcludeByName
+	LimitResourceCount       int
 }
 
 func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -141,6 +143,11 @@ func (c WorkerPoolConverter) writeData(file *hclwrite.File, resource octopus.Wor
 
 func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(pool.Name, c.ExcludeAllWorkerpools, c.ExcludeWorkerpools, c.ExcludeWorkerpoolsRegex, c.ExcludeWorkerpoolsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + pool.Id)
 		return nil
 	}
 

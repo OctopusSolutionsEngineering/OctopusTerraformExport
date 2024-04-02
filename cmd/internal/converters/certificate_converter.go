@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -31,6 +32,7 @@ type CertificateConverter struct {
 	ExcludeCertificatesRegex  args.StringSliceArgs
 	ExcludeCertificatesExcept args.StringSliceArgs
 	ExcludeAllCertificates    bool
+	LimitResourceCount        int
 }
 
 func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -164,6 +166,11 @@ func (c CertificateConverter) writeData(file *hclwrite.File, resource octopus.Ce
 
 func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(certificate.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + certificate.Id)
 		return nil
 	}
 

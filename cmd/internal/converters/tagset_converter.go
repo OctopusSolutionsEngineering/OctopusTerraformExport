@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -28,6 +29,7 @@ type TagSetConverter struct {
 	ExcludeAllTenantTagSets    bool
 	Excluder                   ExcludeByName
 	ErrGroup                   *errgroup.Group
+	LimitResourceCount         int
 }
 
 func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -76,6 +78,11 @@ func (c *TagSetConverter) GetResourceType() string {
 
 func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(tagSet.Name, c.ExcludeAllTenantTagSets, c.ExcludeTenantTagSets, c.ExcludeTenantTagSetsRegex, c.ExcludeTenantTagSetsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + tagSet.Id)
 		return nil
 	}
 

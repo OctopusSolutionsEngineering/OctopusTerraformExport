@@ -35,6 +35,7 @@ type LibraryVariableSetConverter struct {
 	DummySecretGenerator                    DummySecretGenerator
 	Excluder                                ExcludeByName
 	ErrGroup                                *errgroup.Group
+	LimitResourceCount                      int
 }
 
 func (c *LibraryVariableSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -167,6 +168,11 @@ func (c *LibraryVariableSetConverter) writeData(file *hclwrite.File, resource oc
 func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded runbooks
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + resource.Id)
 		return nil
 	}
 

@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -27,6 +28,7 @@ type EnvironmentConverter struct {
 	ExcludeAllEnvironments    bool
 	Excluder                  ExcludeByName
 	IncludeIds                bool
+	LimitResourceCount        int
 }
 
 func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -185,6 +187,11 @@ func (c EnvironmentConverter) getCount(stateless bool, resourceName string) *str
 
 func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(environment.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + environment.Id)
 		return nil
 	}
 

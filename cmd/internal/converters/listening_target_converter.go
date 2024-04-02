@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -34,6 +35,7 @@ type ListeningTargetConverter struct {
 	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
 	ErrGroup               *errgroup.Group
 	IncludeIds             bool
+	LimitResourceCount     int
 }
 
 func (c ListeningTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -214,6 +216,11 @@ func (c ListeningTargetConverter) writeData(file *hclwrite.File, resource octopu
 func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(target.Name, c.ExcludeAllTargets, c.ExcludeTargets, c.ExcludeTargetsRegex, c.ExcludeTargetsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + target.Id)
 		return nil
 	}
 

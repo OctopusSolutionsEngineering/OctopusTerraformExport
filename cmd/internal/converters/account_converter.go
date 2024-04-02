@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -31,6 +32,7 @@ type AccountConverter struct {
 	ExcludeAccountsExcept     args.StringSliceArgs
 	ExcludeAllAccounts        bool
 	IncludeIds                bool
+	LimitResourceCount        int
 }
 
 func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -167,6 +169,11 @@ func (c AccountConverter) buildData(resourceName string, resource octopus.Accoun
 // dependencies maintains the collection of exported Terraform resources
 func (c AccountConverter) toHcl(account octopus.Account, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(account.Name, c.ExcludeAllAccounts, c.ExcludeAccounts, c.ExcludeAccountsRegex, c.ExcludeAccountsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + account.Id)
 		return nil
 	}
 

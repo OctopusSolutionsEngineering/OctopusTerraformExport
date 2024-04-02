@@ -53,6 +53,7 @@ type ProjectConverter struct {
 	ErrGroup                  *errgroup.Group
 	ExcludeTerraformVariables bool
 	IncludeIds                bool
+	LimitResourceCount        int
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -231,6 +232,11 @@ func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceN
 func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded projects
 	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + project.Id)
 		return nil
 	}
 

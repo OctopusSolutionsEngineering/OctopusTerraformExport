@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -25,6 +26,7 @@ type GitCredentialsConverter struct {
 	ExcludeAllGitCredentials  bool
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
+	LimitResourceCount        int
 }
 
 func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -117,6 +119,11 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.R
 func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.ExcludeAllGitCredentials {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + gitCredentials.Id)
 		return nil
 	}
 

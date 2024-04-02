@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -26,6 +27,7 @@ type ProjectGroupConverter struct {
 	ExcludeProjectGroupsExcept args.StringSliceArgs
 	ExcludeAllProjectGroups    bool
 	Excluder                   ExcludeByName
+	LimitResourceCount         int
 }
 
 func (c ProjectGroupConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -140,6 +142,11 @@ func (c ProjectGroupConverter) writeData(file *hclwrite.File, name string, resou
 
 func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + resource.Id)
 		return nil
 	}
 

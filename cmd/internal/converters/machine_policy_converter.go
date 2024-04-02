@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -29,6 +30,7 @@ type MachinePolicyConverter struct {
 	ExcludeMachinePoliciesExcept args.StringSliceArgs
 	ExcludeAllMachinePolicies    bool
 	Excluder                     ExcludeByName
+	LimitResourceCount           int
 }
 
 func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -120,6 +122,11 @@ func (c MachinePolicyConverter) writeData(file *hclwrite.File, resource octopus2
 func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.Excluder.IsResourceExcludedWithRegex(machinePolicy.Name, c.ExcludeAllMachinePolicies, c.ExcludeMachinePolicies, c.ExcludeMachinePoliciesRegex, c.ExcludeMachinePoliciesExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + machinePolicy.Id)
 		return nil
 	}
 

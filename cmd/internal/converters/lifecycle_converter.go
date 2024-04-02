@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -27,6 +28,7 @@ type LifecycleConverter struct {
 	ExcludeLifecyclesExcept args.StringSliceArgs
 	ExcludeAllLifecycles    bool
 	Excluder                ExcludeByName
+	LimitResourceCount      int
 }
 
 func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -145,6 +147,11 @@ func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus2.Lif
 func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.Excluder.IsResourceExcludedWithRegex(lifecycle.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
+		return nil
+	}
+
+	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
+		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + lifecycle.Id)
 		return nil
 	}
 
