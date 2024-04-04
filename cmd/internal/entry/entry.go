@@ -302,14 +302,15 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		LimitResourceCount:        args.LimitResourceCount,
 	}
 	channelConverter := converters.ChannelConverter{
-		Client:               &octopusClient,
-		LifecycleConverter:   lifecycleConverter,
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
-		Excluder:             converters.DefaultExcluder{},
-		ErrGroup:             &group,
-		IncludeIds:           args.IncludeIds,
-		LimitResourceCount:   args.LimitResourceCount,
+		Client:                &octopusClient,
+		LifecycleConverter:    lifecycleConverter,
+		ExcludeTenantTags:     args.ExcludeTenantTags,
+		ExcludeTenantTagSets:  args.ExcludeTenantTagSets,
+		Excluder:              converters.DefaultExcluder{},
+		ErrGroup:              &group,
+		IncludeIds:            args.IncludeIds,
+		LimitResourceCount:    args.LimitResourceCount,
+		IncludeDefaultChannel: args.IncludeDefaultChannel,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -1036,12 +1037,13 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		LimitResourceCount:         args.LimitResourceCount,
 	}
 	channelConverter := converters.ChannelConverter{
-		Client:               &octopusClient,
-		LifecycleConverter:   lifecycleConverter,
-		ExcludeTenantTags:    args.ExcludeTenantTags,
-		ExcludeTenantTagSets: args.ExcludeTenantTagSets,
-		Excluder:             converters.DefaultExcluder{},
-		LimitResourceCount:   args.LimitResourceCount,
+		Client:                &octopusClient,
+		LifecycleConverter:    lifecycleConverter,
+		ExcludeTenantTags:     args.ExcludeTenantTags,
+		ExcludeTenantTagSets:  args.ExcludeTenantTagSets,
+		Excluder:              converters.DefaultExcluder{},
+		LimitResourceCount:    args.LimitResourceCount,
+		IncludeDefaultChannel: args.IncludeDefaultChannel,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{

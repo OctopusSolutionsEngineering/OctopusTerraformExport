@@ -54,6 +54,7 @@ type Arguments struct {
 	LookUpDefaultWorkerPools     bool
 	IncludeIds                   bool
 	IncludeSpaceInPopulation     bool
+	IncludeDefaultChannel        bool
 
 	/*
 		We expose a lot of options to exclude resources from the export.
@@ -244,6 +245,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flags.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
 	flags.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
+	flags.BoolVar(&arguments.IncludeDefaultChannel, "includeDefaultChannel", false, "Internal use only. Includes the \"Default\" channel as a standard channel resource rather than a data block.")
 
 	flags.BoolVar(&arguments.ExcludeAllSteps, "excludeAllSteps", false, "Exclude all steps when exporting projects or runbooks. WARNING: variables scoped to this step will no longer have the step scope applied.")
 	flags.Var(&arguments.ExcludeSteps, "excludeSteps", "A steps to be excluded when exporting projects or runbooks. WARNING: variables scoped to this step will no longer have the step scope applied.")

@@ -21,14 +21,15 @@ const octopusdeployChannelDataType = "octopusdeploy_channels"
 const octopusdeployChannelResourceType = "octopusdeploy_channel"
 
 type ChannelConverter struct {
-	Client               client.OctopusClient
-	LifecycleConverter   ConverterAndLookupWithStatelessById
-	ExcludeTenantTags    args.StringSliceArgs
-	ExcludeTenantTagSets args.StringSliceArgs
-	Excluder             ExcludeByName
-	ErrGroup             *errgroup.Group
-	IncludeIds           bool
-	LimitResourceCount   int
+	Client                client.OctopusClient
+	LifecycleConverter    ConverterAndLookupWithStatelessById
+	ExcludeTenantTags     args.StringSliceArgs
+	ExcludeTenantTagSets  args.StringSliceArgs
+	Excluder              ExcludeByName
+	ErrGroup              *errgroup.Group
+	IncludeIds            bool
+	LimitResourceCount    int
+	IncludeDefaultChannel bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -146,7 +147,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	thisResource.Id = channel.Id
 	thisResource.ResourceType = c.GetResourceType()
 
-	if channel.Name == "Default" {
+	if channel.Name == "Default" && !c.IncludeDefaultChannel {
 		// TODO: Many channels are called default! But there is no way to look up a channel based on its project.
 		thisResource.Lookup = "${data." + octopusdeployChannelDataType + "." + resourceName + ".channels[0].id}"
 		thisResource.ToHcl = func() (string, error) {
