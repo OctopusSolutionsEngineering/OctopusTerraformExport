@@ -33,6 +33,7 @@ type CertificateConverter struct {
 	ExcludeCertificatesExcept args.StringSliceArgs
 	ExcludeAllCertificates    bool
 	LimitResourceCount        int
+	IncludeIds                bool
 }
 
 func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -280,6 +281,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 
 func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificateName string, certificate octopus.Certificate, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	terraformResource := terraform.TerraformCertificate{
+		Id:              strutil.InputPointerIfEnabled(c.IncludeIds, &certificate.Id),
 		Type:            octopusdeployCertificateResourceType,
 		Name:            certificateName,
 		SpaceId:         nil,

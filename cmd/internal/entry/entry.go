@@ -337,6 +337,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeCertificatesExcept: args.ExcludeCertificatesExcept,
 		ExcludeAllCertificates:    args.ExcludeAllCertificates,
 		LimitResourceCount:        args.LimitResourceCount,
+		IncludeIds:                args.IncludeIds,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,
@@ -1133,6 +1134,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeCertificatesExcept: args.ExcludeCertificatesExcept,
 		ExcludeAllCertificates:    args.ExcludeAllCertificates,
 		LimitResourceCount:        args.LimitResourceCount,
+		IncludeIds:                args.IncludeIds,
 	}
 
 	kubernetesTargetConverter := converters.KubernetesTargetConverter{
