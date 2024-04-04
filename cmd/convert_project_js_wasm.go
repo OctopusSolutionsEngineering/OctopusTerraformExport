@@ -96,6 +96,7 @@ func convertSpace() js.Func {
 				ExcludeSpaceCreation:             true,
 				IncludeIds:                       true,
 				IncludeSpaceInPopulation:         true,
+				IncludeDefaultChannel:            true,
 				// We exclude targets with no environments if some environments were specifically mentioned
 				// For example, if the environment "Prod" was mentioned, getBoolArg(funcArgs, 12) would be false,
 				// and we want to limit targets to just that environment.
