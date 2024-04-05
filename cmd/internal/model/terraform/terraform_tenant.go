@@ -6,6 +6,7 @@ type TerraformTenant struct {
 	Count              *string                       `hcl:"count"`
 	ResourceName       string                        `hcl:"name"`
 	Id                 *string                       `hcl:"id"`
+	SpaceId            *string                       `hcl:"space_id"`
 	ClonedFromTenantId *string                       `hcl:"cloned_from_tenant_id"`
 	Description        *string                       `hcl:"description"`
 	TenantTags         []string                      `hcl:"tenant_tags"`

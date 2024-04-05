@@ -20,15 +20,17 @@ const octopusdeployLifecyclesDataType = "octopusdeploy_lifecycles"
 const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
 
 type LifecycleConverter struct {
-	Client                  client.OctopusClient
-	EnvironmentConverter    ConverterAndLookupWithStatelessById
-	ErrGroup                *errgroup.Group
-	ExcludeLifecycles       args.StringSliceArgs
-	ExcludeLifecyclesRegex  args.StringSliceArgs
-	ExcludeLifecyclesExcept args.StringSliceArgs
-	ExcludeAllLifecycles    bool
-	Excluder                ExcludeByName
-	LimitResourceCount      int
+	Client                   client.OctopusClient
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	ErrGroup                 *errgroup.Group
+	ExcludeLifecycles        args.StringSliceArgs
+	ExcludeLifecyclesRegex   args.StringSliceArgs
+	ExcludeLifecyclesExcept  args.StringSliceArgs
+	ExcludeAllLifecycles     bool
+	Excluder                 ExcludeByName
+	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
+	IncludeIds               bool
 }
 
 func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -227,6 +229,8 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 			terraformResource := terraform2.TerraformLifecycle{
 				Type:                    octopusdeployLifecycleResourceType,
 				Name:                    resourceName,
+				Id:                      strutil.InputPointerIfEnabled(c.IncludeIds, &lifecycle.Id),
+				SpaceId:                 strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", lifecycle.SpaceId)),
 				ResourceName:            lifecycle.Name,
 				Description:             lifecycle.Description,
 				Phase:                   c.convertPhases(lifecycle.Phases, dependencies),

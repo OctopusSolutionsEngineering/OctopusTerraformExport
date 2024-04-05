@@ -4,6 +4,7 @@ type TerraformRunbook struct {
 	Type                     string                          `hcl:"type,label"`
 	Name                     string                          `hcl:"name,label"`
 	Id                       *string                         `hcl:"id"`
+	SpaceId                  *string                         `hcl:"space_id"`
 	Count                    *string                         `hcl:"count"`
 	ResourceName             string                          `hcl:"name"`
 	ProjectId                string                          `hcl:"project_id"`

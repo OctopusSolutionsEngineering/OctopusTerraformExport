@@ -24,18 +24,19 @@ const octopusdeployListeningTentacleDeploymentTargetResourceType = "octopusdeplo
 type ListeningTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter ConverterWithStatelessById
-	EnvironmentConverter   ConverterAndLookupWithStatelessById
-	ExcludeAllTargets      bool
-	ExcludeTargets         args.StringSliceArgs
-	ExcludeTargetsRegex    args.StringSliceArgs
-	ExcludeTargetsExcept   args.StringSliceArgs
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	ErrGroup               *errgroup.Group
-	IncludeIds             bool
-	LimitResourceCount     int
+	MachinePolicyConverter   ConverterWithStatelessById
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	ExcludeAllTargets        bool
+	ExcludeTargets           args.StringSliceArgs
+	ExcludeTargetsRegex      args.StringSliceArgs
+	ExcludeTargetsExcept     args.StringSliceArgs
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenantTagSets     args.StringSliceArgs
+	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                 *errgroup.Group
+	LimitResourceCount       int
+	IncludeIds               bool
+	IncludeSpaceInPopulation bool
 }
 
 func (c ListeningTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -271,6 +272,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 
 		terraformResource := terraform.TerraformListeningTentacleDeploymentTarget{
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			Type:                            octopusdeployListeningTentacleDeploymentTargetResourceType,
 			Name:                            targetName,
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
@@ -287,7 +289,6 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 			ProxyId:                         nil,
 			ShellName:                       &target.ShellName,
 			ShellVersion:                    &target.ShellVersion,
-			SpaceId:                         nil,
 			Status:                          nil,
 			StatusSummary:                   nil,
 			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

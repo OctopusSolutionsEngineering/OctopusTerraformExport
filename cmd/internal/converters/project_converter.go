@@ -54,6 +54,7 @@ type ProjectConverter struct {
 	ExcludeTerraformVariables bool
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -297,6 +298,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			Name:                                   projectName,
 			ResourceName:                           resourceName,
 			Id:                                     strutil.InputPointerIfEnabled(c.IncludeIds, &project.Id),
+			SpaceId:                                strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
 			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no way to reference the package
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,

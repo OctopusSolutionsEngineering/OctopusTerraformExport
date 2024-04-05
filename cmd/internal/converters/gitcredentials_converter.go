@@ -27,6 +27,7 @@ type GitCredentialsConverter struct {
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -201,6 +202,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			Type:         octopusdeployGitCredentialResourceType,
 			Name:         gitCredentialsName,
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &gitCredentials.Id),
+			SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", gitCredentials.SpaceId)),
 			Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
 			ResourceName: gitCredentials.Name,
 			ResourceType: gitCredentials.Details.Type,

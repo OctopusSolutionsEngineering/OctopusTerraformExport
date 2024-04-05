@@ -3,7 +3,7 @@ package octopus
 type MachinePolicy struct {
 	Id                                            string
 	Name                                          string
-	SpaceId                                       *string
+	SpaceId                                       string
 	Description                                   *string
 	IsDefault                                     bool
 	PollingRequestQueueTimeout                    string

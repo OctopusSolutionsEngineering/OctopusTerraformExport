@@ -24,18 +24,19 @@ const octopusdeployPollingTentacleDeploymentTargetResourceType = "octopusdeploy_
 type PollingTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter ConverterWithStatelessById
-	EnvironmentConverter   ConverterAndLookupWithStatelessById
-	ExcludeAllTargets      bool
-	ExcludeTargets         args.StringSliceArgs
-	ExcludeTargetsRegex    args.StringSliceArgs
-	ExcludeTargetsExcept   args.StringSliceArgs
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	ErrGroup               *errgroup.Group
-	IncludeIds             bool
-	LimitResourceCount     int
+	MachinePolicyConverter   ConverterWithStatelessById
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	ExcludeAllTargets        bool
+	ExcludeTargets           args.StringSliceArgs
+	ExcludeTargetsRegex      args.StringSliceArgs
+	ExcludeTargetsExcept     args.StringSliceArgs
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenantTagSets     args.StringSliceArgs
+	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                 *errgroup.Group
+	IncludeIds               bool
+	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
 }
 
 func (c PollingTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -268,6 +269,7 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 
 		terraformResource := terraform.TerraformPollingTentacleDeploymentTarget{
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			Type:                            octopusdeployPollingTentacleDeploymentTargetResourceType,
 			Name:                            targetName,
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
@@ -281,7 +283,6 @@ func (c PollingTargetConverter) toHcl(target octopus.PollingEndpointResource, re
 			OperatingSystem:                 nil,
 			ShellName:                       &target.ShellName,
 			ShellVersion:                    &target.ShellVersion,
-			SpaceId:                         nil,
 			Status:                          nil,
 			StatusSummary:                   nil,
 			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

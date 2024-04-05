@@ -5,7 +5,7 @@ type Account struct {
 	Name                            string
 	Slug                            *string
 	Description                     *string
-	SpaceId                         *string
+	SpaceId                         string
 	EnvironmentIds                  []string
 	TenantedDeploymentParticipation *string
 	TenantIds                       []string

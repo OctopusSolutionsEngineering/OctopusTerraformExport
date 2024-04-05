@@ -5,8 +5,9 @@ type NamedResource interface {
 }
 
 type NameId struct {
-	Id   string
-	Name string
+	Id      string
+	SpaceId string
+	Name    string
 }
 
 func (n NameId) GetName() string {

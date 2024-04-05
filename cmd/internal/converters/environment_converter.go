@@ -29,6 +29,7 @@ type EnvironmentConverter struct {
 	Excluder                  ExcludeByName
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -214,7 +215,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, st
 			Name:                       resourceName,
 			Id:                         strutil.InputPointerIfEnabled(c.IncludeIds, &environment.Id),
 			Count:                      c.getCount(stateless, resourceName),
-			SpaceId:                    nil,
+			SpaceId:                    strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", environment.SpaceId)),
 			ResourceName:               environment.Name,
 			Description:                environment.Description,
 			AllowDynamicInfrastructure: environment.AllowDynamicInfrastructure,

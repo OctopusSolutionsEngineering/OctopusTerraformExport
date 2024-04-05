@@ -19,6 +19,7 @@ const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_p
 type ProjectTriggerConverter struct {
 	Client             client.OctopusClient
 	LimitResourceCount int
+	IncludeIds         bool
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
@@ -96,6 +97,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 		terraformResource := terraform.TerraformProjectTrigger{
 			Type:            octopusdeployProjectDeploymentTargetTriggerResourceType,
 			Name:            projectTriggerName,
+			Id:              strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			ResourceName:    projectTrigger.Name,
 			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			EventCategories: projectTrigger.Filter.EventCategories,
@@ -103,7 +105,6 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 			EventGroups:     projectTrigger.Filter.EventGroups,
 			Roles:           projectTrigger.Filter.Roles,
 			ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,
-			Id:              nil,
 		}
 		file := hclwrite.NewEmptyFile()
 

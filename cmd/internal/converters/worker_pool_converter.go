@@ -29,6 +29,8 @@ type WorkerPoolConverter struct {
 	ExcludeAllWorkerpools    bool
 	Excluder                 ExcludeByName
 	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
+	IncludeIds               bool
 }
 
 func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -165,7 +167,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			c.createDynamicWorkerPoolResource(resourceName, &thisResource, pool, stateless)
+			c.createDynamicWorkerPoolResource(resourceName, &thisResource, dependencies, pool, stateless)
 		}
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
@@ -199,7 +201,7 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName 
 	}
 }
 
-func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
+func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string, thisResource *data.ResourceDetails, dependencies *data.ResourceDetailsCollection, pool octopus.WorkerPool, stateless bool) {
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
 			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
@@ -213,6 +215,8 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 		terraformResource := terraform.TerraformWorkerPool{
 			Type:         octopusdeployDynamicWorkerPoolResourceType,
 			Name:         resourceName,
+			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &pool.Id),
+			SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", pool.SpaceId)),
 			ResourceName: pool.Name,
 			Description:  pool.Description,
 			IsDefault:    pool.IsDefault,

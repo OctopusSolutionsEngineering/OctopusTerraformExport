@@ -2,6 +2,7 @@ package octopus
 
 type Certificate struct {
 	Id                              string
+	SpaceId                         string
 	Name                            string
 	Description                     *string
 	TenantedDeploymentParticipation string

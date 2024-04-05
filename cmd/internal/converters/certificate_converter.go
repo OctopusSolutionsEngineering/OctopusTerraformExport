@@ -34,6 +34,7 @@ type CertificateConverter struct {
 	ExcludeAllCertificates    bool
 	LimitResourceCount        int
 	IncludeIds                bool
+	IncludeSpaceInPopulation  bool
 }
 
 func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -284,7 +285,7 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 		Id:              strutil.InputPointerIfEnabled(c.IncludeIds, &certificate.Id),
 		Type:            octopusdeployCertificateResourceType,
 		Name:            certificateName,
-		SpaceId:         nil,
+		SpaceId:         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", certificate.SpaceId)),
 		ResourceName:    certificate.Name,
 		Password:        "${var." + certificateName + "_password}",
 		CertificateData: "${var." + certificateName + "_data}",

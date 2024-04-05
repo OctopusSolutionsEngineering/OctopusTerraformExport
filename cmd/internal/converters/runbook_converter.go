@@ -36,6 +36,8 @@ type RunbookConverter struct {
 	IgnoreProjectChanges         bool
 	ErrGroup                     *errgroup.Group
 	LimitResourceCount           int
+	IncludeSpaceInPopulation     bool
+	IncludeIds                   bool
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -201,6 +203,8 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 		terraformResource := terraform.TerraformRunbook{
 			Type:                     octopusdeployRunbookResourceType,
 			Name:                     runbookName,
+			Id:                       strutil.InputPointerIfEnabled(c.IncludeIds, &runbook.Id),
+			SpaceId:                  strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", runbook.SpaceId)),
 			ResourceName:             "${var." + runbookName + "_name}",
 			ProjectId:                dependencies.GetResource("Projects", runbook.ProjectId),
 			EnvironmentScope:         runbook.EnvironmentScope,

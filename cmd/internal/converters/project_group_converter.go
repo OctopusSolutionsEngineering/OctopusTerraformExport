@@ -28,6 +28,8 @@ type ProjectGroupConverter struct {
 	ExcludeAllProjectGroups    bool
 	Excluder                   ExcludeByName
 	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	IncludeIds                 bool
 }
 
 func (c ProjectGroupConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -185,6 +187,8 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformProjectGroup{
+				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				Type:         octopusdeployProjectGroupResourceType,
 				Name:         projectName,
 				ResourceName: "${var." + projectName + "_name}",

@@ -2,6 +2,7 @@ package octopus
 
 type Channel struct {
 	Id          string
+	SpaceId     string
 	Name        string
 	Slug        *string
 	Description *string

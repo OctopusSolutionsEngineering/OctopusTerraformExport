@@ -36,6 +36,7 @@ type FeedConverter struct {
 	Excluder                  ExcludeByName
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c FeedConverter) GetResourceType() string {
@@ -217,6 +218,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 				Type:                              octopusdeployDockerContainerRegistryResourceType,
 				Name:                              resourceName,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				ResourceName:                      resource.Name,
 				RegistryPath:                      resource.RegistryPath,
 				Username:                          strutil.NilIfEmptyPointer(resource.Username),
@@ -311,6 +313,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 				Type:                              octopusdeployAwsElasticContainerRegistryResourceType,
 				Name:                              resourceName,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				ResourceName:                      resource.Name,
 				AccessKey:                         resource.AccessKey,
 				SecretKey:                         &password,
@@ -409,6 +412,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 			terraformResource := terraform2.TerraformMavenFeed{
 				Type:                              octopusdeployMavenFeedResourceType,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
@@ -506,6 +510,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 			terraformResource := terraform2.TerraformGitHubRepoFeed{
 				Type:                              octopusdeployGithubRepositoryFeedResourceType,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
@@ -604,6 +609,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 			terraformResource := terraform2.TerraformHelmFeed{
 				Type:                              octopusdeployHelmFeedResourceType,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,
@@ -696,6 +702,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 			terraformResource := terraform2.TerraformNuGetFeed{
 				Type:                              octopusdeploy_nuget_feed_resource_type,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				Name:                              resourceName,
 				ResourceName:                      resource.Name,
 				FeedUri:                           resource.FeedUri,

@@ -24,19 +24,20 @@ const azureCloudServiceDeploymentResourceType = "octopusdeploy_azure_cloud_servi
 type AzureCloudServiceTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter ConverterWithStatelessById
-	AccountConverter       ConverterAndLookupWithStatelessById
-	EnvironmentConverter   ConverterAndLookupWithStatelessById
-	ExcludeAllTargets      bool
-	ExcludeTargets         args.StringSliceArgs
-	ExcludeTargetsRegex    args.StringSliceArgs
-	ExcludeTargetsExcept   args.StringSliceArgs
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	ErrGroup               *errgroup.Group
-	IncludeIds             bool
-	LimitResourceCount     int
+	MachinePolicyConverter   ConverterWithStatelessById
+	AccountConverter         ConverterAndLookupWithStatelessById
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	ExcludeAllTargets        bool
+	ExcludeTargets           args.StringSliceArgs
+	ExcludeTargetsRegex      args.StringSliceArgs
+	ExcludeTargetsExcept     args.StringSliceArgs
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenantTagSets     args.StringSliceArgs
+	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                 *errgroup.Group
+	IncludeIds               bool
+	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
 }
 
 func (c AzureCloudServiceTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -290,6 +291,7 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 			Type:                            azureCloudServiceDeploymentResourceType,
 			Name:                            targetName,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 			ResourceName:                    target.Name,
 			Roles:                           target.Roles,
@@ -304,7 +306,6 @@ func (c AzureCloudServiceTargetConverter) toHcl(target octopus.AzureCloudService
 			ShellName:                       &target.ShellName,
 			ShellVersion:                    &target.ShellVersion,
 			Slot:                            nil,
-			SpaceId:                         nil,
 			Status:                          nil,
 			StatusSummary:                   nil,
 			SwapIfPossible:                  nil,

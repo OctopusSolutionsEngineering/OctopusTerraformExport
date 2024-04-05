@@ -37,6 +37,7 @@ type OfflineDropTargetConverter struct {
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c OfflineDropTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -270,6 +271,7 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 
 		terraformResource := terraform.TerraformOfflineDropDeploymentTarget{
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			Type:                            octopusdeployOfflinePackageDropDeploymentTargetResourceType,
 			Name:                            targetName,
 			ApplicationsDirectory:           target.Endpoint.ApplicationsDirectory,
@@ -283,7 +285,6 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 			OperatingSystem:                 nil,
 			ShellName:                       &target.ShellName,
 			ShellVersion:                    &target.ShellVersion,
-			SpaceId:                         nil,
 			Status:                          nil,
 			StatusSummary:                   nil,
 			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

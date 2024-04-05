@@ -8,6 +8,7 @@ type TerraformMachinePolicy struct {
 	Count                        *string        `hcl:"count"`
 	ResourceName                 string         `hcl:"name"`
 	Id                           *string        `hcl:"id"`
+	SpaceId                      *string        `hcl:"space_id"`
 	Description                  *string        `hcl:"description"`
 	ConnectionConnectTimeout     *time.Duration `hcl:"connection_connect_timeout"`
 	ConnectionRetryCountLimit    *int           `hcl:"connection_retry_count_limit"`

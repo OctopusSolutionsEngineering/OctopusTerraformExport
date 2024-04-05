@@ -24,19 +24,20 @@ const octopusdeploySshConnectionDeploymentTargetResourceType = "octopusdeploy_ss
 type SshTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter ConverterWithStatelessById
-	AccountConverter       ConverterAndLookupWithStatelessById
-	EnvironmentConverter   ConverterAndLookupWithStatelessById
-	ExcludeAllTargets      bool
-	ExcludeTargets         args.StringSliceArgs
-	ExcludeTargetsRegex    args.StringSliceArgs
-	ExcludeTargetsExcept   args.StringSliceArgs
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	ErrGroup               *errgroup.Group
-	IncludeIds             bool
-	LimitResourceCount     int
+	MachinePolicyConverter   ConverterWithStatelessById
+	AccountConverter         ConverterAndLookupWithStatelessById
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	ExcludeAllTargets        bool
+	ExcludeTargets           args.StringSliceArgs
+	ExcludeTargetsRegex      args.StringSliceArgs
+	ExcludeTargetsExcept     args.StringSliceArgs
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenantTagSets     args.StringSliceArgs
+	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                 *errgroup.Group
+	IncludeIds               bool
+	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
 }
 
 func (c SshTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -278,6 +279,7 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 
 		terraformResource := terraform.TerraformSshConnectionDeploymentTarget{
 			Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:            strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			Type:               octopusdeploySshConnectionDeploymentTargetResourceType,
 			Name:               targetName,
 			AccountId:          c.getAccount(target.Endpoint.AccountId, dependencies),

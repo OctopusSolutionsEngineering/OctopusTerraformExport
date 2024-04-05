@@ -5,6 +5,7 @@ type TerraformGitCredentials struct {
 	Name         string  `hcl:"name,label"`
 	Count        *string `hcl:"count"`
 	Id           *string `hcl:"id"`
+	SpaceId      *string `hcl:"space_id"`
 	Description  *string `hcl:"description"`
 	ResourceName string  `hcl:"name"`
 	ResourceType string  `hcl:"type"`

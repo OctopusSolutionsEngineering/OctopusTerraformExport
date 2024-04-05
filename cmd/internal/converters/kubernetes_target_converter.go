@@ -24,19 +24,21 @@ const octopusdeployKubernetesClusterDeploymentTargetResourceType = "octopusdeplo
 type KubernetesTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter ConverterWithStatelessById
-	AccountConverter       ConverterAndLookupWithStatelessById
-	EnvironmentConverter   ConverterAndLookupWithStatelessById
-	CertificateConverter   ConverterAndLookupWithStatelessById
-	ExcludeAllTargets      bool
-	ExcludeTargets         args.StringSliceArgs
-	ExcludeTargetsRegex    args.StringSliceArgs
-	ExcludeTargetsExcept   args.StringSliceArgs
-	ExcludeTenantTags      args.StringSliceArgs
-	ExcludeTenantTagSets   args.StringSliceArgs
-	TagSetConverter        ConvertToHclByResource[octopus.TagSet]
-	ErrGroup               *errgroup.Group
-	LimitResourceCount     int
+	MachinePolicyConverter   ConverterWithStatelessById
+	AccountConverter         ConverterAndLookupWithStatelessById
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	CertificateConverter     ConverterAndLookupWithStatelessById
+	ExcludeAllTargets        bool
+	ExcludeTargets           args.StringSliceArgs
+	ExcludeTargetsRegex      args.StringSliceArgs
+	ExcludeTargetsExcept     args.StringSliceArgs
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenantTagSets     args.StringSliceArgs
+	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                 *errgroup.Group
+	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
+	IncludeIds               bool
 }
 
 func (c KubernetesTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -272,6 +274,8 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 		terraformResource := terraform.TerraformKubernetesEndpointResource{
 			Type:                            octopusdeployKubernetesClusterDeploymentTargetResourceType,
 			Name:                            targetName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			ClusterUrl:                      strutil.EmptyIfNil(target.Endpoint.ClusterUrl),
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 			ResourceName:                    target.Name,
@@ -280,7 +284,6 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			ClusterCertificatePath:          target.Endpoint.ClusterCertificatePath,
 			DefaultWorkerPoolId:             c.getWorkerPool(target.Endpoint.DefaultWorkerPoolId, dependencies),
 			HealthStatus:                    nil,
-			Id:                              nil,
 			IsDisabled:                      strutil.NilIfFalse(target.IsDisabled),
 			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
 			Namespace:                       strutil.NilIfEmptyPointer(target.Endpoint.Namespace),
@@ -290,7 +293,6 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 			ShellName:                       nil,
 			ShellVersion:                    nil,
 			SkipTlsVerification:             strutil.ParseBoolPointer(target.Endpoint.SkipTlsVerification),
-			SpaceId:                         nil,
 			Status:                          nil,
 			StatusSummary:                   nil,
 			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

@@ -1,6 +1,7 @@
 package octopus
 
 type Target struct {
+	SpaceId        string
 	EnvironmentIds []string
 }
 

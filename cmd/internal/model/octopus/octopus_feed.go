@@ -2,6 +2,7 @@ package octopus
 
 type Feed struct {
 	Id                                string
+	SpaceId                           string
 	Name                              string
 	Slug                              *string
 	FeedType                          *string

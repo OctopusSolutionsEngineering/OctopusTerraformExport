@@ -38,6 +38,7 @@ type AzureServiceFabricTargetConverter struct {
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c AzureServiceFabricTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -258,6 +259,7 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			Type:                            octopusdeployAzureServiceFabricClusterDeploymentResourceType,
 			Name:                            targetName,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &target.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", target.SpaceId)),
 			Environments:                    c.lookupEnvironments(target.EnvironmentIds, dependencies),
 			ResourceName:                    target.Name,
 			Roles:                           target.Roles,
@@ -277,7 +279,6 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 			ServerCertificateThumbprint:     nil,
 			ShellName:                       &target.ShellName,
 			ShellVersion:                    &target.ShellVersion,
-			SpaceId:                         nil,
 			Status:                          nil,
 			StatusSummary:                   nil,
 			TenantTags:                      c.Excluder.FilteredTenantTags(target.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

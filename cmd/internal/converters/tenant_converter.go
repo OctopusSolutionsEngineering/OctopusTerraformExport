@@ -23,25 +23,26 @@ const octopusdeployTenantsDataType = "octopusdeploy_tenants"
 const octopusdeployTenantResourceType = "octopusdeploy_tenant"
 
 type TenantConverter struct {
-	Client                  client.OctopusClient
-	TenantVariableConverter ConverterByTenantId
-	EnvironmentConverter    ConverterAndLookupWithStatelessById
-	TagSetConverter         ConvertToHclByResource[octopus2.TagSet]
-	ExcludeTenantTagSets    args.StringSliceArgs
-	ExcludeTenantTags       args.StringSliceArgs
-	ExcludeTenants          args.StringSliceArgs
-	ExcludeTenantsRegex     args.StringSliceArgs
-	ExcludeTenantsWithTags  args.StringSliceArgs
-	ExcludeTenantsExcept    args.StringSliceArgs
-	ExcludeAllTenants       bool
-	Excluder                ExcludeByName
-	ExcludeProjects         args.StringSliceArgs
-	ExcludeProjectsExcept   args.StringSliceArgs
-	ExcludeProjectsRegex    args.StringSliceArgs
-	ExcludeAllProjects      bool
-	ErrGroup                *errgroup.Group
-	IncludeIds              bool
-	LimitResourceCount      int
+	Client                   client.OctopusClient
+	TenantVariableConverter  ConverterByTenantId
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
+	TagSetConverter          ConvertToHclByResource[octopus2.TagSet]
+	ExcludeTenantTagSets     args.StringSliceArgs
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenants           args.StringSliceArgs
+	ExcludeTenantsRegex      args.StringSliceArgs
+	ExcludeTenantsWithTags   args.StringSliceArgs
+	ExcludeTenantsExcept     args.StringSliceArgs
+	ExcludeAllTenants        bool
+	Excluder                 ExcludeByName
+	ExcludeProjects          args.StringSliceArgs
+	ExcludeProjectsExcept    args.StringSliceArgs
+	ExcludeProjectsRegex     args.StringSliceArgs
+	ExcludeAllProjects       bool
+	ErrGroup                 *errgroup.Group
+	IncludeIds               bool
+	LimitResourceCount       int
+	IncludeSpaceInPopulation bool
 }
 
 func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -253,6 +254,7 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 				Type:               octopusdeployTenantResourceType,
 				Name:               tenantName,
 				Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &tenant.Id),
+				SpaceId:            strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", tenant.SpaceId)),
 				Count:              count,
 				ResourceName:       tenant.Name,
 				ClonedFromTenantId: nil,

@@ -33,6 +33,7 @@ type AccountConverter struct {
 	ExcludeAllAccounts        bool
 	IncludeIds                bool
 	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
 }
 
 func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -316,6 +317,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 			Type:                            "octopusdeploy_aws_account",
 			Name:                            resourceName,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			ResourceName:                    account.Name,
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
@@ -402,6 +404,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -481,6 +484,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -569,6 +573,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -652,6 +657,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -736,6 +742,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
@@ -829,6 +836,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 			Name:                            resourceName,
 			ResourceName:                    account.Name,
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     account.Description,
 			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),

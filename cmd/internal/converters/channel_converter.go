@@ -21,15 +21,16 @@ const octopusdeployChannelDataType = "octopusdeploy_channels"
 const octopusdeployChannelResourceType = "octopusdeploy_channel"
 
 type ChannelConverter struct {
-	Client                client.OctopusClient
-	LifecycleConverter    ConverterAndLookupWithStatelessById
-	ExcludeTenantTags     args.StringSliceArgs
-	ExcludeTenantTagSets  args.StringSliceArgs
-	Excluder              ExcludeByName
-	ErrGroup              *errgroup.Group
-	IncludeIds            bool
-	LimitResourceCount    int
-	IncludeDefaultChannel bool
+	Client                   client.OctopusClient
+	LifecycleConverter       ConverterAndLookupWithStatelessById
+	ExcludeTenantTags        args.StringSliceArgs
+	ExcludeTenantTagSets     args.StringSliceArgs
+	Excluder                 ExcludeByName
+	ErrGroup                 *errgroup.Group
+	IncludeIds               bool
+	LimitResourceCount       int
+	IncludeDefaultChannel    bool
+	IncludeSpaceInPopulation bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -187,6 +188,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				Type:         octopusdeployChannelResourceType,
 				Name:         resourceName,
 				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &channel.Id),
+				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", channel.SpaceId)),
 				ResourceName: channel.Name,
 				Description:  channel.Description,
 				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),

@@ -5,6 +5,7 @@ type TerraformProject struct {
 	Name                                   string                                           `hcl:"name,label"`
 	Count                                  *string                                          `hcl:"count"`
 	Id                                     *string                                          `hcl:"id"`
+	SpaceId                                *string                                          `hcl:"space_id"`
 	ResourceName                           string                                           `hcl:"name"`
 	AutoCreateRelease                      bool                                             `hcl:"auto_create_release"`
 	DefaultGuidedFailureMode               *string                                          `hcl:"default_guided_failure_mode"`

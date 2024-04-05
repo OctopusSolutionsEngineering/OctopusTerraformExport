@@ -31,6 +31,8 @@ type MachinePolicyConverter struct {
 	ExcludeAllMachinePolicies    bool
 	Excluder                     ExcludeByName
 	LimitResourceCount           int
+	IncludeIds                   bool
+	IncludeSpaceInPopulation     bool
 }
 
 func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -166,7 +168,8 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 				Type:                         octopusdeployMachinePolicyResourceType,
 				Name:                         policyName,
 				ResourceName:                 machinePolicy.Name,
-				Id:                           nil,
+				Id:                           strutil.InputPointerIfEnabled(c.IncludeIds, &machinePolicy.Id),
+				SpaceId:                      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", machinePolicy.SpaceId)),
 				Description:                  machinePolicy.Description,
 				ConnectionConnectTimeout:     c.convertDurationToNumber(machinePolicy.ConnectionConnectTimeout),
 				ConnectionRetryCountLimit:    machinePolicy.ConnectionRetryCountLimit,
