@@ -41,6 +41,8 @@ func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(resourceType string) <
 			items = len(collection.Items)
 			skip += pageSize
 		}
+
+		close(chnl)
 	}()
 
 	return chnl
