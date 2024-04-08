@@ -5,10 +5,14 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 )
 
+// BatchingOctopusApiClient is a wrapper over the regular client that exposes the ability
+// to return a group of resources while making smaller batched requests to the Octopus API.
+// This has the benefit of allowing large collections to be processed in a lazy fashion.
 type BatchingOctopusApiClient[T any] struct {
 	Client OctopusClient
 }
 
+// ResultError captures either a successful result or an error.
 type ResultError[T any] struct {
 	Res T
 	Err error
@@ -29,7 +33,7 @@ func (c *BatchingOctopusApiClient[T]) GetAllResourcesBatch(done <-chan struct{},
 			close(chnl)
 		}()
 
-		for ok := true; ok; ok = (items != 0) {
+		for ok := true; ok; ok = items == pageSize {
 			collection := new(octopus.GeneralCollection[T])
 			err := c.Client.GetAllResources(resourceType, collection, []string{"take", fmt.Sprint(pageSize)}, []string{"skip", fmt.Sprint(skip)})
 
