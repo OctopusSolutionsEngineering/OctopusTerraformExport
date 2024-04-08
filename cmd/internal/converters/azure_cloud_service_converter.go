@@ -1,9 +1,9 @@
 package converters
 
 import (
-	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -57,34 +57,32 @@ func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies 
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.AzureCloudServiceResource]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.AzureCloudServiceResource]{
+		Client: c.Client,
 	}
 
-	var filterErrors error
-	targets := lo.Filter(collection.Items, func(item octopus.AzureCloudServiceResource, index int) bool {
-		err, noEnvironments := c.HasNoEnvironments(item)
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		valid, err := c.validTarget(resource)
 
 		if err != nil {
-			filterErrors = errors.Join(filterErrors, err)
-			return false
+			return err
 		}
 
-		if noEnvironments {
-			return false
+		if !valid {
+			continue
 		}
 
-		return c.isAzureCloudService(item)
-	})
-
-	if filterErrors != nil {
-		return filterErrors
-	}
-
-	for _, resource := range targets {
 		zap.L().Info("Azure Cloud Service Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -95,6 +93,21 @@ func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies 
 
 	return nil
 }
+
+func (c AzureCloudServiceTargetConverter) validTarget(item octopus.AzureCloudServiceResource) (bool, error) {
+	err, noEnvironments := c.HasNoEnvironments(item)
+
+	if err != nil {
+		return false, err
+	}
+
+	if noEnvironments {
+		return false, nil
+	}
+
+	return c.isAzureCloudService(item), nil
+}
+
 func (c AzureCloudServiceTargetConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclById(id, true, dependencies)
 }

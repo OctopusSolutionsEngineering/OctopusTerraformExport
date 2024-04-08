@@ -1,9 +1,9 @@
 package converters
 
 import (
-	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -53,34 +53,32 @@ func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.Resource
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.SshEndpointResource]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.SshEndpointResource]{
+		Client: c.Client,
 	}
 
-	var filterErrors error
-	targets := lo.Filter(collection.Items, func(item octopus.SshEndpointResource, index int) bool {
-		err, noEnvironments := c.HasNoEnvironments(item)
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		valid, err := c.validTarget(resource)
 
 		if err != nil {
-			filterErrors = errors.Join(filterErrors, err)
-			return false
+			return err
 		}
 
-		if noEnvironments {
-			return false
+		if !valid {
+			continue
 		}
 
-		return c.isSsh(item)
-	})
-
-	if filterErrors != nil {
-		return filterErrors
-	}
-
-	for _, resource := range targets {
 		zap.L().Info("SSH Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -90,6 +88,20 @@ func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.Resource
 	}
 
 	return nil
+}
+
+func (c SshTargetConverter) validTarget(item octopus.SshEndpointResource) (bool, error) {
+	err, noEnvironments := c.HasNoEnvironments(item)
+
+	if err != nil {
+		return false, err
+	}
+
+	if noEnvironments {
+		return false, nil
+	}
+
+	return c.isSsh(item), nil
 }
 
 func (c SshTargetConverter) isSsh(resource octopus.SshEndpointResource) bool {

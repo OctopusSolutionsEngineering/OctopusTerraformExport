@@ -1,9 +1,9 @@
 package converters
 
 import (
-	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -52,35 +52,32 @@ func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *data.
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.CloudRegionResource]{
+		Client: c.Client,
 	}
 
-	// filter out environments that should not be processed
-	var filterError error = nil
-	targets := lo.Filter(collection.Items, func(item octopus.CloudRegionResource, index int) bool {
-		err, noEnvironments := c.HasNoEnvironments(item)
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		valid, err := c.validTarget(resource)
 
 		if err != nil {
-			filterError = errors.Join(filterError, err)
-			return false
+			return err
 		}
 
-		if noEnvironments {
-			return false
+		if !valid {
+			continue
 		}
 
-		return c.isCloudTarget(item)
-	})
-
-	if filterError != nil {
-		return filterError
-	}
-
-	for _, resource := range targets {
 		zap.L().Info("Cloud Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -90,6 +87,20 @@ func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *data.
 	}
 
 	return nil
+}
+
+func (c CloudRegionTargetConverter) validTarget(item octopus.CloudRegionResource) (bool, error) {
+	err, noEnvironments := c.HasNoEnvironments(item)
+
+	if err != nil {
+		return false, err
+	}
+
+	if noEnvironments {
+		return false, nil
+	}
+
+	return c.isCloudTarget(item), nil
 }
 
 func (c CloudRegionTargetConverter) isCloudTarget(resource octopus.CloudRegionResource) bool {
