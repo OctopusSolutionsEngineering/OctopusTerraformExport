@@ -16,7 +16,7 @@ type ResultError[T any] struct {
 
 // GetAllResourcesBatch retrieves all the resources of a given type but in small batches.
 // This allows the resources to be exported in smaller chunks, which is useful for large spaces.
-func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(resourceType string) <-chan ResultError[T] {
+func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(done <-chan struct{}, resourceType string) <-chan ResultError[T] {
 
 	pageSize := 30
 	chnl := make(chan ResultError[T])
@@ -24,6 +24,10 @@ func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(resourceType string) <
 	go func() {
 		skip := 0
 		items := 0
+
+		defer func() {
+			close(chnl)
+		}()
 
 		for ok := true; ok; ok = (items != 0) {
 			collection := new(octopus.GeneralCollection[T])
@@ -35,14 +39,20 @@ func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(resourceType string) <
 			}
 
 			for _, item := range collection.Items {
-				chnl <- ResultError[T]{Res: item, Err: nil}
+				// https://go.dev/blog/pipelines#explicit-cancellation
+				select {
+				case <-done:
+					// Any signal on the done channel means we should stop processing
+					return
+				default:
+					// No messages on the done channel means we send the next item
+					chnl <- ResultError[T]{Res: item, Err: nil}
+				}
 			}
 
 			items = len(collection.Items)
 			skip += pageSize
 		}
-
-		close(chnl)
 	}()
 
 	return chnl

@@ -49,7 +49,10 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.Resou
 		Client: c.Client,
 	}
 
-	channel := batchClient.GetAllResourcesBatch(c.GetResourceType())
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
 
 	for resourceWrapper := range channel {
 		if resourceWrapper.Err != nil {
