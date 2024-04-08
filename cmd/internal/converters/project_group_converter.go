@@ -45,20 +45,30 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.Resou
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.ProjectGroup]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.GenericOctopusApiClient[octopus.ProjectGroup]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
-		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
+	channel := batchClient.GetAllResourcesBatch(c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		if c.Excluder.IsResourceExcludedWithRegex(
+			resource.Name,
+			c.ExcludeAllProjectGroups,
+			c.ExcludeProjectGroups,
+			c.ExcludeProjectGroupsRegex,
+			c.ExcludeProjectGroupsExcept) {
 			continue
 		}
 
 		zap.L().Info("Project Group: " + resource.Id)
-		err = c.toHcl(resource, false, false, stateless, dependencies)
+		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err
