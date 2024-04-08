@@ -224,9 +224,14 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		return nil, err
 	}
 
-	requestURL := spaceUrl + "/" + resourceType + "?take=10000"
+	requestURL := spaceUrl + "/" + resourceType
 
+	foundTake := false
 	for _, q := range queryParams {
+
+		if q[0] == "take" {
+			foundTake = true
+		}
 
 		if len(q) == 1 {
 			requestURL += "&" + url.QueryEscape(q[0])
@@ -235,6 +240,16 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		if len(q) == 2 {
 			requestURL += "&" + url.QueryEscape(q[0]) + "=" + url.QueryEscape(q[1])
 		}
+	}
+
+	if !foundTake {
+		if len(queryParams) == 0 {
+			requestURL += "&"
+		} else {
+			requestURL += "?"
+		}
+
+		requestURL += "take=10000"
 	}
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
