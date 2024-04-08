@@ -6,8 +6,8 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -46,20 +46,27 @@ func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.Resource
 		return nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.Lifecycle]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.Lifecycle]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
 			continue
 		}
 
 		zap.L().Info("Lifecycle: " + resource.Id)
-		err = c.toHcl(resource, false, false, stateless, dependencies)
+		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -87,7 +94,7 @@ func (c LifecycleConverter) toHclById(id string, stateless bool, dependencies *d
 		return nil
 	}
 
-	resource := octopus2.Lifecycle{}
+	resource := octopus.Lifecycle{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -113,7 +120,7 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.Resour
 		return nil
 	}
 
-	lifecycle := octopus2.Lifecycle{}
+	lifecycle := octopus.Lifecycle{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
 
 	if err != nil {
@@ -128,8 +135,8 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.Resour
 
 }
 
-func (c LifecycleConverter) buildData(resourceName string, resource octopus2.Lifecycle) terraform2.TerraformLifecycleData {
-	return terraform2.TerraformLifecycleData{
+func (c LifecycleConverter) buildData(resourceName string, resource octopus.Lifecycle) terraform.TerraformLifecycleData {
+	return terraform.TerraformLifecycleData{
 		Type:        octopusdeployLifecyclesDataType,
 		Name:        resourceName,
 		Ids:         nil,
@@ -140,13 +147,13 @@ func (c LifecycleConverter) buildData(resourceName string, resource octopus2.Lif
 }
 
 // writeData appends the data block for stateless modules
-func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus2.Lifecycle, resourceName string) {
+func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus.Lifecycle, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
 
-func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.Excluder.IsResourceExcludedWithRegex(lifecycle.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
 		return nil
@@ -226,7 +233,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus2.Lifecycle, recursive bool, 
 
 		thisResource.ToHcl = func() (string, error) {
 
-			terraformResource := terraform2.TerraformLifecycle{
+			terraformResource := terraform.TerraformLifecycle{
 				Type:                    octopusdeployLifecycleResourceType,
 				Name:                    resourceName,
 				Id:                      strutil.InputPointerIfEnabled(c.IncludeIds, &lifecycle.Id),
@@ -264,22 +271,22 @@ func (c LifecycleConverter) GetResourceType() string {
 	return "Lifecycles"
 }
 
-func (c LifecycleConverter) convertPolicy(policy *octopus2.Policy) *terraform2.TerraformPolicy {
+func (c LifecycleConverter) convertPolicy(policy *octopus.Policy) *terraform.TerraformPolicy {
 	if policy == nil {
 		return nil
 	}
 
-	return &terraform2.TerraformPolicy{
+	return &terraform.TerraformPolicy{
 		QuantityToKeep:    policy.QuantityToKeep,
 		ShouldKeepForever: policy.ShouldKeepForever,
 		Unit:              policy.Unit,
 	}
 }
 
-func (c LifecycleConverter) convertPhases(phases []octopus2.Phase, dependencies *data.ResourceDetailsCollection) []terraform2.TerraformPhase {
-	terraformPhases := make([]terraform2.TerraformPhase, 0)
+func (c LifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *data.ResourceDetailsCollection) []terraform.TerraformPhase {
+	terraformPhases := make([]terraform.TerraformPhase, 0)
 	for _, v := range phases {
-		terraformPhases = append(terraformPhases, terraform2.TerraformPhase{
+		terraformPhases = append(terraformPhases, terraform.TerraformPhase{
 			AutomaticDeploymentTargets:         c.convertTargets(v.AutomaticDeploymentTargets, dependencies),
 			OptionalDeploymentTargets:          c.convertTargets(v.OptionalDeploymentTargets, dependencies),
 			Name:                               v.Name,

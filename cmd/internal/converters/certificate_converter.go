@@ -50,20 +50,27 @@ func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.Resour
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.Certificate]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.Certificate]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
 			continue
 		}
 
 		zap.L().Info("Certificate: " + resource.Id)
-		err = c.toHcl(resource, false, stateless, dependencies)
+		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err

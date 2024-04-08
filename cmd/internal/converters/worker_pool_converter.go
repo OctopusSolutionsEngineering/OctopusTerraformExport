@@ -46,20 +46,27 @@ func (c WorkerPoolConverter) allToHcl(stateless bool, dependencies *data.Resourc
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.WorkerPool]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.WorkerPool]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllWorkerpools, c.ExcludeWorkerpools, c.ExcludeWorkerpoolsRegex, c.ExcludeWorkerpoolsExcept) {
 			continue
 		}
 
 		zap.L().Info("Worker Pool: " + resource.Id)
-		err = c.toHcl(resource, false, false, stateless, dependencies)
+		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err

@@ -49,20 +49,27 @@ func (c AccountConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.Account]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.Account]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllAccounts, c.ExcludeAccounts, c.ExcludeAccountsRegex, c.ExcludeAccountsExcept) {
 			continue
 		}
 
 		zap.L().Info("Account: " + resource.Id)
-		err = c.toHcl(resource, false, stateless, dependencies)
+		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err
