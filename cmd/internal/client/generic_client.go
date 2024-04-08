@@ -44,9 +44,7 @@ func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(done <-chan struct{}, 
 				case <-done:
 					// Any signal on the done channel means we should stop processing
 					return
-				default:
-					// No messages on the done channel means we send the next item
-					chnl <- ResultError[T]{Res: item, Err: nil}
+				case chnl <- ResultError[T]{Res: item, Err: nil}: // Send the item on the channel
 				}
 			}
 
