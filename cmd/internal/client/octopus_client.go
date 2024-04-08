@@ -7,6 +7,7 @@ import (
 	"fmt"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/avast/retry-go/v4"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -634,7 +635,13 @@ func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
 }
 
 func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
-	cacheHit := o.readCollectionCache(resourceType)
+	queryParamsId := strings.Join(lo.Map(queryParams, func(item []string, index int) string {
+		return item[0] + "=" + item[1]
+	}), ",")
+
+	cacheId := resourceType + "[" + queryParamsId + "]"
+
+	cacheHit := o.readCollectionCache(cacheId)
 	if cacheHit != nil {
 		zap.L().Debug("Cache hit on " + resourceType)
 
@@ -678,7 +685,7 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 		return err
 	}
 
-	o.cacheCollectionResult(resourceType, body)
+	o.cacheCollectionResult(cacheId, body)
 
 	return o.unmarshal(resources, body)
 }
