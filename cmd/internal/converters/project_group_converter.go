@@ -45,7 +45,7 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.Resou
 		return nil
 	}
 
-	batchClient := client.GenericOctopusApiClient[octopus.ProjectGroup]{
+	batchClient := client.BatchingOctopusApiClient[octopus.ProjectGroup]{
 		Client: c.Client,
 	}
 

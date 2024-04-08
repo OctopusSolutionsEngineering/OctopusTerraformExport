@@ -5,7 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 )
 
-type GenericOctopusApiClient[T any] struct {
+type BatchingOctopusApiClient[T any] struct {
 	Client OctopusClient
 }
 
@@ -16,7 +16,7 @@ type ResultError[T any] struct {
 
 // GetAllResourcesBatch retrieves all the resources of a given type but in small batches.
 // This allows the resources to be exported in smaller chunks, which is useful for large spaces.
-func (c *GenericOctopusApiClient[T]) GetAllResourcesBatch(done <-chan struct{}, resourceType string) <-chan ResultError[T] {
+func (c *BatchingOctopusApiClient[T]) GetAllResourcesBatch(done <-chan struct{}, resourceType string) <-chan ResultError[T] {
 
 	pageSize := 30
 	chnl := make(chan ResultError[T])
