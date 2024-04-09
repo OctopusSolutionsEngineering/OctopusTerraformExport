@@ -8583,6 +8583,36 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != "" {
 						return errors.New("Deployment process should have an empty worker pool.")
 					}
+
+					runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+					err = octopusClient.GetAllResources("Runbooks", &runbookCollection)
+
+					if err != nil {
+						return err
+					}
+
+					runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+						return item.Name == "Runbook"
+					})
+
+					if len(runbook) != 1 {
+						return errors.New("Should have created a runbook called \"Runbook\".")
+					}
+
+					runbookProcess := octopus.RunbookProcess{}
+					_, err = octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
+
+					if err != nil {
+						return err
+					}
+
+					if strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].WorkerPoolVariable) != "#{WorkerPool}" {
+						return errors.New("Runbook step should have had a worker pool variable of \"#{WorkerPool}\".")
+					}
+
+					if runbookProcess.Steps[0].Actions[0].WorkerPoolId != "" {
+						return errors.New("Runbook step should have had an empty worker pool ID.")
+					}
 				}
 			}
 
