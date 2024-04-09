@@ -180,7 +180,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 					IsDisabled:                    a.IsDisabled,
 					CanBeUsedForProjectVersioning: a.CanBeUsedForProjectVersioning,
 					IsRequired:                    a.IsRequired,
-					WorkerPoolId:                  workerPool,
+					WorkerPoolId:                  strutil.InputIfEnabled(a.WorkerPoolVariable == nil, workerPool),
 					Container:                     c.OctopusActionProcessor.ConvertContainer(a.Container, dependencies),
 					WorkerPoolVariable:            a.WorkerPoolVariable,
 					Environments:                  dependencies.GetResources("Environments", a.Environments...),
