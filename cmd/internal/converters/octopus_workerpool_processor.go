@@ -2,7 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -22,14 +22,21 @@ func (c OctopusWorkerPoolProcessor) ResolveWorkerPoolId(workerPoolId string) (st
 		return workerPoolId, nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.WorkerPool]{}
-	err := c.Client.GetAllResources("WorkerPools", &collection, []string{"take", "1000"})
-
-	if err != nil {
-		return "", err
+	batchClient := client.BatchingOctopusApiClient[octopus.MachinePolicy]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, "WorkerPools")
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return "", resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if resource.IsDefault {
 			return resource.Id, nil
 		}

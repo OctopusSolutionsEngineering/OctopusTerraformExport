@@ -8463,3 +8463,48 @@ func TestSingleRunbookExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestLotsOfProjectExport verifies that a large number of projects (more than the API batch size) are processed
+// correctly.
+func TestLotsOfProjectExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/70-lotsofproject/space_creation",
+		"../test/terraform/70-lotsofproject/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			// Verify one of the last projects is exported correctly
+			resourceName := "Test 99"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Description) != "Test project 99" {
+						return errors.New("The project must be have a description of \"Test project 99\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

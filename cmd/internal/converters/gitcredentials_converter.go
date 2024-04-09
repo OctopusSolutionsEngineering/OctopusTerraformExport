@@ -5,8 +5,8 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -43,16 +43,24 @@ func (c GitCredentialsConverter) allToHcl(stateless bool, dependencies *data.Res
 		return nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.GitCredentials]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.GitCredentials]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
 		zap.L().Info("Git Credentials: " + resource.Id)
-		err = c.toHcl(resource, false, false, stateless, dependencies)
+		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -83,7 +91,7 @@ func (c GitCredentialsConverter) toHclById(id string, stateless bool, dependenci
 		return nil
 	}
 
-	resource := octopus2.GitCredentials{}
+	resource := octopus.GitCredentials{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -107,7 +115,7 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.R
 		return nil
 	}
 
-	gitCredentials := octopus2.GitCredentials{}
+	gitCredentials := octopus.GitCredentials{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &gitCredentials)
 
 	if err != nil {
@@ -117,7 +125,7 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.R
 	return c.toHcl(gitCredentials, false, true, false, dependencies)
 }
 
-func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.ExcludeAllGitCredentials {
 		return nil
@@ -146,7 +154,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus2.GitCredentials, _
 	return nil
 }
 
-func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredentials, thisResource *data.ResourceDetails, gitCredentialsName string) {
+func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus.GitCredentials, thisResource *data.ResourceDetails, gitCredentialsName string) {
 	thisResource.Lookup = "${data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(gitCredentialsName, gitCredentials)
@@ -159,8 +167,8 @@ func (c GitCredentialsConverter) toHclLookup(gitCredentials octopus2.GitCredenti
 	}
 }
 
-func (c GitCredentialsConverter) buildData(resourceName string, resource octopus2.GitCredentials) terraform2.TerraformGitCredentialData {
-	return terraform2.TerraformGitCredentialData{
+func (c GitCredentialsConverter) buildData(resourceName string, resource octopus.GitCredentials) terraform.TerraformGitCredentialData {
+	return terraform.TerraformGitCredentialData{
 		Type:         octopusdeployGitCredentialDataType,
 		Name:         resourceName,
 		ResourceName: resource.Name,
@@ -170,13 +178,13 @@ func (c GitCredentialsConverter) buildData(resourceName string, resource octopus
 }
 
 // writeData appends the data block for stateless modules
-func (c GitCredentialsConverter) writeData(file *hclwrite.File, resource octopus2.GitCredentials, resourceName string) {
+func (c GitCredentialsConverter) writeData(file *hclwrite.File, resource octopus.GitCredentials, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
 
-func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus2.GitCredentials, dependencies *data.ResourceDetailsCollection, thisResource *data.ResourceDetails, gitCredentialsName string) {
+func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials octopus.GitCredentials, dependencies *data.ResourceDetailsCollection, thisResource *data.ResourceDetails, gitCredentialsName string) {
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials) != 0 " +
 			"? data." + octopusdeployGitCredentialDataType + "." + gitCredentialsName + ".git_credentials[0].id " +
@@ -198,7 +206,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 	}
 	thisResource.ToHcl = func() (string, error) {
 
-		terraformResource := terraform2.TerraformGitCredentials{
+		terraformResource := terraform.TerraformGitCredentials{
 			Type:         octopusdeployGitCredentialResourceType,
 			Name:         gitCredentialsName,
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &gitCredentials.Id),
@@ -221,7 +229,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		// When using dummy values, we expect the secrets will be updated later
 		if c.DummySecretVariableValues || stateless {
 
-			ignoreAll := terraform2.EmptyBlock{}
+			ignoreAll := terraform.EmptyBlock{}
 			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 			gitCertBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -236,7 +244,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 
 		file.Body().AppendBlock(gitCertBlock)
 
-		secretVariableResource := terraform2.TerraformVariable{
+		secretVariableResource := terraform.TerraformVariable{
 			Name:        gitCredentialsName,
 			Type:        "string",
 			Nullable:    false,

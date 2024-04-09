@@ -6,8 +6,8 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -48,20 +48,27 @@ func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *data.Reso
 		return nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.MachinePolicy]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.MachinePolicy]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllMachinePolicies, c.ExcludeMachinePolicies, c.ExcludeMachinePoliciesRegex, c.ExcludeMachinePoliciesExcept) {
 			continue
 		}
 
 		zap.L().Info("Machine Policy: " + resource.Id)
-		err = c.toHcl(resource, false, stateless, dependencies)
+		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -88,7 +95,7 @@ func (c MachinePolicyConverter) toHclById(id string, stateless bool, dependencie
 		return nil
 	}
 
-	resource := octopus2.MachinePolicy{}
+	resource := octopus.MachinePolicy{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -103,8 +110,8 @@ func (c MachinePolicyConverter) toHclById(id string, stateless bool, dependencie
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 
-func (c MachinePolicyConverter) buildData(resourceName string, resource octopus2.MachinePolicy) terraform2.TerraformMachinePolicyData {
-	return terraform2.TerraformMachinePolicyData{
+func (c MachinePolicyConverter) buildData(resourceName string, resource octopus.MachinePolicy) terraform.TerraformMachinePolicyData {
+	return terraform.TerraformMachinePolicyData{
 		Type:        octopusdeployMachinePoliciesDataType,
 		Name:        resourceName,
 		Ids:         nil,
@@ -115,13 +122,13 @@ func (c MachinePolicyConverter) buildData(resourceName string, resource octopus2
 }
 
 // writeData appends the data block for stateless modules
-func (c MachinePolicyConverter) writeData(file *hclwrite.File, resource octopus2.MachinePolicy, resourceName string) {
+func (c MachinePolicyConverter) writeData(file *hclwrite.File, resource octopus.MachinePolicy, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
 
-func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.Excluder.IsResourceExcludedWithRegex(machinePolicy.Name, c.ExcludeAllMachinePolicies, c.ExcludeMachinePolicies, c.ExcludeMachinePoliciesRegex, c.ExcludeMachinePoliciesExcept) {
 		return nil
@@ -164,7 +171,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 			return string(file.Bytes()), nil
 		} else {
 
-			terraformResource := terraform2.TerraformMachinePolicy{
+			terraformResource := terraform.TerraformMachinePolicy{
 				Type:                         octopusdeployMachinePolicyResourceType,
 				Name:                         policyName,
 				ResourceName:                 machinePolicy.Name,
@@ -176,19 +183,19 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 				ConnectionRetrySleepInterval: c.convertDurationToNumber(machinePolicy.ConnectionRetrySleepInterval),
 				ConnectionRetryTimeLimit:     c.convertDurationToNumber(machinePolicy.ConnectionRetryTimeLimit),
 				//PollingRequestMaximumMessageProcessingTimeout: c.convertDurationToNumber(machinePolicy.PollingRequestMaximumMessageProcessingTimeout),
-				MachineCleanupPolicy: terraform2.TerraformMachineCleanupPolicy{
+				MachineCleanupPolicy: terraform.TerraformMachineCleanupPolicy{
 					DeleteMachinesBehavior:        &machinePolicy.MachineCleanupPolicy.DeleteMachinesBehavior,
 					DeleteMachinesElapsedTimespan: c.convertDurationToNumber(machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan),
 				},
-				TerraformMachineConnectivityPolicy: terraform2.TerraformMachineConnectivityPolicy{
+				TerraformMachineConnectivityPolicy: terraform.TerraformMachineConnectivityPolicy{
 					MachineConnectivityBehavior: machinePolicy.MachineConnectivityPolicy.MachineConnectivityBehavior,
 				},
-				TerraformMachineHealthCheckPolicy: terraform2.TerraformMachineHealthCheckPolicy{
-					BashHealthCheckPolicy: terraform2.TerraformBashHealthCheckPolicy{
+				TerraformMachineHealthCheckPolicy: terraform.TerraformMachineHealthCheckPolicy{
+					BashHealthCheckPolicy: terraform.TerraformBashHealthCheckPolicy{
 						RunType:    machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.RunType,
 						ScriptBody: machinePolicy.MachineHealthCheckPolicy.BashHealthCheckPolicy.ScriptBody,
 					},
-					PowershellHealthCheckPolicy: terraform2.TerraformPowershellHealthCheckPolicy{
+					PowershellHealthCheckPolicy: terraform.TerraformPowershellHealthCheckPolicy{
 						RunType:    machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.RunType,
 						ScriptBody: machinePolicy.MachineHealthCheckPolicy.PowerShellHealthCheckPolicy.ScriptBody,
 					},
@@ -197,7 +204,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus2.MachinePolicy, _ bo
 					HealthCheckInterval:     c.convertDurationPointerToNumber(machinePolicy.MachineHealthCheckPolicy.HealthCheckInterval),
 					HealthCheckType:         machinePolicy.MachineHealthCheckPolicy.HealthCheckType,
 				},
-				TerraformMachineUpdatePolicy: terraform2.TerraformMachineUpdatePolicy{
+				TerraformMachineUpdatePolicy: terraform.TerraformMachineUpdatePolicy{
 					CalamariUpdateBehavior:  machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior,
 					TentacleUpdateAccountId: machinePolicy.MachineUpdatePolicy.TentacleUpdateAccountId,
 					TentacleUpdateBehavior:  machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior,

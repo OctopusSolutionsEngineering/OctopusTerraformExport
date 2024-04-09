@@ -1,9 +1,9 @@
 package converters
 
 import (
-	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -12,7 +12,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -53,35 +52,32 @@ func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *data.
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.OfflineDropResource]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.OfflineDropResource]{
+		Client: c.Client,
 	}
 
-	var filterErrors error
-	targets := lo.Filter(collection.Items, func(item octopus.OfflineDropResource, index int) bool {
+	done := make(chan struct{})
+	defer close(done)
 
-		err, noEnvironments := c.HasNoEnvironments(item)
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		valid, err := c.validTarget(resource)
 
 		if err != nil {
-			filterErrors = errors.Join(filterErrors, err)
-			return false
+			return err
 		}
 
-		if noEnvironments {
-			return false
+		if !valid {
+			continue
 		}
 
-		return c.isOfflineTarget(item)
-	})
-
-	if filterErrors != nil {
-		return filterErrors
-	}
-
-	for _, resource := range targets {
 		zap.L().Info("Offline Drop Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -91,6 +87,20 @@ func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *data.
 	}
 
 	return nil
+}
+
+func (c OfflineDropTargetConverter) validTarget(item octopus.OfflineDropResource) (bool, error) {
+	err, noEnvironments := c.HasNoEnvironments(item)
+
+	if err != nil {
+		return false, err
+	}
+
+	if noEnvironments {
+		return false, nil
+	}
+
+	return c.isOfflineTarget(item), nil
 }
 
 func (c OfflineDropTargetConverter) isOfflineTarget(resource octopus.OfflineDropResource) bool {

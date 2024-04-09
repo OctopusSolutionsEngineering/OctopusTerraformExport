@@ -1,9 +1,9 @@
 package converters
 
 import (
-	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -54,35 +54,32 @@ func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.R
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.KubernetesEndpointResource]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.KubernetesEndpointResource]{
+		Client: c.Client,
 	}
 
-	var filterErrors error
-	targets := lo.Filter(collection.Items, func(item octopus.KubernetesEndpointResource, index int) bool {
+	done := make(chan struct{})
+	defer close(done)
 
-		err, noEnvironments := c.HasNoEnvironments(item)
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		valid, err := c.validTarget(resource)
 
 		if err != nil {
-			filterErrors = errors.Join(filterErrors, err)
-			return false
+			return err
 		}
 
-		if noEnvironments {
-			return false
+		if !valid {
+			continue
 		}
 
-		return c.isKubernetesTarget(item)
-	})
-
-	if filterErrors != nil {
-		return filterErrors
-	}
-
-	for _, resource := range targets {
 		zap.L().Info("Kubernetes Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -92,6 +89,20 @@ func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.R
 	}
 
 	return nil
+}
+
+func (c KubernetesTargetConverter) validTarget(item octopus.KubernetesEndpointResource) (bool, error) {
+	err, noEnvironments := c.HasNoEnvironments(item)
+
+	if err != nil {
+		return false, err
+	}
+
+	if noEnvironments {
+		return false, nil
+	}
+
+	return c.isKubernetesTarget(item), nil
 }
 
 func (c KubernetesTargetConverter) isKubernetesTarget(resource octopus.KubernetesEndpointResource) bool {

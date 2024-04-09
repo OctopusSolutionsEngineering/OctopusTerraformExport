@@ -6,8 +6,8 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -56,20 +56,27 @@ func (c FeedConverter) allToHcl(stateless bool, dependencies *data.ResourceDetai
 		return nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.Feed]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.Feed]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {
 			continue
 		}
 
 		zap.L().Info("Feed: " + resource.Id)
-		err = c.toHcl(resource, false, false, stateless, dependencies)
+		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -96,7 +103,7 @@ func (c FeedConverter) toHclById(id string, stateless bool, dependencies *data.R
 		return nil
 	}
 
-	resource := octopus2.Feed{}
+	resource := octopus.Feed{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -116,7 +123,7 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDet
 		return nil
 	}
 
-	resource := octopus2.Feed{}
+	resource := octopus.Feed{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -130,7 +137,7 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDet
 	return c.toHcl(resource, false, true, false, dependencies)
 }
 
-func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c FeedConverter) toHcl(resource octopus.Feed, _ bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {
 		return nil
 	}
@@ -163,7 +170,7 @@ func (c FeedConverter) toHcl(resource octopus2.Feed, _ bool, lookup bool, statel
 	return nil
 }
 
-func (c FeedConverter) toHclResource(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) {
+func (c FeedConverter) toHclResource(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) {
 	if !(c.exportProjectFeed(resource) ||
 		c.exportDocker(stateless, dependencies, resource, thisResource, resourceName) ||
 		c.exportAws(stateless, dependencies, resource, thisResource, resourceName) ||
@@ -175,7 +182,7 @@ func (c FeedConverter) toHclResource(stateless bool, dependencies *data.Resource
 	}
 }
 
-func (c FeedConverter) exportProjectFeed(resource octopus2.Feed) bool {
+func (c FeedConverter) exportProjectFeed(resource octopus.Feed) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		return true
 	}
@@ -183,7 +190,7 @@ func (c FeedConverter) exportProjectFeed(resource octopus2.Feed) bool {
 	return false
 }
 
-func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 
 		if stateless {
@@ -214,7 +221,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 		thisResource.ToHcl = func() (string, error) {
 
 			password := "${var." + passwordName + "}"
-			terraformResource := terraform2.TerraformDockerFeed{
+			terraformResource := terraform.TerraformDockerFeed{
 				Type:                              octopusdeployDockerContainerRegistryResourceType,
 				Name:                              resourceName,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
@@ -235,7 +242,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 			}
 
 			if resource.Password != nil && resource.Password.HasValue {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",
 					Nullable:    false,
@@ -259,7 +266,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues || stateless {
 
-				ignoreAll := terraform2.EmptyBlock{}
+				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				targetBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -283,7 +290,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 	return false
 }
 
-func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -309,7 +316,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 		thisResource.ToHcl = func() (string, error) {
 
 			password := "${var." + passwordName + "}"
-			terraformResource := terraform2.TerraformEcrFeed{
+			terraformResource := terraform.TerraformEcrFeed{
 				Type:                              octopusdeployAwsElasticContainerRegistryResourceType,
 				Name:                              resourceName,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
@@ -329,7 +336,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 			}
 
 			if resource.SecretKey != nil && resource.SecretKey.HasValue {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",
 					Nullable:    false,
@@ -353,7 +360,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues || stateless {
 
-				ignoreAll := terraform2.EmptyBlock{}
+				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				targetBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -377,7 +384,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 	return false
 }
 
-func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
 		thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 
@@ -409,7 +416,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 		thisResource.Parameters = parameters
 		thisResource.ToHcl = func() (string, error) {
 			password := "${var." + passwordName + "}"
-			terraformResource := terraform2.TerraformMavenFeed{
+			terraformResource := terraform.TerraformMavenFeed{
 				Type:                              octopusdeployMavenFeedResourceType,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
@@ -430,7 +437,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 			}
 
 			if resource.Password != nil && resource.Password.HasValue {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",
 					Nullable:    false,
@@ -454,7 +461,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues || stateless {
 
-				ignoreAll := terraform2.EmptyBlock{}
+				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				targetBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -478,7 +485,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 	return false
 }
 
-func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -507,7 +514,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 		thisResource.ToHcl = func() (string, error) {
 
 			password := "${var." + passwordName + "}"
-			terraformResource := terraform2.TerraformGitHubRepoFeed{
+			terraformResource := terraform.TerraformGitHubRepoFeed{
 				Type:                              octopusdeployGithubRepositoryFeedResourceType,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
@@ -528,7 +535,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 			}
 
 			if resource.Password != nil && resource.Password.HasValue {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",
 					Nullable:    false,
@@ -552,7 +559,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues || stateless {
 
-				ignoreAll := terraform2.EmptyBlock{}
+				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				targetBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -576,7 +583,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 	return false
 }
 
-func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -606,7 +613,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 
 			password := "${var." + passwordName + "}"
 
-			terraformResource := terraform2.TerraformHelmFeed{
+			terraformResource := terraform.TerraformHelmFeed{
 				Type:                              octopusdeployHelmFeedResourceType,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
@@ -625,7 +632,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 			}
 
 			if resource.Password != nil && resource.Password.HasValue {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",
 					Nullable:    false,
@@ -649,7 +656,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues || stateless {
 
-				ignoreAll := terraform2.EmptyBlock{}
+				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				targetBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -673,7 +680,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 	return false
 }
 
-func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
 		if stateless {
 			thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -699,7 +706,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 		thisResource.ToHcl = func() (string, error) {
 			password := "${var." + passwordName + "}"
 
-			terraformResource := terraform2.TerraformNuGetFeed{
+			terraformResource := terraform.TerraformNuGetFeed{
 				Type:                              octopusdeploy_nuget_feed_resource_type,
 				Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
@@ -721,7 +728,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 			}
 
 			if resource.Password != nil && resource.Password.HasValue {
-				secretVariableResource := terraform2.TerraformVariable{
+				secretVariableResource := terraform.TerraformVariable{
 					Name:        passwordName,
 					Type:        "string",
 					Nullable:    false,
@@ -745,7 +752,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 			// When using dummy values, we expect the secrets will be updated later
 			if c.DummySecretVariableValues || stateless {
 
-				ignoreAll := terraform2.EmptyBlock{}
+				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				targetBlock.Body().AppendBlock(lifecycleBlock)
 
@@ -769,7 +776,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 	return false
 }
 
-func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) {
+func (c FeedConverter) toHclLookup(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) {
 	thisResource.Lookup = "${data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id}"
 
 	if !(c.lookupBuiltIn(resource, thisResource, resourceName) ||
@@ -784,7 +791,7 @@ func (c FeedConverter) toHclLookup(resource octopus2.Feed, thisResource *data.Re
 	}
 }
 
-func (c FeedConverter) lookupOctopusProject(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupOctopusProject(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, "", "OctopusProject")
@@ -802,7 +809,7 @@ func (c FeedConverter) lookupOctopusProject(resource octopus2.Feed, thisResource
 	return false
 }
 
-func (c FeedConverter) lookupNuget(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupNuget(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "NuGet" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "NuGet")
@@ -820,7 +827,7 @@ func (c FeedConverter) lookupNuget(resource octopus2.Feed, thisResource *data.Re
 	return false
 }
 
-func (c FeedConverter) lookupHelm(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupHelm(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Helm" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "Helm")
@@ -838,7 +845,7 @@ func (c FeedConverter) lookupHelm(resource octopus2.Feed, thisResource *data.Res
 	return false
 }
 
-func (c FeedConverter) lookupGithub(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupGithub(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "GitHub" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "GitHub")
@@ -856,7 +863,7 @@ func (c FeedConverter) lookupGithub(resource octopus2.Feed, thisResource *data.R
 	return false
 }
 
-func (c FeedConverter) lookupMaven(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupMaven(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Maven" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "Maven")
@@ -874,7 +881,7 @@ func (c FeedConverter) lookupMaven(resource octopus2.Feed, thisResource *data.Re
 	return false
 }
 
-func (c FeedConverter) lookupAws(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupAws(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "AwsElasticContainerRegistry" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "AwsElasticContainerRegistry")
@@ -892,7 +899,7 @@ func (c FeedConverter) lookupAws(resource octopus2.Feed, thisResource *data.Reso
 	return false
 }
 
-func (c FeedConverter) lookupDocker(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupDocker(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "Docker" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, resource.Name, "Docker")
@@ -910,7 +917,7 @@ func (c FeedConverter) lookupDocker(resource octopus2.Feed, thisResource *data.R
 	return false
 }
 
-func (c FeedConverter) lookupBuiltIn(resource octopus2.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+func (c FeedConverter) lookupBuiltIn(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "BuiltIn" {
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := c.buildData(resourceName, "", "BuiltIn")
@@ -928,8 +935,8 @@ func (c FeedConverter) lookupBuiltIn(resource octopus2.Feed, thisResource *data.
 	return false
 }
 
-func (c FeedConverter) buildData(resourceName string, partialName string, feedType string) terraform2.TerraformFeedData {
-	return terraform2.TerraformFeedData{
+func (c FeedConverter) buildData(resourceName string, partialName string, feedType string) terraform.TerraformFeedData {
+	return terraform.TerraformFeedData{
 		Type:        octopusdeployFeedsDataType,
 		Name:        resourceName,
 		PartialName: partialName,

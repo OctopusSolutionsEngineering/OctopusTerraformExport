@@ -6,7 +6,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -45,20 +45,27 @@ func (c EnvironmentConverter) allToHcl(stateless bool, dependencies *data.Resour
 		return nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.Environment]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.Environment]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {
 			continue
 		}
 
 		zap.L().Info("Environment: " + resource.Id)
-		err = c.toHcl(resource, false, stateless, dependencies)
+		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -88,7 +95,7 @@ func (c EnvironmentConverter) toHclById(id string, stateless bool, dependencies 
 		return nil
 	}
 
-	resource := octopus2.Environment{}
+	resource := octopus.Environment{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -108,7 +115,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.Reso
 		return nil
 	}
 
-	environment := octopus2.Environment{}
+	environment := octopus.Environment{}
 	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
 
 	if err != nil {
@@ -142,7 +149,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.Reso
 	return nil
 }
 
-func (c EnvironmentConverter) buildData(resourceName string, resource octopus2.Environment) terraform.TerraformEnvironmentData {
+func (c EnvironmentConverter) buildData(resourceName string, resource octopus.Environment) terraform.TerraformEnvironmentData {
 	return terraform.TerraformEnvironmentData{
 		Type:        octopusdeployEnvironmentsDataType,
 		Name:        resourceName,
@@ -154,7 +161,7 @@ func (c EnvironmentConverter) buildData(resourceName string, resource octopus2.E
 }
 
 // writeData appends the data block for stateless modules
-func (c EnvironmentConverter) writeData(file *hclwrite.File, resource octopus2.Environment, resourceName string) {
+func (c EnvironmentConverter) writeData(file *hclwrite.File, resource octopus.Environment, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
@@ -186,7 +193,7 @@ func (c EnvironmentConverter) getCount(stateless bool, resourceName string) *str
 	return nil
 }
 
-func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(environment.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {
 		return nil
 	}
@@ -251,7 +258,7 @@ func (c EnvironmentConverter) toHcl(environment octopus2.Environment, _ bool, st
 	return nil
 }
 
-func (c EnvironmentConverter) getServiceNowChangeControlled(env octopus2.Environment) bool {
+func (c EnvironmentConverter) getServiceNowChangeControlled(env octopus.Environment) bool {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "servicenow-integration" {
 			v, ok := setting.Values["ServiceNowChangeControlled"]
@@ -268,7 +275,7 @@ func (c EnvironmentConverter) getServiceNowChangeControlled(env octopus2.Environ
 	return false
 }
 
-func (c EnvironmentConverter) getJiraServiceManagementExtensionSettings(env octopus2.Environment) bool {
+func (c EnvironmentConverter) getJiraServiceManagementExtensionSettings(env octopus.Environment) bool {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "jiraservicemanagement-integration" {
 			v, ok := setting.Values["JsmChangeControlled"]
@@ -285,7 +292,7 @@ func (c EnvironmentConverter) getJiraServiceManagementExtensionSettings(env octo
 	return false
 }
 
-func (c EnvironmentConverter) getJiraExtensionSettings(env octopus2.Environment) string {
+func (c EnvironmentConverter) getJiraExtensionSettings(env octopus.Environment) string {
 	for _, setting := range env.ExtensionSettings {
 		if setting.ExtensionId == "jira-integration" {
 			v, ok := setting.Values["JiraEnvironmentType"]

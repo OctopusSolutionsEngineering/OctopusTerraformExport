@@ -7,6 +7,7 @@ import (
 	"fmt"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/avast/retry-go/v4"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -223,20 +224,31 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		return nil, err
 	}
 
-	requestURL := spaceUrl + "/" + resourceType + "?take=10000"
+	requestURL, err := url.Parse(spaceUrl + "/" + resourceType)
 
+	if err != nil {
+		panic(err)
+	}
+
+	params := url.Values{}
 	for _, q := range queryParams {
-
 		if len(q) == 1 {
-			requestURL += "&" + url.QueryEscape(q[0])
+			params.Add(q[0], "")
 		}
 
 		if len(q) == 2 {
-			requestURL += "&" + url.QueryEscape(q[0]) + "=" + url.QueryEscape(q[1])
+			params.Add(q[0], q[1])
 		}
 	}
 
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	// Add default take query param if it was not specified
+	if _, ok := params["take"]; !ok {
+		params.Add("take", "10000")
+	}
+
+	requestURL.RawQuery = params.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, requestURL.String(), nil)
 
 	if err != nil {
 		return nil, err
@@ -634,7 +646,13 @@ func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
 }
 
 func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
-	cacheHit := o.readCollectionCache(resourceType)
+	queryParamsId := strings.Join(lo.Map(queryParams, func(item []string, index int) string {
+		return item[0] + "=" + item[1]
+	}), ",")
+
+	cacheId := resourceType + "[" + queryParamsId + "]"
+
+	cacheHit := o.readCollectionCache(cacheId)
 	if cacheHit != nil {
 		zap.L().Debug("Cache hit on " + resourceType)
 
@@ -678,7 +696,7 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 		return err
 	}
 
-	o.cacheCollectionResult(resourceType, body)
+	o.cacheCollectionResult(cacheId, body)
 
 	return o.unmarshal(resources, body)
 }

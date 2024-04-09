@@ -6,7 +6,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -45,20 +45,27 @@ func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 		return nil
 	}
 
-	collection := octopus2.GeneralCollection[octopus2.TagSet]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.TagSet]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTenantTagSets, c.ExcludeTenantTagSets, c.ExcludeTenantTagSetsRegex, c.ExcludeTenantTagSetsExcept) {
 			continue
 		}
 
 		zap.L().Info("Tagset: " + resource.Id)
-		err = c.toHcl(resource, stateless, dependencies)
+		err := c.toHcl(resource, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -68,7 +75,7 @@ func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	return nil
 }
 
-func (c *TagSetConverter) ToHclByResource(tagSet octopus2.TagSet, dependencies *data.ResourceDetailsCollection) error {
+func (c *TagSetConverter) ToHclByResource(tagSet octopus.TagSet, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHcl(tagSet, false, dependencies)
 }
 
@@ -76,7 +83,7 @@ func (c *TagSetConverter) GetResourceType() string {
 	return "TagSets"
 }
 
-func (c *TagSetConverter) toHcl(tagSet octopus2.TagSet, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(tagSet.Name, c.ExcludeAllTenantTagSets, c.ExcludeTenantTagSets, c.ExcludeTenantTagSetsRegex, c.ExcludeTenantTagSetsExcept) {
 		return nil
 	}
@@ -208,7 +215,7 @@ func (c *TagSetConverter) getCount(stateless bool, tagSetName string) *string {
 	return nil
 }
 
-func (c *TagSetConverter) buildData(resourceName string, resource octopus2.TagSet) terraform.TerraformTagSetData {
+func (c *TagSetConverter) buildData(resourceName string, resource octopus.TagSet) terraform.TerraformTagSetData {
 	return terraform.TerraformTagSetData{
 		Type:        octopusdeployTagSetsData,
 		Name:        resourceName,
@@ -220,7 +227,7 @@ func (c *TagSetConverter) buildData(resourceName string, resource octopus2.TagSe
 }
 
 // writeData appends the data block for stateless modules
-func (c *TagSetConverter) writeData(file *hclwrite.File, resource octopus2.TagSet, resourceName string) {
+func (c *TagSetConverter) writeData(file *hclwrite.File, resource octopus.TagSet, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)

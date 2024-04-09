@@ -1,9 +1,9 @@
 package converters
 
 import (
-	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -53,35 +53,32 @@ func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *data.
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.AzureWebAppResource]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.AzureWebAppResource]{
+		Client: c.Client,
 	}
 
-	// filter out environments that should not be processed
-	var filterErrors error = nil
-	targets := lo.Filter(collection.Items, func(item octopus.AzureWebAppResource, index int) bool {
-		err, noEnvironments := c.HasNoEnvironments(item)
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
+
+		valid, err := c.validTarget(resource)
 
 		if err != nil {
-			filterErrors = errors.Join(filterErrors, err)
-			return false
+			return err
 		}
 
-		if noEnvironments {
-			return false
+		if !valid {
+			continue
 		}
 
-		return c.isAzureWebApp(item)
-	})
-
-	if filterErrors != nil {
-		return filterErrors
-	}
-
-	for _, resource := range targets {
 		zap.L().Info("Azure Web App Target: " + resource.Id)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
@@ -91,6 +88,20 @@ func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *data.
 	}
 
 	return nil
+}
+
+func (c AzureWebAppTargetConverter) validTarget(item octopus.AzureWebAppResource) (bool, error) {
+	err, noEnvironments := c.HasNoEnvironments(item)
+
+	if err != nil {
+		return false, err
+	}
+
+	if noEnvironments {
+		return false, nil
+	}
+
+	return c.isAzureWebApp(item), nil
 }
 
 func (c AzureWebAppTargetConverter) isAzureWebApp(resource octopus.AzureWebAppResource) bool {

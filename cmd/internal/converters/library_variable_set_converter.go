@@ -51,20 +51,27 @@ func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *dat
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.LibraryVariableSet]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
-
-	if err != nil {
-		return err
+	batchClient := client.BatchingOctopusApiClient[octopus.LibraryVariableSet]{
+		Client: c.Client,
 	}
 
-	for _, resource := range collection.Items {
+	done := make(chan struct{})
+	defer close(done)
+
+	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+
+	for resourceWrapper := range channel {
+		if resourceWrapper.Err != nil {
+			return resourceWrapper.Err
+		}
+
+		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
 			continue
 		}
 
 		zap.L().Info("Library Variable Set: " + resource.Id)
-		err = c.toHcl(resource, false, stateless, dependencies)
+		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
 			return err
