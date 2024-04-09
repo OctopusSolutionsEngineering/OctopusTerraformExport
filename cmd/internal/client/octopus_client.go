@@ -231,13 +231,7 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 	}
 
 	params := url.Values{}
-	foundTake := false
 	for _, q := range queryParams {
-
-		if q[0] == "take" {
-			foundTake = true
-		}
-
 		if len(q) == 1 {
 			params.Add(q[0], "")
 		}
@@ -247,7 +241,8 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		}
 	}
 
-	if !foundTake {
+	// Add default take query param if it was not specified
+	if _, ok := params["take"]; !ok {
 		params.Add("take", "10000")
 	}
 
