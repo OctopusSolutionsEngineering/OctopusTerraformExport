@@ -8508,3 +8508,118 @@ func TestLotsOfProjectExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestProjectWorkerPoolVariableExport verifies that a project with steps using a worker pool variables
+// can be reimported with the correct settings.
+func TestProjectWorkerPoolVariableExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/71-workerpoolvariable/space_creation",
+		"../test/terraform/71-workerpoolvariable/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{
+			// The step in this example uses a worker pool variable, so the empty worker pool
+			// reference must be ignored
+			LookUpDefaultWorkerPools: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil {
+						return err
+					}
+
+					if len(variables.Variables) != 1 {
+						return errors.New("The project must have a single variable.")
+					}
+
+					if variables.Variables[0].Name != "WorkerPool" {
+						return errors.New("The project must have a single variable called \"WorkerPool\".")
+					}
+
+					workerPoolResource := octopus.WorkerPool{}
+					_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(variables.Variables[0].Value), &workerPoolResource)
+
+					if err != nil {
+						return err
+					}
+
+					if workerPoolResource.Name != "Static pool" {
+						return errors.New("The project must have a variable referencing a worker pool called \"Static pool\".")
+					}
+
+					deploymentProcess := octopus.DeploymentProcess{}
+					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
+
+					if err != nil {
+						return err
+					}
+
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].WorkerPoolVariable) != "#{WorkerPool}" {
+						return errors.New("Deployment process should have a worker pool variable of \"#{WorkerPool}\".")
+					}
+
+					if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != "" {
+						return errors.New("Deployment process should have an empty worker pool.")
+					}
+
+					runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+					err = octopusClient.GetAllResources("Runbooks", &runbookCollection)
+
+					if err != nil {
+						return err
+					}
+
+					runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+						return item.Name == "Runbook"
+					})
+
+					if len(runbook) != 1 {
+						return errors.New("Should have created a runbook called \"Runbook\".")
+					}
+
+					runbookProcess := octopus.RunbookProcess{}
+					_, err = octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
+
+					if err != nil {
+						return err
+					}
+
+					if strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].WorkerPoolVariable) != "#{WorkerPool}" {
+						return errors.New("Runbook step should have had a worker pool variable of \"#{WorkerPool}\".")
+					}
+
+					if runbookProcess.Steps[0].Actions[0].WorkerPoolId != "" {
+						return errors.New("Runbook step should have had an empty worker pool ID.")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
