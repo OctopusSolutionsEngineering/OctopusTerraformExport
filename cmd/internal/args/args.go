@@ -397,6 +397,14 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 
 	arguments.ExcludeProjectsExcept = filteredProjects
 
+	filteredEnvironments, err := filterNamedResource[octopus.Environment](octopusClient, "Environments", arguments.ExcludeEnvironmentsExcept)
+
+	if err != nil {
+		return err
+	}
+
+	arguments.ExcludeEnvironmentsExcept = filteredEnvironments
+
 	filteredTenants, err := filterNamedResource[octopus.Tenant](octopusClient, "Tenants", arguments.ExcludeTenantsExcept)
 
 	if err != nil {
