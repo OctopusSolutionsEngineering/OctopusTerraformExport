@@ -298,6 +298,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 		resourceName := c.writeProjectNameVariable(file, projectName, project.Name)
 		description := c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
+		tenanted := c.writeProjectTenantedVariable(file, projectName, strutil.EmptyIfNil(project.TenantedDeploymentMode))
 
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
@@ -314,7 +315,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			LifecycleId:                            dependencies.GetResource("Lifecycles", project.LifecycleId),
 			ProjectGroupId:                         dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
 			IncludedLibraryVariableSets:            c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
-			TenantedDeploymentParticipation:        project.TenantedDeploymentMode,
+			TenantedDeploymentParticipation:        &tenanted,
 			Template:                               projectTemplates,
 			ConnectivityPolicy:                     c.convertConnectivityPolicy(project),
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
@@ -538,6 +539,29 @@ func (c *ProjectConverter) writeProjectNameVariable(file *hclwrite.File, project
 	file.Body().AppendBlock(block)
 
 	return "${var." + projectName + "_name}"
+}
+
+func (c *ProjectConverter) writeProjectTenantedVariable(file *hclwrite.File, projectName string, tenantedSetting string) string {
+	if c.ExcludeTerraformVariables {
+		return tenantedSetting
+	}
+
+	sanitizedProjectName := sanitizer.SanitizeName(projectName)
+
+	secretVariableResource := terraform.TerraformVariable{
+		Name:        sanitizedProjectName + "_tenanted",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   false,
+		Description: "The tenanted setting for the project " + tenantedSetting,
+		Default:     &tenantedSetting,
+	}
+
+	block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
+	file.Body().AppendBlock(block)
+
+	return "${var." + projectName + "_tenanted}"
 }
 
 func (c *ProjectConverter) writeProjectDescriptionVariable(file *hclwrite.File, projectResourceName string, projectName string, projectResourceDescription string) string {
