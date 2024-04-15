@@ -109,11 +109,24 @@ func main() {
 	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
 		listenAddr = ":" + val
 	}
-	http.HandleFunc("/api/octoterra", octoterraHandler)
+	http.HandleFunc("/api/octoterra", func(writer http.ResponseWriter, request *http.Request) {
+		switch request.Method {
+		case http.MethodPost:
+			octoterraHandler(writer, request)
+		default:
+			writer.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
 	http.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
-		w.WriteHeader(200)
-		w.Write([]byte("Healthy"))
+		switch r.Method {
+		case http.MethodGet:
+			w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
+			w.WriteHeader(200)
+			w.Write([]byte("Healthy"))
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+
 	})
 	log.Printf("About to listen on %s. Go to https://127.0.0.1%s/", listenAddr, listenAddr)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
