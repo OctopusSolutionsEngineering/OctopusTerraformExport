@@ -110,6 +110,11 @@ func main() {
 		listenAddr = ":" + val
 	}
 	http.HandleFunc("/api/octoterra", octoterraHandler)
+	http.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
+		w.WriteHeader(200)
+		w.Write([]byte("Healthy"))
+	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header()["Content-Type"] = []string{"application/json; charset=utf-8"}
 		w.WriteHeader(200)
