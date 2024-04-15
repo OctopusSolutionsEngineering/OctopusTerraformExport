@@ -34,13 +34,11 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//var requestBody AzureFunctionRequest
-	//err = json.Unmarshal(respBytes, &requestBody)
-	//
-	//if err != nil {
-	//	handleError(err, w)
-	//	return
-	//}
+	if len(respBytes) == 0 {
+		w.WriteHeader(400)
+		w.Write([]byte("Request body is empty"))
+		return
+	}
 
 	file, err := os.CreateTemp("", "*.json")
 
