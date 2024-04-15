@@ -214,6 +214,11 @@ jobs:
         with:
           name: Dependencies Updates
           path: dependencyUpdates.txt
+      - name: Generate SBOM
+        uses: CycloneDX/gh-gomod-generate-sbom@v2
+        with:
+          version: v1
+          args: mod -licenses -json -output functions/bom.json
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_amd64 cmd/cli/octoterra.go
         env:
           GOOS: linux
