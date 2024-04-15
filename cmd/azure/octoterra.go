@@ -115,11 +115,6 @@ func main() {
 		w.WriteHeader(200)
 		w.Write([]byte("Healthy"))
 	})
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header()["Content-Type"] = []string{"application/json; charset=utf-8"}
-		w.WriteHeader(200)
-		w.Write([]byte("{\"Hello\": \"" + r.RequestURI + "\"}"))
-	})
 	log.Printf("About to listen on %s. Go to https://127.0.0.1%s/", listenAddr, listenAddr)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }
