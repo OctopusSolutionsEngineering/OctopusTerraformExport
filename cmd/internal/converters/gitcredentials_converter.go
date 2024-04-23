@@ -175,7 +175,7 @@ RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" -
 
 if [[ -z RESOURCE_ID ]]
 then
-	echo "No git credentials found with the name ${RESOURCE_ID}"
+	echo "No git credentials found with the name ${RESOURCE_NAME}"
 	exit 1
 fi
 

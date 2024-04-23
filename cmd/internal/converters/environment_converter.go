@@ -243,7 +243,7 @@ RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" -
 
 if [[ -z RESOURCE_ID ]]
 then
-	echo "No environment found with the name ${RESOURCE_ID}"
+	echo "No environment found with the name ${RESOURCE_NAME}"
 	exit 1
 fi
 
