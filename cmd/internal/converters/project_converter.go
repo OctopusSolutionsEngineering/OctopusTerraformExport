@@ -239,29 +239,29 @@ func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceN
 // toBashImport creates a bash script to import the project
 func (c *ProjectConverter) toBashImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
-		FileName: "space_population/import_project_" + projectName + ".sh",
+		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
 			return fmt.Sprintf(`#!/bin/bash
 
 # Make the script executable with the command:
-# chmod +x ./import_project_%s.sh
+# chmod +x ./import_%s.sh
 
 # Alternativly, run the script with bash directly:
-# /bin/bash ./import_project_%s.sh <options>
+# /bin/bash ./import_%s.sh <options>
 
 # Run "terraform init" to download any required providers.
 
 # Then run the import script. Replace the API key, instance URL, and Space ID in the example below 
 # with the values of the space that the Terraform module will be imported into.
 
-# ./import_project_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
 
 # If using a remote backend, you must pass in additional partial configuration options to the script
 # The example below demonstrates passing the partial configuration options for an S3 bucket.
 # See https://developer.hashicorp.com/terraform/language/settings/backends/configuration#partial-configuration
 # for more information on partial configuration options.
 
-# ./import_project_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234 -backend-config="bucket=terraform-state-bucket" -backend-config="key=terraform.state" -backend-config="region=us-east-1"
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234 -backend-config="bucket=terraform-state-bucket" -backend-config="key=terraform.state" -backend-config="region=us-east-1"
 
 if ! command -v jq &> /dev/null
 then
