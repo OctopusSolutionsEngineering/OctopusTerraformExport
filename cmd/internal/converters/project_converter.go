@@ -237,8 +237,11 @@ func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceN
 }
 
 // toBashImport creates a bash script to import the project
-func (c *ProjectConverter) toBashImport(resourceName string, projectName string) string {
-	return fmt.Sprintf(`#!/bin/bash
+func (c *ProjectConverter) toBashImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_project_" + projectName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
 
 # Make the script executable with the command:
 # chmod +x ./import_project_%s.sh
@@ -273,7 +276,9 @@ then
 fi
 
 PROJECT_ID=$(curl --silent --data-urlencode 'partialName=%s' --data-urlencode 'take=10000' --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r '.Items[] | select(.Name == "%s") | .Id')
-terraform import %s.%s ${PROJECT_ID} "${@:4}"`, resourceName, resourceName, resourceName, resourceName, projectName, projectName, octopusdeployProjectResourceType, resourceName)
+terraform import %s.%s ${PROJECT_ID} "${@:4}"`, resourceName, resourceName, resourceName, resourceName, projectName, projectName, octopusdeployProjectResourceType, resourceName), nil
+		},
+	})
 }
 
 func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
@@ -312,13 +317,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	}
 
 	// Build the file containing the import block
-	importResource := data.ResourceDetails{
-		FileName: "space_population/import_project_" + projectName + ".sh",
-		ToHcl: func() (string, error) {
-			return c.toBashImport(projectName, project.Name), nil
-		},
-	}
-	dependencies.AddResource(importResource)
+	c.toBashImport(projectName, project.Name, dependencies)
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName, stateless)
