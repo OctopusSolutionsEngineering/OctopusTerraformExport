@@ -243,6 +243,10 @@ func (c *ProjectConverter) toBashImport(resourceName string, projectName string,
 		ToHcl: func() (string, error) {
 			return fmt.Sprintf(`#!/bin/bash
 
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
 # Make the script executable with the command:
 # chmod +x ./import_%s.sh
 
@@ -258,6 +262,13 @@ func (c *ProjectConverter) toBashImport(resourceName string, projectName string,
 
 # ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
 
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
 if ! command -v jq &> /dev/null
 then
     echo "jq is required"
@@ -270,18 +281,18 @@ then
     exit 1
 fi
 
-PROJECT_NAME="%s"
-PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
-if [[ -z $PROJECT_ID ]]
+if [[ -z RESOURCE_ID ]]
 then
-	echo "No project found with the name ${PROJECT_NAME}"
+	echo "No project found with the name ${RESOURCE_NAME}"
 	exit 1
 fi
 
-echo "Importing project ${PROJECT_ID}"
+echo "Importing project ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${PROJECT_ID}`, resourceName, resourceName, resourceName, projectName, octopusdeployProjectResourceType, resourceName), nil
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, projectName, octopusdeployProjectResourceType, resourceName), nil
 		},
 	})
 }

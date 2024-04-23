@@ -11,7 +11,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -172,6 +171,67 @@ func (c *LibraryVariableSetConverter) writeData(file *hclwrite.File, resource oc
 	file.Body().AppendBlock(block)
 }
 
+// toBashImport creates a bash script to import the resource
+func (c LibraryVariableSetConverter) toBashImport(resourceType string, resourceName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required"
+    exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Machines" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+
+if [[ -z RESOURCE_ID ]]
+then
+	echo "No target found with the name ${RESOURCE_ID}"
+	exit 1
+fi
+
+echo "Importing target ${RESOURCE_ID}"
+
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusResourceName, resourceType, resourceName), nil
+		},
+	})
+}
+
 func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded runbooks
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLibraryVariableSets, c.Excluded, c.ExcludeLibraryVariableSetsRegex, c.ExcludeLibraryVariableSetsExcept) {
@@ -239,24 +299,23 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 		thisResource.Dependency = c.getScriptModuleDependency(stateless, resourceName)
 	}
 
-	thisResource.ToHcl = func() (string, error) {
-
-		file := hclwrite.NewEmptyFile()
-
-		if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-			return c.writeLibraryVariableSet(resource, resourceName, projectTemplates, stateless, file)
-		} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
-			return c.writeScriptModule(resource, resourceName, stateless, file)
+	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
+		c.toBashImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
+		thisResource.ToHcl = func() (string, error) {
+			return c.writeLibraryVariableSet(resource, resourceName, projectTemplates, stateless)
 		}
-
-		return "", nil
+	} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
+		c.toBashImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
+		thisResource.ToHcl = func() (string, error) {
+			return c.writeScriptModule(resource, resourceName, stateless)
+		}
 	}
 
 	dependencies.AddResource(thisResource)
 	return nil
 }
 
-func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.LibraryVariableSet, resourceName string, projectTemplates []terraform.TerraformTemplate, stateless bool, file *hclwrite.File) (string, error) {
+func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.LibraryVariableSet, resourceName string, projectTemplates []terraform.TerraformTemplate, stateless bool) (string, error) {
 	terraformResource := terraform.TerraformLibraryVariableSet{
 		Type:         octopusdeployLibraryVariableSetsResourceType,
 		Name:         resourceName,
@@ -264,6 +323,8 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 		Description:  resource.Description,
 		Template:     projectTemplates,
 	}
+
+	file := hclwrite.NewEmptyFile()
 
 	if stateless {
 		c.writeData(file, resource, resourceName)
@@ -281,7 +342,7 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 	return string(file.Bytes()), nil
 }
 
-func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.LibraryVariableSet, resourceName string, stateless bool, file *hclwrite.File) (string, error) {
+func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.LibraryVariableSet, resourceName string, stateless bool) (string, error) {
 	variable := octopus.VariableSet{}
 	_, err := c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
 
@@ -312,20 +373,12 @@ func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.Library
 		},
 	}
 
+	file := hclwrite.NewEmptyFile()
+
 	if stateless {
 		c.writeData(file, resource, resourceName)
 		terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets) != 0 ? 0 : 1}")
 	}
-
-	// Add a comment with the import command
-	baseUrl, _ := c.Client.GetSpaceBaseUrl()
-	file.Body().AppendUnstructuredTokens([]*hclwrite.Token{{
-		Type: hclsyntax.TokenComment,
-		Bytes: []byte("# Import existing resources with the following commands:\n" +
-			"# RESOURCE_ID=$(curl -H \"X-Octopus-ApiKey: ${OCTOPUS_CLI_API_KEY}\" " + baseUrl + "/" + c.GetResourceType() + " | jq -r '.Items[] | select(.Name==\"" + resource.Name + "\") | .Id')\n" +
-			"# terraform import " + octopusdeployScriptModuleResourceType + "." + resourceName + " ${RESOURCE_ID}\n"),
-		SpacesBefore: 0,
-	}})
 
 	block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
