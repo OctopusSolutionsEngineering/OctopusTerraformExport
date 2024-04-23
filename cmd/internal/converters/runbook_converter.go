@@ -154,6 +154,76 @@ func (c *RunbookConverter) writeData(file *hclwrite.File, name string, resourceN
 	file.Body().AppendBlock(block)
 }
 
+// toBashImport creates a bash script to import the resource
+func (c *RunbookConverter) toBashImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required"
+    exit 1
+fi
+
+PROJECT_NAME="%s"
+PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
+
+if [[ -z PROJECT_ID ]]
+then
+	echo "No project found with the name ${PROJECT_NAME}"
+	exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Runbooks" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") and select(.ProjectId == \"${PROJECT_ID}\") | .Id")
+
+if [[ -z RESOURCE_ID ]]
+then
+	echo "No runbook found with the name ${RESOURCE_NAME}"
+	exit 1
+fi
+
+echo "Importing runbook ${RESOURCE_ID}"
+
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusProjectName, octopusResourceName, octopusdeployRunbookResourceType, resourceName), nil
+		},
+	})
+}
+
 func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	c.compileRegexes()
 
@@ -175,6 +245,8 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
 	runbookName := "runbook_" + resourceNameSuffix
+
+	c.toBashImport(runbookName, projectName, runbook.Name, dependencies)
 
 	err := c.exportChildDependencies(recursive, lookups, stateless, runbook, resourceNameSuffix, dependencies)
 
