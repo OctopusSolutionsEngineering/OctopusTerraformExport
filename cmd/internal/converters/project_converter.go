@@ -249,19 +249,14 @@ func (c *ProjectConverter) toBashImport(resourceName string, projectName string,
 # Alternativly, run the script with bash directly:
 # /bin/bash ./import_%s.sh <options>
 
-# Run "terraform init" to download any required providers.
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
 
-# Then run the import script. Replace the API key, instance URL, and Space ID in the example below 
-# with the values of the space that the Terraform module will be imported into.
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
 
 # ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
-
-# If using a remote backend, you must pass in additional partial configuration options to the script
-# The example below demonstrates passing the partial configuration options for an S3 bucket.
-# See https://developer.hashicorp.com/terraform/language/settings/backends/configuration#partial-configuration
-# for more information on partial configuration options.
-
-# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234 -backend-config="bucket=terraform-state-bucket" -backend-config="key=terraform.state" -backend-config="region=us-east-1"
 
 if ! command -v jq &> /dev/null
 then
@@ -275,8 +270,18 @@ then
     exit 1
 fi
 
-PROJECT_ID=$(curl --silent --data-urlencode 'partialName=%s' --data-urlencode 'take=10000' --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r '.Items[] | select(.Name == "%s") | .Id')
-terraform import %s.%s ${PROJECT_ID} "${@:4}"`, resourceName, resourceName, resourceName, resourceName, projectName, projectName, octopusdeployProjectResourceType, resourceName), nil
+PROJECT_NAME="%s"
+PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
+
+if [[ -z $PROJECT_ID ]]
+then
+	echo "No project found with the name ${PROJECT_NAME}"
+	exit 1
+fi
+
+echo "Importing project ${PROJECT_ID}"
+
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${PROJECT_ID}`, resourceName, resourceName, resourceName, projectName, octopusdeployProjectResourceType, resourceName), nil
 		},
 	})
 }
