@@ -217,7 +217,7 @@ then
 fi
 
 RESOURCE_NAME="%s"
-RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Machines" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/LibraryVariableSets" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
 if [[ -z RESOURCE_ID ]]
 then
@@ -228,6 +228,58 @@ fi
 echo "Importing target ${RESOURCE_ID}"
 
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusResourceName, resourceType, resourceName), nil
+		},
+	})
+}
+
+// toPowershellImport creates a powershell script to import the resource
+func (c LibraryVariableSetConverter) toPowershellImport(resourceType string, resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/LibraryVariableSets?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No library variable set found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing library variable set $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, resourceType, resourceName), nil
 		},
 	})
 }
@@ -301,11 +353,13 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
 		c.toBashImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
 		thisResource.ToHcl = func() (string, error) {
 			return c.writeLibraryVariableSet(resource, resourceName, projectTemplates, stateless)
 		}
 	} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
 		c.toBashImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
 		thisResource.ToHcl = func() (string, error) {
 			return c.writeScriptModule(resource, resourceName, stateless)
 		}

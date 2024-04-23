@@ -214,6 +214,58 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 	})
 }
 
+// toPowershellImport creates a powershell script to import the resource
+func (c LifecycleConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Lifecycles?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No lifecycle found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing lifecycle $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployLifecycleResourceType, resourceName), nil
+		},
+	})
+}
+
 func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	if c.Excluder.IsResourceExcludedWithRegex(lifecycle.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
@@ -266,6 +318,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
 	c.toBashImport(resourceName, lifecycle.Name, dependencies)
+	c.toPowershellImport(resourceName, lifecycle.Name, dependencies)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

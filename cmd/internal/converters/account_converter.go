@@ -230,6 +230,58 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 	})
 }
 
+// toPowershellImport creates a powershell script to import the resource
+func (c AccountConverter) toPowershellImport(resourceType string, resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Accounts?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No account found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing account $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, resourceType, resourceName), nil
+		},
+	})
+}
+
 // toHcl adds this resource to the list of dependencies.
 // account is the Octopus account object to be serialized
 // recursive indicates if any transient dependencies are to be serialized
@@ -266,24 +318,31 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 	if account.AccountType == "AmazonWebServicesAccount" {
 		c.writeAwsAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_aws_account", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_aws_account", resourceName, account.Name, dependencies)
 	} else if account.AccountType == "AzureServicePrincipal" {
 		c.writeAzureServicePrincipalAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_azure_service_principal", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_azure_service_principal", resourceName, account.Name, dependencies)
 	} else if account.AccountType == "AzureSubscription" {
 		c.writeAzureSubscriptionAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_azure_subscription_account", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_azure_subscription_account", resourceName, account.Name, dependencies)
 	} else if account.AccountType == "GoogleCloudAccount" {
 		c.writeGoogleCloudAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_gcp_account", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_gcp_account", resourceName, account.Name, dependencies)
 	} else if account.AccountType == "Token" {
 		c.writeTokenAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_token_account", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_token_account", resourceName, account.Name, dependencies)
 	} else if account.AccountType == "UsernamePassword" {
 		c.writeUsernamePasswordAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_username_password_account", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_username_password_account", resourceName, account.Name, dependencies)
 	} else if account.AccountType == "SshKeyPair" {
 		c.writeSshAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
 		c.toBashImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
+		c.toPowershellImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
 	}
 
 	dependencies.AddResource(thisResource)
