@@ -144,6 +144,58 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 	})
 }
 
+// toPowershellImport creates a powershell script to import the resource
+func (c *TagSetConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/TagSets?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No tag set found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing tag set $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployTagSetResourceType, resourceName), nil
+		},
+	})
+}
+
 func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(tagSet.Name, c.ExcludeAllTenantTagSets, c.ExcludeTenantTagSets, c.ExcludeTenantTagSetsRegex, c.ExcludeTenantTagSetsExcept) {
 		return nil
@@ -157,6 +209,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
 	c.toBashImport(tagSetName, tagSet.Name, dependencies)
+	c.toPowershellImport(tagSetName, tagSet.Name, dependencies)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + tagSetName + ".tf"

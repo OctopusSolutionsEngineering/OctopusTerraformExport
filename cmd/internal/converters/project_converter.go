@@ -236,7 +236,7 @@ func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceN
 	file.Body().AppendBlock(block)
 }
 
-// toBashImport creates a bash script to import the project
+// toBashImport creates a bash script to import the resource
 func (c *ProjectConverter) toBashImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
@@ -297,6 +297,58 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 	})
 }
 
+// toPowershellImport creates a powershell script to import the resource
+func (c *ProjectConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No project found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing project $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployProjectResourceType, resourceName), nil
+		},
+	})
+}
+
 func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded projects
 	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
@@ -334,6 +386,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 	// Build the file containing the import block
 	c.toBashImport(projectName, project.Name, dependencies)
+	c.toPowershellImport(projectName, project.Name, dependencies)
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName, stateless)
