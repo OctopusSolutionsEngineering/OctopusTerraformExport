@@ -236,6 +236,46 @@ func (c *ProjectConverter) writeData(file *hclwrite.File, name string, resourceN
 	file.Body().AppendBlock(block)
 }
 
+// toBashImport creates a bash script to import the project
+func (c *ProjectConverter) toBashImport(resourceName string, projectName string) string {
+	return fmt.Sprintf(`#!/bin/bash
+
+# Make the script executable with the command:
+# chmod +x ./import_project_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_project_%s.sh <options>
+
+# Run "terraform init" to download any required providers.
+
+# Then run the import script. Replace the API key, instance URL, and Space ID in the example below 
+# with the values of the space that the Terraform module will be imported into.
+
+# ./import_project_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+# If using a remote backend, you must pass in additional partial configuration options to the script
+# The example below demonstrates passing the partial configuration options for an S3 bucket.
+# See https://developer.hashicorp.com/terraform/language/settings/backends/configuration#partial-configuration
+# for more information on partial configuration options.
+
+# ./import_project_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234 -backend-config="bucket=terraform-state-bucket" -backend-config="key=terraform.state" -backend-config="region=us-east-1"
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required"
+    exit 1
+fi
+
+PROJECT_ID=$(curl --silent --data-urlencode 'partialName=%s' --data-urlencode 'take=10000' --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r '.Items[] | select(.Name == "%s") | .Id')
+terraform import %s.%s ${PROJECT_ID} "${@:4}"`, resourceName, resourceName, resourceName, resourceName, projectName, projectName, octopusdeployProjectResourceType, resourceName)
+}
+
 func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded projects
 	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
@@ -270,6 +310,15 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	if err != nil {
 		return err
 	}
+
+	// Build the file containing the import block
+	importResource := data.ResourceDetails{
+		FileName: "space_population/import_project_" + projectName + ".sh",
+		ToHcl: func() (string, error) {
+			return c.toBashImport(projectName, project.Name), nil
+		},
+	}
+	dependencies.AddResource(importResource)
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName, stateless)
