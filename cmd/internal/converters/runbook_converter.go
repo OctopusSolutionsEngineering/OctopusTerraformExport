@@ -261,7 +261,7 @@ $ProjectName="%s"
 
 $ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ProjectName))" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Items | 
-	Where-Object {$_.Name -eq $ResourceName} | 
+	Where-Object {$_.Name -eq $ProjectName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ProjectId)) {
