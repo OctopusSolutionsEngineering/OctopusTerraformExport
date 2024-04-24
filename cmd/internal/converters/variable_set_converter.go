@@ -248,7 +248,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 // toPowershellImport creates a powershell script to import the resource
 func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
-		FileName: "space_population/import_" + resourceName + ".ps1",
+		FileName: "space_population/import_project_variable_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
 			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
 # It is useful when importing a Terraform module into an Octopus space that
@@ -376,7 +376,7 @@ if ($Resource.Count -eq 0) {
 $ResourceId = $Resource.Id
 echo "Importing variable $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`,
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s "$($ProjectId):$($ResourceId)"`,
 				resourceName,
 				strings.Join(envNames, ","),
 				strings.Join(machineNames, ","),
@@ -438,7 +438,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		}
 
 		c.toPowershellImport(
-			"project_variable_"+resourceName,
+			resourceName,
 			parentName,
 			v.Name,
 			scopedEnvironmentNames,
