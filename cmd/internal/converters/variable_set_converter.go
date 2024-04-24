@@ -245,6 +245,115 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	return c.toHcl(resource, false, true, false, false, parentName, parentLookup, nil, dependencies)
 }
 
+// toPowershellImport creates a powershell script to import the resource
+func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$EnvScopes="%s".Split(",")
+$MachineScopes="%s".Split(",")
+$RoleScopes="%s".Split(",")
+$ChannelScopes="%s".Split(",")
+
+$ProjectName="%s"
+
+$ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ProjectName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ProjectName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ProjectId)) {
+	echo "No project found with the name $ProjectName"
+	exit 1
+}
+
+$ResourceName="%s"
+
+$Variables = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Variables" -Method Get -Headers $headers
+
+$Resource = $Variables |
+	Select-Object -ExpandProperty Variables | 
+	Where-Object {$_.Name -eq $ResourceName}
+
+if ($Resource -eq $null) {
+	echo "No variable found with the name $ResourceName"
+	exit 1
+}
+
+# Check environment scopes
+$Resource = $Resource | Where-Object { $_.Scope.Environment | Where-Object {
+	$ScopeName = $Variables.ScopeValues.Environments | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
+	$EnvScopes -contains $ScopeName
+}} | Where-Object {$_.Scope.Environment.Count -eq $EnvScopes.Count}
+
+# Check machine scopes
+$Resource = $Resource | Where-Object { $_.Scope.Machine | Where-Object {
+	$ScopeName = $Variables.ScopeValues.Machines | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
+	$MachineScopes -contains $ScopeName
+}} | Where-Object {$_.Scope.Machine.Count -eq $MachineScopes.Count}
+
+# Check role scopes
+$Resource = $Resource | Where-Object { $_.Scope.Role | Where-Object {
+	$ScopeName = $Variables.ScopeValues.Roles | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
+	$RoleScopes -contains $ScopeName
+}} | Where-Object {$_.Scope.Role.Count -eq $RoleScopes.Count}
+
+# Check channel scopes
+$Resource = $Resource | Where-Object { $_.Scope.Channel | Where-Object {
+	$ScopeName = $Variables.ScopeValues.Channels | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
+	$ChannelScopes -contains $ScopeName
+}} | Where-Object {$_.Scope.Channel.Count -eq $ChannelScopes.Count}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same scopes"
+	exit 1
+}
+
+$ResourceId = $Resource.Id
+echo "Importing variable $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`,
+				resourceName,
+				strings.Join(envNames, ","),
+				strings.Join(machineNames, ","),
+				strings.Join(roleNames, ","),
+				strings.Join(channelNames, ","),
+				octopusProjectName,
+				octopusResourceName,
+				octopusdeployVariableResourceType,
+				resourceName), nil
+		},
+	})
+}
+
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, stateless bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
 	c.convertEnvironmentsToIds()
 
@@ -272,6 +381,8 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		thisResource := data.ResourceDetails{}
 
 		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(nameCount[v.Name])
+
+		c.toPowershellImport("project_variable_"+resourceName, parentName, v.Name, v.Scope.Environment, v.Scope.Machine, v.Scope.Role, v.Scope.Channel, dependencies)
 
 		// Export linked accounts
 		err := c.exportAccounts(recursive, lookup, stateless, v.Value, dependencies)
