@@ -308,32 +308,68 @@ if ($Resource -eq $null) {
 	exit 1
 }
 
+function Test-ArraysEqual {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$array1,
+
+        [Parameter(Mandatory=$false)]
+        [string[]]$array2
+    )
+
+	if ($array1 -eq $null) {
+		$array1 = @()
+	}
+
+	if ($array2 -eq $null) {
+		$array2 = @()
+	}
+
+	# Sort the arrays
+	$sortedArray1 = $array1 | Sort-Object
+	$sortedArray2 = $array2 | Sort-Object
+	
+	if ($sortedArray1 -eq $null) {
+		$sortedArray1 = @()
+	}
+
+	if ($sortedArray2 -eq $null) {
+		$sortedArray2 = @()
+	}
+	
+	# Compare the sorted arrays
+	return Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
+}
+
 # Check environment scopes
-$Resource = $Resource | Where-Object { $_.Scope.Environment | Where-Object {
-	$ScopeName = $Variables.ScopeValues.Environments | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
-	$EnvScopes -contains $ScopeName
-}} | Where-Object {$_.Scope.Environment.Count -eq $EnvScopes.Count}
-
-# Check machine scopes
-$Resource = $Resource | Where-Object { $_.Scope.Machine | Where-Object {
-	$ScopeName = $Variables.ScopeValues.Machines | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
-	$MachineScopes -contains $ScopeName
-}} | Where-Object {$_.Scope.Machine.Count -eq $MachineScopes.Count}
-
-# Check role scopes
-$Resource = $Resource | Where-Object { $_.Scope.Role | Where-Object {
-	$ScopeName = $Variables.ScopeValues.Roles | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
-	$RoleScopes -contains $ScopeName
-}} | Where-Object {$_.Scope.Role.Count -eq $RoleScopes.Count}
-
-# Check channel scopes
-$Resource = $Resource | Where-Object { $_.Scope.Channel | Where-Object {
-	$ScopeName = $Variables.ScopeValues.Channels | Where-Object {$_ -eq $_.Id} | Select-Object -ExpandProperty Name
-	$ChannelScopes -contains $ScopeName
-}} | Where-Object {$_.Scope.Channel.Count -eq $ChannelScopes.Count}
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Environment $EnvScopes }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same scopes"
+	echo "No variable found with the same environment scopes"
+	exit 1
+}
+
+# Check machine scopes
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Machine $MachineScopes }
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same machine scopes"
+	exit 1
+}
+
+# Check role scopes
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Roles $RoleScopes }
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same role scopes"
+	exit 1
+}
+
+# Check channel scopes
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Channel $ChannelScopes }
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same channel scopes"
 	exit 1
 }
 
@@ -382,7 +418,34 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(nameCount[v.Name])
 
-		c.toPowershellImport("project_variable_"+resourceName, parentName, v.Name, v.Scope.Environment, v.Scope.Machine, v.Scope.Role, v.Scope.Channel, dependencies)
+		// Build the import script
+		scopedEnvironmentNames, lookupErrors := c.Client.GetResourceNamesByIds("Environments", c.filterEnvironmentScope(v.Scope.Environment))
+
+		if lookupErrors != nil {
+			return lookupErrors
+		}
+
+		scopedMachineNames, lookupErrors := c.Client.GetResourceNamesByIds("Machines", c.filterEnvironmentScope(v.Scope.Machine))
+
+		if lookupErrors != nil {
+			return lookupErrors
+		}
+
+		scopedChannelNames, lookupErrors := c.Client.GetResourceNamesByIds("Channel", c.filterEnvironmentScope(v.Scope.Channel))
+
+		if lookupErrors != nil {
+			return lookupErrors
+		}
+
+		c.toPowershellImport(
+			"project_variable_"+resourceName,
+			parentName,
+			v.Name,
+			scopedEnvironmentNames,
+			scopedMachineNames,
+			v.Scope.Role,
+			scopedChannelNames,
+			dependencies)
 
 		// Export linked accounts
 		err := c.exportAccounts(recursive, lookup, stateless, v.Value, dependencies)
