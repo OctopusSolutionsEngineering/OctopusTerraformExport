@@ -338,7 +338,8 @@ function Test-ArraysEqual {
 	}
 	
 	# Compare the sorted arrays
-	return Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
+	$result = Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
+	return -not $result
 }
 
 # Check environment scopes
