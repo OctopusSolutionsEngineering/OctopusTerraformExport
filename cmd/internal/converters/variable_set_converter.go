@@ -646,7 +646,10 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 	})
 }
 
-func (c *VariableSetConverter) processImportScript(resourceName string, parentName string, parentId string, v octopus.Variable, dependencies *data.ResourceDetailsCollection) error {
+// processImportScript converts all the variable scopes from IDs back to names and passes the scope names to the
+// scripts used to import existing variables. It takes care of the differences between project and library variable sets
+// variables, where the later have more limited scoping options.
+func (c *VariableSetConverter) processImportScript(resourceName string, parentId string, v octopus.Variable, dependencies *data.ResourceDetailsCollection) error {
 	if !c.GenerateImportScripts {
 		return nil
 	}
@@ -806,7 +809,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(nameCount[v.Name])
 
-		if err := c.processImportScript(resourceName, parentName, strutil.EmptyIfNil(resource.OwnerId), v, dependencies); err != nil {
+		if err := c.processImportScript(resourceName, strutil.EmptyIfNil(resource.OwnerId), v, dependencies); err != nil {
 			return err
 		}
 
