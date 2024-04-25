@@ -247,7 +247,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
+func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_project_variable_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -283,6 +283,7 @@ $EnvScopes="%s".Split(",")
 $MachineScopes="%s".Split(",")
 $RoleScopes="%s".Split(",")
 $ChannelScopes="%s".Split(",")
+$ActionScopes="%s".Split(",")
 
 $ProjectName="%s"
 
@@ -398,12 +399,87 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 				strings.Join(machineNames, ","),
 				strings.Join(roleNames, ","),
 				strings.Join(channelNames, ","),
+				strings.Join(actionNames, ","),
 				octopusProjectName,
 				octopusResourceName,
 				octopusdeployVariableResourceType,
 				resourceName), nil
 		},
 	})
+}
+
+func (c *VariableSetConverter) processImportScript(resourceName string, parentName string, parentId string, v octopus.Variable, dependencies *data.ResourceDetailsCollection) error {
+	if !c.GenerateImportScripts {
+		return nil
+	}
+
+	// Build the import script
+	scopedEnvironmentNames, lookupErrors := c.Client.GetResourceNamesByIds("Environments", c.filterEnvironmentScope(v.Scope.Environment))
+
+	if lookupErrors != nil {
+		return lookupErrors
+	}
+
+	scopedMachineNames, lookupErrors := c.Client.GetResourceNamesByIds("Machines", c.filterEnvironmentScope(v.Scope.Machine))
+
+	if lookupErrors != nil {
+		return lookupErrors
+	}
+
+	scopedChannelNames, lookupErrors := c.Client.GetResourceNamesByIds("Channel", c.filterEnvironmentScope(v.Scope.Channel))
+
+	if lookupErrors != nil {
+		return lookupErrors
+	}
+
+	scopedActions := []string{}
+
+	// Only variables assigned to a project can be scoped to individual actions
+	if strings.HasPrefix(parentId, "Projects") {
+		project := octopus.Project{}
+		_, projectErr := c.Client.GetResourceById("Projects", parentId, &project)
+
+		if projectErr != nil {
+			return projectErr
+		}
+
+		if project.DeploymentProcessId != nil {
+			deploymentProcess := octopus.DeploymentProcess{}
+			_, processErr := c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
+
+			if processErr != nil {
+				return processErr
+			}
+
+			scopedActions = lo.FilterMap(v.Scope.Action, func(actionId string, index int) (string, bool) {
+				actions := lo.FlatMap(deploymentProcess.Steps, func(step octopus.Step, index int) []octopus.Action {
+					return step.Actions
+				})
+				step := lo.Filter(actions, func(action octopus.Action, index int) bool {
+					return actionId == action.Id
+				})
+
+				if len(step) == 0 {
+					return "", false
+				}
+
+				return strutil.EmptyIfNil(step[0].Name), true
+			})
+		}
+	}
+
+	c.toPowershellImport(
+		resourceName,
+		parentName,
+		v.Name,
+		scopedEnvironmentNames,
+		scopedMachineNames,
+		v.Scope.Role,
+		scopedChannelNames,
+		scopedActions,
+		dependencies)
+
+	return nil
 }
 
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, stateless bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
@@ -434,35 +510,8 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(nameCount[v.Name])
 
-		// Build the import script
-		scopedEnvironmentNames, lookupErrors := c.Client.GetResourceNamesByIds("Environments", c.filterEnvironmentScope(v.Scope.Environment))
-
-		if lookupErrors != nil {
-			return lookupErrors
-		}
-
-		scopedMachineNames, lookupErrors := c.Client.GetResourceNamesByIds("Machines", c.filterEnvironmentScope(v.Scope.Machine))
-
-		if lookupErrors != nil {
-			return lookupErrors
-		}
-
-		scopedChannelNames, lookupErrors := c.Client.GetResourceNamesByIds("Channel", c.filterEnvironmentScope(v.Scope.Channel))
-
-		if lookupErrors != nil {
-			return lookupErrors
-		}
-
-		if c.GenerateImportScripts {
-			c.toPowershellImport(
-				resourceName,
-				parentName,
-				v.Name,
-				scopedEnvironmentNames,
-				scopedMachineNames,
-				v.Scope.Role,
-				scopedChannelNames,
-				dependencies)
+		if err := c.processImportScript(resourceName, parentName, strutil.EmptyIfNil(resource.OwnerId), v, dependencies); err != nil {
+			return err
 		}
 
 		// Export linked accounts
