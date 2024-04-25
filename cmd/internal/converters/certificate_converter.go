@@ -35,6 +35,7 @@ type CertificateConverter struct {
 	LimitResourceCount        int
 	IncludeIds                bool
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c CertificateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -304,8 +305,10 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 
 	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
 
-	c.toBashImport(certificateName, certificate.Name, dependencies)
-	c.toPowershellImport(certificateName, certificate.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(certificateName, certificate.Name, dependencies)
+		c.toPowershellImport(certificateName, certificate.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = certificate.Name

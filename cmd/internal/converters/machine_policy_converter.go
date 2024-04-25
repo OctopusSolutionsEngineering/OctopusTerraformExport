@@ -33,6 +33,7 @@ type MachinePolicyConverter struct {
 	LimitResourceCount           int
 	IncludeIds                   bool
 	IncludeSpaceInPopulation     bool
+	GenerateImportScripts        bool
 }
 
 func (c MachinePolicyConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -254,8 +255,10 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, _ boo
 
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
-	c.toBashImport(policyName, machinePolicy.Name, dependencies)
-	c.toPowershellImport(policyName, machinePolicy.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(policyName, machinePolicy.Name, dependencies)
+		c.toPowershellImport(policyName, machinePolicy.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = machinePolicy.Name

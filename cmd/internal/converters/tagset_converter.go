@@ -30,6 +30,7 @@ type TagSetConverter struct {
 	Excluder                   ExcludeByName
 	ErrGroup                   *errgroup.Group
 	LimitResourceCount         int
+	GenerateImportScripts      bool
 }
 
 func (c *TagSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -208,8 +209,10 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
-	c.toBashImport(tagSetName, tagSet.Name, dependencies)
-	c.toPowershellImport(tagSetName, tagSet.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(tagSetName, tagSet.Name, dependencies)
+		c.toPowershellImport(tagSetName, tagSet.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + tagSetName + ".tf"

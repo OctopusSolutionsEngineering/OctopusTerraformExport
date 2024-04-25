@@ -43,6 +43,7 @@ type TenantConverter struct {
 	IncludeIds               bool
 	LimitResourceCount       int
 	IncludeSpaceInPopulation bool
+	GenerateImportScripts    bool
 }
 
 func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -330,8 +331,10 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 
 	tenantName := "tenant_" + sanitizer.SanitizeName(tenant.Name)
 
-	c.toBashImport(tenantName, tenant.Name, dependencies)
-	c.toPowershellImport(tenantName, tenant.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(tenantName, tenant.Name, dependencies)
+		c.toPowershellImport(tenantName, tenant.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + tenantName + ".tf"

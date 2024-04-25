@@ -771,23 +771,23 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 		return err
 	}
 
-	o.cacheCollectionResult(cacheId, body)
+	o.cacheCollectionResult(resourceType, cacheId, body)
 
 	return o.unmarshal(resources, body)
 }
 
-func (o *OctopusApiClient) readCollectionCache(resourceType string) []byte {
+func (o *OctopusApiClient) readCollectionCache(cacheId string) []byte {
 	o.collectionCacheMu.Lock()
 	defer o.collectionCacheMu.Unlock()
 
-	if val, ok := o.collectionCache[resourceType]; ok {
+	if val, ok := o.collectionCache[cacheId]; ok {
 		return val
 	}
 
 	return nil
 }
 
-func (o *OctopusApiClient) cacheCollectionResult(resourceType string, body []byte) {
+func (o *OctopusApiClient) cacheCollectionResult(resourceType string, cacheId string, body []byte) {
 	// Only worker pools and tag sets are looked up by other resources. Worker pools may be looked
 	// up to find the default worker pool. Tag sets are looked up to add terraform dependencies.
 	if resourceType != "WorkerPools" && resourceType != "TagSets" && resourceType != "Environments" {
@@ -801,5 +801,5 @@ func (o *OctopusApiClient) cacheCollectionResult(resourceType string, body []byt
 		o.collectionCache = map[string][]byte{}
 	}
 
-	o.collectionCache[resourceType] = body
+	o.collectionCache[cacheId] = body
 }

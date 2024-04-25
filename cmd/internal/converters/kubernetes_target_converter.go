@@ -39,6 +39,7 @@ type KubernetesTargetConverter struct {
 	LimitResourceCount       int
 	IncludeSpaceInPopulation bool
 	IncludeIds               bool
+	GenerateImportScripts    bool
 }
 
 func (c KubernetesTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -379,8 +380,10 @@ func (c KubernetesTargetConverter) toHcl(target octopus.KubernetesEndpointResour
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	c.toBashImport(targetName, target.Name, dependencies)
-	c.toPowershellImport(targetName, target.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(targetName, target.Name, dependencies)
+		c.toPowershellImport(targetName, target.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"

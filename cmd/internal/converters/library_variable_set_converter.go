@@ -35,6 +35,7 @@ type LibraryVariableSetConverter struct {
 	Excluder                                ExcludeByName
 	ErrGroup                                *errgroup.Group
 	LimitResourceCount                      int
+	GenerateImportScripts                   bool
 }
 
 func (c *LibraryVariableSetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -352,14 +353,19 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 	}
 
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
-		c.toBashImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
-		c.toPowershellImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
+			c.toPowershellImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
+		}
 		thisResource.ToHcl = func() (string, error) {
 			return c.writeLibraryVariableSet(resource, resourceName, projectTemplates, stateless)
 		}
 	} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
-		c.toBashImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
-		c.toPowershellImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
+		if c.GenerateImportScripts {
+			c.toBashImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
+			c.toPowershellImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
+		}
 		thisResource.ToHcl = func() (string, error) {
 			return c.writeScriptModule(resource, resourceName, stateless)
 		}

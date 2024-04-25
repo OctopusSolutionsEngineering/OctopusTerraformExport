@@ -37,6 +37,7 @@ type OfflineDropTargetConverter struct {
 	IncludeIds                bool
 	LimitResourceCount        int
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c OfflineDropTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -375,8 +376,10 @@ func (c OfflineDropTargetConverter) toHcl(target octopus.OfflineDropResource, re
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	c.toBashImport(targetName, target.Name, dependencies)
-	c.toPowershellImport(targetName, target.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(targetName, target.Name, dependencies)
+		c.toPowershellImport(targetName, target.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"

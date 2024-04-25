@@ -37,6 +37,7 @@ type FeedConverter struct {
 	IncludeIds                bool
 	LimitResourceCount        int
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c FeedConverter) GetResourceType() string {
@@ -308,8 +309,10 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 		return false
 	}
 
-	c.toBashImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
-	c.toPowershellImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -410,8 +413,10 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 		return false
 	}
 
-	c.toBashImport(octopusdeployAwsElasticContainerRegistryResourceType, resourceName, resource.Name, dependencies)
-	c.toPowershellImport(octopusdeployAwsElasticContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeployAwsElasticContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployAwsElasticContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -507,8 +512,10 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 		return false
 	}
 
-	c.toBashImport(octopusdeployMavenFeedResourceType, resourceName, resource.Name, dependencies)
-	c.toPowershellImport(octopusdeployMavenFeedResourceType, resourceName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeployMavenFeedResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployMavenFeedResourceType, resourceName, resource.Name, dependencies)
+	}
 
 	thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 
@@ -612,8 +619,10 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 		return false
 	}
 
-	c.toBashImport(octopusdeployGithubRepositoryFeedResourceType, resourceName, resource.Name, dependencies)
-	c.toPowershellImport(octopusdeployGithubRepositoryFeedResourceType, resourceName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeployGithubRepositoryFeedResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployGithubRepositoryFeedResourceType, resourceName, resource.Name, dependencies)
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
@@ -714,8 +723,10 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 		return false
 	}
 
-	c.toBashImport(octopusdeployHelmFeedResourceType, resourceName, resource.Name, dependencies)
-	c.toPowershellImport(octopusdeployHelmFeedResourceType, resourceName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeployHelmFeedResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployHelmFeedResourceType, resourceName, resource.Name, dependencies)
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +

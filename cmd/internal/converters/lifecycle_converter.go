@@ -31,6 +31,7 @@ type LifecycleConverter struct {
 	LimitResourceCount       int
 	IncludeSpaceInPopulation bool
 	IncludeIds               bool
+	GenerateImportScripts    bool
 }
 
 func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -317,8 +318,10 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
-	c.toBashImport(resourceName, lifecycle.Name, dependencies)
-	c.toPowershellImport(resourceName, lifecycle.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(resourceName, lifecycle.Name, dependencies)
+		c.toPowershellImport(resourceName, lifecycle.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"

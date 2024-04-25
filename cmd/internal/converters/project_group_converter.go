@@ -30,6 +30,7 @@ type ProjectGroupConverter struct {
 	LimitResourceCount         int
 	IncludeSpaceInPopulation   bool
 	IncludeIds                 bool
+	GenerateImportScripts      bool
 }
 
 func (c ProjectGroupConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -284,8 +285,10 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 	projectName := "project_group_" + sanitizer.SanitizeName(resource.Name)
 
-	c.toBashImport(projectName, resource.Name, dependencies)
-	c.toPowershellImport(projectName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(projectName, resource.Name, dependencies)
+		c.toPowershellImport(projectName, resource.Name, dependencies)
+	}
 
 	thisResource.FileName = "space_population/projectgroup_" + projectName + ".tf"
 	thisResource.Id = resource.Id
