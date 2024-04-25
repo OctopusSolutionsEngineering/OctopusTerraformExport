@@ -247,7 +247,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, dependencies *data.ResourceDetailsCollection) {
+func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_project_variable_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -284,6 +284,7 @@ $MachineScopes="%s".Split(",")
 $RoleScopes="%s".Split(",")
 $ChannelScopes="%s".Split(",")
 $ActionScopes="%s".Split(",")
+$OwnerScopes="%s".Split(",")
 
 $ProjectName="%s"
 
@@ -341,8 +342,8 @@ function Test-ArraysEqual {
 	}
 	
 	Write-Host "Comparing Arrays"
-	Write-Host "Destination Variable Scopes: $sortedArray1"
-	Write-Host "Source Variable Scopes: $sortedArray2"
+	Write-Host "Destination Variable Scopes: $($sortedArray1 -join ",")"
+	Write-Host "Source Variable Scopes: $($sortedArray2 -join ",")"
 
 	if ($sortedArray1.Length -eq 0 -and $sortedArray2.Length -eq 0) {
 		return $True
@@ -351,6 +352,27 @@ function Test-ArraysEqual {
 	# Compare the sorted arrays
 	$result = Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
 	return -not $result
+}
+
+function Get-ProjectName {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$ProjectOwner
+    )
+
+	$Project = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectOwner" -Method Get -Headers $headers
+	return $Project.Name
+}
+
+function Get-RunbookName {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$RunbookOwner
+    )
+
+	$Runbook = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Runbooks/$RunbookOwner" -Method Get -Headers $headers
+	$Project = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$Runbook.ProjectId" -Method Get -Headers $headers
+	return $Project.Name + ":" + $Runbook.Name
 }
 
 # Check environment scopes
@@ -410,6 +432,33 @@ if ($Resource.Count -eq 0) {
 	exit 1
 }
 
+# Check owner scopes
+echo "Testing owners"
+$Resource = $Resource | Where-Object { 
+	$ScopedOwners = $_.Scope.ProcessOwner | ForEach-Object {
+		if ([string]::IsNullOrWhiteSpace($_)) {
+			return $null
+		}
+	
+		if ($_.StartsWith("Projects")) {
+			return Get-ProjectName $_
+		}
+
+		if ($_.StartsWith("Runbooks")) {
+			return Get-RunbookName $_
+		}
+
+		return $null
+	} | Where-Object {$_ -ne $null}
+
+	Test-ArraysEqual $ScopedOwners $OwnerScopes
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same process owner scopes"
+	exit 1
+}
+
 $ResourceId = $Resource.Id
 echo "Importing variable $ResourceId"
 
@@ -420,6 +469,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 				strings.Join(roleNames, ","),
 				strings.Join(channelNames, ","),
 				strings.Join(actionNames, ","),
+				strings.Join(ownerNames, ","),
 				octopusProjectName,
 				octopusResourceName,
 				octopusdeployVariableResourceType,
@@ -488,6 +538,45 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentNa
 		}
 	}
 
+	var ownersError error = nil
+	scopedOwners := lo.Map(v.Scope.ProcessOwner, func(owner string, index int) string {
+		if strings.HasPrefix(owner, "Projects") {
+			projectName, err := c.Client.GetResourceNameById("Projects", owner)
+
+			if err != nil {
+				ownersError = errors.Join(ownersError, err)
+			}
+
+			return projectName
+		}
+
+		if strings.HasPrefix(owner, "Runbooks") {
+			runbook := octopus.Runbook{}
+			_, runbookErr := c.Client.GetResourceById("Runbooks", owner, &runbook)
+
+			if runbookErr != nil {
+				ownersError = errors.Join(ownersError, runbookErr)
+			} else {
+
+				project := octopus.Project{}
+				_, projectErr := c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
+
+				if projectErr != nil {
+					ownersError = errors.Join(ownersError, projectErr)
+				}
+
+				return project.Name + ":" + runbook.Name
+			}
+		}
+
+		ownersError = errors.Join(ownersError, errors.New("Found unexpected owner with ID "+owner))
+		return ""
+	})
+
+	if ownersError != nil {
+		return ownersError
+	}
+
 	c.toPowershellImport(
 		resourceName,
 		parentName,
@@ -497,6 +586,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentNa
 		v.Scope.Role,
 		scopedChannelNames,
 		scopedActions,
+		scopedOwners,
 		dependencies)
 
 	return nil
