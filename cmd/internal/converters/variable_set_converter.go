@@ -62,6 +62,7 @@ type VariableSetConverter struct {
 	ExcludeTerraformVariables           bool
 	LimitAttributeLength                int
 	StatelessAdditionalParams           args.StringSliceArgs
+	GenerateImportScripts               bool
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -337,13 +338,21 @@ function Test-ArraysEqual {
 		$sortedArray2 = @()
 	}
 	
+	Write-Host "Comparing Arrays"
+	Write-Host "Sorted Array 1: $sortedArray1"
+	Write-Host "Sorted Array 2: $sortedArray2"
+	
 	# Compare the sorted arrays
 	$result = Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
 	return -not $result
 }
 
 # Check environment scopes
-$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Environment $EnvScopes }
+echo "Testing environments"
+$Resource = $Resource | Where-Object { 
+	$ScopedEnvironments = $_.Scope.Environment | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Environments | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedEnvironments $EnvScopes 
+}
 
 if ($Resource.Count -eq 0) {
 	echo "No variable found with the same environment scopes"
@@ -351,7 +360,10 @@ if ($Resource.Count -eq 0) {
 }
 
 # Check machine scopes
-$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Machine $MachineScopes }
+$Resource = $Resource | Where-Object { 
+	$ScopedMachines = $_.Scope.Machine | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Machines | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedMachines $MachineScopes 
+}
 
 if ($Resource.Count -eq 0) {
 	echo "No variable found with the same machine scopes"
@@ -367,7 +379,10 @@ if ($Resource.Count -eq 0) {
 }
 
 # Check channel scopes
-$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Channel $ChannelScopes }
+$Resource = $Resource | Where-Object { 
+	$ScopedChannels = $_.Scope.Channel | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Channels | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedChannels $ChannelScopes 
+}
 
 if ($Resource.Count -eq 0) {
 	echo "No variable found with the same channel scopes"
@@ -438,15 +453,17 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			return lookupErrors
 		}
 
-		c.toPowershellImport(
-			resourceName,
-			parentName,
-			v.Name,
-			scopedEnvironmentNames,
-			scopedMachineNames,
-			v.Scope.Role,
-			scopedChannelNames,
-			dependencies)
+		if c.GenerateImportScripts {
+			c.toPowershellImport(
+				resourceName,
+				parentName,
+				v.Name,
+				scopedEnvironmentNames,
+				scopedMachineNames,
+				v.Scope.Role,
+				scopedChannelNames,
+				dependencies)
+		}
 
 		// Export linked accounts
 		err := c.exportAccounts(recursive, lookup, stateless, v.Value, dependencies)

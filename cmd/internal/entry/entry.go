@@ -666,6 +666,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeAllProjectVariables:        args.ExcludeAllProjectVariables,
 		ExcludeProjectVariablesExcept:     args.ExcludeProjectVariablesExcept,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
+		GenerateImportScripts:             args.GenerateImportScripts,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -1517,6 +1518,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Excluder:                          converters.DefaultExcluder{},
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 		StatelessAdditionalParams:         args.StatelessAdditionalParams,
+		GenerateImportScripts:             args.GenerateImportScripts,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
