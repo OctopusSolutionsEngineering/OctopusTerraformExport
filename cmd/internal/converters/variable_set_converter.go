@@ -300,6 +300,7 @@ if ([System.String]::IsNullOrEmpty($ProjectId)) {
 $ResourceName="%s"
 
 $Variables = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Variables" -Method Get -Headers $headers
+$DeploymentProcess = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/DeploymentProcesses" -Method Get -Headers $headers
 
 $Resource = $Variables |
 	Select-Object -ExpandProperty Variables | 
@@ -340,8 +341,12 @@ function Test-ArraysEqual {
 	}
 	
 	Write-Host "Comparing Arrays"
-	Write-Host "Sorted Array 1: $sortedArray1"
-	Write-Host "Sorted Array 2: $sortedArray2"
+	Write-Host "Destination Variable Scopes: $sortedArray1"
+	Write-Host "Source Variable Scopes: $sortedArray2"
+
+	if ($sortedArray1.Length -eq 0 -and $sortedArray2.Length -eq 0) {
+		return $True
+	}
 	
 	# Compare the sorted arrays
 	$result = Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
@@ -361,6 +366,7 @@ if ($Resource.Count -eq 0) {
 }
 
 # Check machine scopes
+echo "Testing machines"
 $Resource = $Resource | Where-Object { 
 	$ScopedMachines = $_.Scope.Machine | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Machines | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
 	Test-ArraysEqual $ScopedMachines $MachineScopes 
@@ -372,7 +378,8 @@ if ($Resource.Count -eq 0) {
 }
 
 # Check role scopes
-$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Roles $RoleScopes }
+echo "Testing roles"
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Role $RoleScopes }
 
 if ($Resource.Count -eq 0) {
 	echo "No variable found with the same role scopes"
@@ -380,6 +387,7 @@ if ($Resource.Count -eq 0) {
 }
 
 # Check channel scopes
+echo "Testing channels"
 $Resource = $Resource | Where-Object { 
 	$ScopedChannels = $_.Scope.Channel | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Channels | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
 	Test-ArraysEqual $ScopedChannels $ChannelScopes 
@@ -387,6 +395,18 @@ $Resource = $Resource | Where-Object {
 
 if ($Resource.Count -eq 0) {
 	echo "No variable found with the same channel scopes"
+	exit 1
+}
+
+# Check action scopes
+echo "Testing actions"
+$Resource = $Resource | Where-Object { 
+	$ScopedActions = $_.Scope.Action | ForEach-Object {$ActionId = $_; $DeploymentProcess.Steps | ForEach-Object {$_.Actions} | Where-Object {$ActionId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedActions $ActionScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same action scopes"
 	exit 1
 }
 
