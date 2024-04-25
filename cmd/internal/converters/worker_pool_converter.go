@@ -31,6 +31,7 @@ type WorkerPoolConverter struct {
 	LimitResourceCount       int
 	IncludeSpaceInPopulation bool
 	IncludeIds               bool
+	GenerateImportScripts    bool
 }
 
 func (c WorkerPoolConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -287,8 +288,10 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			c.toBashImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
-			c.toPowershellImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
+			if c.GenerateImportScripts {
+				c.toBashImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
+				c.toPowershellImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
+			}
 			c.createDynamicWorkerPoolResource(resourceName, &thisResource, dependencies, pool, stateless)
 		}
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
@@ -297,8 +300,10 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		if forceLookup {
 			c.createStaticWorkerPoolLookupResource(resourceName, &thisResource, pool)
 		} else {
-			c.toBashImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
-			c.toPowershellImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
+			if c.GenerateImportScripts {
+				c.toBashImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
+				c.toPowershellImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
+			}
 			c.createStaticWorkerPoolResource(resourceName, &thisResource, pool, stateless)
 		}
 	}

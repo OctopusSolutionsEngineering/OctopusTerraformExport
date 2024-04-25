@@ -34,6 +34,7 @@ type AccountConverter struct {
 	IncludeIds                bool
 	LimitResourceCount        int
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -317,32 +318,53 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 
 	if account.AccountType == "AmazonWebServicesAccount" {
 		c.writeAwsAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_aws_account", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_aws_account", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_aws_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_aws_account", resourceName, account.Name, dependencies)
+		}
 	} else if account.AccountType == "AzureServicePrincipal" {
 		c.writeAzureServicePrincipalAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_azure_service_principal", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_azure_service_principal", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_azure_service_principal", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_azure_service_principal", resourceName, account.Name, dependencies)
+		}
 	} else if account.AccountType == "AzureSubscription" {
 		c.writeAzureSubscriptionAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_azure_subscription_account", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_azure_subscription_account", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_azure_subscription_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_azure_subscription_account", resourceName, account.Name, dependencies)
+		}
 	} else if account.AccountType == "GoogleCloudAccount" {
 		c.writeGoogleCloudAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_gcp_account", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_gcp_account", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_gcp_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_gcp_account", resourceName, account.Name, dependencies)
+		}
 	} else if account.AccountType == "Token" {
 		c.writeTokenAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_token_account", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_token_account", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_token_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_token_account", resourceName, account.Name, dependencies)
+		}
 	} else if account.AccountType == "UsernamePassword" {
 		c.writeUsernamePasswordAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_username_password_account", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_username_password_account", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_username_password_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_username_password_account", resourceName, account.Name, dependencies)
+		}
 	} else if account.AccountType == "SshKeyPair" {
 		c.writeSshAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
-		c.toBashImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
-		c.toPowershellImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
+		}
 	}
 
 	dependencies.AddResource(thisResource)

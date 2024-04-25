@@ -55,6 +55,7 @@ type ProjectConverter struct {
 	IncludeIds                bool
 	LimitResourceCount        int
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -384,9 +385,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		return err
 	}
 
-	// Build the file containing the import block
-	c.toBashImport(projectName, project.Name, dependencies)
-	c.toPowershellImport(projectName, project.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(projectName, project.Name, dependencies)
+		c.toPowershellImport(projectName, project.Name, dependencies)
+	}
 
 	// The templates are dependencies that we export as part of the project
 	projectTemplates, variables, projectTemplateMap := c.convertTemplates(project.Templates, projectName, stateless)

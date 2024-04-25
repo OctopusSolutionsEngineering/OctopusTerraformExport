@@ -38,6 +38,7 @@ type RunbookConverter struct {
 	LimitResourceCount           int
 	IncludeSpaceInPopulation     bool
 	IncludeIds                   bool
+	GenerateImportScripts        bool
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -310,8 +311,10 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
 	runbookName := "runbook_" + resourceNameSuffix
 
-	c.toBashImport(runbookName, projectName, runbook.Name, dependencies)
-	c.toPowershellImport(runbookName, projectName, runbook.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(runbookName, projectName, runbook.Name, dependencies)
+		c.toPowershellImport(runbookName, projectName, runbook.Name, dependencies)
+	}
 
 	err := c.exportChildDependencies(recursive, lookups, stateless, runbook, resourceNameSuffix, dependencies)
 

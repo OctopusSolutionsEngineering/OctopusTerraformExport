@@ -28,6 +28,7 @@ type GitCredentialsConverter struct {
 	IncludeIds                bool
 	LimitResourceCount        int
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c GitCredentialsConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -251,8 +252,10 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, _ 
 
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 
-	c.toBashImport(gitCredentialsName, gitCredentials.Name, dependencies)
-	c.toPowershellImport(gitCredentialsName, gitCredentials.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(gitCredentialsName, gitCredentials.Name, dependencies)
+		c.toPowershellImport(gitCredentialsName, gitCredentials.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = gitCredentials.Name

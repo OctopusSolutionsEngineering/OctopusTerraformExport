@@ -38,6 +38,7 @@ type SshTargetConverter struct {
 	IncludeIds               bool
 	LimitResourceCount       int
 	IncludeSpaceInPopulation bool
+	GenerateImportScripts    bool
 }
 
 func (c SshTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -386,8 +387,10 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	c.toBashImport(targetName, target.Name, dependencies)
-	c.toPowershellImport(targetName, target.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(targetName, target.Name, dependencies)
+		c.toPowershellImport(targetName, target.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + targetName + ".tf"

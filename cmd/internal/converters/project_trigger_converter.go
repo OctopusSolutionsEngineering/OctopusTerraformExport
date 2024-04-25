@@ -17,9 +17,10 @@ import (
 const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
 
 type ProjectTriggerConverter struct {
-	Client             client.OctopusClient
-	LimitResourceCount int
-	IncludeIds         bool
+	Client                client.OctopusClient
+	LimitResourceCount    int
+	IncludeIds            bool
+	GenerateImportScripts bool
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
@@ -208,8 +209,10 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, dependencies)
-	c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, dependencies)
+		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = projectTrigger.Name

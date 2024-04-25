@@ -30,6 +30,7 @@ type EnvironmentConverter struct {
 	IncludeIds                bool
 	LimitResourceCount        int
 	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
 }
 
 func (c EnvironmentConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -318,8 +319,10 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
-	c.toBashImport(resourceName, environment.Name, dependencies)
-	c.toPowershellImport(resourceName, environment.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(resourceName, environment.Name, dependencies)
+		c.toPowershellImport(resourceName, environment.Name, dependencies)
+	}
 
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = environment.Name
