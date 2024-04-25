@@ -1553,6 +1553,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		Excluder:                          converters.DefaultExcluder{},
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 		StatelessAdditionalParams:         args.StatelessAdditionalParams,
+		GenerateImportScripts:             args.GenerateImportScripts,
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{

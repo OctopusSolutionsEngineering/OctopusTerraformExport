@@ -246,8 +246,8 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	return c.toHcl(resource, false, true, false, false, parentName, parentLookup, nil, dependencies)
 }
 
-// toPowershellImport creates a powershell script to import the resource
-func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
+// toProjectPowershellImport creates a powershell script to import the resource from an existing project
+func (c *VariableSetConverter) toProjectPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_project_variable_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -478,6 +478,174 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 	})
 }
 
+// toVariableSetPowershellImport creates a powershell script to import the resource from an existing variable set
+func (c *VariableSetConverter) toVariableSetPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_library_variable_set_variable_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$EnvScopes="%s".Split(",")
+$MachineScopes="%s".Split(",")
+$RoleScopes="%s".Split(",")
+$ChannelScopes="%s".Split(",")
+
+$VariableSetName="%s"
+
+$VariableSet = Invoke-RestMethod -Uri "$Url/api/$SpaceId/LibraryVariableSets?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($VariableSetName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $VariableSetName} 
+
+if ($VariableSet -eq $null) {
+	echo "No library variable set found with the name $VariableSetName"
+	exit 1
+}
+
+$VariableSetId = $VariableSet.Id
+
+$ResourceName="%s"
+
+$Variables = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Variables/$($VariableSet.VariableSetId)" -Method Get -Headers $headers
+
+$Resource = $Variables |
+	Select-Object -ExpandProperty Variables | 
+	Where-Object {$_.Name -eq $ResourceName}
+
+if ($Resource -eq $null) {
+	echo "No variable found with the name $ResourceName"
+	exit 1
+}
+
+function Test-ArraysEqual {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$array1,
+
+        [Parameter(Mandatory=$false)]
+        [string[]]$array2
+    )
+
+	if ($array1 -eq $null) {
+		$array1 = @()
+	}
+
+	if ($array2 -eq $null) {
+		$array2 = @()
+	}
+
+	# Sort the arrays
+	$sortedArray1 = $array1 | Sort-Object
+	$sortedArray2 = $array2 | Sort-Object
+	
+	if ($sortedArray1 -eq $null) {
+		$sortedArray1 = @()
+	}
+
+	if ($sortedArray2 -eq $null) {
+		$sortedArray2 = @()
+	}
+	
+	Write-Host "Comparing Arrays"
+	Write-Host "Destination Variable Scopes: $($sortedArray1 -join ",")"
+	Write-Host "Source Variable Scopes: $($sortedArray2 -join ",")"
+
+	if ($sortedArray1.Length -eq 0 -and $sortedArray2.Length -eq 0) {
+		return $True
+	}
+	
+	# Compare the sorted arrays
+	$result = Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
+	return -not $result
+}
+
+# Check environment scopes
+echo "Testing environments"
+$Resource = $Resource | Where-Object { 
+	$ScopedEnvironments = $_.Scope.Environment | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Environments | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedEnvironments $EnvScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same environment scopes"
+	exit 1
+}
+
+# Check machine scopes
+echo "Testing machines"
+$Resource = $Resource | Where-Object { 
+	$ScopedMachines = $_.Scope.Machine | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Machines | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedMachines $MachineScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same machine scopes"
+	exit 1
+}
+
+# Check role scopes
+echo "Testing roles"
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Role $RoleScopes }
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same role scopes"
+	exit 1
+}
+
+# Check channel scopes
+echo "Testing channels"
+$Resource = $Resource | Where-Object { 
+	$ScopedChannels = $_.Scope.Channel | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Channels | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedChannels $ChannelScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same channel scopes"
+	exit 1
+}
+
+$ResourceId = $Resource.Id
+echo "Importing variable $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s "$($VariableSetId):$($ResourceId)"`,
+				resourceName,
+				strings.Join(envNames, ","),
+				strings.Join(machineNames, ","),
+				strings.Join(roleNames, ","),
+				strings.Join(channelNames, ","),
+				octopusProjectName,
+				octopusResourceName,
+				octopusdeployVariableResourceType,
+				resourceName), nil
+		},
+	})
+}
+
 func (c *VariableSetConverter) processImportScript(resourceName string, parentName string, parentId string, v octopus.Variable, dependencies *data.ResourceDetailsCollection) error {
 	if !c.GenerateImportScripts {
 		return nil
@@ -500,42 +668,6 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentNa
 
 	if lookupErrors != nil {
 		return lookupErrors
-	}
-
-	scopedActions := []string{}
-
-	// Only variables assigned to a project can be scoped to individual actions
-	if strings.HasPrefix(parentId, "Projects") {
-		project := octopus.Project{}
-		_, projectErr := c.Client.GetResourceById("Projects", parentId, &project)
-
-		if projectErr != nil {
-			return projectErr
-		}
-
-		if project.DeploymentProcessId != nil {
-			deploymentProcess := octopus.DeploymentProcess{}
-			_, processErr := c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
-
-			if processErr != nil {
-				return processErr
-			}
-
-			scopedActions = lo.FilterMap(v.Scope.Action, func(actionId string, index int) (string, bool) {
-				actions := lo.FlatMap(deploymentProcess.Steps, func(step octopus.Step, index int) []octopus.Action {
-					return step.Actions
-				})
-				step := lo.Filter(actions, func(action octopus.Action, index int) bool {
-					return actionId == action.Id
-				})
-
-				if len(step) == 0 {
-					return "", false
-				}
-
-				return strutil.EmptyIfNil(step[0].Name), true
-			})
-		}
 	}
 
 	var ownersError error = nil
@@ -577,17 +709,70 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentNa
 		return ownersError
 	}
 
-	c.toPowershellImport(
-		resourceName,
-		parentName,
-		v.Name,
-		scopedEnvironmentNames,
-		scopedMachineNames,
-		v.Scope.Role,
-		scopedChannelNames,
-		scopedActions,
-		scopedOwners,
-		dependencies)
+	scopedActions := []string{}
+
+	// Only variables assigned to a project can be scoped to individual actions
+	if strings.HasPrefix(parentId, "Projects") {
+		project := octopus.Project{}
+		_, projectErr := c.Client.GetResourceById("Projects", parentId, &project)
+
+		if projectErr != nil {
+			return projectErr
+		}
+
+		if project.DeploymentProcessId != nil {
+			deploymentProcess := octopus.DeploymentProcess{}
+			_, processErr := c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
+
+			if processErr != nil {
+				return processErr
+			}
+
+			scopedActions = lo.FilterMap(v.Scope.Action, func(actionId string, index int) (string, bool) {
+				actions := lo.FlatMap(deploymentProcess.Steps, func(step octopus.Step, index int) []octopus.Action {
+					return step.Actions
+				})
+				step := lo.Filter(actions, func(action octopus.Action, index int) bool {
+					return actionId == action.Id
+				})
+
+				if len(step) == 0 {
+					return "", false
+				}
+
+				return strutil.EmptyIfNil(step[0].Name), true
+			})
+		}
+
+		c.toProjectPowershellImport(
+			resourceName,
+			project.Name,
+			v.Name,
+			scopedEnvironmentNames,
+			scopedMachineNames,
+			v.Scope.Role,
+			scopedChannelNames,
+			scopedActions,
+			scopedOwners,
+			dependencies)
+	} else if strings.HasPrefix(parentId, "LibraryVariableSets") {
+		libraryVariableSetName, lookupErr := c.Client.GetResourceNameById("LibraryVariableSets", parentId)
+
+		if lookupErr != nil {
+			return lookupErr
+		}
+
+		c.toVariableSetPowershellImport(
+			resourceName,
+			libraryVariableSetName,
+			v.Name,
+			scopedEnvironmentNames,
+			scopedMachineNames,
+			v.Scope.Role,
+			scopedChannelNames,
+			dependencies)
+
+	}
 
 	return nil
 }
