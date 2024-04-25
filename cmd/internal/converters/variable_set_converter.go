@@ -62,6 +62,7 @@ type VariableSetConverter struct {
 	ExcludeTerraformVariables           bool
 	LimitAttributeLength                int
 	StatelessAdditionalParams           args.StringSliceArgs
+	GenerateImportScripts               bool
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -245,6 +246,352 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	return c.toHcl(resource, false, true, false, false, parentName, parentLookup, nil, dependencies)
 }
 
+// toPowershellImport creates a powershell script to import the resource
+func (c *VariableSetConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_project_variable_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$EnvScopes="%s".Split(",")
+$MachineScopes="%s".Split(",")
+$RoleScopes="%s".Split(",")
+$ChannelScopes="%s".Split(",")
+$ActionScopes="%s".Split(",")
+$OwnerScopes="%s".Split(",")
+
+$ProjectName="%s"
+
+$ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ProjectName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ProjectName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ProjectId)) {
+	echo "No project found with the name $ProjectName"
+	exit 1
+}
+
+$ResourceName="%s"
+
+$Variables = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Variables" -Method Get -Headers $headers
+$DeploymentProcess = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/DeploymentProcesses" -Method Get -Headers $headers
+
+$Resource = $Variables |
+	Select-Object -ExpandProperty Variables | 
+	Where-Object {$_.Name -eq $ResourceName}
+
+if ($Resource -eq $null) {
+	echo "No variable found with the name $ResourceName"
+	exit 1
+}
+
+function Test-ArraysEqual {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$array1,
+
+        [Parameter(Mandatory=$false)]
+        [string[]]$array2
+    )
+
+	if ($array1 -eq $null) {
+		$array1 = @()
+	}
+
+	if ($array2 -eq $null) {
+		$array2 = @()
+	}
+
+	# Sort the arrays
+	$sortedArray1 = $array1 | Sort-Object
+	$sortedArray2 = $array2 | Sort-Object
+	
+	if ($sortedArray1 -eq $null) {
+		$sortedArray1 = @()
+	}
+
+	if ($sortedArray2 -eq $null) {
+		$sortedArray2 = @()
+	}
+	
+	Write-Host "Comparing Arrays"
+	Write-Host "Destination Variable Scopes: $($sortedArray1 -join ",")"
+	Write-Host "Source Variable Scopes: $($sortedArray2 -join ",")"
+
+	if ($sortedArray1.Length -eq 0 -and $sortedArray2.Length -eq 0) {
+		return $True
+	}
+	
+	# Compare the sorted arrays
+	$result = Compare-Object -ReferenceObject $sortedArray1 -DifferenceObject $sortedArray2
+	return -not $result
+}
+
+function Get-ProjectName {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$ProjectOwner
+    )
+
+	$Project = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectOwner" -Method Get -Headers $headers
+	return $Project.Name
+}
+
+function Get-RunbookName {
+	param(
+        [Parameter(Mandatory=$false)]
+        [string[]]$RunbookOwner
+    )
+
+	$Runbook = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Runbooks/$RunbookOwner" -Method Get -Headers $headers
+	$Project = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$Runbook.ProjectId" -Method Get -Headers $headers
+	return $Project.Name + ":" + $Runbook.Name
+}
+
+# Check environment scopes
+echo "Testing environments"
+$Resource = $Resource | Where-Object { 
+	$ScopedEnvironments = $_.Scope.Environment | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Environments | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedEnvironments $EnvScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same environment scopes"
+	exit 1
+}
+
+# Check machine scopes
+echo "Testing machines"
+$Resource = $Resource | Where-Object { 
+	$ScopedMachines = $_.Scope.Machine | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Machines | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedMachines $MachineScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same machine scopes"
+	exit 1
+}
+
+# Check role scopes
+echo "Testing roles"
+$Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Role $RoleScopes }
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same role scopes"
+	exit 1
+}
+
+# Check channel scopes
+echo "Testing channels"
+$Resource = $Resource | Where-Object { 
+	$ScopedChannels = $_.Scope.Channel | ForEach-Object {$EnvId = $_; $Variables.ScopeValues.Channels | Where-Object{$EnvId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedChannels $ChannelScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same channel scopes"
+	exit 1
+}
+
+# Check action scopes
+echo "Testing actions"
+$Resource = $Resource | Where-Object { 
+	$ScopedActions = $_.Scope.Action | ForEach-Object {$ActionId = $_; $DeploymentProcess.Steps | ForEach-Object {$_.Actions} | Where-Object {$ActionId -eq $_.Id} | Select-Object -ExpandProperty Name}
+	Test-ArraysEqual $ScopedActions $ActionScopes 
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same action scopes"
+	exit 1
+}
+
+# Check owner scopes
+echo "Testing owners"
+$Resource = $Resource | Where-Object { 
+	$ScopedOwners = $_.Scope.ProcessOwner | ForEach-Object {
+		if ([string]::IsNullOrWhiteSpace($_)) {
+			return $null
+		}
+	
+		if ($_.StartsWith("Projects")) {
+			return Get-ProjectName $_
+		}
+
+		if ($_.StartsWith("Runbooks")) {
+			return Get-RunbookName $_
+		}
+
+		return $null
+	} | Where-Object {$_ -ne $null}
+
+	Test-ArraysEqual $ScopedOwners $OwnerScopes
+}
+
+if ($Resource.Count -eq 0) {
+	echo "No variable found with the same process owner scopes"
+	exit 1
+}
+
+$ResourceId = $Resource.Id
+echo "Importing variable $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s "$($ProjectId):$($ResourceId)"`,
+				resourceName,
+				strings.Join(envNames, ","),
+				strings.Join(machineNames, ","),
+				strings.Join(roleNames, ","),
+				strings.Join(channelNames, ","),
+				strings.Join(actionNames, ","),
+				strings.Join(ownerNames, ","),
+				octopusProjectName,
+				octopusResourceName,
+				octopusdeployVariableResourceType,
+				resourceName), nil
+		},
+	})
+}
+
+func (c *VariableSetConverter) processImportScript(resourceName string, parentName string, parentId string, v octopus.Variable, dependencies *data.ResourceDetailsCollection) error {
+	if !c.GenerateImportScripts {
+		return nil
+	}
+
+	// Build the import script
+	scopedEnvironmentNames, lookupErrors := c.Client.GetResourceNamesByIds("Environments", c.filterEnvironmentScope(v.Scope.Environment))
+
+	if lookupErrors != nil {
+		return lookupErrors
+	}
+
+	scopedMachineNames, lookupErrors := c.Client.GetResourceNamesByIds("Machines", c.filterEnvironmentScope(v.Scope.Machine))
+
+	if lookupErrors != nil {
+		return lookupErrors
+	}
+
+	scopedChannelNames, lookupErrors := c.Client.GetResourceNamesByIds("Channel", c.filterEnvironmentScope(v.Scope.Channel))
+
+	if lookupErrors != nil {
+		return lookupErrors
+	}
+
+	scopedActions := []string{}
+
+	// Only variables assigned to a project can be scoped to individual actions
+	if strings.HasPrefix(parentId, "Projects") {
+		project := octopus.Project{}
+		_, projectErr := c.Client.GetResourceById("Projects", parentId, &project)
+
+		if projectErr != nil {
+			return projectErr
+		}
+
+		if project.DeploymentProcessId != nil {
+			deploymentProcess := octopus.DeploymentProcess{}
+			_, processErr := c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
+
+			if processErr != nil {
+				return processErr
+			}
+
+			scopedActions = lo.FilterMap(v.Scope.Action, func(actionId string, index int) (string, bool) {
+				actions := lo.FlatMap(deploymentProcess.Steps, func(step octopus.Step, index int) []octopus.Action {
+					return step.Actions
+				})
+				step := lo.Filter(actions, func(action octopus.Action, index int) bool {
+					return actionId == action.Id
+				})
+
+				if len(step) == 0 {
+					return "", false
+				}
+
+				return strutil.EmptyIfNil(step[0].Name), true
+			})
+		}
+	}
+
+	var ownersError error = nil
+	scopedOwners := lo.Map(v.Scope.ProcessOwner, func(owner string, index int) string {
+		if strings.HasPrefix(owner, "Projects") {
+			projectName, err := c.Client.GetResourceNameById("Projects", owner)
+
+			if err != nil {
+				ownersError = errors.Join(ownersError, err)
+			}
+
+			return projectName
+		}
+
+		if strings.HasPrefix(owner, "Runbooks") {
+			runbook := octopus.Runbook{}
+			_, runbookErr := c.Client.GetResourceById("Runbooks", owner, &runbook)
+
+			if runbookErr != nil {
+				ownersError = errors.Join(ownersError, runbookErr)
+			} else {
+
+				project := octopus.Project{}
+				_, projectErr := c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
+
+				if projectErr != nil {
+					ownersError = errors.Join(ownersError, projectErr)
+				}
+
+				return project.Name + ":" + runbook.Name
+			}
+		}
+
+		ownersError = errors.Join(ownersError, errors.New("Found unexpected owner with ID "+owner))
+		return ""
+	})
+
+	if ownersError != nil {
+		return ownersError
+	}
+
+	c.toPowershellImport(
+		resourceName,
+		parentName,
+		v.Name,
+		scopedEnvironmentNames,
+		scopedMachineNames,
+		v.Scope.Role,
+		scopedChannelNames,
+		scopedActions,
+		scopedOwners,
+		dependencies)
+
+	return nil
+}
+
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, stateless bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
 	c.convertEnvironmentsToIds()
 
@@ -272,6 +619,10 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		thisResource := data.ResourceDetails{}
 
 		resourceName := sanitizer.SanitizeName(parentName) + "_" + sanitizer.SanitizeName(v.Name) + "_" + fmt.Sprint(nameCount[v.Name])
+
+		if err := c.processImportScript(resourceName, parentName, strutil.EmptyIfNil(resource.OwnerId), v, dependencies); err != nil {
+			return err
+		}
 
 		// Export linked accounts
 		err := c.exportAccounts(recursive, lookup, stateless, v.Value, dependencies)

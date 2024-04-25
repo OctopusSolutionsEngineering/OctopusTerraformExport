@@ -24,6 +24,8 @@ type OctopusClient interface {
 	EnsureSpaceDeleted(spaceId string) (funcErr error)
 	GetResource(resourceType string, resources any) (exists bool, funcErr error)
 	GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
+	GetResourceNameById(resourceType string, id string) (name string, funcErr error)
+	GetResourceNamesByIds(resourceType string, id []string) (name []string, funcErr error)
 	GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error)
 }
 
@@ -597,6 +599,79 @@ func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resou
 	}
 
 	return true, nil
+}
+
+func (o *OctopusApiClient) GetResourceNamesByIds(resourceType string, id []string) (names []string, funcErr error) {
+	var mappingErrors error = nil
+	resourceNames := lo.Map(id, func(item string, index int) string {
+		name, err := o.GetResourceNameById(resourceType, item)
+		if err != nil {
+			mappingErrors = errors.Join(mappingErrors, err)
+		}
+		return name
+	})
+
+	return resourceNames, mappingErrors
+}
+
+func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (name string, funcErr error) {
+	nameId := octopus2.NameId{}
+	cacheHit := o.readCache(resourceType, id)
+	if cacheHit != nil {
+		zap.L().Debug("Cache hit on " + resourceType + " " + id)
+
+		err := o.unmarshal(&nameId, cacheHit)
+
+		if err != nil {
+			return "", err
+		}
+
+		return nameId.Name, nil
+	}
+
+	zap.L().Debug("Getting " + resourceType + " " + id)
+
+	req, err := o.getRequest(resourceType, id)
+
+	if err != nil {
+		return "", err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode == 404 {
+		return "", nil
+	}
+
+	if res.StatusCode != 200 {
+		return "", errors.New("did not find the requested resource: " + resourceType + " " + id)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
+
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return "", err
+	}
+
+	o.cacheResult(resourceType, id, body)
+
+	err = o.unmarshal(&nameId, body)
+
+	if err != nil {
+		return "", err
+	}
+
+	return nameId.Name, nil
 }
 
 func (o *OctopusApiClient) readCache(resourceType string, id string) []byte {

@@ -25,12 +25,13 @@ type Variable struct {
 }
 
 type Scope struct {
-	Environment []string
-	Role        []string
-	Machine     []string
-	Channel     []string
-	TenantTag   []string
-	Action      []string
+	Environment  []string
+	Role         []string
+	Machine      []string
+	Channel      []string
+	TenantTag    []string
+	Action       []string
+	ProcessOwner []string
 }
 
 type Prompt struct {
