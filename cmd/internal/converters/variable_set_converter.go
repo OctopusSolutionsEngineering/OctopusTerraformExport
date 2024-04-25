@@ -670,48 +670,6 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentNa
 		return lookupErrors
 	}
 
-	var ownersError error = nil
-	scopedOwners := lo.Map(v.Scope.ProcessOwner, func(owner string, index int) string {
-		if strings.HasPrefix(owner, "Projects") {
-			projectName, err := c.Client.GetResourceNameById("Projects", owner)
-
-			if err != nil {
-				ownersError = errors.Join(ownersError, err)
-			}
-
-			return projectName
-		}
-
-		if strings.HasPrefix(owner, "Runbooks") {
-			runbook := octopus.Runbook{}
-			_, runbookErr := c.Client.GetResourceById("Runbooks", owner, &runbook)
-
-			if runbookErr != nil {
-				ownersError = errors.Join(ownersError, runbookErr)
-			} else {
-
-				project := octopus.Project{}
-				_, projectErr := c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
-
-				if projectErr != nil {
-					ownersError = errors.Join(ownersError, projectErr)
-				}
-
-				return project.Name + ":" + runbook.Name
-			}
-		}
-
-		ownersError = errors.Join(ownersError, errors.New("Found unexpected owner with ID "+owner))
-		return ""
-	})
-
-	if ownersError != nil {
-		return ownersError
-	}
-
-	scopedActions := []string{}
-
-	// Only variables assigned to a project can be scoped to individual actions
 	if strings.HasPrefix(parentId, "Projects") {
 		project := octopus.Project{}
 		_, projectErr := c.Client.GetResourceById("Projects", parentId, &project)
@@ -720,6 +678,49 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentNa
 			return projectErr
 		}
 
+		// Only variables assigned to a project can be scoped to owners
+		var ownersError error = nil
+		scopedOwners := lo.Map(v.Scope.ProcessOwner, func(owner string, index int) string {
+			if strings.HasPrefix(owner, "Projects") {
+				projectName, err := c.Client.GetResourceNameById("Projects", owner)
+
+				if err != nil {
+					ownersError = errors.Join(ownersError, err)
+				}
+
+				return projectName
+			}
+
+			if strings.HasPrefix(owner, "Runbooks") {
+				runbook := octopus.Runbook{}
+				_, runbookErr := c.Client.GetResourceById("Runbooks", owner, &runbook)
+
+				if runbookErr != nil {
+					ownersError = errors.Join(ownersError, runbookErr)
+				} else {
+
+					project := octopus.Project{}
+					_, projectErr := c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
+
+					if projectErr != nil {
+						ownersError = errors.Join(ownersError, projectErr)
+					}
+
+					return project.Name + ":" + runbook.Name
+				}
+			}
+
+			ownersError = errors.Join(ownersError, errors.New("Found unexpected owner with ID "+owner))
+			return ""
+		})
+
+		if ownersError != nil {
+			return ownersError
+		}
+
+		scopedActions := []string{}
+
+		// Only variables assigned to a project can be scoped to individual actions
 		if project.DeploymentProcessId != nil {
 			deploymentProcess := octopus.DeploymentProcess{}
 			_, processErr := c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
