@@ -436,7 +436,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuous
 }
 
 func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule, error) {
-	if projectTrigger.Filter.FilterType != "FilterType" {
+	if projectTrigger.Filter.FilterType != "DaysPerMonthSchedule" {
 		return nil, nil
 	}
 
