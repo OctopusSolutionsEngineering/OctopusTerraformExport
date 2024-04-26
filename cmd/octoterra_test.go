@@ -8623,3 +8623,40 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestProjectFeedAndScheduledTriggerExport verifies that a project can be reimported with feed and scheduled triggers
+func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/72-projecttrigger/space_creation",
+		"../test/terraform/72-projecttrigger/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
+
+			if len(project) != 1 {
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

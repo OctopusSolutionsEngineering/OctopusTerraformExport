@@ -29,40 +29,40 @@ const octopusdeployVariableResourceType = "octopusdeploy_variable"
 // library variable sets. There is no global collection or all endpoint that we can use to dump variables
 // in bulk.
 type VariableSetConverter struct {
-	Client                              client.OctopusClient
-	ChannelConverter                    ConverterByProjectIdWithTerraDependencies
-	EnvironmentConverter                ConverterAndLookupWithStatelessById
-	TagSetConverter                     ConvertToHclByResource[octopus.TagSet]
-	AzureCloudServiceTargetConverter    ConverterAndLookupWithStatelessById
-	AzureServiceFabricTargetConverter   ConverterAndLookupWithStatelessById
-	AzureWebAppTargetConverter          ConverterAndLookupWithStatelessById
-	CloudRegionTargetConverter          ConverterAndLookupWithStatelessById
-	KubernetesTargetConverter           ConverterAndLookupWithStatelessById
-	ListeningTargetConverter            ConverterAndLookupWithStatelessById
-	OfflineDropTargetConverter          ConverterAndLookupWithStatelessById
-	PollingTargetConverter              ConverterAndLookupWithStatelessById
-	SshTargetConverter                  ConverterAndLookupWithStatelessById
-	AccountConverter                    ConverterAndLookupWithStatelessById
-	FeedConverter                       ConverterAndLookupWithStatelessById
-	CertificateConverter                ConverterAndLookupWithStatelessById
-	WorkerPoolConverter                 ConverterAndLookupWithStatelessById
-	IgnoreCacManagedValues              bool
-	DefaultSecretVariableValues         bool
-	DummySecretVariableValues           bool
-	ExcludeAllProjectVariables          bool
-	ExcludeProjectVariables             args.StringSliceArgs
-	ExcludeProjectVariablesExcept       args.StringSliceArgs
-	ExcludeProjectVariablesRegex        args.StringSliceArgs
-	IgnoreProjectChanges                bool
-	DummySecretGenerator                DummySecretGenerator
-	ExcludeVariableEnvironmentScopes    args.StringSliceArgs
-	excludeVariableEnvironmentScopesIds []string
-	Excluder                            ExcludeByName
-	ErrGroup                            *errgroup.Group
-	ExcludeTerraformVariables           bool
-	LimitAttributeLength                int
-	StatelessAdditionalParams           args.StringSliceArgs
-	GenerateImportScripts               bool
+	Client                            client.OctopusClient
+	ChannelConverter                  ConverterByProjectIdWithTerraDependencies
+	EnvironmentConverter              ConverterAndLookupWithStatelessById
+	TagSetConverter                   ConvertToHclByResource[octopus.TagSet]
+	AzureCloudServiceTargetConverter  ConverterAndLookupWithStatelessById
+	AzureServiceFabricTargetConverter ConverterAndLookupWithStatelessById
+	AzureWebAppTargetConverter        ConverterAndLookupWithStatelessById
+	CloudRegionTargetConverter        ConverterAndLookupWithStatelessById
+	KubernetesTargetConverter         ConverterAndLookupWithStatelessById
+	ListeningTargetConverter          ConverterAndLookupWithStatelessById
+	OfflineDropTargetConverter        ConverterAndLookupWithStatelessById
+	PollingTargetConverter            ConverterAndLookupWithStatelessById
+	SshTargetConverter                ConverterAndLookupWithStatelessById
+	AccountConverter                  ConverterAndLookupWithStatelessById
+	FeedConverter                     ConverterAndLookupWithStatelessById
+	CertificateConverter              ConverterAndLookupWithStatelessById
+	WorkerPoolConverter               ConverterAndLookupWithStatelessById
+	IgnoreCacManagedValues            bool
+	DefaultSecretVariableValues       bool
+	DummySecretVariableValues         bool
+	ExcludeAllProjectVariables        bool
+	ExcludeProjectVariables           args.StringSliceArgs
+	ExcludeProjectVariablesExcept     args.StringSliceArgs
+	ExcludeProjectVariablesRegex      args.StringSliceArgs
+	IgnoreProjectChanges              bool
+	DummySecretGenerator              DummySecretGenerator
+
+	Excluder                  ExcludeByName
+	ErrGroup                  *errgroup.Group
+	ExcludeTerraformVariables bool
+	LimitAttributeLength      int
+	StatelessAdditionalParams args.StringSliceArgs
+	GenerateImportScripts     bool
+	EnvironmentFilter         EnvironmentFilter
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -655,19 +655,19 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 	}
 
 	// Build the import script
-	scopedEnvironmentNames, lookupErrors := c.Client.GetResourceNamesByIds("Environments", c.filterEnvironmentScope(v.Scope.Environment))
+	scopedEnvironmentNames, lookupErrors := c.Client.GetResourceNamesByIds("Environments", c.EnvironmentFilter.FilterEnvironmentScope(v.Scope.Environment))
 
 	if lookupErrors != nil {
 		return lookupErrors
 	}
 
-	scopedMachineNames, lookupErrors := c.Client.GetResourceNamesByIds("Machines", c.filterEnvironmentScope(v.Scope.Machine))
+	scopedMachineNames, lookupErrors := c.Client.GetResourceNamesByIds("Machines", v.Scope.Machine)
 
 	if lookupErrors != nil {
 		return lookupErrors
 	}
 
-	scopedChannelNames, lookupErrors := c.Client.GetResourceNamesByIds("Channel", c.filterEnvironmentScope(v.Scope.Channel))
+	scopedChannelNames, lookupErrors := c.Client.GetResourceNamesByIds("Channel", v.Scope.Channel)
 
 	if lookupErrors != nil {
 		return lookupErrors
@@ -782,8 +782,6 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 }
 
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, stateless bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
-	c.convertEnvironmentsToIds()
-
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Do not export regular variables if ignoring cac managed values
@@ -1157,53 +1155,8 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 	return &display
 }
 
-func (c *VariableSetConverter) convertEnvironmentsToIds() {
-	if c.ExcludeVariableEnvironmentScopes == nil {
-		c.excludeVariableEnvironmentScopesIds = []string{}
-	} else {
-		c.excludeVariableEnvironmentScopesIds = lo.FilterMap(c.ExcludeVariableEnvironmentScopes, func(envName string, index int) (string, bool) {
-
-			// for each input environment name, convert it to an ID
-			environments := octopus.GeneralCollection[octopus.Environment]{}
-			err := c.Client.GetAllResources("Environments", &environments)
-			if err == nil {
-				// partial matches can have false positives, so do a second filter to do an exact match
-				filteredList := lo.FilterMap(environments.Items, func(env octopus.Environment, index int) (string, bool) {
-					if env.Name == envName {
-						return env.Id, true
-					}
-
-					return "", false
-				})
-
-				// return the environment id
-				if len(filteredList) != 0 {
-					return filteredList[0], true
-				}
-			}
-
-			// no match found
-			return "", false
-		})
-	}
-}
-
-func (c *VariableSetConverter) filterEnvironmentScope(envs []string) []string {
-	if envs == nil {
-		return []string{}
-	}
-
-	return lo.Filter(envs, func(env string, i int) bool {
-		if c.excludeVariableEnvironmentScopesIds != nil && slices.Index(c.excludeVariableEnvironmentScopesIds, env) != -1 {
-			return false
-		}
-
-		return true
-	})
-}
-
 func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
-	filteredEnvironments := c.filterEnvironmentScope(variable.Scope.Environment)
+	filteredEnvironments := c.EnvironmentFilter.FilterEnvironmentScope(variable.Scope.Environment)
 
 	// Removing all environment scoping may not have been the intention
 	if len(filteredEnvironments) == 0 && len(variable.Scope.Environment) != 0 {
@@ -1578,7 +1531,7 @@ func (c *VariableSetConverter) exportEnvironments(recursive bool, lookup bool, s
 		return errors.New("one, and only one, of recursive and lookup can be true")
 	}
 
-	for _, e := range c.filterEnvironmentScope(variable.Scope.Environment) {
+	for _, e := range c.EnvironmentFilter.FilterEnvironmentScope(variable.Scope.Environment) {
 		var err error
 		if recursive {
 			if stateless {
