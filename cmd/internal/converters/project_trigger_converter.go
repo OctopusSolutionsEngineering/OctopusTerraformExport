@@ -429,7 +429,6 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMon
 		DateOfMonth:         strutil.EmptyIfNil(projectTrigger.Filter.DateOfMonth),
 		DayNumberOfMonth:    strutil.EmptyIfNil(projectTrigger.Filter.DayNumberOfMonth),
 		DayOfWeek:           strutil.EmptyIfNil(projectTrigger.Filter.DayOfWeek),
-		DaysOfWeek:          projectTrigger.Filter.DaysOfWeek,
 	}, nil
 }
 
