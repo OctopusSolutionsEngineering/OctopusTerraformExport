@@ -82,6 +82,14 @@ func InputIfEnabled(enabled bool, input string) *string {
 	return nil
 }
 
+func InputIfEnabledElseDefault(enabled bool, input string, defaultValue string) *string {
+	if enabled {
+		return &input
+	}
+
+	return &defaultValue
+}
+
 func DefaultIfEmpty(input string, defaultValue string) string {
 	if input == "" {
 		return defaultValue

@@ -655,7 +655,6 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
 		DefaultSecretVariableValues:       false,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
-		ExcludeVariableEnvironmentScopes:  nil,
 		DummySecretVariableValues:         args.DummySecretVariableValues,
 		DummySecretGenerator:              dummySecretGenerator,
 		Excluder:                          converters.DefaultExcluder{},
@@ -667,6 +666,10 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeProjectVariablesExcept:     args.ExcludeProjectVariablesExcept,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
 		GenerateImportScripts:             args.GenerateImportScripts,
+		EnvironmentFilter: converters.EnvironmentFilter{
+			Client:                           &octopusClient,
+			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
+		},
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -1513,12 +1516,15 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeProjectVariables:           args.ExcludeProjectVariables,
 		ExcludeProjectVariablesExcept:     args.ExcludeProjectVariablesExcept,
 		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
-		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
 		Excluder:                          converters.DefaultExcluder{},
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 		StatelessAdditionalParams:         args.StatelessAdditionalParams,
 		GenerateImportScripts:             args.GenerateImportScripts,
+		EnvironmentFilter: converters.EnvironmentFilter{
+			Client:                           &octopusClient,
+			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
+		},
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -1548,12 +1554,15 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeProjectVariables:           nil,
 		ExcludeProjectVariablesExcept:     nil,
 		ExcludeProjectVariablesRegex:      nil,
-		ExcludeVariableEnvironmentScopes:  args.ExcludeVariableEnvironmentScopes,
 		IgnoreProjectChanges:              false,
 		Excluder:                          converters.DefaultExcluder{},
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
 		StatelessAdditionalParams:         args.StatelessAdditionalParams,
 		GenerateImportScripts:             args.GenerateImportScripts,
+		EnvironmentFilter: converters.EnvironmentFilter{
+			Client:                           &octopusClient,
+			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
+		},
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{

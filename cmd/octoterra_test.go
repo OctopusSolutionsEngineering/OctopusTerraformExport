@@ -5,6 +5,7 @@ import (
 	"fmt"
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
@@ -8618,6 +8619,245 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 
 			if !found {
 				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestProjectScheduledTriggerExport verifies that a project can be reimported with feed and scheduled triggers
+func TestProjectScheduledTriggerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/72-projecttrigger/space_creation",
+		"../test/terraform/72-projecttrigger/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
+
+			if err != nil {
+				return err
+			}
+
+			testEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Test"
+			})
+
+			developmentEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Development"
+			})
+
+			resourceName := "Test"
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
+
+			if len(project) != 1 {
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			onceDailyExample := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Once Daily example"
+			})
+
+			if len(onceDailyExample) != 1 {
+				return errors.New("space must have an trigger called \"Once Daily example\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(onceDailyExample[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Once Daily example\" must have an environment of Test")
+			}
+
+			if len(onceDailyExample[0].Action.SourceEnvironmentIds) != 0 {
+				return errors.New("the trigger \"Once Daily example\" must have no source environments")
+			}
+
+			if onceDailyExample[0].Action.DestinationEnvironmentId != nil {
+				return errors.New("the trigger \"Once Daily example\" must have no destination environment")
+			}
+
+			if strutil.EmptyIfNil(onceDailyExample[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Once Daily example\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if slices.Index(onceDailyExample[0].Filter.DaysOfWeek, "Monday") == -1 {
+				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Monday\"")
+			}
+
+			if slices.Index(onceDailyExample[0].Filter.DaysOfWeek, "Tuesday") == -1 {
+				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Tuesday\"")
+			}
+
+			if slices.Index(onceDailyExample[0].Filter.DaysOfWeek, "Wednesday") == -1 {
+				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Wednesday\"")
+			}
+
+			continuousExample := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Continuous"
+			})
+
+			if len(continuousExample) != 1 {
+				return errors.New("Space must have an trigger called \"Continuous\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(continuousExample[0].Description) != "This is a continuous daily schedule" {
+				return errors.New("the trigger \"Continuous\" must have a description \"This is a continuous daily schedule\"")
+			}
+
+			if strutil.EmptyIfNil(continuousExample[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Continuous\" must have an environment of Test")
+			}
+
+			if strutil.EmptyIfNil(continuousExample[0].Filter.Interval) != "OnceHourly" {
+				return errors.New("the trigger \"Continuous\" must have an interval of \"OnceHourly\"")
+			}
+
+			if intutil.ZeroIfNil(continuousExample[0].Filter.HourInterval) != 3 {
+				return errors.New("the trigger \"Continuous\" must have an hourly interval of 3")
+			}
+
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Monday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Monday\"")
+			}
+
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Tuesday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Tuesday\"")
+			}
+
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Friday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Friday\"")
+			}
+
+			deployLatest := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Deploy Latest"
+			})
+
+			if len(deployLatest) != 1 {
+				return errors.New("space must have an trigger called \"Deploy Latest\" in space " + recreatedSpaceId)
+			}
+
+			if len(deployLatest[0].Action.SourceEnvironmentIds) != 1 {
+				return errors.New("the trigger \"Deploy Latest\" must have 1 source environment")
+			}
+
+			if deployLatest[0].Action.SourceEnvironmentIds[0] != developmentEnvironment[0].Id {
+				return errors.New("the trigger \"Deploy Latest\" must have 1 source environment of Development")
+			}
+
+			if strutil.EmptyIfNil(deployLatest[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Deploy Latest\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if strutil.EmptyIfNil(deployLatest[0].Action.DestinationEnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Deploy Latest\" must have an environment of Test")
+			}
+
+			if !boolutil.FalseIfNil(deployLatest[0].Action.ShouldRedeployWhenReleaseIsCurrent) {
+				return errors.New("the trigger \"Deploy Latest\" must redeploy when release is current")
+			}
+
+			deployNew := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Deploy New"
+			})
+
+			if len(deployNew) != 1 {
+				return errors.New("space must have an trigger called \"Deploy New\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(deployNew[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Deploy New\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if strutil.EmptyIfNil(deployNew[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Deploy New\" must have an environment of Test")
+			}
+
+			runbook := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) != 1 {
+				return errors.New("space must have an trigger called \"Runbook\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(runbook[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Runbook\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if slices.Index(runbook[0].Action.EnvironmentIds, testEnvironment[0].Id) == -1 {
+				return errors.New("the trigger \"Runbook\" must have a deployment environment of Test")
+			}
+
+			if slices.Index(runbook[0].Action.EnvironmentIds, developmentEnvironment[0].Id) == -1 {
+				return errors.New("the trigger \"Runbook\" must have a deployment environment of Development")
+			}
+
+			dateOfMonth := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Date Of Month"
+			})
+
+			if len(dateOfMonth) != 1 {
+				return errors.New("space must have an trigger called \"Date Of Month\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(dateOfMonth[0].Filter.MonthlyScheduleType) != "DateOfMonth" {
+				return errors.New("the trigger \"Date Of Month\" must have a monlthy schedule type of \"DateOfMonth\"")
+			}
+
+			if strutil.EmptyIfNil(dateOfMonth[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Date Of Month\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if strutil.EmptyIfNil(dateOfMonth[0].Filter.DateOfMonth) != "1" {
+				return errors.New("the trigger \"Date Of Month\" must have a date of month of \"1\"")
+			}
+
+			dayOfMonth := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Day Of Month"
+			})
+
+			if len(dayOfMonth) != 1 {
+				return errors.New("space must have an trigger called \"Day Of Month\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.MonthlyScheduleType) != "DayOfMonth" {
+				return errors.New("the trigger \"Day Of Month\" must have a monlthy schedule type of \"DateOfMonth\"")
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Day Of Month\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.DayNumberOfMonth) != "1" {
+				return errors.New("the trigger \"Day Of Month\" must have a day number of month of \"1\"")
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.DayOfWeek) != "Monday" {
+				return errors.New("the trigger \"Day Of Month\" must have a day of week of \"Monday\"")
 			}
 
 			return nil

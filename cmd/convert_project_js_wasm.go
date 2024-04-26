@@ -442,6 +442,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 		Excluder:                          converters.DefaultExcluder{},
+		EnvironmentFilter: converters.EnvironmentFilter{
+			Client:                           &octopusClient,
+			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
+		},
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:               &client,

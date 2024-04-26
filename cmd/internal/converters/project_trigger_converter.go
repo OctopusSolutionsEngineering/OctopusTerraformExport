@@ -2,9 +2,12 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dateutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -12,9 +15,11 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
+	"k8s.io/utils/strings/slices"
 )
 
 const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
+const octopusdeployProjectScheduledTrigger = "octopusdeploy_project_scheduled_trigger"
 
 type ProjectTriggerConverter struct {
 	Client                client.OctopusClient
@@ -62,7 +67,7 @@ func (c ProjectTriggerConverter) writeData(file *hclwrite.File, name string, res
 }
 
 // toBashImport creates a bash script to import the resource
-func (c ProjectTriggerConverter) toBashImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c ProjectTriggerConverter) toBashImport(resourceName string, octopusProjectName string, octopusResourceName string, octopusResourceType string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -126,13 +131,13 @@ fi
 
 echo "Importing trigger ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusProjectName, octopusResourceName, octopusdeployProjectDeploymentTargetTriggerResourceType, resourceName), nil
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusProjectName, octopusResourceName, octopusResourceType, resourceName), nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c ProjectTriggerConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c ProjectTriggerConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, octopusResourceType string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -190,14 +195,15 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing target $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, octopusProjectName, octopusResourceName, octopusdeployProjectDeploymentTargetTriggerResourceType, resourceName), nil
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, octopusProjectName, octopusResourceName, octopusResourceType, resourceName), nil
 		},
 	})
 }
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
-	// Scheduled triggers with types like "OnceDailySchedule" are not supported
-	if projectTrigger.Filter.FilterType != "MachineFilter" {
+	// Some triggers are not supported
+	supportedTriggers := []string{"MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule"}
+	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {
 		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
 		return nil
 	}
@@ -207,11 +213,22 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 		return nil
 	}
 
+	c.buildTargetTrigger(projectTrigger, stateless, projectId, projectName, dependencies)
+	c.buildScheduledTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
+
+	return nil
+}
+
+func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	if projectTrigger.Filter.FilterType != "MachineFilter" {
+		return
+	}
+
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
 	if c.GenerateImportScripts {
-		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, dependencies)
-		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, dependencies)
+		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, dependencies)
+		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, dependencies)
 	}
 
 	thisResource := data.ResourceDetails{}
@@ -266,7 +283,218 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 	}
 
 	dependencies.AddResource(thisResource)
-	return nil
+}
+
+func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	thisResource := data.ResourceDetails{}
+	thisResource.Name = projectTrigger.Name
+	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
+	thisResource.Id = projectTrigger.Id
+	thisResource.ResourceType = c.GetGroupResourceType(projectId)
+	thisResource.Lookup = "${" + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + ".id}"
+
+	if stateless {
+		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the trigger anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + "}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		onceDailySchedule, err := c.buildOnceDailySchedule(projectTrigger)
+
+		if err != nil {
+			return "", err
+		}
+
+		continuousDailySchedule, err := c.buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger)
+
+		if err != nil {
+			return "", err
+		}
+
+		daysPerMonthSchedule, err := c.buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger)
+
+		if err != nil {
+			return "", err
+		}
+
+		terraformResource := terraform.TerraformProjectScheduledTrigger{
+			Type:  octopusdeployProjectScheduledTrigger,
+			Name:  projectTriggerName,
+			Count: nil,
+			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
+			SpaceId:                   strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
+			Id:                        strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
+			ResourceName:              projectTrigger.Name,
+			ProjectId:                 dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			Description:               projectTrigger.Description,
+			Timezone:                  projectTrigger.Filter.Timezone,
+			IsDisabled:                projectTrigger.IsDisabled,
+			ChannelId:                 projectTrigger.Filter.ChannelId,
+			TenantIds:                 projectTrigger.Action.TenantIds,
+			DeployNewReleaseAction:    c.buildDeployNewReleaseAction(projectTrigger, dependencies),
+			OnceDailySchedule:         onceDailySchedule,
+			ContinuousDailySchedule:   continuousDailySchedule,
+			DaysPerMonthSchedule:      daysPerMonthSchedule,
+			CronExpressionSchedule:    c.buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger),
+			RunRunbookAction:          c.buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger, dependencies),
+			DeployLatestReleaseAction: c.buildDeployLatestReleaseAction(projectTrigger, dependencies),
+		}
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			// when importing a stateless project, the trigger is only created if the project does not exist
+			c.writeData(file, projectName, projectTriggerName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		if stateless {
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+}
+
+func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	supportedTypes := []string{"OnceDailySchedule", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule"}
+
+	if slices.Index(supportedTypes, projectTrigger.Filter.FilterType) == -1 {
+		return
+	}
+
+	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
+
+	if c.GenerateImportScripts {
+		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectScheduledTrigger, dependencies)
+		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectScheduledTrigger, dependencies)
+	}
+
+	c.buildScheduledTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
+}
+
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerContinuousDailySchedule, error) {
+	if projectTrigger.Filter.FilterType != "ContinuousDailySchedule" {
+		return nil, nil
+	}
+
+	runAfter, err := dateutil.RemoveTimezone(projectTrigger.Filter.RunAfter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	runUntil, err := dateutil.RemoveTimezone(projectTrigger.Filter.RunUntil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerContinuousDailySchedule{
+		Interval:       strutil.EmptyIfNil(projectTrigger.Filter.Interval),
+		RunAfter:       strutil.EmptyIfNil(runAfter),
+		RunUntil:       strutil.EmptyIfNil(runUntil),
+		HourInterval:   intutil.ZeroIfNil(projectTrigger.Filter.HourInterval),
+		MinuteInterval: intutil.ZeroIfNil(projectTrigger.Filter.MinuteInterval),
+		DaysOfWeek:     projectTrigger.Filter.DaysOfWeek,
+	}, nil
+}
+
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule, error) {
+	if projectTrigger.Filter.FilterType != "DaysPerMonthSchedule" {
+		return nil, nil
+	}
+
+	startTime, err := dateutil.RemoveTimezone(projectTrigger.Filter.StartTime)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule{
+		MonthlyScheduleType: strutil.EmptyIfNil(projectTrigger.Filter.MonthlyScheduleType),
+		StartTime:           strutil.EmptyIfNil(startTime),
+		DateOfMonth:         strutil.EmptyIfNil(projectTrigger.Filter.DateOfMonth),
+		DayNumberOfMonth:    strutil.EmptyIfNil(projectTrigger.Filter.DayNumberOfMonth),
+		DayOfWeek:           strutil.EmptyIfNil(projectTrigger.Filter.DayOfWeek),
+	}, nil
+}
+
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger octopus2.ProjectTrigger) *terraform.TerraformProjectScheduledTriggerCronExpressionSchedule {
+	if projectTrigger.Filter.FilterType != "CronExpressionSchedule" {
+		return nil
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerCronExpressionSchedule{
+		CronExpression: strutil.EmptyIfNil(projectTrigger.Filter.CronExpression),
+	}
+}
+
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerRunRunbookAction {
+	if projectTrigger.Action.ActionType != "RunRunbook" {
+		return nil
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerRunRunbookAction{
+		TargetEnvironmentIds: dependencies.GetResources("Environments", projectTrigger.Action.EnvironmentIds...),
+		RunbookId:            dependencies.GetResource("Runbooks", strutil.EmptyIfNil(projectTrigger.Action.RunbookId)),
+	}
+}
+
+func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaily, error) {
+	if projectTrigger.Filter.FilterType != "OnceDailySchedule" {
+		return nil, nil
+	}
+
+	dateTime, err := dateutil.RemoveTimezone(projectTrigger.Filter.StartTime)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerDaily{
+		StartTime:  strutil.EmptyIfNil(dateTime),
+		DaysOfWeek: projectTrigger.Filter.DaysOfWeek,
+	}, nil
+}
+
+func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction {
+	if projectTrigger.Action.ActionType != "DeployNewRelease" {
+		return nil
+	}
+
+	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
+
+	return &terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction{
+		DestinationEnvironmentId: environment,
+	}
+}
+
+func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction {
+	if projectTrigger.Action.ActionType != "DeployLatestRelease" {
+		return nil
+	}
+
+	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
+	sourceEnvironments := dependencies.GetResources("Environments", projectTrigger.Action.SourceEnvironmentIds...)
+
+	return &terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction{
+		SourceEnvironmentId:      sourceEnvironments[0],
+		DestinationEnvironmentId: environment,
+		ShouldRedeploy:           boolutil.FalseIfNil(projectTrigger.Action.ShouldRedeployWhenReleaseIsCurrent),
+	}
 }
 
 func (c ProjectTriggerConverter) GetGroupResourceType(projectId string) string {
