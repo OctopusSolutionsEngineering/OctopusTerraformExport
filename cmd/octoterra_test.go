@@ -5,7 +5,6 @@ import (
 	"fmt"
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
@@ -8685,23 +8684,31 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 			}
 
 			if strutil.EmptyIfNil(onceDailyExample[0].Action.EnvironmentId) != testEnvironment[0].Id {
-				return errors.New("The trigger \"Once Daily example\" must have an environment of Test")
+				return errors.New("the trigger \"Once Daily example\" must have an environment of Test")
 			}
 
 			if len(onceDailyExample[0].Action.SourceEnvironmentIds) != 0 {
-				return errors.New("The trigger \"Once Daily example\" must have no source environments")
-			}
-
-			if !boolutil.FalseIfNil(onceDailyExample[0].Action.ShouldRedeployWhenReleaseIsCurrent) {
-				return errors.New("The trigger \"Once Daily example\" must redeploy when release is current")
-			}
-
-			if strutil.EmptyIfNil(onceDailyExample[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
-				return errors.New("The trigger \"Once Daily example\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+				return errors.New("the trigger \"Once Daily example\" must have no source environments")
 			}
 
 			if onceDailyExample[0].Action.DestinationEnvironmentId != nil {
-				return errors.New("The trigger \"Once Daily example\" must have no destination environment")
+				return errors.New("the trigger \"Once Daily example\" must have no destination environment")
+			}
+
+			if strutil.EmptyIfNil(onceDailyExample[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Once Daily example\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if slices.Index(onceDailyExample[0].Filter.DaysOfWeek, "Monday") == -1 {
+				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Monday\"")
+			}
+
+			if slices.Index(onceDailyExample[0].Filter.DaysOfWeek, "Tuesday") == -1 {
+				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Tuesday\"")
+			}
+
+			if slices.Index(onceDailyExample[0].Filter.DaysOfWeek, "Wednesday") == -1 {
+				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Wednesday\"")
 			}
 
 			return nil
