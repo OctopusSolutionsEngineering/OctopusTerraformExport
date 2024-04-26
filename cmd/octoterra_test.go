@@ -8711,6 +8711,42 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 				return errors.New("the trigger \"Once Daily example\" must have a day of the week as \"Wednesday\"")
 			}
 
+			continuousExample := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Continuous"
+			})
+
+			if len(continuousExample) != 1 {
+				return errors.New("Space must have an trigger called \"Continuous\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(continuousExample[0].Description) != "This is a continuous daily schedule" {
+				return errors.New("the trigger \"Continuous\" must have a description \"This is a continuous daily schedule\"")
+			}
+
+			if strutil.EmptyIfNil(continuousExample[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Continuous\" must have an environment of Test")
+			}
+
+			if strutil.EmptyIfNil(continuousExample[0].Filter.Interval) != "OnceHourly" {
+				return errors.New("the trigger \"Continuous\" must have an interval of \"OnceHourly\"")
+			}
+
+			if intutil.ZeroIfNil(continuousExample[0].Filter.HourInterval) != 3 {
+				return errors.New("the trigger \"Continuous\" must have an hourly interval of 3")
+			}
+
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Monday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Monday\"")
+			}
+
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Tuesday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Tuesday\"")
+			}
+
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Wednesday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Wednesday\"")
+			}
+
 			return nil
 		})
 }

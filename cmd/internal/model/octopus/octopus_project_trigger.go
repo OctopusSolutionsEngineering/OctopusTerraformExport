@@ -1,12 +1,13 @@
 package octopus
 
 type ProjectTrigger struct {
-	Id         string
-	Name       string
-	ProjectId  string
-	IsDisabled bool
-	Filter     ProjectTriggerFilter
-	Action     ProjectTriggerAction
+	Id          string
+	Name        string
+	Description *string
+	ProjectId   string
+	IsDisabled  bool
+	Filter      ProjectTriggerFilter
+	Action      ProjectTriggerAction
 }
 
 type ProjectTriggerFilter struct {

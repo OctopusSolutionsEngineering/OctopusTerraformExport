@@ -7,6 +7,7 @@ type TerraformProjectScheduledTrigger struct {
 	Id                        *string                                                    `hcl:"id"`
 	SpaceId                   *string                                                    `hcl:"space_id"`
 	ResourceName              string                                                     `hcl:"name"`
+	Description               *string                                                    `hcl:"description"`
 	ProjectId                 string                                                     `hcl:"project_id"`
 	DeployNewReleaseAction    *TerraformProjectScheduledTriggerDeployNewReleaseAction    `hcl:"deploy_new_release_action,block"`
 	OnceDailySchedule         *TerraformProjectScheduledTriggerDaily                     `hcl:"once_daily_schedule,block"`

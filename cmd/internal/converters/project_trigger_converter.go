@@ -202,8 +202,8 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 }
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
-	// Scheduled triggers with types like "OnceDailySchedule" are not supported
-	supportedTriggers := []string{"MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule"}
+	// Some triggers are not supported
+	supportedTriggers := []string{"MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule"}
 	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {
 		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
 		return nil
@@ -331,6 +331,12 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			return "", nil
 		}
 
+		continuousDailySchedule, err := c.buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger)
+
+		if err != nil {
+			return "", err
+		}
+
 		terraformResource := terraform.TerraformProjectScheduledTrigger{
 			Type:  octopusdeployProjectScheduledTrigger,
 			Name:  projectTriggerName,
@@ -340,9 +346,10 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			Id:                        strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			ResourceName:              projectTrigger.Name,
 			ProjectId:                 dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			Description:               projectTrigger.Description,
 			DeployNewReleaseAction:    deployNewReleaseAction,
 			OnceDailySchedule:         onceDailySchedule,
-			ContinuousDailySchedule:   c.buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger),
+			ContinuousDailySchedule:   continuousDailySchedule,
 			CronExpressionSchedule:    c.buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger),
 			RunRunbookAction:          runBookAction,
 			DeployLatestReleaseAction: deployLatestReleaseAction,
@@ -370,7 +377,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 }
 
 func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
-	if projectTrigger.Filter.FilterType != "OnceDailySchedule" && projectTrigger.Filter.FilterType != "CronExpressionSchedule" && projectTrigger.Filter.FilterType != "DaysPerMonthSchedule" {
+	if projectTrigger.Filter.FilterType != "OnceDailySchedule" && projectTrigger.Filter.FilterType != "CronExpressionSchedule" && projectTrigger.Filter.FilterType != "DaysPerMonthSchedule" && projectTrigger.Filter.FilterType != "ContinuousDailySchedule" {
 		return
 	}
 
@@ -384,7 +391,7 @@ func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger o
 	c.buildScheduledTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
 }
 
-func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger octopus2.ProjectTrigger) *terraform.TerraformProjectScheduledTriggerContinuousDailySchedule {
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerContinuousDailySchedule, error) {
 	if projectTrigger.Filter.StartTime != nil || // A start time indicates a once_daily_schedule block
 		(projectTrigger.Filter.Interval == nil &&
 			projectTrigger.Filter.HourInterval == nil &&
@@ -392,17 +399,41 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuous
 			projectTrigger.Filter.RunAfter == nil &&
 			projectTrigger.Filter.RunUntil == nil &&
 			(projectTrigger.Filter.DaysOfWeek == nil || len(projectTrigger.Filter.DaysOfWeek) == 0)) {
-		return nil
+		return nil, nil
+	}
+
+	// The TF provider doesn't like the time formats returned by the Octopus API.
+	// We need to parse the date so we can serialize it in a format accepted by the TF provider.
+	var runAfter string = ""
+	if projectTrigger.Filter.RunAfter != nil {
+		runDate, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.RunAfter))
+
+		if err != nil {
+			return nil, err
+		}
+
+		runAfter = runDate.Format("2006-01-02T15:04:05")
+	}
+
+	var runUntil string = ""
+	if projectTrigger.Filter.RunAfter != nil {
+		runDate, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.RunUntil))
+
+		if err != nil {
+			return nil, err
+		}
+
+		runUntil = runDate.Format("2006-01-02T15:04:05")
 	}
 
 	return &terraform.TerraformProjectScheduledTriggerContinuousDailySchedule{
 		Interval:       strutil.EmptyIfNil(projectTrigger.Filter.Interval),
-		RunAfter:       strutil.EmptyIfNil(projectTrigger.Filter.RunAfter),
-		RunUntil:       strutil.EmptyIfNil(projectTrigger.Filter.RunUntil),
+		RunAfter:       runAfter,
+		RunUntil:       runUntil,
 		HourInterval:   intutil.ZeroIfNil(projectTrigger.Filter.HourInterval),
 		MinuteInterval: intutil.ZeroIfNil(projectTrigger.Filter.MinuteInterval),
 		DaysOfWeek:     projectTrigger.Filter.DaysOfWeek,
-	}
+	}, nil
 }
 
 func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger octopus2.ProjectTrigger) *terraform.TerraformProjectScheduledTriggerCronExpressionSchedule {
@@ -481,7 +512,7 @@ func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger o
 		return nil, true
 	}
 
-	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
+	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
 	sourceEnvironments := dependencies.GetResources("Environments", c.EnvironmentFilter.FilterEnvironmentScope(projectTrigger.Action.SourceEnvironmentIds)...)
 
 	// This means the resources that the target triggers were filtered out, so we need to exclude this trigger
