@@ -8816,6 +8816,50 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 				return errors.New("the trigger \"Runbook\" must have a deployment environment of Development")
 			}
 
+			dateOfMonth := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Date Of Month"
+			})
+
+			if len(dateOfMonth) != 1 {
+				return errors.New("space must have an trigger called \"Date Of Month\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(dateOfMonth[0].Filter.MonthlyScheduleType) != "DateOfMonth" {
+				return errors.New("the trigger \"Date Of Month\" must have a monlthy schedule type of \"DateOfMonth\"")
+			}
+
+			if strutil.EmptyIfNil(dateOfMonth[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Date Of Month\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if strutil.EmptyIfNil(dateOfMonth[0].Filter.DateOfMonth) != "1" {
+				return errors.New("the trigger \"Date Of Month\" must have a date of month of \"1\"")
+			}
+
+			dayOfMonth := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Day Of Month"
+			})
+
+			if len(dayOfMonth) != 1 {
+				return errors.New("space must have an trigger called \"Day Of Month\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.MonthlyScheduleType) != "DayOfMonth" {
+				return errors.New("the trigger \"Day Of Month\" must have a monlthy schedule type of \"DateOfMonth\"")
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Day Of Month\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.DayNumberOfMonth) != "1" {
+				return errors.New("the trigger \"Day Of Month\" must have a day number of month of \"1\"")
+			}
+
+			if strutil.EmptyIfNil(dayOfMonth[0].Filter.DayOfWeek) != "Monday" {
+				return errors.New("the trigger \"Day Of Month\" must have a day of week of \"Monday\"")
+			}
+
 			return nil
 		})
 }
