@@ -8665,7 +8665,7 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 			})
 
 			if len(project) != 1 {
-				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
@@ -8680,7 +8680,7 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 			})
 
 			if len(onceDailyExample) != 1 {
-				return errors.New("Space must have an trigger called \"Once Daily example\" in space " + recreatedSpaceId)
+				return errors.New("space must have an trigger called \"Once Daily example\" in space " + recreatedSpaceId)
 			}
 
 			if strutil.EmptyIfNil(onceDailyExample[0].Action.EnvironmentId) != testEnvironment[0].Id {
@@ -8745,6 +8745,34 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 
 			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Wednesday") == -1 {
 				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Wednesday\"")
+			}
+
+			deployLatest := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Deploy Latest"
+			})
+
+			if len(deployLatest) != 1 {
+				return errors.New("space must have an trigger called \"Deploy Latest\" in space " + recreatedSpaceId)
+			}
+
+			if len(deployLatest[0].Action.SourceEnvironmentIds) != 1 {
+				return errors.New("the trigger \"Deploy Latest\" must have 1 source environment")
+			}
+
+			deployNew := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Deploy New"
+			})
+
+			if len(deployNew) != 1 {
+				return errors.New("space must have an trigger called \"Deploy New\" in space " + recreatedSpaceId)
+			}
+
+			runbook := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) != 1 {
+				return errors.New("space must have an trigger called \"Runbook\" in space " + recreatedSpaceId)
 			}
 
 			return nil
