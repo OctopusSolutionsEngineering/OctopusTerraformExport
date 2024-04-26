@@ -788,10 +788,6 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 				Client:                &octopusClient,
 				LimitResourceCount:    args.LimitResourceCount,
 				GenerateImportScripts: args.GenerateImportScripts,
-				EnvironmentFilter: converters.EnvironmentFilter{
-					Client:                           &octopusClient,
-					ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
-				},
 			},
 			VariableSetConverter:      &variableSetConverter,
 			ChannelConverter:          channelConverter,
@@ -1666,10 +1662,6 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 			Client:                &octopusClient,
 			LimitResourceCount:    args.LimitResourceCount,
 			GenerateImportScripts: args.GenerateImportScripts,
-			EnvironmentFilter: converters.EnvironmentFilter{
-				Client:                           &octopusClient,
-				ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
-			},
 		},
 		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,

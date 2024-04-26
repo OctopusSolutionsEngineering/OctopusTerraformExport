@@ -5,6 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dateutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -15,7 +16,6 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
-	"time"
 )
 
 const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
@@ -26,7 +26,6 @@ type ProjectTriggerConverter struct {
 	LimitResourceCount    int
 	IncludeIds            bool
 	GenerateImportScripts bool
-	EnvironmentFilter     EnvironmentFilter
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
@@ -313,25 +312,13 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			return "", err
 		}
 
-		runBookAction, include := c.buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger, dependencies)
-
-		if !include {
-			return "", nil
-		}
-
-		deployNewReleaseAction, include := c.buildDeployNewReleaseAction(projectTrigger, dependencies)
-
-		if !include {
-			return "", nil
-		}
-
-		deployLatestReleaseAction, include := c.buildDeployLatestReleaseAction(projectTrigger, dependencies)
-
-		if !include {
-			return "", nil
-		}
-
 		continuousDailySchedule, err := c.buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger)
+
+		if err != nil {
+			return "", err
+		}
+
+		daysPerMonthSchedule, err := c.buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger)
 
 		if err != nil {
 			return "", err
@@ -351,13 +338,13 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			IsDisabled:                projectTrigger.IsDisabled,
 			ChannelId:                 projectTrigger.Filter.ChannelId,
 			TenantIds:                 projectTrigger.Action.TenantIds,
-			DeployNewReleaseAction:    deployNewReleaseAction,
+			DeployNewReleaseAction:    c.buildDeployNewReleaseAction(projectTrigger, dependencies),
 			OnceDailySchedule:         onceDailySchedule,
 			ContinuousDailySchedule:   continuousDailySchedule,
-			DaysPerMonthSchedule:      nil,
+			DaysPerMonthSchedule:      daysPerMonthSchedule,
 			CronExpressionSchedule:    c.buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger),
-			RunRunbookAction:          runBookAction,
-			DeployLatestReleaseAction: deployLatestReleaseAction,
+			RunRunbookAction:          c.buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger, dependencies),
+			DeployLatestReleaseAction: c.buildDeployLatestReleaseAction(projectTrigger, dependencies),
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -401,34 +388,22 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuous
 		return nil, nil
 	}
 
-	// The TF provider doesn't like the time formats returned by the Octopus API.
-	// We need to parse the date so we can serialize it in a format accepted by the TF provider.
-	var runAfter string = ""
-	if projectTrigger.Filter.RunAfter != nil {
-		runDate, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.RunAfter))
+	runAfter, err := dateutil.RemoveTimezone(projectTrigger.Filter.RunAfter)
 
-		if err != nil {
-			return nil, err
-		}
-
-		runAfter = runDate.Format("2006-01-02T15:04:05")
+	if err != nil {
+		return nil, err
 	}
 
-	var runUntil string = ""
-	if projectTrigger.Filter.RunAfter != nil {
-		runDate, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.RunUntil))
+	runUntil, err := dateutil.RemoveTimezone(projectTrigger.Filter.RunUntil)
 
-		if err != nil {
-			return nil, err
-		}
-
-		runUntil = runDate.Format("2006-01-02T15:04:05")
+	if err != nil {
+		return nil, err
 	}
 
 	return &terraform.TerraformProjectScheduledTriggerContinuousDailySchedule{
 		Interval:       strutil.EmptyIfNil(projectTrigger.Filter.Interval),
-		RunAfter:       runAfter,
-		RunUntil:       runUntil,
+		RunAfter:       strutil.EmptyIfNil(runAfter),
+		RunUntil:       strutil.EmptyIfNil(runUntil),
 		HourInterval:   intutil.ZeroIfNil(projectTrigger.Filter.HourInterval),
 		MinuteInterval: intutil.ZeroIfNil(projectTrigger.Filter.MinuteInterval),
 		DaysOfWeek:     projectTrigger.Filter.DaysOfWeek,
@@ -440,20 +415,15 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMon
 		return nil, nil
 	}
 
-	var startTime string = ""
-	if projectTrigger.Filter.StartTime != nil {
-		runDate, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.StartTime))
+	startTime, err := dateutil.RemoveTimezone(projectTrigger.Filter.StartTime)
 
-		if err != nil {
-			return nil, err
-		}
-
-		startTime = runDate.Format("2006-01-02T15:04:05")
+	if err != nil {
+		return nil, err
 	}
 
 	return &terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule{
 		MonthlyScheduleType: strutil.EmptyIfNil(projectTrigger.Filter.MonthlyScheduleType),
-		StartTime:           startTime,
+		StartTime:           strutil.EmptyIfNil(startTime),
 		DateOfMonth:         strutil.EmptyIfNil(projectTrigger.Filter.DateOfMonth),
 		DayNumberOfMonth:    strutil.EmptyIfNil(projectTrigger.Filter.DayNumberOfMonth),
 		DayOfWeek:           strutil.EmptyIfNil(projectTrigger.Filter.DayOfWeek),
@@ -471,23 +441,15 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpres
 	}
 }
 
-func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerRunRunbookAction, bool) {
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerRunRunbookAction {
 	if projectTrigger.Action.ActionType != "RunRunbook" {
-		return nil, true
-	}
-
-	environments := dependencies.GetResources("Environments", c.EnvironmentFilter.FilterEnvironmentScope(projectTrigger.Action.EnvironmentIds)...)
-	runbook := dependencies.GetResource("Runbooks", strutil.EmptyIfNil(projectTrigger.Action.RunbookId))
-
-	// This means the resources that the target triggers were filtered out, so we need to exclude this trigger
-	if runbook == "" || len(environments) == 0 {
-		return nil, false
+		return nil
 	}
 
 	return &terraform.TerraformProjectScheduledTriggerRunRunbookAction{
-		TargetEnvironmentIds: dependencies.GetResources("Environments", c.EnvironmentFilter.FilterEnvironmentScope(projectTrigger.Action.EnvironmentIds)...),
+		TargetEnvironmentIds: dependencies.GetResources("Environments", projectTrigger.Action.EnvironmentIds...),
 		RunbookId:            dependencies.GetResource("Runbooks", strutil.EmptyIfNil(projectTrigger.Action.RunbookId)),
-	}, true
+	}
 }
 
 func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaily, error) {
@@ -495,57 +457,43 @@ func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.
 		return nil, nil
 	}
 
-	// The TF provider doesn't like the time formats returned by the Octopus API.
-	// We need to parse the date so we can serialize it in a format accepted by the TF provider.
-	dateTime, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.StartTime))
+	dateTime, err := dateutil.RemoveTimezone(projectTrigger.Filter.StartTime)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// The TF provider responds with this error when using a ISO RFC3339 date format:
-	// Error: parsing time "2024-03-22T09:00:00Z": extra text: "Z"
-	// So we need to format the date without the timezone.
 	return &terraform.TerraformProjectScheduledTriggerDaily{
-		StartTime:  dateTime.Format("2006-01-02T15:04:05"),
+		StartTime:  strutil.EmptyIfNil(dateTime),
 		DaysOfWeek: projectTrigger.Filter.DaysOfWeek,
 	}, nil
 }
 
-func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction, bool) {
+func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction {
 	if projectTrigger.Action.ActionType != "DeployNewRelease" {
-		return nil, true
+		return nil
 	}
 
 	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
 
-	if environment == "" {
-		return nil, false
-	}
-
 	return &terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction{
 		DestinationEnvironmentId: environment,
-	}, true
+	}
 }
 
-func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction, bool) {
+func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction {
 	if projectTrigger.Action.ActionType != "DeployLatestRelease" {
-		return nil, true
+		return nil
 	}
 
 	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
-	sourceEnvironments := dependencies.GetResources("Environments", c.EnvironmentFilter.FilterEnvironmentScope(projectTrigger.Action.SourceEnvironmentIds)...)
-
-	// This means the resources that the target triggers were filtered out, so we need to exclude this trigger
-	if environment == "" || len(sourceEnvironments) == 0 {
-		return nil, false
-	}
+	sourceEnvironments := dependencies.GetResources("Environments", projectTrigger.Action.SourceEnvironmentIds...)
 
 	return &terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction{
 		SourceEnvironmentId:      sourceEnvironments[0],
 		DestinationEnvironmentId: environment,
 		ShouldRedeploy:           boolutil.FalseIfNil(projectTrigger.Action.ShouldRedeployWhenReleaseIsCurrent),
-	}, true
+	}
 }
 
 func (c ProjectTriggerConverter) GetGroupResourceType(projectId string) string {

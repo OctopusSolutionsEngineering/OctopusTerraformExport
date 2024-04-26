@@ -16,7 +16,7 @@ type EnvironmentFilter struct {
 	excludeVariableEnvironmentScopesIds []string
 }
 
-func (c EnvironmentFilter) convertEnvironmentsToIds() {
+func (c *EnvironmentFilter) convertEnvironmentsToIds() {
 	if c.ExcludeVariableEnvironmentScopes == nil {
 		c.excludeVariableEnvironmentScopesIds = []string{}
 	} else {
@@ -47,7 +47,7 @@ func (c EnvironmentFilter) convertEnvironmentsToIds() {
 	}
 }
 
-func (c EnvironmentFilter) FilterEnvironmentScope(envs []string) []string {
+func (c *EnvironmentFilter) FilterEnvironmentScope(envs []string) []string {
 	if envs == nil {
 		return []string{}
 	}
