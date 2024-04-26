@@ -369,7 +369,9 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 }
 
 func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
-	if projectTrigger.Filter.FilterType != "OnceDailySchedule" && projectTrigger.Filter.FilterType != "CronExpressionSchedule" && projectTrigger.Filter.FilterType != "DaysPerMonthSchedule" && projectTrigger.Filter.FilterType != "ContinuousDailySchedule" {
+	supportedTypes := []string{"OnceDailySchedule", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule"}
+
+	if slices.Index(supportedTypes, projectTrigger.Filter.FilterType) == -1 {
 		return
 	}
 
