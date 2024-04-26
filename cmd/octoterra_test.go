@@ -8743,8 +8743,8 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Tuesday\"")
 			}
 
-			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Wednesday") == -1 {
-				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Wednesday\"")
+			if slices.Index(continuousExample[0].Filter.DaysOfWeek, "Friday") == -1 {
+				return errors.New("the trigger \"Continuous\" must have a day of the week as \"Friday\"")
 			}
 
 			deployLatest := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
