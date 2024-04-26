@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -324,20 +325,27 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			return "", nil
 		}
 
+		deployLatestReleaseAction, include := c.buildDeployLatestReleaseAction(projectTrigger, dependencies)
+
+		if !include {
+			return "", nil
+		}
+
 		terraformResource := terraform.TerraformProjectScheduledTrigger{
 			Type:  octopusdeployProjectScheduledTrigger,
 			Name:  projectTriggerName,
 			Count: nil,
 			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
-			SpaceId:                 strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
-			Id:                      strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
-			ResourceName:            projectTrigger.Name,
-			ProjectId:               dependencies.GetResource("Projects", projectTrigger.ProjectId),
-			DeployNewReleaseAction:  deployNewReleaseAction,
-			OnceDailySchedule:       onceDailySchedule,
-			ContinuousDailySchedule: c.buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger),
-			CronExpressionSchedule:  c.buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger),
-			RunRunbookAction:        runBookAction,
+			SpaceId:                   strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
+			Id:                        strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
+			ResourceName:              projectTrigger.Name,
+			ProjectId:                 dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			DeployNewReleaseAction:    deployNewReleaseAction,
+			OnceDailySchedule:         onceDailySchedule,
+			ContinuousDailySchedule:   c.buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger),
+			CronExpressionSchedule:    c.buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger),
+			RunRunbookAction:          runBookAction,
+			DeployLatestReleaseAction: deployLatestReleaseAction,
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -452,12 +460,11 @@ func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.
 }
 
 func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction, bool) {
-	if strutil.NilIfEmptyPointer(projectTrigger.Action.DestinationEnvironmentId) == nil &&
-		strutil.NilIfEmptyPointer(projectTrigger.Action.EnvironmentId) == nil {
+	if strutil.NilIfEmptyPointer(projectTrigger.Action.EnvironmentId) == nil {
 		return nil, true
 	}
 
-	environment := dependencies.GetResource("Environments", strutil.DefaultIfEmptyOrNil(projectTrigger.Action.DestinationEnvironmentId, strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId)))
+	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
 
 	if environment == "" {
 		return nil, false
@@ -465,6 +472,27 @@ func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octo
 
 	return &terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction{
 		DestinationEnvironmentId: environment,
+	}, true
+}
+
+func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction, bool) {
+	if strutil.NilIfEmptyPointer(projectTrigger.Action.DestinationEnvironmentId) == nil &&
+		(projectTrigger.Action.SourceEnvironmentIds == nil || len(projectTrigger.Action.SourceEnvironmentIds) == 0) {
+		return nil, true
+	}
+
+	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
+	sourceEnvironments := dependencies.GetResources("Environments", c.EnvironmentFilter.FilterEnvironmentScope(projectTrigger.Action.SourceEnvironmentIds)...)
+
+	// This means the resources that the target triggers were filtered out, so we need to exclude this trigger
+	if environment == "" || len(sourceEnvironments) == 0 {
+		return nil, false
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction{
+		SourceEnvironmentId:      sourceEnvironments[0],
+		DestinationEnvironmentId: environment,
+		ShouldRedeploy:           boolutil.FalseIfNil(projectTrigger.Action.ShouldRedeployWhenReleaseIsCurrent),
 	}, true
 }
 

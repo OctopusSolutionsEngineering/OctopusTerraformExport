@@ -5,6 +5,7 @@ import (
 	"fmt"
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
@@ -8647,6 +8648,17 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 				return err
 			}
 
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
+
+			if err != nil {
+				return err
+			}
+
+			testEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Test"
+			})
+
 			resourceName := "Test"
 
 			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
@@ -8655,6 +8667,41 @@ func TestProjectFeedAndScheduledTriggerExport(t *testing.T) {
 
 			if len(project) != 1 {
 				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			onceDailyExample := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Once Daily example"
+			})
+
+			if len(onceDailyExample) != 1 {
+				return errors.New("Space must have an trigger called \"Once Daily example\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(onceDailyExample[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("The trigger \"Once Daily example\" must have an environment of Test")
+			}
+
+			if len(onceDailyExample[0].Action.SourceEnvironmentIds) != 0 {
+				return errors.New("The trigger \"Once Daily example\" must have no source environments")
+			}
+
+			if !boolutil.FalseIfNil(onceDailyExample[0].Action.ShouldRedeployWhenReleaseIsCurrent) {
+				return errors.New("The trigger \"Once Daily example\" must redeploy when release is current")
+			}
+
+			if strutil.EmptyIfNil(onceDailyExample[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("The trigger \"Once Daily example\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if onceDailyExample[0].Action.DestinationEnvironmentId != nil {
+				return errors.New("The trigger \"Once Daily example\" must have no destination environment")
 			}
 
 			return nil

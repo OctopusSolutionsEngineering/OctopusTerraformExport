@@ -1,22 +1,29 @@
 package terraform
 
 type TerraformProjectScheduledTrigger struct {
-	Type                    string                                                   `hcl:"type,label"`
-	Name                    string                                                   `hcl:"name,label"`
-	Count                   *string                                                  `hcl:"count"`
-	Id                      *string                                                  `hcl:"id"`
-	SpaceId                 *string                                                  `hcl:"space_id"`
-	ResourceName            string                                                   `hcl:"name"`
-	ProjectId               string                                                   `hcl:"project_id"`
-	DeployNewReleaseAction  *TerraformProjectScheduledTriggerDeployNewReleaseAction  `hcl:"deploy_new_release_action,block"`
-	OnceDailySchedule       *TerraformProjectScheduledTriggerDaily                   `hcl:"once_daily_schedule,block"`
-	ContinuousDailySchedule *TerraformProjectScheduledTriggerContinuousDailySchedule `hcl:"continuous_daily_schedule,block"`
-	CronExpressionSchedule  *TerraformProjectScheduledTriggerCronExpressionSchedule  `hcl:"cron_expression_schedule,block"`
-	RunRunbookAction        *TerraformProjectScheduledTriggerRunRunbookAction        `hcl:"run_runbook_action,block"`
+	Type                      string                                                     `hcl:"type,label"`
+	Name                      string                                                     `hcl:"name,label"`
+	Count                     *string                                                    `hcl:"count"`
+	Id                        *string                                                    `hcl:"id"`
+	SpaceId                   *string                                                    `hcl:"space_id"`
+	ResourceName              string                                                     `hcl:"name"`
+	ProjectId                 string                                                     `hcl:"project_id"`
+	DeployNewReleaseAction    *TerraformProjectScheduledTriggerDeployNewReleaseAction    `hcl:"deploy_new_release_action,block"`
+	OnceDailySchedule         *TerraformProjectScheduledTriggerDaily                     `hcl:"once_daily_schedule,block"`
+	ContinuousDailySchedule   *TerraformProjectScheduledTriggerContinuousDailySchedule   `hcl:"continuous_daily_schedule,block"`
+	CronExpressionSchedule    *TerraformProjectScheduledTriggerCronExpressionSchedule    `hcl:"cron_expression_schedule,block"`
+	RunRunbookAction          *TerraformProjectScheduledTriggerRunRunbookAction          `hcl:"run_runbook_action,block"`
+	DeployLatestReleaseAction *TerraformProjectScheduledTriggerDeployLatestReleaseAction `hcl:"deploy_latest_release_action,block"`
 }
 
 type TerraformProjectScheduledTriggerDeployNewReleaseAction struct {
 	DestinationEnvironmentId string `hcl:"destination_environment_id"`
+}
+
+type TerraformProjectScheduledTriggerDeployLatestReleaseAction struct {
+	SourceEnvironmentId      string `hcl:"source_environment_id"`
+	DestinationEnvironmentId string `hcl:"destination_environment_id"`
+	ShouldRedeploy           bool   `hcl:"should_redeploy"`
 }
 
 type TerraformProjectScheduledTriggerDaily struct {
