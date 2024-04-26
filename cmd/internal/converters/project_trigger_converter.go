@@ -347,9 +347,14 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			ResourceName:              projectTrigger.Name,
 			ProjectId:                 dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			Description:               projectTrigger.Description,
+			Timezone:                  projectTrigger.Filter.Timezone,
+			IsDisabled:                projectTrigger.IsDisabled,
+			ChannelId:                 projectTrigger.Filter.ChannelId,
+			TenantIds:                 projectTrigger.Action.TenantIds,
 			DeployNewReleaseAction:    deployNewReleaseAction,
 			OnceDailySchedule:         onceDailySchedule,
 			ContinuousDailySchedule:   continuousDailySchedule,
+			DaysPerMonthSchedule:      nil,
 			CronExpressionSchedule:    c.buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger),
 			RunRunbookAction:          runBookAction,
 			DeployLatestReleaseAction: deployLatestReleaseAction,
@@ -392,13 +397,7 @@ func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger o
 }
 
 func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerContinuousDailySchedule, error) {
-	if projectTrigger.Filter.StartTime != nil || // A start time indicates a once_daily_schedule block
-		(projectTrigger.Filter.Interval == nil &&
-			projectTrigger.Filter.HourInterval == nil &&
-			projectTrigger.Filter.MinuteInterval == nil &&
-			projectTrigger.Filter.RunAfter == nil &&
-			projectTrigger.Filter.RunUntil == nil &&
-			(projectTrigger.Filter.DaysOfWeek == nil || len(projectTrigger.Filter.DaysOfWeek) == 0)) {
+	if projectTrigger.Filter.FilterType != "ContinuousDailySchedule" {
 		return nil, nil
 	}
 
@@ -436,8 +435,34 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuous
 	}, nil
 }
 
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule, error) {
+	if projectTrigger.Filter.FilterType != "FilterType" {
+		return nil, nil
+	}
+
+	var startTime string = ""
+	if projectTrigger.Filter.StartTime != nil {
+		runDate, err := time.Parse("2006-01-02T15:04:05.000Z07:00", strutil.EmptyIfNil(projectTrigger.Filter.StartTime))
+
+		if err != nil {
+			return nil, err
+		}
+
+		startTime = runDate.Format("2006-01-02T15:04:05")
+	}
+
+	return &terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule{
+		MonthlyScheduleType: strutil.EmptyIfNil(projectTrigger.Filter.MonthlyScheduleType),
+		StartTime:           startTime,
+		DateOfMonth:         strutil.EmptyIfNil(projectTrigger.Filter.DateOfMonth),
+		DayNumberOfMonth:    strutil.EmptyIfNil(projectTrigger.Filter.DayNumberOfMonth),
+		DayOfWeek:           strutil.EmptyIfNil(projectTrigger.Filter.DayOfWeek),
+		DaysOfWeek:          projectTrigger.Filter.DaysOfWeek,
+	}, nil
+}
+
 func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger octopus2.ProjectTrigger) *terraform.TerraformProjectScheduledTriggerCronExpressionSchedule {
-	if projectTrigger.Filter.CronExpression == nil {
+	if projectTrigger.Filter.FilterType != "CronExpressionSchedule" {
 		return nil
 	}
 
@@ -447,8 +472,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpres
 }
 
 func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerRunRunbookAction, bool) {
-	if strutil.NilIfEmptyPointer(projectTrigger.Action.RunbookId) == nil &&
-		(projectTrigger.Action.EnvironmentIds == nil || len(projectTrigger.Action.EnvironmentIds) == 0) {
+	if projectTrigger.Action.ActionType != "RunRunbook" {
 		return nil, true
 	}
 
@@ -467,9 +491,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbook
 }
 
 func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaily, error) {
-	if strutil.NilIfEmptyPointer(projectTrigger.Filter.Interval) != nil || // An interval indicates a continuous_daily_schedule block
-		(strutil.NilIfEmptyPointer(projectTrigger.Filter.StartTime) == nil &&
-			(projectTrigger.Filter.DaysOfWeek == nil || len(projectTrigger.Filter.DaysOfWeek) == 0)) {
+	if projectTrigger.Filter.FilterType != "OnceDailySchedule" {
 		return nil, nil
 	}
 
@@ -491,7 +513,7 @@ func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.
 }
 
 func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction, bool) {
-	if strutil.NilIfEmptyPointer(projectTrigger.Action.EnvironmentId) == nil {
+	if projectTrigger.Action.ActionType != "DeployNewRelease" {
 		return nil, true
 	}
 
@@ -507,8 +529,7 @@ func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octo
 }
 
 func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction, bool) {
-	if strutil.NilIfEmptyPointer(projectTrigger.Action.DestinationEnvironmentId) == nil &&
-		(projectTrigger.Action.SourceEnvironmentIds == nil || len(projectTrigger.Action.SourceEnvironmentIds) == 0) {
+	if projectTrigger.Action.ActionType != "DeployLatestRelease" {
 		return nil, true
 	}
 
