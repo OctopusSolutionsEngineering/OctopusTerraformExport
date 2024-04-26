@@ -8808,11 +8808,11 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 				return errors.New("the trigger \"Runbook\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
 			}
 
-			if slices.Index(continuousExample[0].Action.EnvironmentIds, testEnvironment[0].Id) == -1 {
+			if slices.Index(runbook[0].Action.EnvironmentIds, testEnvironment[0].Id) == -1 {
 				return errors.New("the trigger \"Runbook\" must have a deployment environment of Test")
 			}
 
-			if slices.Index(continuousExample[0].Action.EnvironmentIds, developmentEnvironment[0].Id) == -1 {
+			if slices.Index(runbook[0].Action.EnvironmentIds, developmentEnvironment[0].Id) == -1 {
 				return errors.New("the trigger \"Runbook\" must have a deployment environment of Development")
 			}
 
