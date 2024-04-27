@@ -100,3 +100,21 @@ resource "octopusdeploy_project_scheduled_trigger" "runbook_example" {
     cron_expression = "0 0 06 * * Mon-Fri"
   }
 }
+
+resource "octopusdeploy_project_scheduled_trigger" "timezone_example" {
+  name        = "Time Zone Example"
+  description = "This is a continuous daily schedule"
+  project_id  = octopusdeploy_project.deploy_frontend_project.id
+  space_id = var.octopus_space_id
+  timezone = "E. Australia Standard Time"
+  deploy_new_release_action {
+    destination_environment_id = octopusdeploy_environment.test_environment.id
+  }
+  continuous_daily_schedule {
+    interval      = "OnceHourly"
+    hour_interval = 3
+    run_after     = "2024-03-22T09:00:00"
+    run_until     = "2024-03-29T13:00:00"
+    days_of_week  = ["Monday", "Tuesday", "Friday"]
+  }
+}

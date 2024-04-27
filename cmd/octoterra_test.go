@@ -8845,7 +8845,7 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 			}
 
 			if strutil.EmptyIfNil(dayOfMonth[0].Filter.MonthlyScheduleType) != "DayOfMonth" {
-				return errors.New("the trigger \"Day Of Month\" must have a monlthy schedule type of \"DateOfMonth\"")
+				return errors.New("the trigger \"Day Of Month\" must have a monthly schedule type of \"DateOfMonth\"")
 			}
 
 			if strutil.EmptyIfNil(dayOfMonth[0].Filter.StartTime) != "2024-03-22T09:00:00.000Z" {
@@ -8858,6 +8858,27 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 
 			if strutil.EmptyIfNil(dayOfMonth[0].Filter.DayOfWeek) != "Monday" {
 				return errors.New("the trigger \"Day Of Month\" must have a day of week of \"Monday\"")
+			}
+
+			timeZone := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Time Zone Example"
+			})
+
+			if len(timeZone) != 1 {
+				return errors.New("space must have an trigger called \"Time Zone Example\" in space " + recreatedSpaceId)
+			}
+
+			// At an API level, start and end times are stored in UTC. This is not entirely accurate,
+			// as what this value represents is actually a time with no timezone. The timezone is
+			// defined by the separate timezone field. I assume what happens here is the timezone
+			// component of this UTC time is stripped and the timezone from the separate field
+			// is appended.
+			if strutil.EmptyIfNil(timeZone[0].Filter.RunAfter) != "2024-03-22T09:00:00.000Z" {
+				return errors.New("the trigger \"Time Zone Example\" must have a start time of \"2024-03-22T09:00:00.000Z\"")
+			}
+
+			if strutil.EmptyIfNil(timeZone[0].Filter.Timezone) != "E. Australia Standard Time" {
+				return errors.New("the trigger \"Time Zone Example\" must have a timezone of \"E. Australia Standard Time\"")
 			}
 
 			return nil
