@@ -8625,7 +8625,7 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 		})
 }
 
-// TestProjectScheduledTriggerExport verifies that a project can be reimported with feed and scheduled triggers
+// TestProjectScheduledTriggerExport verifies that a project can be reimported with scheduled triggers
 func TestProjectScheduledTriggerExport(t *testing.T) {
 	exportSpaceImportAndTest(
 		t,
@@ -8879,6 +8879,81 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 
 			if strutil.EmptyIfNil(timeZone[0].Filter.Timezone) != "E. Australia Standard Time" {
 				return errors.New("the trigger \"Time Zone Example\" must have a timezone of \"E. Australia Standard Time\"")
+			}
+
+			return nil
+		})
+}
+
+// TestProjectFeedTriggerExport verifies that a project can be reimported with feed triggers
+func TestProjectFeedTriggerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/73-projectfeedtrigger/space_creation",
+		"../test/terraform/73-projectfeedtrigger/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
+
+			if len(project) != 1 {
+				return errors.New("space must have an project called \"My feed trigger\" in space " + recreatedSpaceId)
+			}
+
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			feedTrigger := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "My feed trigger"
+			})
+
+			if len(feedTrigger) != 1 {
+				return errors.New("space must have an trigger called \"My feed trigger\" in space " + recreatedSpaceId)
+			}
+
+			if feedTrigger[0].Filter.FilterType != "FeedFilter" {
+				return errors.New("the trigger must have a feed type of \"FeedFilter\"")
+			}
+
+			if len(feedTrigger[0].Filter.Packages) != 1 {
+				return errors.New("the trigger must have 1 package reference")
+			}
+
+			if feedTrigger[0].Filter.Packages[0].DeploymentAction != "Get MySQL Host" {
+				return errors.New("the trigger must reference the action \"Get MySQL Host\"")
+			}
+
+			if feedTrigger[0].Filter.Packages[0].PackageReference != "package1" {
+				return errors.New("the trigger must reference the package \"package1\"")
 			}
 
 			return nil
