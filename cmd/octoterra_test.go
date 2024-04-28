@@ -8908,13 +8908,6 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 				return err
 			}
 
-			environments := octopus.GeneralCollection[octopus.Environment]{}
-			err = octopusClient.GetAllResources("Environments", &environments)
-
-			if err != nil {
-				return err
-			}
-
 			resourceName := "Test"
 
 			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
@@ -8927,6 +8920,13 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 
 			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
 			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			channels := octopus.GeneralCollection[octopus.Channel]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Channels", &channels)
 
 			if err != nil {
 				return err
@@ -8954,6 +8954,18 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 
 			if feedTrigger[0].Filter.Packages[0].PackageReference != "package1" {
 				return errors.New("the trigger must reference the package \"package1\"")
+			}
+
+			testChannel := lo.Filter(channels.Items, func(item octopus.Channel, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testChannel) != 1 {
+				return errors.New("project must have an channel called \"Test\"")
+			}
+
+			if strutil.EmptyIfNil(feedTrigger[0].Action.ChannelId) != testChannel[0].Id {
+				return errors.New("the trigger must reference the channel \"Test\"")
 			}
 
 			return nil

@@ -337,8 +337,8 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			Description:               projectTrigger.Description,
 			Timezone:                  projectTrigger.Filter.Timezone,
 			IsDisabled:                projectTrigger.IsDisabled,
-			ChannelId:                 projectTrigger.Filter.ChannelId,
-			TenantIds:                 projectTrigger.Action.TenantIds,
+			ChannelId:                 strutil.NilIfEmpty(dependencies.GetResource("Channels", strutil.EmptyIfNil(projectTrigger.Filter.ChannelId))),
+			TenantIds:                 dependencies.GetResources("Tenants", projectTrigger.Action.TenantIds...),
 			DeployNewReleaseAction:    c.buildDeployNewReleaseAction(projectTrigger, dependencies),
 			OnceDailySchedule:         onceDailySchedule,
 			ContinuousDailySchedule:   continuousDailySchedule,
@@ -418,10 +418,11 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.Projec
 			Count: nil,
 			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
 			SpaceId:      strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
+			ProjectId:    dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			ResourceName: projectTrigger.Name,
 			IsDisabled:   strutil.NilIfFalse(projectTrigger.IsDisabled),
-			ChannelId:    projectTrigger.Filter.ChannelId,
+			ChannelId:    strutil.NilIfEmpty(dependencies.GetResource("Channels", strutil.EmptyIfNil(projectTrigger.Action.ChannelId))),
 			Package:      c.buildTriggerPackages(projectTrigger),
 		}
 		file := hclwrite.NewEmptyFile()
@@ -436,7 +437,7 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.Projec
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))+"]")
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {
