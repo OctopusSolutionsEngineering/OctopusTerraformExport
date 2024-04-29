@@ -22,25 +22,33 @@ type TerraformStep struct {
 }
 
 type TerraformAction struct {
-	ActionType                    *string             `hcl:"action_type"`
-	Name                          *string             `hcl:"name"`
-	Notes                         *string             `hcl:"notes"`
-	Condition                     *string             `hcl:"condition"`
-	RunOnServer                   bool                `hcl:"run_on_server"`
-	IsDisabled                    bool                `hcl:"is_disabled"`
-	CanBeUsedForProjectVersioning bool                `hcl:"can_be_used_for_project_versioning"`
-	IsRequired                    bool                `hcl:"is_required"`
-	WorkerPoolId                  *string             `hcl:"worker_pool_id"`
-	WorkerPoolVariable            *string             `hcl:"worker_pool_variable"`
-	Properties                    map[string]string   `hcl:"properties"`
-	Container                     *TerraformContainer `hcl:"container,block"`
-	Environments                  []string            `hcl:"environments"`
-	ExcludedEnvironments          []string            `hcl:"excluded_environments"`
-	Channels                      []string            `hcl:"channels"`
-	TenantTags                    []string            `hcl:"tenant_tags"`
-	Package                       []TerraformPackage  `hcl:"package,block"`
-	PrimaryPackage                *TerraformPackage   `hcl:"primary_package,block"`
-	Features                      []string            `hcl:"features"`
+	ActionType                    *string                  `hcl:"action_type"`
+	Name                          *string                  `hcl:"name"`
+	Notes                         *string                  `hcl:"notes"`
+	Condition                     *string                  `hcl:"condition"`
+	RunOnServer                   bool                     `hcl:"run_on_server"`
+	IsDisabled                    bool                     `hcl:"is_disabled"`
+	CanBeUsedForProjectVersioning bool                     `hcl:"can_be_used_for_project_versioning"`
+	IsRequired                    bool                     `hcl:"is_required"`
+	WorkerPoolId                  *string                  `hcl:"worker_pool_id"`
+	WorkerPoolVariable            *string                  `hcl:"worker_pool_variable"`
+	Properties                    map[string]string        `hcl:"properties"`
+	Container                     *TerraformContainer      `hcl:"container,block"`
+	Environments                  []string                 `hcl:"environments"`
+	ExcludedEnvironments          []string                 `hcl:"excluded_environments"`
+	Channels                      []string                 `hcl:"channels"`
+	TenantTags                    []string                 `hcl:"tenant_tags"`
+	Package                       []TerraformPackage       `hcl:"package,block"`
+	PrimaryPackage                *TerraformPackage        `hcl:"primary_package,block"`
+	Features                      []string                 `hcl:"features"`
+	GitDependencies               []TerraformGitDependency `hcl:"git_dependency,block"`
+}
+
+type TerraformGitDependency struct {
+	RepositoryUri     *string `hcl:"repository_uri"`
+	DefaultBranch     *string `hcl:"default_branch"`
+	GitCredentialType *string `hcl:"git_credential_type"`
+	GitCredentialID   *string `hcl:"git_credential_id"`
 }
 
 type TerraformContainer struct {
