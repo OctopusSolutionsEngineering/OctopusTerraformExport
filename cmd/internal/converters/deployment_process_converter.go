@@ -269,6 +269,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 					RunOnServer:                   c.OctopusActionProcessor.GetRunOnServer(a.Properties),
 					Properties:                    nil,
 					Features:                      c.OctopusActionProcessor.GetFeatures(a.Properties),
+					GitDependencies:               c.OctopusActionProcessor.ConvertGitDependencies(a.GitDependencies, dependencies),
 				}
 
 				for _, p := range a.Packages {

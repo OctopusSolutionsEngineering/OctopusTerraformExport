@@ -160,6 +160,19 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 	return nil
 }
 
+func (c OctopusActionProcessor) ConvertGitDependencies(gitDependencies []octopus.GitDependency, dependencies *data.ResourceDetailsCollection) []terraform.TerraformGitDependency {
+	result := make([]terraform.TerraformGitDependency, len(gitDependencies))
+	for i, gitDependency := range gitDependencies {
+		result[i] = terraform.TerraformGitDependency{
+			RepositoryUri:     gitDependency.RepositoryUri,
+			DefaultBranch:     gitDependency.DefaultBranch,
+			GitCredentialType: gitDependency.GitCredentialType,
+			GitCredentialID:   dependencies.GetResourcePointer("Git-Credentials", gitDependency.GitCredentialId),
+		}
+	}
+	return result
+}
+
 func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	properties = c.replaceAccountIds(properties, dependencies)
 	properties = c.replaceFeedIds(properties, dependencies)

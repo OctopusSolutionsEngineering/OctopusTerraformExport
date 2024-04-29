@@ -35,6 +35,17 @@ type Action struct {
 	Condition                     *string
 	Properties                    map[string]any
 	Inputs                        map[string]any
+	GitDependencies               []GitDependency
+}
+
+type GitDependency struct {
+	Name                         *string
+	RepositoryUri                *string
+	DefaultBranch                *string
+	GitCredentialType            *string
+	FilePathFilters              []string
+	GitCredentialId              *string
+	StepPackageInputsReferenceId *string
 }
 
 type Container struct {
