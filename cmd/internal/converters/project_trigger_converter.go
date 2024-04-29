@@ -585,6 +585,11 @@ func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger o
 	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
 	sourceEnvironments := dependencies.GetResources("Environments", projectTrigger.Action.SourceEnvironmentIds...)
 
+	if len(sourceEnvironments) == 0 {
+		zap.L().Info("The source environment was not resolved for trigger " + projectTrigger.Name + ". The resulting trigger has no source environment ID and will not deploy correctly.")
+		return nil
+	}
+
 	return &terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction{
 		SourceEnvironmentId:      sourceEnvironments[0],
 		DestinationEnvironmentId: environment,
