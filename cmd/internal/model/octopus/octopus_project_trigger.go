@@ -18,7 +18,6 @@ type ProjectTriggerFilter struct {
 	EventCategories     []string
 	DaysOfWeek          []string
 	Timezone            *string
-	ChannelId           *string
 	Id                  *string
 	LastModifiedOn      *string
 	LastModifiedBy      *string

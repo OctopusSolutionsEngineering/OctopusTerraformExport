@@ -343,7 +343,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			Description:               projectTrigger.Description,
 			Timezone:                  projectTrigger.Filter.Timezone,
 			IsDisabled:                projectTrigger.IsDisabled,
-			ChannelId:                 strutil.NilIfEmpty(dependencies.GetResource("Channels", strutil.EmptyIfNil(projectTrigger.Filter.ChannelId))),
+			ChannelId:                 strutil.NilIfEmpty(dependencies.GetResource("Channels", strutil.EmptyIfNil(projectTrigger.Action.ChannelId))),
 			TenantIds:                 dependencies.GetResources("Tenants", projectTrigger.Action.TenantIds...),
 			DeployNewReleaseAction:    c.buildDeployNewReleaseAction(projectTrigger, dependencies),
 			OnceDailySchedule:         onceDailySchedule,
