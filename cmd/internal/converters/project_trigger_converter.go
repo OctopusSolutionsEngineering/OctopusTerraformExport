@@ -17,6 +17,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
+	"strings"
 )
 
 const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
@@ -28,9 +29,10 @@ type ProjectTriggerConverter struct {
 	LimitResourceCount    int
 	IncludeIds            bool
 	GenerateImportScripts bool
+	EnvironmentConverter  ConverterAndLookupWithStatelessById
 }
 
-func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus2.GeneralCollection[octopus2.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -40,7 +42,7 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project Trigger: " + resource.Id)
-		err = c.toHcl(resource, false, false, projectId, projectName, dependencies)
+		err = c.toHcl(resource, recursive, lookup, false, projectId, projectName, dependencies)
 		if err != nil {
 			return err
 		}
@@ -202,7 +204,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 	})
 }
 
-func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _ bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, recursive bool, lookup bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	// Some triggers are not supported
 	supportedTriggers := []string{"MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter"}
 	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {
@@ -213,6 +215,10 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, _
 	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
 		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + projectTrigger.Id)
 		return nil
+	}
+
+	if err := c.exportEnvironments(projectTrigger, recursive, lookup, stateless, dependencies); err != nil {
+		return err
 	}
 
 	c.buildTargetTrigger(projectTrigger, stateless, projectId, projectName, dependencies)
@@ -603,4 +609,34 @@ func (c ProjectTriggerConverter) GetGroupResourceType(projectId string) string {
 
 func (c ProjectTriggerConverter) GetResourceType() string {
 	return "ProjectTriggers"
+}
+
+func (c ProjectTriggerConverter) exportEnvironments(projectTrigger octopus2.ProjectTrigger, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	environments := []string{}
+	environments = append(environments, projectTrigger.Filter.EnvironmentIds...)
+	environments = append(environments, projectTrigger.Action.SourceEnvironmentIds...)
+	environments = append(environments, strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
+	environments = lo.Filter(environments, func(environment string, index int) bool {
+		return strings.TrimSpace(environment) != ""
+	})
+
+	for _, env := range environments {
+		if recursive {
+			if stateless {
+				if err := c.EnvironmentConverter.ToHclStatelessById(env, dependencies); err != nil {
+					return err
+				}
+			} else {
+				if err := c.EnvironmentConverter.ToHclById(env, dependencies); err != nil {
+					return err
+				}
+			}
+		} else if lookup {
+			if err := c.EnvironmentConverter.ToHclLookupById(env, dependencies); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

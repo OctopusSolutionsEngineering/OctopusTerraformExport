@@ -515,7 +515,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
-			Client: &client,
+			Client:               &client,
+			EnvironmentConverter: environmentConverter,
 		},
 		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,

@@ -8885,12 +8885,17 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 		})
 }
 
-// TestProjectFeedTriggerExport verifies that a project can be reimported with feed triggers
-func TestProjectFeedTriggerExport(t *testing.T) {
-	exportSpaceImportAndTest(
+// TestSingleProjectScheduledTriggerExport verifies that a single project can be reimported with scheduled triggers.
+// We defer to the TestProjectScheduledTriggerExport test to verify that triggers are created with the correct values.
+// This test is focused on ensuring environments are recursivly exported.
+func TestSingleProjectScheduledTriggerExport(t *testing.T) {
+	exportProjectImportAndTest(
 		t,
-		"../test/terraform/73-projectfeedtrigger/space_creation",
-		"../test/terraform/73-projectfeedtrigger/space_population",
+		"Test",
+		"../test/terraform/72-projecttrigger/space_creation",
+		"../test/terraform/72-projecttrigger/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
 		[]string{},
 		[]string{
 			"-var=feed_docker_password=whatever",
@@ -8908,6 +8913,29 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 				return err
 			}
 
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
+
+			if err != nil {
+				return err
+			}
+
+			testEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testEnvironment) != 1 {
+				return errors.New("space must have an environment called \"Test\" in space " + recreatedSpaceId)
+			}
+
+			developmentEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Development"
+			})
+
+			if len(developmentEnvironment) != 1 {
+				return errors.New("space must have an environment called \"Development\" in space " + recreatedSpaceId)
+			}
+
 			resourceName := "Test"
 
 			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
@@ -8915,7 +8943,7 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 			})
 
 			if len(project) != 1 {
-				return errors.New("space must have an project called \"My feed trigger\" in space " + recreatedSpaceId)
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
@@ -8925,47 +8953,152 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 				return err
 			}
 
-			channels := octopus.GeneralCollection[octopus.Channel]{}
-			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Channels", &channels)
+			deployNew := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Deploy New"
+			})
+
+			if len(deployNew) != 1 {
+				return errors.New("space must have an trigger called \"Deploy New\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(deployNew[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Deploy New\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if strutil.EmptyIfNil(deployNew[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Deploy New\" must have an environment of Test")
+			}
+
+			runbook := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) != 1 {
+				return errors.New("space must have an trigger called \"Runbook\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(runbook[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Runbook\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if slices.Index(runbook[0].Action.EnvironmentIds, testEnvironment[0].Id) == -1 {
+				return errors.New("the trigger \"Runbook\" must have a deployment environment of Test")
+			}
+
+			if slices.Index(runbook[0].Action.EnvironmentIds, developmentEnvironment[0].Id) == -1 {
+				return errors.New("the trigger \"Runbook\" must have a deployment environment of Development")
+			}
+
+			return nil
+		})
+}
+
+// TestSingleProjectLookupScheduledTriggerExport verifies that a project with lookups to external resources
+// can be reimported with feed triggers. We defer to the TestProjectScheduledTriggerExport test to verify
+// that triggers are created with the correct values. This test is focused on ensuring environments are
+// correctly resolved with lookups.
+func TestSingleProjectLookupScheduledTriggerExport(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/72-projecttriggerlookup/space_creation",
+		"../test/terraform/72-projecttriggerlookup/space_prepopulation",
+		"../test/terraform/72-projecttriggerlookup/space_population",
+		"../test/terraform/72-projecttriggerlookup/space_creation",
+		"../test/terraform/72-projecttriggerlookup/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ProjectName: []string{"Test"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
 
 			if err != nil {
 				return err
 			}
 
-			feedTrigger := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
-				return item.Name == "My feed trigger"
-			})
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
 
-			if len(feedTrigger) != 1 {
-				return errors.New("space must have an trigger called \"My feed trigger\" in space " + recreatedSpaceId)
+			if err != nil {
+				return err
 			}
 
-			if feedTrigger[0].Filter.FilterType != "FeedFilter" {
-				return errors.New("the trigger must have a feed type of \"FeedFilter\"")
-			}
-
-			if len(feedTrigger[0].Filter.Packages) != 1 {
-				return errors.New("the trigger must have 1 package reference")
-			}
-
-			if feedTrigger[0].Filter.Packages[0].DeploymentAction != "Get MySQL Host" {
-				return errors.New("the trigger must reference the action \"Get MySQL Host\"")
-			}
-
-			if feedTrigger[0].Filter.Packages[0].PackageReference != "package1" {
-				return errors.New("the trigger must reference the package \"package1\"")
-			}
-
-			testChannel := lo.Filter(channels.Items, func(item octopus.Channel, index int) bool {
+			testEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
 				return item.Name == "Test"
 			})
 
-			if len(testChannel) != 1 {
-				return errors.New("project must have an channel called \"Test\"")
+			if len(testEnvironment) != 1 {
+				return errors.New("space must have an environment called \"Test\" in space " + recreatedSpaceId)
 			}
 
-			if strutil.EmptyIfNil(feedTrigger[0].Action.ChannelId) != testChannel[0].Id {
-				return errors.New("the trigger must reference the channel \"Test\"")
+			developmentEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Development"
+			})
+
+			if len(developmentEnvironment) != 1 {
+				return errors.New("space must have an environment called \"Development\" in space " + recreatedSpaceId)
+			}
+
+			resourceName := "Test"
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
+
+			if len(project) != 1 {
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			deployNew := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Deploy New"
+			})
+
+			if len(deployNew) != 1 {
+				return errors.New("space must have an trigger called \"Deploy New\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(deployNew[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Deploy New\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if strutil.EmptyIfNil(deployNew[0].Action.EnvironmentId) != testEnvironment[0].Id {
+				return errors.New("the trigger \"Deploy New\" must have an environment of Test")
+			}
+
+			runbook := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) != 1 {
+				return errors.New("space must have an trigger called \"Runbook\" in space " + recreatedSpaceId)
+			}
+
+			if strutil.EmptyIfNil(runbook[0].Filter.CronExpression) != "0 0 06 * * Mon-Fri" {
+				return errors.New("the trigger \"Runbook\" must have a cron expression of \"0 0 06 * * Mon-Fri\"")
+			}
+
+			if slices.Index(runbook[0].Action.EnvironmentIds, testEnvironment[0].Id) == -1 {
+				return errors.New("the trigger \"Runbook\" must have a deployment environment of Test")
+			}
+
+			if slices.Index(runbook[0].Action.EnvironmentIds, developmentEnvironment[0].Id) == -1 {
+				return errors.New("the trigger \"Runbook\" must have a deployment environment of Development")
 			}
 
 			return nil

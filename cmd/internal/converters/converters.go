@@ -139,7 +139,7 @@ type ConverterAndLookupByIdWithNameAndParent interface {
 
 // ConverterByProjectIdWithName converts objects based on their relationship to a project, and uses the supplied name for the Terraform resource
 type ConverterByProjectIdWithName interface {
-	ToHclByProjectIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByProjectIdAndName(id string, name string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterByProjectId converts objects based on their relationship to a project
