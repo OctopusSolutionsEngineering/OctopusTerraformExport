@@ -8971,3 +8971,72 @@ func TestProjectFeedTriggerExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestGitDependenciesExport verifies that a project can be reimported with steps that have git dependencies
+func TestGitDependenciesExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/74-gitdependencies/space_creation",
+		"../test/terraform/74-gitdependencies/space_population",
+		[]string{},
+		[]string{
+			"-var=gitcredential_test=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					deploymentProcess := octopus.DeploymentProcess{}
+					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
+
+					if err != nil {
+						return err
+					}
+
+					gitCreds := octopus.GeneralCollection[octopus.GitCredentials]{}
+					err = octopusClient.GetAllResources("Git-Credentials", &gitCreds)
+
+					if err != nil {
+						return err
+					}
+
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].GitDependencies[0].RepositoryUri) != "https://github.com/OctopusDeploy/OctopusClients.git" {
+						return errors.New("step must have git credentials url of \"https://github.com/OctopusDeploy/OctopusClients.git\"")
+					}
+
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].GitDependencies[0].GitCredentialType) != "Library" {
+						return errors.New("step must have git credentials type of \"Library\"")
+					}
+
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].GitDependencies[0].DefaultBranch) != "main" {
+						return errors.New("step must have git credentials branch of \"main\"")
+					}
+
+					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].GitDependencies[0].GitCredentialId) != gitCreds.Items[0].Id {
+						return errors.New("step must have git credentials ID referencing the git credentials resource")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
