@@ -527,9 +527,9 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMon
 	return &terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule{
 		MonthlyScheduleType: strutil.EmptyIfNil(projectTrigger.Filter.MonthlyScheduleType),
 		StartTime:           strutil.EmptyIfNil(startTime),
-		DateOfMonth:         strutil.EmptyIfNil(projectTrigger.Filter.DateOfMonth),
-		DayNumberOfMonth:    strutil.EmptyIfNil(projectTrigger.Filter.DayNumberOfMonth),
-		DayOfWeek:           strutil.EmptyIfNil(projectTrigger.Filter.DayOfWeek),
+		DateOfMonth:         projectTrigger.Filter.DateOfMonth,
+		DayNumberOfMonth:    projectTrigger.Filter.DayNumberOfMonth,
+		DayOfWeek:           projectTrigger.Filter.DayOfWeek,
 	}, nil
 }
 

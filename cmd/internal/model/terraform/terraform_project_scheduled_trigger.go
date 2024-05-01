@@ -38,11 +38,11 @@ type TerraformProjectScheduledTriggerDaily struct {
 }
 
 type TerraformProjectScheduledTriggerDaysPerMonthSchedule struct {
-	MonthlyScheduleType string `hcl:"monthly_schedule_type"`
-	StartTime           string `hcl:"start_time"`
-	DateOfMonth         string `hcl:"date_of_month"`
-	DayNumberOfMonth    string `hcl:"day_number_of_month"`
-	DayOfWeek           string `hcl:"day_of_week"`
+	MonthlyScheduleType string  `hcl:"monthly_schedule_type"`
+	StartTime           string  `hcl:"start_time"`
+	DateOfMonth         *string `hcl:"date_of_month"`
+	DayNumberOfMonth    *string `hcl:"day_number_of_month"`
+	DayOfWeek           *string `hcl:"day_of_week"`
 }
 
 type TerraformProjectScheduledTriggerRunRunbookAction struct {
