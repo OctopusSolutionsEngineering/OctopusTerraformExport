@@ -343,7 +343,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 			Description:               projectTrigger.Description,
 			Timezone:                  projectTrigger.Filter.Timezone,
 			IsDisabled:                projectTrigger.IsDisabled,
-			ChannelId:                 dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId),
+			ChannelId:                 strutil.NilIfEmptyPointer(dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId)),
 			TenantIds:                 dependencies.GetResources("Tenants", projectTrigger.Action.TenantIds...),
 			DeployNewReleaseAction:    c.buildDeployNewReleaseAction(projectTrigger, dependencies),
 			OnceDailySchedule:         onceDailySchedule,
@@ -428,7 +428,7 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.Projec
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			ResourceName: projectTrigger.Name,
 			IsDisabled:   strutil.NilIfFalse(projectTrigger.IsDisabled),
-			ChannelId:    dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId),
+			ChannelId:    strutil.NilIfEmptyPointer(dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId)),
 			Package:      c.buildTriggerPackages(projectTrigger),
 		}
 		file := hclwrite.NewEmptyFile()
