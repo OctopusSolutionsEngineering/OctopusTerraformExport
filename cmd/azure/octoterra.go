@@ -27,6 +27,10 @@ type AzureFunctionRequest struct {
 }
 
 func octoterraHandler(w http.ResponseWriter, r *http.Request) {
+	// Allow the more sensitive values to be passed as headers
+	apiKey := r.Header.Get("X-Octopus-ApiKey")
+	url := r.Header.Get("X-Octopus-Url")
+
 	respBytes, err := io.ReadAll(r.Body)
 
 	if err != nil {
@@ -66,7 +70,17 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	extension := filepath.Ext(filename)
 	filenameWithoutExtension := filename[0 : len(filename)-len(extension)]
 
-	webArgs, _, err := args.ParseArgs([]string{"-configFile", filenameWithoutExtension, "-configPath", filepath.Dir(file.Name())})
+	commandLineArgs := []string{"-configFile", filenameWithoutExtension, "-configPath", filepath.Dir(file.Name())}
+
+	if apiKey != "" {
+		commandLineArgs = append(commandLineArgs, "-apiKey", apiKey)
+	}
+
+	if url != "" {
+		commandLineArgs = append(commandLineArgs, "-url", url)
+	}
+
+	webArgs, _, err := args.ParseArgs(commandLineArgs)
 
 	if err != nil {
 		handleError(err, w)
