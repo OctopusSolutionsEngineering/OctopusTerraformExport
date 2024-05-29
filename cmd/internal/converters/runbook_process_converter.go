@@ -182,16 +182,17 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 					IsRequired:                    a.IsRequired,
 					WorkerPoolId:                  strutil.InputIfEnabled(a.WorkerPoolVariable == nil, workerPool),
 					Container:                     c.OctopusActionProcessor.ConvertContainer(a.Container, dependencies),
-					WorkerPoolVariable:            a.WorkerPoolVariable,
-					Environments:                  dependencies.GetResources("Environments", a.Environments...),
-					ExcludedEnvironments:          a.ExcludedEnvironments,
-					Channels:                      a.Channels,
-					TenantTags:                    c.Excluder.FilteredTenantTags(a.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
-					Package:                       []terraform.TerraformPackage{},
-					Condition:                     a.Condition,
-					RunOnServer:                   c.OctopusActionProcessor.GetRunOnServer(a.Properties),
-					Properties:                    nil,
-					Features:                      c.OctopusActionProcessor.GetFeatures(a.Properties),
+					// an empty string caused problems, so we need to return nil here for an empty string
+					WorkerPoolVariable:   strutil.NilIfEmptyPointer(a.WorkerPoolVariable),
+					Environments:         dependencies.GetResources("Environments", a.Environments...),
+					ExcludedEnvironments: a.ExcludedEnvironments,
+					Channels:             a.Channels,
+					TenantTags:           c.Excluder.FilteredTenantTags(a.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+					Package:              []terraform.TerraformPackage{},
+					Condition:            a.Condition,
+					RunOnServer:          c.OctopusActionProcessor.GetRunOnServer(a.Properties),
+					Properties:           nil,
+					Features:             c.OctopusActionProcessor.GetFeatures(a.Properties),
 				}
 
 				for _, p := range a.Packages {
