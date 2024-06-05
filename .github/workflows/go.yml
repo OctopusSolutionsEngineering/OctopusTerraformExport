@@ -107,6 +107,10 @@ jobs:
           # This avoids errors like
           # Error response from daemon: No such container: d7447146fc04ed2253f9f73644b59ca856c255c603099414e6f50b800719b05b: creating network reaper failed: failed to create network
           TESTCONTAINERS_RYUK_DISABLED: true
+
+          # Override these values to test a specific container and version
+          #OCTOTESTIMAGEURL: octopusdeploy/linuxoctopus
+          #OCTOTESTVERSION: 2024:3:2249
         run: |
           sudo apt install gotestsum
           gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0 ./...
