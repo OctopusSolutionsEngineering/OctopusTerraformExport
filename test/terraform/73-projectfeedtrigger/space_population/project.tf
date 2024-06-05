@@ -51,13 +51,13 @@ resource "octopusdeploy_deployment_process" "test" {
 
   step {
     condition           = "Success"
-    name                = "Get MySQL Host"
+    name                = "step1"
     package_requirement = "LetOctopusDecide"
     start_trigger       = "StartAfterPrevious"
 
     action {
       action_type                        = "Octopus.KubernetesRunScript"
-      name                               = "Get MySQL Host"
+      name                               = "step1"
       condition                          = "Success"
       run_on_server                      = true
       is_disabled                        = false

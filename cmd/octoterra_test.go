@@ -9101,6 +9101,75 @@ func TestSingleProjectLookupScheduledTriggerExport(t *testing.T) {
 		})
 }
 
+func TestSingleProjectFeedTriggerExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/73-projectfeedtrigger/space_creation",
+		"../test/terraform/73-projectfeedtrigger/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
+
+			if err != nil {
+				return err
+			}
+
+			developmentEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Development"
+			})
+
+			if len(developmentEnvironment) != 1 {
+				return errors.New("space must have an environment called \"Development\" in space " + recreatedSpaceId)
+			}
+
+			resourceName := "Test"
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
+
+			if len(project) != 1 {
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			deployNew := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "My feed trigger"
+			})
+
+			if len(deployNew) != 1 {
+				return errors.New("space must have an trigger called \"My feed trigger\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
 // TestGitDependenciesExport verifies that a project can be reimported with steps that have git dependencies
 func TestGitDependenciesExport(t *testing.T) {
 	exportSpaceImportAndTest(
