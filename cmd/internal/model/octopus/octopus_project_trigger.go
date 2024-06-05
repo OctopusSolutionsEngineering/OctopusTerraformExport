@@ -36,8 +36,8 @@ type ProjectTriggerFilter struct {
 }
 
 type ProjectTriggerFilterPackage struct {
-	DeploymentAction string
-	PackageReference string
+	DeploymentActionSlug string
+	PackageReference     string
 }
 
 type ProjectTriggerAction struct {

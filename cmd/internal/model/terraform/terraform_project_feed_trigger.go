@@ -14,6 +14,6 @@ type TerraformProjectFeedTrigger struct {
 }
 
 type TerraformProjectFeedTriggerPackage struct {
-	DeploymentAction string `hcl:"deployment_action_slug"`
-	PackageReference string `hcl:"package_reference"`
+	DeploymentActionSlug string `hcl:"deployment_action_slug"`
+	PackageReference     string `hcl:"package_reference"`
 }

@@ -463,8 +463,8 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.Projec
 func (c ProjectTriggerConverter) buildTriggerPackages(projectTrigger octopus2.ProjectTrigger) []terraform.TerraformProjectFeedTriggerPackage {
 	return lo.Map(projectTrigger.Filter.Packages, func(packageReference octopus2.ProjectTriggerFilterPackage, index int) terraform.TerraformProjectFeedTriggerPackage {
 		return terraform.TerraformProjectFeedTriggerPackage{
-			DeploymentAction: packageReference.DeploymentAction,
-			PackageReference: packageReference.PackageReference,
+			DeploymentActionSlug: packageReference.DeploymentActionSlug,
+			PackageReference:     packageReference.PackageReference,
 		}
 	})
 }
