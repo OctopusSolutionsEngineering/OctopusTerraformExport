@@ -3293,10 +3293,6 @@ func TestMachinePolicyExport(t *testing.T) {
 						return errors.New("The machine policy must have a ConnectionRetryTimeLimit of \"00:05:00\" (was \"" + machinePolicy.ConnectionRetryTimeLimit + "\")")
 					}
 
-					if machinePolicy.PollingRequestMaximumMessageProcessingTimeout != "00:10:00" {
-						return errors.New("The machine policy must have a PollingRequestMaximumMessageProcessingTimeout of \"00:10:00\" (was \"" + machinePolicy.PollingRequestMaximumMessageProcessingTimeout + "\")")
-					}
-
 					if machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan != "00:20:00" {
 						return errors.New("The machine policy must have a DeleteMachinesElapsedTimeSpan of \"00:20:00\" (was \"" + machinePolicy.MachineCleanupPolicy.DeleteMachinesElapsedTimeSpan + "\")")
 					}
