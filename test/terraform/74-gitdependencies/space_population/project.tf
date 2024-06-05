@@ -77,6 +77,6 @@ resource "octopusdeploy_deployment_process" "test" {
     }
 
     properties   = {}
-    target_roles = []
+    target_roles = ["k8s"]
   }
 }
