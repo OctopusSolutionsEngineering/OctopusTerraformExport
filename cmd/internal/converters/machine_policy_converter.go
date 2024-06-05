@@ -324,9 +324,10 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, _ boo
 					HealthCheckType:         machinePolicy.MachineHealthCheckPolicy.HealthCheckType,
 				},
 				TerraformMachineUpdatePolicy: terraform.TerraformMachineUpdatePolicy{
-					CalamariUpdateBehavior:  machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior,
-					TentacleUpdateAccountId: machinePolicy.MachineUpdatePolicy.TentacleUpdateAccountId,
-					TentacleUpdateBehavior:  machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior,
+					CalamariUpdateBehavior:        machinePolicy.MachineUpdatePolicy.CalamariUpdateBehavior,
+					TentacleUpdateAccountId:       machinePolicy.MachineUpdatePolicy.TentacleUpdateAccountId,
+					TentacleUpdateBehavior:        machinePolicy.MachineUpdatePolicy.TentacleUpdateBehavior,
+					KubernetesAgentUpdateBehavior: machinePolicy.MachineUpdatePolicy.KubernetesAgentUpdateBehavior,
 				},
 			}
 			file := hclwrite.NewEmptyFile()

@@ -51,7 +51,8 @@ type TerraformPowershellHealthCheckPolicy struct {
 }
 
 type TerraformMachineUpdatePolicy struct {
-	CalamariUpdateBehavior  *string `hcl:"calamari_update_behavior"`
-	TentacleUpdateAccountId *string `hcl:"tentacle_update_account_id"`
-	TentacleUpdateBehavior  *string `hcl:"tentacle_update_behavior"`
+	CalamariUpdateBehavior        *string `hcl:"calamari_update_behavior"`
+	TentacleUpdateAccountId       *string `hcl:"tentacle_update_account_id"`
+	TentacleUpdateBehavior        *string `hcl:"tentacle_update_behavior"`
+	KubernetesAgentUpdateBehavior *string `hcl:"kubernetes_agent_update_behavior"`
 }

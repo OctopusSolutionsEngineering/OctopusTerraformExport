@@ -47,7 +47,8 @@ type MachineCleanupPolicy struct {
 }
 
 type MachineUpdatePolicy struct {
-	CalamariUpdateBehavior  *string
-	TentacleUpdateBehavior  *string
-	TentacleUpdateAccountId *string
+	CalamariUpdateBehavior        *string
+	TentacleUpdateBehavior        *string
+	TentacleUpdateAccountId       *string
+	KubernetesAgentUpdateBehavior *string
 }
