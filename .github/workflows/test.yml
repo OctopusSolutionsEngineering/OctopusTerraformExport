@@ -55,6 +55,9 @@ jobs:
           OCTOTESTDEFAULTSPACEID: Spaces-2
           GOMAXPROCS: 2
           TESTCONTAINERS_RYUK_DISABLED: true
+          # Override these values to test a specific container and version.
+          OCTOTESTIMAGEURL: octopusdeploy/linuxoctopus
+          OCTOTESTVERSION: 2024.3.2249
       - name: Archive code coverage results
         if: always()
         uses: actions/upload-artifact@v3
