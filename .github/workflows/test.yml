@@ -57,7 +57,7 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
           # Override these values to test a specific container and version.
           OCTOTESTIMAGEURL: octopusdeploy/linuxoctopus
-          OCTOTESTVERSION: 2024.3.2249
+          OCTOTESTVERSION: 2024.3.3434
       - name: Archive code coverage results
         if: always()
         uses: actions/upload-artifact@v3
