@@ -1115,7 +1115,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 	}
 
 	// Export the tenants
-	err = c.TenantConverter.ToHclByProjectId(project.Id, dependencies)
+	err = c.TenantConverter.ToHclLookupByProjectId(project.Id, dependencies)
 
 	if err != nil {
 		return err
