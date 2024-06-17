@@ -21,6 +21,7 @@ type OctopusActionProcessor struct {
 	GitCredentialsConverter ConverterAndLookupWithStatelessById
 	DetachProjectTemplates  bool
 	WorkerPoolProcessor     OctopusWorkerPoolProcessor
+	StepTemplateConverter   ConverterById
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
@@ -178,6 +179,7 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 	properties = c.replaceFeedIds(properties, dependencies)
 	properties = c.replaceProjectIds(properties, dependencies)
 	properties = c.replaceGitCredentialIds(properties, dependencies)
+	properties = c.replaceStepTemplates(properties, dependencies)
 	return properties
 }
 
@@ -326,6 +328,20 @@ func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]st
 	return properties
 }
 
+// replaceStepTemplates looks for any property value that is a valid step template and replaces it with a resource ID lookup.
+// This also looks in the property values, for instance when you export a JSON blob that has feed references.
+func (c OctopusActionProcessor) replaceStepTemplates(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
+	for k, v := range properties {
+		for _, v2 := range dependencies.GetAllResource("StepTemplates") {
+			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
+				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
+			}
+		}
+	}
+
+	return properties
+}
+
 func (c OctopusActionProcessor) GetFeatures(properties map[string]any) []string {
 	f, ok := properties["Octopus.Action.EnabledFeatures"]
 	if ok {
@@ -361,6 +377,27 @@ func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, 
 
 				if err != nil {
 					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c OctopusActionProcessor) ExportStepTemplates(steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+	if c.DetachProjectTemplates {
+		return nil
+	}
+
+	for _, step := range steps {
+		for _, action := range step.Actions {
+			for key, value := range action.Properties {
+				if key == "Octopus.Action.Template.Id" {
+					valueString := fmt.Sprint(value)
+					if err := c.StepTemplateConverter.ToHclById(valueString, dependencies); err != nil {
+						return err
+					}
 				}
 			}
 		}

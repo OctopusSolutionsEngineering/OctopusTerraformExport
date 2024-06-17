@@ -174,6 +174,8 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 
 	dummySecretGenerator := converters.DummySecret{}
 
+	stepTemplateConverter := converters.StepTemplateConverter{}
+
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.GetBackend(),
 		ProviderVersion:          args.ProviderVersion,
@@ -705,6 +707,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 				DetachProjectTemplates:  args.DetachProjectTemplates,
 				WorkerPoolProcessor:     workerPoolProcessor,
 				GitCredentialsConverter: gitCredentialsConverter,
+				StepTemplateConverter:   stepTemplateConverter,
 			},
 			IgnoreProjectChanges:       false,
 			WorkerPoolProcessor:        workerPoolProcessor,
@@ -768,6 +771,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 					DetachProjectTemplates:  args.DetachProjectTemplates,
 					WorkerPoolProcessor:     workerPoolProcessor,
 					GitCredentialsConverter: gitCredentialsConverter,
+					StepTemplateConverter:   stepTemplateConverter,
 				},
 				IgnoreProjectChanges:       false,
 				WorkerPoolProcessor:        workerPoolProcessor,
@@ -857,6 +861,8 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	dummySecretGenerator := converters.DummySecret{}
 
 	dependencies := data.ResourceDetailsCollection{}
+
+	stepTemplateConverter := converters.StepTemplateConverter{}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,
@@ -1012,6 +1018,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 				DetachProjectTemplates:  args.DetachProjectTemplates,
 				WorkerPoolProcessor:     workerPoolProcessor,
 				GitCredentialsConverter: gitCredentialsConverter,
+				StepTemplateConverter:   stepTemplateConverter,
 			},
 			IgnoreProjectChanges:       args.IgnoreProjectChanges,
 			WorkerPoolProcessor:        workerPoolProcessor,
@@ -1059,6 +1066,8 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	dummySecretGenerator := converters.DummySecret{}
 
 	dependencies := data.ResourceDetailsCollection{}
+
+	stepTemplateConverter := converters.StepTemplateConverter{}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,
@@ -1598,6 +1607,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 				DetachProjectTemplates:  args.DetachProjectTemplates,
 				WorkerPoolProcessor:     workerPoolProcessor,
 				GitCredentialsConverter: gitCredentialsConverter,
+				StepTemplateConverter:   stepTemplateConverter,
 			},
 			IgnoreProjectChanges:       args.IgnoreProjectChanges,
 			WorkerPoolProcessor:        workerPoolProcessor,
@@ -1643,6 +1653,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 				DetachProjectTemplates:  args.DetachProjectTemplates,
 				WorkerPoolProcessor:     workerPoolProcessor,
 				GitCredentialsConverter: gitCredentialsConverter,
+				StepTemplateConverter:   stepTemplateConverter,
 			},
 			IgnoreProjectChanges:       args.IgnoreProjectChanges,
 			WorkerPoolProcessor:        workerPoolProcessor,

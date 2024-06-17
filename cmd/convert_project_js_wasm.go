@@ -188,6 +188,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 
 	converters.TerraformProviderGenerator{}.ToHcl("space_population", true, &dependencies)
 
+	stepTemplateConverter := StepTemplateConverter{}
+
 	environmentConverter := converters.EnvironmentConverter{
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
@@ -470,6 +472,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: true,
 				WorkerPoolProcessor:    workerPoolProcessor,
+				StepTemplateConverter:  stepTemplateConverter,
 			},
 			IgnoreProjectChanges:       false,
 			WorkerPoolProcessor:        workerPoolProcessor,
@@ -504,6 +507,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 				EnvironmentConverter:   environmentConverter,
 				DetachProjectTemplates: true,
 				WorkerPoolProcessor:    workerPoolProcessor,
+				StepTemplateConverter:  stepTemplateConverter,
 			},
 			IgnoreProjectChanges:       false,
 			WorkerPoolProcessor:        workerPoolProcessor,

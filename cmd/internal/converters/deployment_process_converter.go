@@ -392,6 +392,12 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 		return err
 	}
 
+	// Export step templates
+	err = c.OctopusActionProcessor.ExportStepTemplates(resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
