@@ -346,7 +346,7 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 			Description:                environment.Description,
 			AllowDynamicInfrastructure: environment.AllowDynamicInfrastructure,
 			UseGuidedFailure:           environment.UseGuidedFailure,
-			SortOrder:                  0,
+			SortOrder:                  environment.SortOrder,
 			JiraExtensionSettings: &terraform.TerraformJiraExtensionSettings{
 				EnvironmentType: c.getJiraExtensionSettings(environment),
 			},
