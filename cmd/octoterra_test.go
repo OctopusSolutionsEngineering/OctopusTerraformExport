@@ -534,6 +534,8 @@ func exportImportAndTest(
 
 			if deleted {
 				t.Log("Deleted space Spaces-" + fmt.Sprint(x))
+			} else {
+				t.Log("Space Spaces-" + fmt.Sprint(x) + " not found")
 			}
 		}
 
