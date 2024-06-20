@@ -593,7 +593,7 @@ func exportImportAndTest(
 			t.Log("Existing spaces")
 			if spacesErr == nil {
 				for _, space := range spaces {
-					t.Log("ID: " + space.Id + " Name: " + space.Name)
+					t.Log("ID: " + space.Id + " Name: " + space.Name + " Description: " + strutil.EmptyIfNil(space.Description))
 				}
 			} else {
 				t.Log(spacesErr.Error())
@@ -646,8 +646,9 @@ func TestSpaceExport(t *testing.T) {
 				return errors.New("New space must have the name \"Test3\"")
 			}
 
-			if *space.Description != "My test space" {
-				return errors.New("New space must have the name \"My test space\"")
+			// The description is overridden by the test framework to reflect the name of the test
+			if *space.Description != "TestSpaceExport" {
+				return errors.New("New space must have the name \"TestSpaceExport\"")
 			}
 
 			if space.IsDefault {
