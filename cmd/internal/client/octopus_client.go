@@ -21,7 +21,7 @@ type OctopusClient interface {
 	GetSpaceBaseUrl() (string, error)
 	GetSpace(resources *octopus2.Space) error
 	GetSpaces() ([]octopus2.Space, error)
-	EnsureSpaceDeleted(spaceId string) (funcErr error)
+	EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error)
 	GetResource(resourceType string, resources any) (exists bool, funcErr error)
 	GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
 	GetResourceNameById(resourceType string, id string) (name string, funcErr error)
@@ -329,7 +329,7 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) 
 	return collection.Items, nil
 }
 
-func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
+func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
 	// Get the details of the space
@@ -378,11 +378,11 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	}()
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if space == nil {
-		return nil
+		return false, nil
 	}
 
 	// disable task processing
@@ -426,7 +426,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 	}()
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Delete the space
@@ -462,7 +462,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (funcErr error) {
 		return nil
 	}()
 
-	return err
+	return true, err
 }
 
 func (o *OctopusApiClient) bodyToString(body io.Reader) (string, error) {

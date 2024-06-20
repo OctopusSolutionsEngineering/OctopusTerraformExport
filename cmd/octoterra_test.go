@@ -527,9 +527,13 @@ func exportImportAndTest(
 		// To catch these scenarios, we delete a bunch of spaces before running tests again to create a "clean" Octopus instance.
 		octopusClient := createClient(container, "")
 		for x := 2; x < 10; x++ {
-			err := octopusClient.EnsureSpaceDeleted("Spaces-" + fmt.Sprint(x))
+			deleted, err := octopusClient.EnsureSpaceDeleted("Spaces-" + fmt.Sprint(x))
 			if err != nil {
 				t.Log(err.Error())
+			}
+
+			if deleted {
+				t.Log("Deleted space Spaces-" + fmt.Sprint(x))
 			}
 		}
 
