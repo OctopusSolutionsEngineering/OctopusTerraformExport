@@ -523,21 +523,7 @@ func exportImportAndTest(
 
 	testFramework := test.OctopusContainerTest{}
 	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) (funcErr error) {
-		// There appears to be a bug in test containers where containers are reused instead of being recreated under heavy load.
-		// To catch these scenarios, we delete a bunch of spaces before running tests again to create a "clean" Octopus instance.
 		octopusClient := createClient(container, "")
-		for x := 2; x < 10; x++ {
-			deleted, err := octopusClient.EnsureSpaceDeleted("Spaces-" + fmt.Sprint(x))
-			if err != nil {
-				t.Log(err.Error())
-			}
-
-			if deleted {
-				t.Log("Deleted space Spaces-" + fmt.Sprint(x))
-			} else {
-				t.Log("Space Spaces-" + fmt.Sprint(x) + " not found")
-			}
-		}
 
 		// Act
 		newSpaceId, err := testFramework.ActWithCustomPrePopulatedSpace(
