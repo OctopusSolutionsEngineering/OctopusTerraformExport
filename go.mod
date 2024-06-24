@@ -6,7 +6,7 @@ toolchain go1.21.3
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.40.2
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240620212851-73804308f80f
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240622231527-24df7b6eaa48
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
@@ -97,7 +97,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/mod v0.16.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
