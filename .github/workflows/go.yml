@@ -297,7 +297,7 @@ jobs:
         with:
           project: Octopus Octoterra Function
           packages: octoterra_azure:${{ steps.determine_version.outputs.semVer }}
-          release_number: ${{ steps.determine_version.outputs.semVer }}+run${{ github.run_number }}-attempt${{ github.run_attempt }}
+          release_number: ${{ steps.determine_version.outputs.semVer }}+sha${{ steps.determine_version.outputs.ShortSha }}.run${{ github.run_number }}.attempt${{ github.run_attempt }}
           git_ref: main
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
