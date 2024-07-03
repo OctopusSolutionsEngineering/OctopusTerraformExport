@@ -280,7 +280,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 		tagResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTag{
 				Type:         octopusdeployTagResourceType,
-				Name:         tagName,
+				Name:         tagsetName + "_" + tagName,
 				Count:        c.getCount(stateless, tagSetName),
 				ResourceName: tag.Name,
 				TagSetId:     c.getTagsetId(stateless, tagSetName, tagName),
