@@ -1,11 +1,11 @@
 resource "octopusdeploy_tag_set" "tagset_tag1" {
-  name        = "type"
+  name        = "type with space"
   description = "Test tagset"
   sort_order  = 0
 }
 
 resource "octopusdeploy_tag" "tag_a" {
-  name        = "a"
+  name        = "a with space"
   color       = "#333333"
   description = "tag a"
   sort_order  = 2

@@ -68,7 +68,7 @@ resource "octopusdeploy_deployment_process" "test" {
       environments          = []
       excluded_environments = []
       channels              = []
-      tenant_tags           = ["type/a"]
+      tenant_tags           = ["type with space/a with space"]
 
       features = []
     }

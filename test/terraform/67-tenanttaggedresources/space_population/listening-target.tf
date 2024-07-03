@@ -11,7 +11,7 @@ resource "octopusdeploy_listening_tentacle_deployment_target" "target_vm_listeni
   shell_version                     = "Unknown"
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   tenants                           = []
 
   tentacle_version_details {

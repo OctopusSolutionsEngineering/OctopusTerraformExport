@@ -3,7 +3,7 @@ resource "octopusdeploy_azure_service_principal" "account_azure" {
   name                              = "Azure"
   environments                      = [octopusdeploy_environment.test_environment.id]
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   tenanted_deployment_participation = "Tenanted"
   application_id                    = "2eb8bd13-661e-489c-beb9-4103efb9dbdd"
   password                          = "secretgoeshere"

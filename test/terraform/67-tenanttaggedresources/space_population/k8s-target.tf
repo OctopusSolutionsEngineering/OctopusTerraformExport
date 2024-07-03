@@ -17,7 +17,7 @@ resource octopusdeploy_kubernetes_cluster_deployment_target test_eks {
   skip_tls_verification             = true
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   tenants                           = []
   thumbprint                        = ""
   uri                               = ""

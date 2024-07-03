@@ -17,7 +17,7 @@ resource "octopusdeploy_azure_service_fabric_cluster_deployment_target" "target_
   shell_version                     = "Unknown"
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   tenants                           = []
   thumbprint                        = ""
 }

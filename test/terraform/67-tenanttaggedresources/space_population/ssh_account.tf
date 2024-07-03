@@ -4,7 +4,7 @@ resource "octopusdeploy_ssh_key_account" "account_ssh" {
   environments                      = null
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   tenants                           = null
   private_key_file                  = "unused"
   username                          = "admin"
