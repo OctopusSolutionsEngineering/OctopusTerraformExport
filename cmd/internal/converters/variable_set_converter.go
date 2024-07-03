@@ -1026,9 +1026,6 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 		// Dummy values take precedence over default values
 		if c.DummySecretVariableValues {
 			defaultValue = c.DummySecretGenerator.GetDummySecret()
-		} else if c.DefaultSecretVariableValues {
-			defaultValueLookup := "#{" + variable.Name + " | Replace \"\\\\\" \"\\\\\"}"
-			defaultValue = &defaultValueLookup
 		}
 
 		secretVariableResource := terraform.TerraformVariable{
@@ -1042,6 +1039,11 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 
 		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 		hcl.WriteUnquotedAttribute(block, "type", "string")
+
+		// If we are writing an octostache template, we need to have octostache replace any slashes, and not have HCL escape this template
+		if c.DefaultSecretVariableValues {
+			hcl.WriteUnquotedAttribute(block, "default", "\"#{"+variable.Name+" | Replace \"\\\\\" \"\\\\\"}\"")
+		}
 
 		file.Body().AppendBlock(block)
 
