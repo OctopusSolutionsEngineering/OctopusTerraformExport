@@ -1027,7 +1027,7 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 		if c.DummySecretVariableValues {
 			defaultValue = c.DummySecretGenerator.GetDummySecret()
 		} else if c.DefaultSecretVariableValues {
-			defaultValueLookup := "#{" + variable.Name + "}"
+			defaultValueLookup := "#{" + variable.Name + " | Replace \"\\\\\" \"\\\\\"}"
 			defaultValue = &defaultValueLookup
 		}
 
