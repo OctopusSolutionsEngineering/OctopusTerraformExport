@@ -266,10 +266,11 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 		// https://go.dev/doc/faq#closures_and_goroutines
 		tag := tag
 
+		tagsetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 		tagName := "tag_" + sanitizer.SanitizeName(tag.Name)
 
 		tagResource := data.ResourceDetails{}
-		tagResource.FileName = "space_population/" + tagName + ".tf"
+		tagResource.FileName = "space_population/" + tagsetName + "_" + tagName + ".tf"
 		tagResource.Id = tag.Id
 		tagResource.Name = tag.Name
 		tagResource.ResourceType = "Tags"
