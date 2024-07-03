@@ -375,6 +375,11 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -474,6 +479,11 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -580,6 +590,11 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -684,6 +699,11 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -787,6 +807,11 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
@@ -886,6 +911,11 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
 			}
 
 			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

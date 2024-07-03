@@ -75,7 +75,28 @@ func Entry(parseArgs args.Arguments) (map[string]string, error) {
 
 		return map[string]string{"step_template.json": string(templateContent[:])}, nil
 	} else {
-		return ProcessResources(dependencies.Resources)
+		files, err := ProcessResources(dependencies.Resources)
+
+		if err != nil {
+			return nil, err
+		}
+
+		logDummyValues(dependencies)
+
+		return files, nil
+	}
+}
+
+func logDummyValues(dependencies *data.ResourceDetailsCollection) {
+	if len(dependencies.DummyVariables) == 0 {
+		return
+	}
+
+	zap.L().Info("The follow dummy values were defined for sensitive values and certificates.")
+	zap.L().Info("These values must be defined when applying the module, or manually updated after the module is applied.")
+
+	for _, dummy := range dependencies.DummyVariables {
+		zap.L().Info("Dummy value defined for variable " + dummy.VariableName + " associated with " + dummy.ResourceType + " called " + dummy.ResourceName)
 	}
 }
 

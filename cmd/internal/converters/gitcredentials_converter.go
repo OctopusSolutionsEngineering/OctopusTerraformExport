@@ -373,6 +373,11 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 
 		if c.DummySecretVariableValues {
 			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			dependencies.AddDummy(data.DummyVariableReference{
+				VariableName: gitCredentialsName,
+				ResourceName: gitCredentials.Name,
+				ResourceType: c.GetResourceType(),
+			})
 		}
 
 		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

@@ -496,6 +496,11 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 				if c.DummySecretVariableValues {
 					secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+					dependencies.AddDummy(data.DummyVariableReference{
+						VariableName: projectName + "_git_password",
+						ResourceName: project.Name,
+						ResourceType: c.GetResourceType(),
+					})
 				}
 
 				block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

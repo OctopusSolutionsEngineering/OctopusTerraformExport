@@ -941,7 +941,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			value = c.getWorkerPools(value, dependencies)
 
 			normalValue := c.writeTerraformVariablesForString(file, v, resourceName, value)
-			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, resourceName)
+			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, resourceName, dependencies)
 
 			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
@@ -1014,7 +1014,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 	return nil
 }
 
-func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.File, variable octopus.Variable, resourceName string) *string {
+func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.File, variable octopus.Variable, resourceName string, dependencies *data.ResourceDetailsCollection) *string {
 	if variable.IsSensitive {
 		// We don't know the value of secrets, so the value is just nil
 		if c.ExcludeTerraformVariables {
@@ -1023,9 +1023,15 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 
 		var defaultValue *string = nil
 
-		// Dummy values take precedence over default values
-		if c.DummySecretVariableValues {
+		// Dummy values are used if we are not also replacing the variable with a octostache template
+		// with the DefaultSecretVariableValues option.
+		if c.DummySecretVariableValues && !c.DefaultSecretVariableValues {
 			defaultValue = c.DummySecretGenerator.GetDummySecret()
+			dependencies.AddDummy(data.DummyVariableReference{
+				VariableName: resourceName,
+				ResourceName: variable.Name,
+				ResourceType: c.GetResourceType(),
+			})
 		}
 
 		secretVariableResource := terraform.TerraformVariable{

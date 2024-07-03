@@ -354,7 +354,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 			return "", err
 		}
 
-		err = c.writeVariables(file, certificateName, certificate)
+		err = c.writeVariables(file, certificateName, certificate, dependencies)
 
 		if err != nil {
 			return "", err
@@ -367,7 +367,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 	return nil
 }
 
-func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus.Certificate) error {
+func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateName string, certificate octopus.Certificate, dependencies *data.ResourceDetailsCollection) error {
 
 	defaultPassword := ""
 	certificatePassword := terraform.TerraformVariable{
@@ -381,6 +381,11 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 
 	if c.DummySecretVariableValues {
 		certificatePassword.Default = c.DummySecretGenerator.GetDummyCertificatePassword()
+		dependencies.AddDummy(data.DummyVariableReference{
+			VariableName: certificateName + "_password",
+			ResourceName: certificate.Name,
+			ResourceType: c.GetResourceType(),
+		})
 	}
 
 	block := gohcl.EncodeAsBlock(certificatePassword, "variable")
@@ -397,6 +402,11 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 
 	if c.DummySecretVariableValues {
 		certificateData.Default = c.DummySecretGenerator.GetDummyCertificate()
+		dependencies.AddDummy(data.DummyVariableReference{
+			VariableName: certificateName + "_data",
+			ResourceName: certificate.Name,
+			ResourceType: c.GetResourceType(),
+		})
 	}
 
 	block = gohcl.EncodeAsBlock(certificateData, "variable")
