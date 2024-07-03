@@ -655,7 +655,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		CertificateConverter:              certificateConverter,
 		WorkerPoolConverter:               workerPoolConverter,
 		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
-		DefaultSecretVariableValues:       false,
+		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges || args.IgnoreProjectVariableChanges,
 		DummySecretVariableValues:         args.DummySecretVariableValues,
 		DummySecretGenerator:              dummySecretGenerator,
