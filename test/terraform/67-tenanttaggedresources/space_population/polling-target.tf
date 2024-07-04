@@ -9,7 +9,7 @@ resource "octopusdeploy_polling_tentacle_deployment_target" "target_desktop_3e4k
   shell_version                     = "5.1.22621.1"
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   tenants                           = []
 
   tentacle_version_details {

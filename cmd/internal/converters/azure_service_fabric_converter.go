@@ -460,6 +460,11 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 
 		if c.DummySecretVariableValues {
 			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+			dependencies.AddDummy(data.DummyVariableReference{
+				VariableName: targetName,
+				ResourceName: target.Name,
+				ResourceType: c.GetResourceType(),
+			})
 		}
 
 		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")

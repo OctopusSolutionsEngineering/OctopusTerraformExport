@@ -6,5 +6,5 @@ resource "octopusdeploy_gcp_account" "account_google" {
   json_key                          = "secretgoeshere"
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
 }

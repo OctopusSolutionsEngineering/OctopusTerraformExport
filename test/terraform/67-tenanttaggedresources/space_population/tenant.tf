@@ -1,7 +1,7 @@
 resource "octopusdeploy_tenant" "tenant_team_a" {
   name        = "Team A"
   description = "Test tenant"
-  tenant_tags = ["type/a", "type/b", "type/ignorethis"]
+  tenant_tags = ["type with space/a with space", "type with space/b", "type with space/ignorethis"]
   depends_on  = [octopusdeploy_tag.tag_a, octopusdeploy_tag.tag_b, octopusdeploy_tag.tag_ignore]
 
   project_environment {
@@ -17,7 +17,7 @@ resource "octopusdeploy_tenant" "tenant_team_a" {
 resource "octopusdeploy_tenant" "tenant_excluded" {
   name        = "Excluded"
   description = "Excluded tenant"
-  tenant_tags = ["type/excluded"]
+  tenant_tags = ["type with space/excluded"]
   depends_on  = [octopusdeploy_tag.tag_excluded]
 
   project_environment {

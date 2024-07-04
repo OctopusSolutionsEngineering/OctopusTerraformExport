@@ -375,7 +375,7 @@ func (c AccountConverter) GetResourceType() string {
 	return "Accounts"
 }
 
-func (c AccountConverter) createSecretVariable(resourceName string, description string) terraform.TerraformVariable {
+func (c AccountConverter) createSecretVariable(resourceName string, description string, accountName string, dependencies *data.ResourceDetailsCollection) terraform.TerraformVariable {
 	secretVariableResource := terraform.TerraformVariable{
 		Name:        resourceName,
 		Type:        "string",
@@ -386,6 +386,11 @@ func (c AccountConverter) createSecretVariable(resourceName string, description 
 
 	if c.DummySecretVariableValues {
 		secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+		dependencies.AddDummy(data.DummyVariableReference{
+			VariableName: resourceName,
+			ResourceName: accountName,
+			ResourceType: c.GetResourceType(),
+		})
 	}
 
 	return secretVariableResource
@@ -407,7 +412,7 @@ func (c AccountConverter) createSecretCertificateNoPassVariable(resourceName str
 	return secretVariableResource
 }
 
-func (c AccountConverter) createSecretCertificateB64Variable(resourceName string, description string) terraform.TerraformVariable {
+func (c AccountConverter) createSecretCertificateB64Variable(resourceName string, description string, accountName string, dependencies *data.ResourceDetailsCollection) terraform.TerraformVariable {
 	secretVariableResource := terraform.TerraformVariable{
 		Name:        resourceName,
 		Type:        "string",
@@ -418,6 +423,11 @@ func (c AccountConverter) createSecretCertificateB64Variable(resourceName string
 
 	if c.DummySecretVariableValues {
 		secretVariableResource.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
+		dependencies.AddDummy(data.DummyVariableReference{
+			VariableName: resourceName,
+			ResourceName: accountName,
+			ResourceType: c.GetResourceType(),
+		})
 	}
 
 	return secretVariableResource
@@ -485,7 +495,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 			Count:                           c.getCount(stateless, resourceName),
 		}
 
-		secretVariableResource := c.createSecretVariable(resourceName, "The AWS secret key associated with the account "+account.Name)
+		secretVariableResource := c.createSecretVariable(resourceName, "The AWS secret key associated with the account "+account.Name, account.Name, dependencies)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -575,7 +585,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			Count:                           c.getCount(stateless, resourceName),
 		}
 
-		secretVariableResource := c.createSecretVariable(resourceName, "The Azure secret associated with the account "+account.Name)
+		secretVariableResource := c.createSecretVariable(resourceName, "The Azure secret associated with the account "+account.Name, account.Name, dependencies)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -739,7 +749,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 			Count:                           c.getCount(stateless, resourceName),
 		}
 
-		secretVariableResource := c.createSecretVariable(resourceName, "The GCP JSON key associated with the account "+account.Name)
+		secretVariableResource := c.createSecretVariable(resourceName, "The GCP JSON key associated with the account "+account.Name, account.Name, dependencies)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -823,7 +833,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 			Count:                           c.getCount(stateless, resourceName),
 		}
 
-		secretVariableResource := c.createSecretVariable(resourceName, "The token associated with the account "+account.Name)
+		secretVariableResource := c.createSecretVariable(resourceName, "The token associated with the account "+account.Name, account.Name, dependencies)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -909,7 +919,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			Count:                           c.getCount(stateless, resourceName),
 		}
 
-		secretVariableResource := c.createSecretVariable(resourceName, "The password associated with the account "+account.Name)
+		secretVariableResource := c.createSecretVariable(resourceName, "The password associated with the account "+account.Name, account.Name, dependencies)
 
 		file := hclwrite.NewEmptyFile()
 
@@ -1005,9 +1015,9 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 		}
 
 		// Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
-		secretVariableResource := c.createSecretCertificateB64Variable(resourceName, "The password associated with the certificate for account "+account.Name)
+		secretVariableResource := c.createSecretCertificateB64Variable(resourceName, "The password associated with the certificate for account "+account.Name, account.Name, dependencies)
 
-		certFileVariableResource := c.createSecretCertificateB64Variable(resourceName+"_cert", "The certificate file for account "+account.Name)
+		certFileVariableResource := c.createSecretCertificateB64Variable(resourceName+"_cert", "The certificate file for account "+account.Name, account.Name, dependencies)
 
 		file := hclwrite.NewEmptyFile()
 

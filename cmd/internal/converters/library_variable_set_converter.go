@@ -440,6 +440,11 @@ func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.Library
 		}
 	}
 
+	// An empty script language is assumed to be PowerShell
+	if scriptLanguage == "" {
+		scriptLanguage = "PowerShell"
+	}
+
 	terraformResource := terraform.TerraformScriptModule{
 		Type:         octopusdeployScriptModuleResourceType,
 		Name:         resourceName,

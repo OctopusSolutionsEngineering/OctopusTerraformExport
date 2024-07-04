@@ -13,7 +13,7 @@ resource "octopusdeploy_azure_cloud_service_deployment_target" "target_azure" {
   shell_version                     = "Unknown"
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
   thumbprint                        = ""
   use_current_instance_count        = true
 }

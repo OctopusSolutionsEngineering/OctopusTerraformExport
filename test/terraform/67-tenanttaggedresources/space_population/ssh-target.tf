@@ -33,5 +33,5 @@ resource "octopusdeploy_ssh_connection_deployment_target" "target_3_25_215_87" {
   machine_policy_id                 = data.octopusdeploy_machine_policies.default_machine_policy.machine_policies[0].id
   tenanted_deployment_participation = "Tenanted"
   depends_on                        = [octopusdeploy_tag.tag_a]
-  tenant_tags                       = ["type/a"]
+  tenant_tags                       = ["type with space/a with space"]
 }

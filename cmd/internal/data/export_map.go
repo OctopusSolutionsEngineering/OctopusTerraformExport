@@ -48,10 +48,30 @@ type ResourceDetails struct {
 	Parameters []ResourceParameter
 }
 
+// The DummyVariableReference struct defines the details of a variable that had a dummy value injected into it.
+type DummyVariableReference struct {
+	VariableName string
+	ResourceName string
+	ResourceType string
+}
+
 type ResourceDetailsCollection struct {
-	Resources []ResourceDetails
+	Resources      []ResourceDetails
+	DummyVariables []DummyVariableReference
 	// A mutex to protect lookups
 	mu sync.Mutex
+}
+
+// AddDummy adds a dummy variable reference to the collection
+func (c *ResourceDetailsCollection) AddDummy(reference DummyVariableReference) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.DummyVariables == nil {
+		c.DummyVariables = []DummyVariableReference{}
+	}
+
+	c.DummyVariables = append(c.DummyVariables, reference)
 }
 
 // HasResource returns true if the resource with the id and resourceType exist in the collection, and false otherwise

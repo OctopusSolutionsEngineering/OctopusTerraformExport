@@ -266,10 +266,11 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 		// https://go.dev/doc/faq#closures_and_goroutines
 		tag := tag
 
+		tagsetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 		tagName := "tag_" + sanitizer.SanitizeName(tag.Name)
 
 		tagResource := data.ResourceDetails{}
-		tagResource.FileName = "space_population/" + tagName + ".tf"
+		tagResource.FileName = "space_population/" + tagsetName + "_" + tagName + ".tf"
 		tagResource.Id = tag.Id
 		tagResource.Name = tag.Name
 		tagResource.ResourceType = "Tags"
@@ -279,7 +280,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 		tagResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformTag{
 				Type:         octopusdeployTagResourceType,
-				Name:         tagName,
+				Name:         tagsetName + "_" + tagName,
 				Count:        c.getCount(stateless, tagSetName),
 				ResourceName: tag.Name,
 				TagSetId:     c.getTagsetId(stateless, tagSetName, tagName),
