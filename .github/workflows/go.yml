@@ -420,9 +420,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Create manifest
         run: >
           docker run -v $PWD:/build mplatform/manifest-tool 
           --username=${{ secrets.DOCKERHUB_USERNAME }} 
           --password=${{ secrets.DOCKERHUB_TOKEN }} 
           push from-spec /build/manifest-octoterra.yaml
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: https://ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create manifest
+        run: >
+          docker run -v $PWD:/build mplatform/manifest-tool 
+          --username=${{ secrets.DOCKERHUB_USERNAME }} 
+          --password=${{ secrets.DOCKERHUB_TOKEN }} 
+          push from-spec /build/manifest-octoterra-ghcr.yaml

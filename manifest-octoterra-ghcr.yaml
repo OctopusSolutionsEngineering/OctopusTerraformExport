@@ -1,0 +1,12 @@
+image: octopussolutionsengineering/octoterra-windows:latest
+manifests:
+  -
+    image: octopussolutionsengineering/octoterra-windows-2019:latest
+    platform:
+      architecture: arm64
+      os: windows
+  -
+    image: octopussolutionsengineering/octoterra-windows-2022:latest
+    platform:
+      architecture: amd64
+      os: windows
