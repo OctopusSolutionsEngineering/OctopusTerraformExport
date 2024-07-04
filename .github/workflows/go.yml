@@ -345,14 +345,14 @@ jobs:
         with:
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository_owner }}/octoterra:latest
+          tags: ghcr.io/octopussolutionsengineering/octoterra:latest
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push versioned image
         uses: docker/build-push-action@v4
         with:
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository_owner }}/octoterra:${{ steps.determine_version.outputs.semVer }}
+          tags: ghcr.io/octopussolutionsengineering/octoterra:${{ steps.determine_version.outputs.semVer }}
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push Azure latest
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
@@ -361,7 +361,7 @@ jobs:
           push: true
           file: Dockerfile-azure
           platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository_owner }}/octoterra-azure:latest
+          tags: ghcr.io/octopussolutionsengineering/octoterra-azure:latest
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
   build-windows:
     runs-on: windows-latest
