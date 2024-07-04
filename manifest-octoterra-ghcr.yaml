@@ -1,12 +1,12 @@
-image: ghrc.io/octopussolutionsengineering/octoterra-windows:latest
+image: ghcr.io/octopussolutionsengineering/octoterra-windows:latest
 manifests:
   -
-    image: ghrc.io/octopussolutionsengineering/octoterra-windows-2019:latest
+    image: ghcr.io/octopussolutionsengineering/octoterra-windows-2019:latest
     platform:
       architecture: arm64
       os: windows
   -
-    image: ghrc.io/octopussolutionsengineering/octoterra-windows-2022:latest
+    image: ghcr.io/octopussolutionsengineering/octoterra-windows-2022:latest
     platform:
       architecture: amd64
       os: windows

@@ -424,23 +424,23 @@ jobs:
       - name: Build and push latest 2019
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         run: |
-          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t ghrc.io/octopussolutionsengineering/octoterra-windows-2019:latest
-          docker push ghrc.io/octopussolutionsengineering/octoterra-windows-2019:latest
+          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2019:latest
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2019:latest
       - name: Build and push 2019
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         run: |
-          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t ghrc.io/octopussolutionsengineering/octoterra-windows-2019:${{ steps.determine_version.outputs.semVer }}
-          docker push ghrc.io/octopussolutionsengineering/octoterra-windows-2019:${{ steps.determine_version.outputs.semVer }}
+          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2019:${{ steps.determine_version.outputs.semVer }}
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2019:${{ steps.determine_version.outputs.semVer }}
       - name: Build and push latest 2022
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         run: |
-          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t ghrc.io/octopussolutionsengineering/octoterra-windows-2022:latest
-          docker push ghrc.io/octopussolutionsengineering/octoterra-windows-2022:latest
+          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2022:latest
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2022:latest
       - name: Build and push 2022
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         run: |
-          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t ghrc.io/octopussolutionsengineering/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
-          docker push ghrc.io/octopussolutionsengineering/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
+          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
   multiarch-image:
     needs: [ build-windows ]
     runs-on: ubuntu-latest
