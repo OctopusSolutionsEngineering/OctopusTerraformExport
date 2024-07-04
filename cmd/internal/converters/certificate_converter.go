@@ -401,7 +401,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	}
 
 	if c.DummySecretVariableValues {
-		certificateData.Default = c.DummySecretGenerator.GetDummyCertificate()
+		certificateData.Default = c.DummySecretGenerator.GetDummyCertificateBase64()
 		dependencies.AddDummy(data.DummyVariableReference{
 			VariableName: certificateName + "_data",
 			ResourceName: certificate.Name,
