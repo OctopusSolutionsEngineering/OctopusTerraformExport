@@ -415,31 +415,46 @@ jobs:
         run: |
           docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
           docker push octopussamples/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
-  multiarch-image:
-    needs: [ build-windows ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Create manifest
-        run: >
-          docker run -v $PWD:/build mplatform/manifest-tool 
-          --username=${{ secrets.DOCKERHUB_USERNAME }} 
-          --password=${{ secrets.DOCKERHUB_TOKEN }} 
-          push from-spec /build/manifest-octoterra.yaml
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: https://ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push latest 2019
+        if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
+        run: |
+          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2019:latest
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2019:latest
+      - name: Build and push 2019
+        if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
+        run: |
+          docker build --platform windows/amd64 . -f Dockerfile.windows2019 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2019:${{ steps.determine_version.outputs.semVer }}
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2019:${{ steps.determine_version.outputs.semVer }}
+      - name: Build and push latest 2022
+        if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
+        run: |
+          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2022:latest
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2022:latest
+      - name: Build and push 2022
+        if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
+        run: |
+          docker build --platform windows/amd64 . -f Dockerfile.windows2022 -t ghcr.io/octopussolutionsengineering/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
+          docker push ghcr.io/octopussolutionsengineering/octoterra-windows-2022:${{ steps.determine_version.outputs.semVer }}
+  multiarch-image:
+    needs: [ build-windows ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
       - name: Create manifest
         run: >
           docker run -v $PWD:/build mplatform/manifest-tool 
           --username=${{ secrets.DOCKERHUB_USERNAME }} 
           --password=${{ secrets.DOCKERHUB_TOKEN }} 
+          push from-spec /build/manifest-octoterra.yaml
+      - name: Create manifest
+        run: >
+          docker run -v $PWD:/build mplatform/manifest-tool 
+          --username=${{ github.actor }}
+          --password=${{ secrets.GITHUB_TOKEN }}
           push from-spec /build/manifest-octoterra-ghcr.yaml

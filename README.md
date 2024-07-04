@@ -81,7 +81,7 @@ The `-runbookId` argument does not need a project to be defined:
 Docker can also be used to run Octoterra:
 
 ```
-docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
+docker run -v $PWD:/tmp/octoexport --rm ghcr.io/octopussolutionsengineering/octoterra \
     -url https://yourinstance.octopus.app \
     -space Spaces-## \
     -apiKey API-APIKEYGOESHERE \
@@ -148,7 +148,7 @@ The command below uses the `-stepTemplate`, `-stepTemplateName`, and `-stepTempl
 template JSON file that captures the Octopus resources in the space passed to `-space` as a stateless module:
 
 ```bash
-docker run -v $PWD:/tmp/octoexport --rm octopussamples/octoterra \
+docker run -v $PWD:/tmp/octoexport --rm ghcr.io/octopussolutionsengineering/octoterra \
     -url https://yourinstance.octopus.app \
     -space Spaces-123 \
     -apiKey API-ABCDEFGHIJKLMNOPQURTUVWXYZ \
