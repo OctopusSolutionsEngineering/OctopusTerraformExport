@@ -51,7 +51,8 @@ type Project struct {
 func (t Project) HasCacConfigured() bool {
 	return t.PersistenceSettings.Credentials.Type == "Reference" ||
 		t.PersistenceSettings.Credentials.Type == "Anonymous" ||
-		t.PersistenceSettings.Credentials.Type == "UsernamePassword"
+		t.PersistenceSettings.Credentials.Type == "UsernamePassword" ||
+		t.PersistenceSettings.Credentials.Type == "GitHub"
 }
 
 type PersistenceSettings struct {
