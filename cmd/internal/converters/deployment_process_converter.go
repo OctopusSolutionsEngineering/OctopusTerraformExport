@@ -326,7 +326,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 			return "", err
 		}
 
-		if c.IgnoreProjectChanges || cac {
+		if c.IgnoreProjectChanges {
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
