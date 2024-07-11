@@ -419,6 +419,12 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		description := c.writeProjectDescriptionVariable(file, projectName, project.Name, strutil.EmptyIfNil(project.Description))
 		tenanted := c.writeProjectTenantedVariable(file, projectName, strutil.EmptyIfNil(project.TenantedDeploymentMode))
 
+		// If we are excluding version controlled settings, the version controlled field will be false
+		versionControlled := project.IsVersionControlled
+		if c.ExcludeCaCProjectSettings {
+			versionControlled = false
+		}
+
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
@@ -430,7 +436,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
 			IsDisabled:                             project.IsDisabled,
-			IsVersionControlled:                    project.IsVersionControlled,
+			IsVersionControlled:                    versionControlled,
 			LifecycleId:                            dependencies.GetResource("Lifecycles", project.LifecycleId),
 			ProjectGroupId:                         dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
 			IncludedLibraryVariableSets:            c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
