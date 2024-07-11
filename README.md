@@ -80,7 +80,7 @@ The `-runbookId` argument does not need a project to be defined:
 
 Docker can also be used to run Octoterra:
 
-```
+```bash
 docker run -v $PWD:/tmp/octoexport --rm ghcr.io/octopussolutionsengineering/octoterra \
     -url https://yourinstance.octopus.app \
     -space Spaces-## \
@@ -207,6 +207,30 @@ You can report issues [here](https://github.com/OctopusSolutionsEngineering/Octo
 ## Tool Pack Documentation
 
 The Tool Pack documentation is found [here](https://docs.google.com/document/d/18CeeWZ_olJEy-87PIxFx7x2lhPWHTiYaQXvPBDxQFGA/edit) (internal access only).
+
+## Troubleshooting
+
+If you get an error like this when using the Docker image:
+
+```bash
+error	mkdir /tmp/octoexport/space_creation: permission denied
+```
+
+You may need to use the `z` option to modify the selinux label. 
+
+WARNING! Using the `z` option can have some serious unintended side effects. See the post at https://stackoverflow.com/a/35222815/157605 for more details.
+
+This is an example using the `z` option:
+
+```bash
+docker run -v $PWD:/tmp/octoexport:z --rm ghcr.io/octopussolutionsengineering/octoterra \
+    -url https://yourinstance.octopus.app \
+    -space Spaces-## \
+    -apiKey API-APIKEYGOESHERE \
+    -projectName YourProject \
+    -lookupProjectDependencies \
+    -dest /tmp/octoexport
+```
 
 ## To Do
 
