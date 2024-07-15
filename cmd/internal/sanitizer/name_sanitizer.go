@@ -8,6 +8,7 @@ import (
 )
 
 var allowedChars = regexp.MustCompile(`[^A-Za-z0-9]`)
+var startsWithLetterOrUnderscore = regexp.MustCompile(`^[A-Za-z_].*`)
 
 // SanitizeNamePointer creates a string pointer that can be used as a name for HCL resources
 func SanitizeNamePointer(name *string) string {
@@ -18,8 +19,14 @@ func SanitizeNamePointer(name *string) string {
 }
 
 // SanitizeName creates a string that can be used as a name for HCL resources
+// From the Terraform docs:
+// A name must start with a letter or underscore and may contain only letters, digits, underscores, and dashes.
 func SanitizeName(name string) string {
-	return allowedChars.ReplaceAllString(strings.ToLower(name), "_")
+	sanitized := allowedChars.ReplaceAllString(strings.ToLower(name), "_")
+	if !startsWithLetterOrUnderscore.MatchString(sanitized) {
+		return "_" + sanitized
+	}
+	return sanitized
 }
 
 // SanitizeParameterName creates a string that can be used as slug in a step template parameter name
