@@ -53,6 +53,8 @@ type VariableSetConverter struct {
 	ExcludeProjectVariables           args.StringSliceArgs
 	ExcludeProjectVariablesExcept     args.StringSliceArgs
 	ExcludeProjectVariablesRegex      args.StringSliceArgs
+	ExcludeTenantTagSets              args.StringSliceArgs
+	ExcludeTenantTags                 args.StringSliceArgs
 	IgnoreProjectChanges              bool
 	DummySecretGenerator              DummySecretGenerator
 
@@ -1192,7 +1194,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependenc
 			Environments: environments,
 			Machines:     machines,
 			Roles:        variable.Scope.Role,
-			TenantTags:   variable.Scope.TenantTag,
+			TenantTags:   c.Excluder.FilteredTenantTags(variable.Scope.TenantTag, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 		}
 	}
 
