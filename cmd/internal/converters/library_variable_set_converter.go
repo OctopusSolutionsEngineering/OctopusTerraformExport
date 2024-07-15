@@ -539,7 +539,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 			Name:            v.Name,
 			Label:           v.Label,
 			HelpText:        v.HelpText,
-			DefaultValue:    v.GetDefaultValueString(),
+			DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
 			DisplaySettings: v.DisplaySettings,
 		})
 

@@ -930,7 +930,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					Sensitive:     false,
 					VariableName:  resourceName,
 					ParameterType: "SingleLineText",
-					DefaultValue:  strutil.EmptyIfNil(v.Value),
+					DefaultValue:  strutil.EscapeDollarCurly(strutil.EmptyIfNil(v.Value)),
 				},
 			}
 		}

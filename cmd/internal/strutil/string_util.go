@@ -7,6 +7,10 @@ import (
 )
 
 var regex = regexp.MustCompile(`"\$\$\{([^}]*)}"`)
+var dollarCurlyRegex = regexp.MustCompile(`\$\{`)
+var dollarCurlyEscapedRegex = regexp.MustCompile(`\$\$\{\\"\$\\"}\{`)
+var percentCurlyRegex = regexp.MustCompile(`%\{`)
+var percentCurlyEscapedRegex = regexp.MustCompile(`%%\{\\"%\\"}\{`)
 
 func StrPointer(input string) *string {
 	return &input
@@ -154,5 +158,42 @@ func UnEscapeDollarInMap(fileMap map[string]string) map[string]string {
 
 func UnEscapeDollar(input string) string {
 	// Unescape dollar signs because of https://github.com/hashicorp/hcl/issues/323
-	return regex.ReplaceAllString(input, "\"${$1}\"")
+	unescaped := regex.ReplaceAllString(input, "\"${$1}\"")
+	unescaped = dollarCurlyEscapedRegex.ReplaceAllLiteralString(unescaped, `${"$"}{`)
+	unescaped = percentCurlyEscapedRegex.ReplaceAllLiteralString(unescaped, `%{"%"}{`)
+	return unescaped
+}
+
+// EscapeDollarCurly escapes the dollar sign in the curly braces to allow stings like "${MyVar}" to be expressed
+// as a string value.
+func EscapeDollarCurly(input string) string {
+	if dollarCurlyRegex.MatchString(input) {
+		return strings.ReplaceAll(input, "${", "${\"$\"}{")
+	}
+
+	if percentCurlyRegex.MatchString(input) {
+		return strings.ReplaceAll(input, "%{", "%{\"%\"}{")
+	}
+
+	return input
+}
+
+// EscapeDollarCurlyPointer escapes the dollar sign in the curly braces to allow stings like "${MyVar}" to be expressed
+// as a string value.
+func EscapeDollarCurlyPointer(input *string) *string {
+	if input == nil {
+		return nil
+	}
+
+	if dollarCurlyRegex.MatchString(*input) {
+		escaped := strings.ReplaceAll(*input, "${", "${\"$\"}{")
+		return &escaped
+	}
+
+	if percentCurlyEscapedRegex.MatchString(*input) {
+		escaped := strings.ReplaceAll(*input, "%{", "%{\"%\"}{")
+		return &escaped
+	}
+
+	return input
 }
