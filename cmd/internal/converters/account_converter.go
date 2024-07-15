@@ -656,13 +656,12 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-			ManagementEndpoint:              strutil.EmptyIfNil(account.ServiceManagementEndpointBaseUri),
-			StorageEndpointSuffix:           strutil.EmptyIfNil(account.ServiceManagementEndpointSuffix),
+			ManagementEndpoint:              account.ServiceManagementEndpointBaseUri,
+			StorageEndpointSuffix:           account.ServiceManagementEndpointSuffix,
 			SubscriptionId:                  account.SubscriptionNumber,
-			// A value is required, and an empty upstream string means "AzureCloud"
-			AzureEnvironment: strutil.DefaultIfEmptyOrNil(account.AzureEnvironment, "AzureCloud"),
-			Certificate:      &certVariable,
-			Count:            c.getCount(stateless, resourceName),
+			AzureEnvironment:                account.AzureEnvironment,
+			Certificate:                     &certVariable,
+			Count:                           c.getCount(stateless, resourceName),
 		}
 
 		secretVariableResource := c.createSecretCertificateNoPassVariable(resourceName+"_cert", "The Azure certificate associated with the account "+account.Name)
