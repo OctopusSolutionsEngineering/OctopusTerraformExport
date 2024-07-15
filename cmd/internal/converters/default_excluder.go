@@ -5,6 +5,7 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/exp/slices"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -107,6 +108,10 @@ func (e DefaultExcluder) FilteredTenantTags(tenantTags []string, excludeTenantTa
 		// Exclude the tag if it is part of an excluded tag set
 		return !e.IsResourceExcluded(split[0], false, excludeTenantTagSets, nil)
 	})
+
+	// The TF provider treats the order of strings as important, so ensure there is a consistent sort order to
+	// prevent unnecessary updates.
+	sort.Strings(tags)
 
 	return tags
 }
