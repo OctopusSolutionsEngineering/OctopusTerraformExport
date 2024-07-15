@@ -49,5 +49,9 @@ func SanitizeParameterName(dependencies *data.ResourceDetailsCollection, name st
 		return sanitizedName + fmt.Sprint(count)
 	}
 
+	if !startsWithLetterOrUnderscore.MatchString(sanitizedName) {
+		return "_" + sanitizedName
+	}
+
 	return sanitizedName
 }
