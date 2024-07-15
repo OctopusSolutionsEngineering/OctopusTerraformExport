@@ -2,6 +2,7 @@ package converters
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -37,6 +38,7 @@ func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceD
 
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(variable, "variable")
+		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
