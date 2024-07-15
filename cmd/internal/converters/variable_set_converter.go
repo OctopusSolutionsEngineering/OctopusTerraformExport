@@ -1046,10 +1046,12 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
 		hcl.WriteUnquotedAttribute(block, "type", "string")
 
-		// If we are writing an octostache template, we need to have octostache escape the value so it is suitable
-		// for inclusion in a string (we use JSON escaping for this)
+		// If we are writing an octostache template, we need to have any string escaped for inclusion in a terraform
+		// string. JSON escaping will get us most of the way there. We also need to escape any terraform syntax, which
+		// unfortunately is easier said than done as there appears to be no way to write a double dollar sign with
+		// the HCL serialization library, so we need to get a little creative.
 		if c.DefaultSecretVariableValues {
-			hcl.WriteUnquotedAttribute(block, "default", "\"#{"+variable.Name+" | JsonEscape | Replace \"${\" \"$${\"}\"")
+			hcl.WriteUnquotedAttribute(block, "default", "\"#{"+variable.Name+" | JsonEscape | Replace \"([$])([{])\" \"$1$1$2\" | Replace \"([%])([{])\" \"$1$1$2\"}\"")
 		}
 
 		file.Body().AppendBlock(block)
