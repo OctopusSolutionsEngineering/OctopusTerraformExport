@@ -15,7 +15,7 @@ func SanitizeNamePointer(name *string) string {
 	if name == nil {
 		return ""
 	}
-	return allowedChars.ReplaceAllString(strings.ToLower(*name), "_")
+	return SanitizeName(*name)
 }
 
 // SanitizeName creates a string that can be used as a name for HCL resources

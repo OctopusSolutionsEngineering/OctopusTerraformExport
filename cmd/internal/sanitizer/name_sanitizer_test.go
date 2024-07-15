@@ -21,3 +21,10 @@ func TestSanitizerWithNil(t *testing.T) {
 		t.Fatal("Sanitized name should be empty string")
 	}
 }
+
+func TestSanitizerWithLeadingNumber(t *testing.T) {
+	sanitizedName := SanitizeName("0 my project")
+	if sanitizedName != "_0_my_project" {
+		t.Fatal("Sanitized name should be _0_my_project")
+	}
+}
