@@ -195,45 +195,50 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 				}
 			}
 
-			commonVariableIndex++
-			variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
+			// A tenant common variable needs the tenant to be linked to a project that then links to the library
+			// variable set that defines the common variable. If we are excluding all projects, there is no way
+			// to define any common variables.
+			if !c.ExcludeAllProjects {
+				commonVariableIndex++
+				variableName := "tenantcommonvariable" + fmt.Sprint(commonVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
 
-			thisResource := data.ResourceDetails{}
-			thisResource.FileName = "space_population/" + variableName + ".tf"
-			thisResource.Id = id
-			thisResource.ResourceType = c.GetResourceType()
-			thisResource.Lookup = "${octopusdeploy_tenant_common_variable." + variableName + ".id}"
+				thisResource := data.ResourceDetails{}
+				thisResource.FileName = "space_population/" + variableName + ".tf"
+				thisResource.Id = id
+				thisResource.ResourceType = c.GetResourceType()
+				thisResource.Lookup = "${octopusdeploy_tenant_common_variable." + variableName + ".id}"
 
-			/*
-				Tenants can define secrets, in which case value is an object indicating the state of the
-				secret, but not the value. In this case we can only export an empty string.
-				TODO: Create a variable to override this value if needed.
-			*/
-			fixedValue := ""
-			if stringValue, ok := value.(string); ok {
-				fixedValue = stringValue
-			}
-
-			l := l
-			id := id
-			tenant := tenant
-
-			thisResource.ToHcl = func() (string, error) {
-				file := hclwrite.NewEmptyFile()
-				terraformResource := terraform2.TerraformTenantCommonVariable{
-					Type:                 "octopusdeploy_tenant_common_variable",
-					Name:                 variableName,
-					Count:                count,
-					Id:                   nil,
-					LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", l.LibraryVariableSetId),
-					TemplateId:           dependencies.GetResource("CommonTemplateMap", id),
-					TenantId:             dependencies.GetResource("Tenants", tenant.TenantId),
-					Value:                &fixedValue,
+				/*
+					Tenants can define secrets, in which case value is an object indicating the state of the
+					secret, but not the value. In this case we can only export an empty string.
+					TODO: Create a variable to override this value if needed.
+				*/
+				fixedValue := ""
+				if stringValue, ok := value.(string); ok {
+					fixedValue = stringValue
 				}
-				file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-				return string(file.Bytes()), nil
+
+				l := l
+				id := id
+				tenant := tenant
+
+				thisResource.ToHcl = func() (string, error) {
+					file := hclwrite.NewEmptyFile()
+					terraformResource := terraform2.TerraformTenantCommonVariable{
+						Type:                 "octopusdeploy_tenant_common_variable",
+						Name:                 variableName,
+						Count:                count,
+						Id:                   nil,
+						LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", l.LibraryVariableSetId),
+						TemplateId:           dependencies.GetResource("CommonTemplateMap", id),
+						TenantId:             dependencies.GetResource("Tenants", tenant.TenantId),
+						Value:                &fixedValue,
+					}
+					file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+					return string(file.Bytes()), nil
+				}
+				dependencies.AddResource(thisResource)
 			}
-			dependencies.AddResource(thisResource)
 		}
 	}
 
