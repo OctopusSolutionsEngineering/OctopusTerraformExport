@@ -615,6 +615,7 @@ func (c ProjectTriggerConverter) exportEnvironments(projectTrigger octopus2.Proj
 	environments := []string{}
 	environments = append(environments, projectTrigger.Filter.EnvironmentIds...)
 	environments = append(environments, projectTrigger.Action.SourceEnvironmentIds...)
+	environments = append(environments, projectTrigger.Action.EnvironmentIds...)
 	environments = append(environments, strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
 	environments = append(environments, strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
 	environments = lo.Filter(environments, func(environment string, index int) bool {
