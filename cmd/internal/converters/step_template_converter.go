@@ -164,6 +164,12 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 
 	thisResource.ToHcl = func() (string, error) {
 
+		environmentVars := map[string]string{}
+		environmentVars["VERSION"] = thisResource.VersionCurrent
+		for _, v2 := range dependencies.GetAllResource("Feeds") {
+			environmentVars["FEED_"+v2.Id] = v2.Lookup
+		}
+
 		terraformResource := terraform.TerraformShellScript{
 			Type: octopusdeployStepTemplateResourceType,
 			Name: stepTemplateName,
@@ -181,11 +187,15 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$stepTemplateObject = $response.content | ConvertFrom-Json
 						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
 						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
-						Write-Host $($stepTemplateObject | ConvertTo-Json)
+						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`)),
 				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create step template')
 					$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+
+					# Replace feed IDs with lookup values passed in via env vars
+					gci env:* | ? {$_.Name -like "FEED_*} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
+
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $body -Headers $headers
 					$stepTemplate = $response.content | ConvertFrom-Json
 					# Import any new step template twice to ensure the version of a new template is at least 1.
@@ -194,7 +204,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 					$stepTemplateObject = $response.content | ConvertFrom-Json
 					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
 					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
-					Write-Host $($stepTemplateObject | ConvertTo-Json)`),
+					Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)`),
 				Update: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Updating step template')
 					$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
@@ -203,12 +213,16 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+
+						# Replace feed IDs with lookup values passed in via env vars
+						gci env:* | ? {$_.Name -like "FEED_*} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
+
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
 						# Strip out the last modified by details
 						$stepTemplateObject = $response.content | ConvertFrom-Json
 						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
 						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
-						Write-Host $($stepTemplateObject | ConvertTo-Json)
+						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`)),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
 					$state = Read-Host | ConvertFrom-JSON
@@ -219,10 +233,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method DELETE -Headers $headers
 					}`),
 			},
-			Environment: map[string]string{
-				// trigger an update when the version changes
-				"VERSION": thisResource.VersionCurrent,
-			},
+			Environment: environmentVars,
 			SensitiveEnvironment: map[string]string{
 				"SERVER":  "${var.octopus_server}",
 				"SPACEID": "${var.octopus_space_id}",
@@ -272,7 +283,7 @@ func (c StepTemplateConverter) buildData(resourceName string, resource octopus.S
 			$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates" -Method GET -Headers $headers
 			$keyValueResponse = @{}
 			$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name}
-			Write-Host ($keyValueResponse | ConvertTo-JSON)`},
+			Write-Host ($keyValueResponse | ConvertTo-JSON -Depth 100)`},
 		Query: map[string]string{
 			"name":    resource.Name,
 			"server":  "${var.octopus_server}",
