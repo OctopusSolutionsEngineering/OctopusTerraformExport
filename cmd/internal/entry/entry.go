@@ -202,7 +202,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeStepTemplates:       nil,
 		ExcludeStepTemplatesRegex:  nil,
 		ExcludeStepTemplatesExcept: nil,
-		Excluder:                   nil,
+		Excluder:                   converters.DefaultExcluder{},
 		LimitResourceCount:         0,
 		GenerateImportScripts:      false,
 	}
@@ -903,7 +903,7 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeStepTemplates:       nil,
 		ExcludeStepTemplatesRegex:  nil,
 		ExcludeStepTemplatesExcept: nil,
-		Excluder:                   nil,
+		Excluder:                   converters.DefaultExcluder{},
 		LimitResourceCount:         0,
 		GenerateImportScripts:      false,
 	}
@@ -1118,7 +1118,7 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeStepTemplates:       nil,
 		ExcludeStepTemplatesRegex:  nil,
 		ExcludeStepTemplatesExcept: nil,
-		Excluder:                   nil,
+		Excluder:                   converters.DefaultExcluder{},
 		LimitResourceCount:         0,
 		GenerateImportScripts:      false,
 	}

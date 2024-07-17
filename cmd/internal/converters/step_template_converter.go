@@ -78,7 +78,7 @@ func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceD
 }
 
 func (c StepTemplateConverter) GetResourceType() string {
-	return "StepTemplates"
+	return "ActionTemplates"
 }
 
 func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
@@ -102,7 +102,7 @@ func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.Resou
 
 		resource := resourceWrapper.Res
 
-		zap.L().Info("SSH Target: " + resource.Id)
+		zap.L().Info("Step Template: " + resource.Id)
 		err := c.toHcl(resource, stateless, dependencies)
 
 		if err != nil {
