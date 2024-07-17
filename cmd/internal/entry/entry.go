@@ -195,7 +195,17 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 
 	dummySecretGenerator := converters.DummySecret{}
 
-	stepTemplateConverter := converters.StepTemplateConverter{}
+	stepTemplateConverter := converters.StepTemplateConverter{
+		ErrGroup:                   &group,
+		Client:                     &octopusClient,
+		ExcludeAllStepTemplates:    false,
+		ExcludeStepTemplates:       nil,
+		ExcludeStepTemplatesRegex:  nil,
+		ExcludeStepTemplatesExcept: nil,
+		Excluder:                   nil,
+		LimitResourceCount:         0,
+		GenerateImportScripts:      false,
+	}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.GetBackend(),
@@ -854,6 +864,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		AzureWebAppTargetConverter:        azureWebAppTargetConverter,
 		FeedConverter:                     feedConverter,
 		ErrGroup:                          &group,
+		StepTemplateConverter:             stepTemplateConverter,
 	}
 
 	if args.Stateless {
@@ -885,7 +896,17 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 
 	dependencies := data.ResourceDetailsCollection{}
 
-	stepTemplateConverter := converters.StepTemplateConverter{}
+	stepTemplateConverter := converters.StepTemplateConverter{
+		ErrGroup:                   nil,
+		Client:                     &octopusClient,
+		ExcludeAllStepTemplates:    false,
+		ExcludeStepTemplates:       nil,
+		ExcludeStepTemplatesRegex:  nil,
+		ExcludeStepTemplatesExcept: nil,
+		Excluder:                   nil,
+		LimitResourceCount:         0,
+		GenerateImportScripts:      false,
+	}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,
@@ -1090,7 +1111,17 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 
 	dependencies := data.ResourceDetailsCollection{}
 
-	stepTemplateConverter := converters.StepTemplateConverter{}
+	stepTemplateConverter := converters.StepTemplateConverter{
+		ErrGroup:                   nil,
+		Client:                     &octopusClient,
+		ExcludeAllStepTemplates:    false,
+		ExcludeStepTemplates:       nil,
+		ExcludeStepTemplatesRegex:  nil,
+		ExcludeStepTemplatesExcept: nil,
+		Excluder:                   nil,
+		LimitResourceCount:         0,
+		GenerateImportScripts:      false,
+	}
 
 	converters.TerraformProviderGenerator{
 		TerraformBackend:         args.BackendBlock,

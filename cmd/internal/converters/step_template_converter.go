@@ -32,10 +32,15 @@ type StepTemplateConverter struct {
 	ExcludeStepTemplatesExcept []string
 	Excluder                   ExcludeByName
 	LimitResourceCount         int
+	GenerateImportScripts      bool
 }
 
 func (c StepTemplateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
+}
+
+func (c StepTemplateConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+
 }
 
 func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
