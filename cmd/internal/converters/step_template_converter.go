@@ -197,14 +197,24 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create step template')
 					$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+					$parsedTemplate = $body | ConvertFrom-Json -Depth 100
+	
+					$response = $null
+					if (-not [string]::IsNullOrEmpty($parsedTemplate.CommunityActionTemplateId)) {
+						# Community step templates are installed via another endpoint	
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($parsedTemplate.CommunityActionTemplateId)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+					} else {
+						# Regular step templates are imported from their JSON representation
 
-					# Replace feed IDs with lookup values passed in via env vars
-					gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
+						# Replace feed IDs with lookup values passed in via env vars
+						gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
+	
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $body -Headers $headers
+						$stepTemplate = $response.content | ConvertFrom-Json
+						# Import any new step template twice to ensure the version of a new template is at least 1.
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
+					}
 
-					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $body -Headers $headers
-					$stepTemplate = $response.content | ConvertFrom-Json
-					# Import any new step template twice to ensure the version of a new template is at least 1.
-					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
 					# Strip out the last modified by details
 					$stepTemplateObject = $response.content | ConvertFrom-Json
 					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
