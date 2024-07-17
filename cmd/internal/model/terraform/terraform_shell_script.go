@@ -4,6 +4,7 @@ package terraform
 type TerraformShellScript struct {
 	Type                 string                                `hcl:"type,label"`
 	Name                 string                                `hcl:"name,label"`
+	Count                *string                               `hcl:"count"`
 	LifecycleCommands    TerraformShellScriptLifecycleCommands `hcl:"lifecycle_commands,block"`
 	Environment          map[string]string                     `hcl:"environment,block"`
 	SensitiveEnvironment map[string]string                     `hcl:"sensitive_environment,block"`
