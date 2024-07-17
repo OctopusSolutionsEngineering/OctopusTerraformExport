@@ -20,9 +20,9 @@ import (
 const octopusdeployStepTemplateResourceType = "shell_script"
 const octopusdeployStepTemplateDataType = "external"
 
-// StepTemplateConverter is a placeholder for real step templates. The exported resource is a Terraform variable,
-// which allows a quick way to remap a step template ID as there is one place the ID needs to be updated.
-// In future there should be a real step template resource, but this will do for now.
+// StepTemplateConverter is a placeholder for real step templates. We use the shell_script resource type to run custom
+// PowerShell scripts to manage step templates, and the external data source type to query the Octopus API.
+// This implementation will eventually be replaced when step templates are fully supported by the Octopus Terraform provider.
 type StepTemplateConverter struct {
 	ErrGroup                   *errgroup.Group
 	Client                     client.OctopusClient
@@ -133,8 +133,8 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		thisResource.Lookup = "${length(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".items) != 0 " +
-			"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".items[0].id " +
+		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
+			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
