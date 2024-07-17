@@ -164,6 +164,11 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 
 	thisResource.ToHcl = func() (string, error) {
 
+		// Step templates can reference feeds, which are space specific. We pass in lookup values for the feeds in
+		// environment variables to allow the PowerShell scripts to replace and hard coded feed IDs.
+		// Changes to environment variables trigger the script resource to run an update, so we also track the version
+		// of the upstream step template here as well. The version is not used in the script, but forces updates
+		// when the step template is updated.
 		environmentVars := map[string]string{}
 		environmentVars["VERSION"] = thisResource.VersionCurrent
 		for _, v2 := range dependencies.GetAllResource("Feeds") {
@@ -194,7 +199,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 					$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
 
 					# Replace feed IDs with lookup values passed in via env vars
-					gci env:* | ? {$_.Name -like "FEED_*} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
+					gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
 
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $body -Headers $headers
 					$stepTemplate = $response.content | ConvertFrom-Json
@@ -215,7 +220,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
 
 						# Replace feed IDs with lookup values passed in via env vars
-						gci env:* | ? {$_.Name -like "FEED_*} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
+						gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
 
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
 						# Strip out the last modified by details
