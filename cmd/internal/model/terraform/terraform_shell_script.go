@@ -9,6 +9,7 @@ type TerraformShellScript struct {
 	Environment          map[string]string                     `hcl:"environment"`
 	SensitiveEnvironment map[string]string                     `hcl:"sensitive_environment"`
 	WorkingDirectory     *string                               `hcl:"working_directory"`
+	Triggers             map[string]string                     `hcl:"triggers"`
 }
 
 type TerraformShellScriptLifecycleCommands struct {

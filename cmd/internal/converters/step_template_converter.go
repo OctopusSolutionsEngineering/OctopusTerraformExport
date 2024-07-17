@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"strconv"
 )
 
 const octopusdeployStepTemplateResourceType = "shell_script"
@@ -182,11 +183,13 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 					}`),
 			},
 			Environment: map[string]string{
-				"SERVER":  "${var.octopus_server}",
-				"SPACEID": "${var.octopus_space_id}",
+				// Use this as a way to trigger an update
+				"VERSION": strconv.Itoa(template.Version),
 			},
 			SensitiveEnvironment: map[string]string{
-				"APIKEY": "${var.octopus_apikey}",
+				"SERVER":  "${var.octopus_server}",
+				"SPACEID": "${var.octopus_space_id}",
+				"APIKEY":  "${var.octopus_apikey}",
 			},
 			WorkingDirectory: strutil.StrPointer("${path.module}"),
 		}
