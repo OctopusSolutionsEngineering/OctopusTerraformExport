@@ -196,15 +196,16 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	dummySecretGenerator := converters.DummySecret{}
 
 	stepTemplateConverter := converters.StepTemplateConverter{
-		ErrGroup:                   &group,
-		Client:                     &octopusClient,
-		ExcludeAllStepTemplates:    false,
-		ExcludeStepTemplates:       nil,
-		ExcludeStepTemplatesRegex:  nil,
-		ExcludeStepTemplatesExcept: nil,
-		Excluder:                   converters.DefaultExcluder{},
-		LimitResourceCount:         0,
-		GenerateImportScripts:      false,
+		ErrGroup:                        &group,
+		Client:                          &octopusClient,
+		ExcludeAllStepTemplates:         false,
+		ExcludeStepTemplates:            nil,
+		ExcludeStepTemplatesRegex:       nil,
+		ExcludeStepTemplatesExcept:      nil,
+		Excluder:                        converters.DefaultExcluder{},
+		LimitResourceCount:              0,
+		GenerateImportScripts:           false,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -897,15 +898,16 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	dependencies := data.ResourceDetailsCollection{}
 
 	stepTemplateConverter := converters.StepTemplateConverter{
-		ErrGroup:                   nil,
-		Client:                     &octopusClient,
-		ExcludeAllStepTemplates:    false,
-		ExcludeStepTemplates:       nil,
-		ExcludeStepTemplatesRegex:  nil,
-		ExcludeStepTemplatesExcept: nil,
-		Excluder:                   converters.DefaultExcluder{},
-		LimitResourceCount:         0,
-		GenerateImportScripts:      false,
+		ErrGroup:                        nil,
+		Client:                          &octopusClient,
+		ExcludeAllStepTemplates:         false,
+		ExcludeStepTemplates:            nil,
+		ExcludeStepTemplatesRegex:       nil,
+		ExcludeStepTemplatesExcept:      nil,
+		Excluder:                        converters.DefaultExcluder{},
+		LimitResourceCount:              0,
+		GenerateImportScripts:           false,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -1112,15 +1114,16 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	dependencies := data.ResourceDetailsCollection{}
 
 	stepTemplateConverter := converters.StepTemplateConverter{
-		ErrGroup:                   nil,
-		Client:                     &octopusClient,
-		ExcludeAllStepTemplates:    false,
-		ExcludeStepTemplates:       nil,
-		ExcludeStepTemplatesRegex:  nil,
-		ExcludeStepTemplatesExcept: nil,
-		Excluder:                   converters.DefaultExcluder{},
-		LimitResourceCount:         0,
-		GenerateImportScripts:      false,
+		ErrGroup:                        nil,
+		Client:                          &octopusClient,
+		ExcludeAllStepTemplates:         false,
+		ExcludeStepTemplates:            nil,
+		ExcludeStepTemplatesRegex:       nil,
+		ExcludeStepTemplatesExcept:      nil,
+		Excluder:                        converters.DefaultExcluder{},
+		LimitResourceCount:              0,
+		GenerateImportScripts:           false,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 	}
 
 	converters.TerraformProviderGenerator{

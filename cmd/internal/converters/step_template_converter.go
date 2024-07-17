@@ -132,6 +132,19 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 		c.toPowershellImport(stepTemplateName, target.Name, dependencies)
 	}*/
 
+	stepTemplateResource := data.ResourceDetails{}
+	stepTemplateResource.FileName = "space_population/" + stepTemplateName + ".json"
+	stepTemplateResource.Id = template.Id
+	stepTemplateResource.Name = template.Name
+	stepTemplateResource.ResourceType = "ActionTemplatesJson"
+	stepTemplateResource.ToHcl = func() (string, error) {
+		// Remove the version from the template before marshalling
+		template.Version = nil
+		stepTemplateJson, err := json.Marshal(template)
+		return string(stepTemplateJson), err
+	}
+	dependencies.AddResource(stepTemplateResource)
+
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + stepTemplateName + ".tf"
 	thisResource.Id = template.Id
@@ -151,14 +164,6 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 
 	thisResource.ToHcl = func() (string, error) {
 
-		// Remove the version from the template before marshalling
-		template.Version = nil
-		stepTemplateJson, err := json.Marshal(template)
-
-		if err != nil {
-			return "", err
-		}
-
 		terraformResource := terraform.TerraformShellScript{
 			Type: octopusdeployStepTemplateResourceType,
 			Name: stepTemplateName,
@@ -166,7 +171,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading step template')
 					$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
-						$host.ui.WriteErrorLine('State ID is null')
+						$host.ui.WriteErrorLine('State ID is empty')
 						Write-Host "{}"
 					} else {
 						$host.ui.WriteErrorLine('State ID is ($state.Id)')
@@ -178,24 +183,27 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
 						Write-Host $($stepTemplateObject | ConvertTo-Json)
 					}`)),
-				Create: strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Create step template')\n" +
-					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
+				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create step template')
+					$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
+					$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $body -Headers $headers
 					$stepTemplate = $response.content | ConvertFrom-Json
 					# Import any new step template twice to ensure the version of a new template is at least 1.
-					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $env:TEMPLATE -Headers $headers
+					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
 					# Strip out the last modified by details
 					$stepTemplateObject = $response.content | ConvertFrom-Json
 					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
 					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
 					Write-Host $($stepTemplateObject | ConvertTo-Json)`),
-				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Updating step template')\n" +
-					`$state = Read-Host | ConvertFrom-JSON
+				Update: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Updating step template')
+					$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
+						$host.ui.WriteErrorLine('State ID is empty')
 						Write-Host "{}"
 					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $env:TEMPLATE -Headers $headers
+						$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
 						# Strip out the last modified by details
 						$stepTemplateObject = $response.content | ConvertFrom-Json
 						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
@@ -204,13 +212,16 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 					}`)),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
 					$state = Read-Host | ConvertFrom-JSON
-					if (-not [string]::IsNullOrEmpty($state.Id)) {
+					if ([string]::IsNullOrEmpty($state.Id)) {
+						$host.ui.WriteErrorLine('State ID is empty')
+					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method DELETE -Headers $headers
 					}`),
 			},
 			Environment: map[string]string{
-				"TEMPLATE": string(stepTemplateJson),
+				// trigger an update when the version changes
+				"VERSION": thisResource.VersionCurrent,
 			},
 			SensitiveEnvironment: map[string]string{
 				"SERVER":  "${var.octopus_server}",
