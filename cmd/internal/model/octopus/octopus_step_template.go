@@ -3,7 +3,7 @@ package octopus
 type StepTemplate struct {
 	Id                        string                   `json:"Id"`
 	SpaceId                   *string                  `json:"SpaceId"`
-	Version                   int                      `json:"Version"`
+	Version                   *int                     `json:"Version"`
 	Name                      string                   `json:"Name"`
 	Description               string                   `json:"Description"`
 	ActionType                string                   `json:"ActionType"`

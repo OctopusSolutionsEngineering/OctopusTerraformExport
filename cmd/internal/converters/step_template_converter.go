@@ -126,6 +126,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 	thisResource.FileName = "space_population/" + stepTemplateName + ".tf"
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
+	thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Version}"
+	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
@@ -139,6 +141,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 
 	thisResource.ToHcl = func() (string, error) {
 
+		// Remove the version from the template before marshalling
+		template.Version = nil
 		stepTemplateJson, err := json.Marshal(template)
 
 		if err != nil {
@@ -158,22 +162,35 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$host.ui.WriteErrorLine('State ID is ($state.Id)')
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method GET -Headers $headers
-						Write-Host $response.content
+						# Strip out the last modified by details
+						$stepTemplateObject = $response.content | ConvertFrom-Json
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
+						Write-Host $($stepTemplateObject | ConvertTo-Json)
 					}`)),
 				Create: strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Create step template')\n" +
-					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
-					Write-Host $response.content`),
+					$stepTemplate = $response.content | ConvertFrom-Json
+					# Import any new step template twice to ensure the version of a new template is at least 1.
+					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $env:TEMPLATE -Headers $headers
+					# Strip out the last modified by details
+					$stepTemplateObject = $response.content | ConvertFrom-Json
+					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
+					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
+					Write-Host $($stepTemplateObject | ConvertTo-Json)`),
 				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Updating step template')\n" +
-					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						Write-Host "{}"
 					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $json -Headers $headers
-						Write-Host $response.content
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $env:TEMPLATE -Headers $headers
+						# Strip out the last modified by details
+						$stepTemplateObject = $response.content | ConvertFrom-Json
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
+						Write-Host $($stepTemplateObject | ConvertTo-Json)
 					}`)),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
 					$state = Read-Host | ConvertFrom-JSON
@@ -183,8 +200,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 					}`),
 			},
 			Environment: map[string]string{
-				// Use this as a way to trigger an update
-				"VERSION": strconv.Itoa(template.Version),
+				"TEMPLATE": string(stepTemplateJson),
 			},
 			SensitiveEnvironment: map[string]string{
 				"SERVER":  "${var.octopus_server}",
