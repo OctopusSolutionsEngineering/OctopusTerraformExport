@@ -332,7 +332,7 @@ func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]st
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
 func (c OctopusActionProcessor) replaceStepTemplates(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	for k, v := range properties {
-		for _, v2 := range dependencies.GetAllResource("StepTemplates") {
+		for _, v2 := range dependencies.GetAllResource("ActionTemplates") {
 			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
 				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}

@@ -44,36 +44,27 @@ func (c StepTemplateConverter) AllToStatelessHcl(dependencies *data.ResourceDeta
 
 func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 
-	stepTemplateName := sanitizer.SanitizeName(id)
-
-	thisResource := data.ResourceDetails{}
-	thisResource.FileName = "space_population/" + stepTemplateName + ".tf"
-	thisResource.Id = id
-	thisResource.Name = id
-	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${var." + stepTemplateName + "}"
-	thisResource.ToHcl = func() (string, error) {
-
-		variable := terraform.TerraformVariable{
-			Name:        stepTemplateName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   false,
-			Description: "Step template ID",
-			Default:     &id,
-		}
-
-		file := hclwrite.NewEmptyFile()
-		block := gohcl.EncodeAsBlock(variable, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-		file.Body().AppendBlock(block)
-
-		return string(file.Bytes()), nil
+	if c.ExcludeAllStepTemplates {
+		return nil
 	}
 
-	dependencies.AddResource(thisResource)
+	if id == "" {
+		return nil
+	}
 
-	return nil
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	resource := octopus.StepTemplate{}
+	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+
+	if err != nil {
+		return err
+	}
+
+	zap.L().Info("Step Template: " + resource.Id)
+	return c.toHcl(resource, false, dependencies)
 }
 
 func (c StepTemplateConverter) GetResourceType() string {
@@ -139,10 +130,10 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 	if stateless {
 		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
 			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")[0] " +
-			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].Id}"
+			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
-		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".Id}"
+		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Id}"
 	}
 
 	thisResource.ToHcl = func() (string, error) {
