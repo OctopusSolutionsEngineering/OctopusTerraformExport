@@ -162,30 +162,34 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$host.ui.WriteErrorLine('State ID is ($state.Id)')
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method GET -Headers $headers
-						# We want to make sure that the JSON does not change between read and update, so parse and serialize the JSON
+						# Strip out the last modified by details
 						$stepTemplateObject = $response.content | ConvertFrom-Json
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
 						Write-Host $($stepTemplateObject | ConvertTo-Json)
 					}`)),
 				Create: strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Create step template')\n" +
-					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
 					$stepTemplate = $response.content | ConvertFrom-Json
 					# Import any new step template twice to ensure the version of a new template is at least 1.
-					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $json -Headers $headers
-					# We want to make sure that the JSON does not change between read and update, so parse and serialize the JSON
+					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $env:TEMPLATE -Headers $headers
+					# Strip out the last modified by details
 					$stepTemplateObject = $response.content | ConvertFrom-Json
+					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
+					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
 					Write-Host $($stepTemplateObject | ConvertTo-Json)`),
 				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Updating step template')\n" +
-					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						Write-Host "{}"
 					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $json -Headers $headers
-						# We want to make sure that the JSON does not change between read and update, so parse and serialize the JSON
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $env:TEMPLATE -Headers $headers
+						# Strip out the last modified by details
 						$stepTemplateObject = $response.content | ConvertFrom-Json
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
+						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
 						Write-Host $($stepTemplateObject | ConvertTo-Json)
 					}`)),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
@@ -195,7 +199,9 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method DELETE -Headers $headers
 					}`),
 			},
-			Environment: map[string]string{},
+			Environment: map[string]string{
+				"TEMPLATE": string(stepTemplateJson),
+			},
 			SensitiveEnvironment: map[string]string{
 				"SERVER":  "${var.octopus_server}",
 				"SPACEID": "${var.octopus_space_id}",
