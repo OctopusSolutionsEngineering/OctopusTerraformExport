@@ -10,7 +10,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"github.com/PurpleSec/escape"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
@@ -166,11 +165,11 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method GET -Headers $headers
 						Write-Host $response.content
 					}`)),
-				Create: strutil.StripMultilineWhitespace("$json = \"" + escape.JSON(string(stepTemplateJson)) + "\"\n" +
+				Create: strutil.StripMultilineWhitespace("$json = " + strutil.PowershellEscape(string(stepTemplateJson)) + "\n" +
 					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
 					Write-Host $response.content`),
-				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$json = \"" + escape.JSON(string(stepTemplateJson)) + "\"\n" +
+				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$json = " + strutil.PowershellEscape(string(stepTemplateJson)) + "\n" +
 					`$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						Write-Host "{}"
