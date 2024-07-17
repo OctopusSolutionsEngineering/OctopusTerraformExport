@@ -6,7 +6,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/steptemplate"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -85,7 +85,7 @@ func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.Resou
 		return nil
 	}
 
-	batchClient := client.BatchingOctopusApiClient[steptemplate.StepTemplate]{
+	batchClient := client.BatchingOctopusApiClient[octopus.StepTemplate]{
 		Client: c.Client,
 	}
 
@@ -112,7 +112,7 @@ func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.Resou
 	return nil
 }
 
-func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded step templates
 	if c.Excluder.IsResourceExcludedWithRegex(template.Name, c.ExcludeAllStepTemplates, c.ExcludeStepTemplates, c.ExcludeStepTemplatesRegex, c.ExcludeStepTemplatesExcept) {
 		return nil
@@ -157,19 +157,24 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 			Type: octopusdeployStepTemplateResourceType,
 			Name: stepTemplateName,
 			LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
-				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$state = Read-Host | ConvertFrom-JSON
+				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading step template')
+					$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
+						$host.ui.WriteErrorLine('State ID is null')
 						Write-Host "{}"
 					} else {
+						$host.ui.WriteErrorLine('State ID is ($state.Id)')
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method GET -Headers $headers
 						Write-Host $response.content
 					}`)),
-				Create: strutil.StripMultilineWhitespace("$json = " + strutil.PowershellEscape(string(stepTemplateJson)) + "\n" +
+				Create: strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Create step template')\n" +
+					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
 					Write-Host $response.content`),
-				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$json = " + strutil.PowershellEscape(string(stepTemplateJson)) + "\n" +
+				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Updating step template')\n" +
+					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						Write-Host "{}"
@@ -178,7 +183,8 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $json -Headers $headers
 						Write-Host $response.content
 					}`)),
-				Delete: strutil.StripMultilineWhitespace(`$state = Read-Host | ConvertFrom-JSON
+				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
+					$state = Read-Host | ConvertFrom-JSON
 					if (-not [string]::IsNullOrEmpty($state.Id)) {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method DELETE -Headers $headers
@@ -217,13 +223,13 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 }
 
 // writeData appends the data block for stateless modules
-func (c StepTemplateConverter) writeData(file *hclwrite.File, resource steptemplate.StepTemplate, resourceName string) {
+func (c StepTemplateConverter) writeData(file *hclwrite.File, resource octopus.StepTemplate, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
 
-func (c StepTemplateConverter) buildData(resourceName string, resource steptemplate.StepTemplate) terraform.TerraformExternalData {
+func (c StepTemplateConverter) buildData(resourceName string, resource octopus.StepTemplate) terraform.TerraformExternalData {
 	return terraform.TerraformExternalData{
 		Type: octopusdeployStepTemplateDataType,
 		Name: resourceName,
