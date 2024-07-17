@@ -340,6 +340,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 				sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
+				sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 
 				for _, propertyVariables := range variables {

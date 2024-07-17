@@ -126,6 +126,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 	thisResource.FileName = "space_population/" + stepTemplateName + ".tf"
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
+	thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Version}"
+	thisResource.VersionCurrent = strconv.Itoa(template.Version)
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
@@ -163,6 +165,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 				Create: strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Create step template')\n" +
 					"$json = \"" + strutil.PowershellEscape(string(stepTemplateJson)) + "\"\n" +
 					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
+					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
+					# Import any new step template twice to ensure the version of a new template is at least 1.
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
 					Write-Host $response.content`),
 				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$host.ui.WriteErrorLine('Updating step template')\n" +

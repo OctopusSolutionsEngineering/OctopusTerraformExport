@@ -30,6 +30,12 @@ type ResourceDetails struct {
 	Id string
 	// Name is the name of the resource
 	Name string
+	// Step templates have a calculated version value that is only available when the template is created. This value
+	// is an expression that is used to reference the newly created version value.
+	VersionLookup string
+	// Step templates have a version field that is calculated by Octopus. This value captures the current value from
+	// the space being exported.
+	VersionCurrent string
 	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
 	// Lookup is the ID of the resource created or looked up by Terraform
@@ -162,6 +168,38 @@ func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id stri
 	for _, r := range c.Resources {
 		if r.Id == id && r.ResourceType == resourceType {
 			return r.Name
+		}
+	}
+
+	zap.L().Error("Failed to resolve lookup " + id + " of type " + resourceType)
+
+	return ""
+}
+
+// GetResourceVersionLookup returns the terraform syntax to lookup the version of the new resource.
+func (c *ResourceDetailsCollection) GetResourceVersionLookup(resourceType string, id string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, r := range c.Resources {
+		if r.Id == id && r.ResourceType == resourceType {
+			return r.VersionLookup
+		}
+	}
+
+	zap.L().Error("Failed to resolve lookup " + id + " of type " + resourceType)
+
+	return ""
+}
+
+// GetResourceVersionCurrent returns the current version of the resource being exported.
+func (c *ResourceDetailsCollection) GetResourceVersionCurrent(resourceType string, id string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, r := range c.Resources {
+		if r.Id == id && r.ResourceType == resourceType {
+			return r.VersionCurrent
 		}
 	}
 

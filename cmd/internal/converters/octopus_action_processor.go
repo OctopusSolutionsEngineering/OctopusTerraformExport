@@ -252,6 +252,35 @@ func (c OctopusActionProcessor) LimitPropertyLength(length int, retainVariables 
 	return sanitisedProperties
 }
 
+// ReplaceStepTemplateVersion replaces the step template version with a lookup value
+func (c OctopusActionProcessor) ReplaceStepTemplateVersion(dependencies *data.ResourceDetailsCollection, properties map[string]string) map[string]string {
+	if stepTemplate, ok := properties["Octopus.Action.Template.Id"]; ok {
+		stepTemplateNewVersion := dependencies.GetResourceVersionLookup("ActionTemplates", stepTemplate)
+		stepTemplateCurrentVersion := dependencies.GetResourceVersionCurrent("ActionTemplates", stepTemplate)
+
+		if stepTemplateVersion, ok := properties["Octopus.Action.Template.Version"]; ok {
+			if stepTemplateVersion == stepTemplateCurrentVersion {
+				// If the version of the step template in the step is the same as the version of the step template
+				// that is being exported, we know that this step references the latest step template. We should then
+				// continue to reference the latest version after the step is recreated
+				properties["Octopus.Action.Template.Version"] = stepTemplateNewVersion
+			} else {
+				// If the step referenced an older version of the step template, set the version to 0 to allow the newly
+				// created step to show that an update is available. Technically we don't have a useful version to point
+				// to here as step templates don't retain a history, and we just need a version that we know is not going
+				// to be the current version of any newly imported step templates.
+				// This does mean that newly created step templates need to be imported twice to ensure that the current
+				// version is always at least 1, allowing us to indicate a previous version by setting this property to 0.
+				properties["Octopus.Action.Template.Version"] = "0"
+			}
+		} else {
+			properties["Octopus.Action.Template.Version"] = stepTemplateNewVersion
+		}
+	}
+
+	return properties
+}
+
 // RemoveUnnecessaryStepFields removes generic property bag values that have more specific terraform properties
 func (c OctopusActionProcessor) RemoveUnnecessaryStepFields(properties map[string]string) map[string]string {
 	sanitisedProperties := map[string]string{}
