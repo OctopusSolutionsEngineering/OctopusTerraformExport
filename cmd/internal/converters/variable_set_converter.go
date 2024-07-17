@@ -1053,7 +1053,7 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 		// unfortunately is easier said than done as there appears to be no way to write a double dollar sign with
 		// the HCL serialization library, so we need to get a little creative.
 		if c.DefaultSecretVariableValues {
-			hcl.WriteUnquotedAttribute(block, "default", "\"#{"+variable.Name+" | JsonEscape | Replace \"([$])([{])\" \"$1$1$2\" | Replace \"([%])([{])\" \"$1$1$2\"}\"")
+			hcl.WriteUnquotedAttribute(block, "default", "<<EOT\n#{"+variable.Name+" | YamlSingleQuoteEscape  | Replace \"([$])([{])\" \"$1$1$2\" | Replace \"([%])([{])\" \"$1$1$2\"}\nEOT")
 		}
 
 		file.Body().AppendBlock(block)
