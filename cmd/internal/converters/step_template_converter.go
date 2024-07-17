@@ -139,10 +139,10 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 	if stateless {
 		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
 			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")[0] " +
-			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
+			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].Id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
-		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".Id}"
 	}
 
 	thisResource.ToHcl = func() (string, error) {
