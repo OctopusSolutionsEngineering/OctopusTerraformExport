@@ -24,26 +24,36 @@ const octopusdeployStepTemplateDataType = "external"
 // PowerShell scripts to manage step templates, and the external data source type to query the Octopus API.
 // This implementation will eventually be replaced when step templates are fully supported by the Octopus Terraform provider.
 type StepTemplateConverter struct {
-	ErrGroup                   *errgroup.Group
-	Client                     client.OctopusClient
-	ExcludeAllStepTemplates    bool
-	ExcludeStepTemplates       []string
-	ExcludeStepTemplatesRegex  []string
-	ExcludeStepTemplatesExcept []string
-	Excluder                   ExcludeByName
-	LimitResourceCount         int
-	GenerateImportScripts      bool
+	ErrGroup                        *errgroup.Group
+	Client                          client.OctopusClient
+	ExcludeAllStepTemplates         bool
+	ExcludeStepTemplates            []string
+	ExcludeStepTemplatesRegex       []string
+	ExcludeStepTemplatesExcept      []string
+	Excluder                        ExcludeByName
+	LimitResourceCount              int
+	GenerateImportScripts           bool
+	ExperimentalEnableStepTemplates bool
 }
 
 func (c StepTemplateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+	if !c.ExperimentalEnableStepTemplates {
+		return
+	}
+
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c StepTemplateConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
-
+	if !c.ExperimentalEnableStepTemplates {
+		return
+	}
 }
 
 func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if !c.ExperimentalEnableStepTemplates {
+		return nil
+	}
 
 	if c.ExcludeAllStepTemplates {
 		return nil
