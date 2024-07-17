@@ -7,7 +7,7 @@ type StepTemplate struct {
 	Name                      string                   `json:"Name"`
 	Description               string                   `json:"Description"`
 	ActionType                string                   `json:"ActionType"`
-	Packages                  []string                 `json:"Packages"`
+	Packages                  []Package                `json:"Packages"`
 	GitDependencies           []string                 `json:"GitDependencies"`
 	Properties                map[string]string        `json:"Properties"`
 	LastModifiedBy            string                   `json:"LastModifiedBy"`
@@ -22,7 +22,7 @@ type StepTemplateParameters struct {
 	Name            string                               `json:"Name"`
 	Label           string                               `json:"Label"`
 	HelpText        string                               `json:"HelpText"`
-	DefaultValue    string                               `json:"DefaultValue"`
+	DefaultValue    any                                  `json:"DefaultValue"`
 	DisplaySettings StepTemplateParameterDisplaySettings `json:"DisplaySettings"`
 }
 
