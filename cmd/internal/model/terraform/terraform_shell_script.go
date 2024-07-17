@@ -6,8 +6,8 @@ type TerraformShellScript struct {
 	Name                 string                                `hcl:"name,label"`
 	Count                *string                               `hcl:"count"`
 	LifecycleCommands    TerraformShellScriptLifecycleCommands `hcl:"lifecycle_commands,block"`
-	Environment          map[string]string                     `hcl:"environment,block"`
-	SensitiveEnvironment map[string]string                     `hcl:"sensitive_environment,block"`
+	Environment          map[string]string                     `hcl:"environment"`
+	SensitiveEnvironment map[string]string                     `hcl:"sensitive_environment"`
 	WorkingDirectory     *string                               `hcl:"working_directory"`
 }
 

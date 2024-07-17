@@ -158,19 +158,19 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 			Type: octopusdeployStepTemplateResourceType,
 			Name: stepTemplateName,
 			LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
-				Read: strutil.StrPointer(`$state = Read-Host | ConvertFrom-JSON
+				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						Write-Host "{}"
 					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method GET -Headers $headers
 						Write-Host $response.content
-					}`),
-				Create: "$json = \"" + escape.JSON(string(stepTemplateJson)) + "\"\n" +
+					}`)),
+				Create: strutil.StripMultilineWhitespace("$json = \"" + escape.JSON(string(stepTemplateJson)) + "\"\n" +
 					`$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $json -Headers $headers
-					Write-Host $response.content`,
-				Update: strutil.StrPointer("$json = \"" + escape.JSON(string(stepTemplateJson)) + "\"\n" +
+					Write-Host $response.content`),
+				Update: strutil.StrPointer(strutil.StripMultilineWhitespace("$json = \"" + escape.JSON(string(stepTemplateJson)) + "\"\n" +
 					`$state = Read-Host | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						Write-Host "{}"
@@ -178,12 +178,12 @@ func (c StepTemplateConverter) toHcl(template steptemplate.StepTemplate, statele
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $json -Headers $headers
 						Write-Host $response.content
-					}`),
-				Delete: `$state = Read-Host | ConvertFrom-JSON
+					}`)),
+				Delete: strutil.StripMultilineWhitespace(`$state = Read-Host | ConvertFrom-JSON
 					if (-not [string]::IsNullOrEmpty($state.Id)) {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method DELETE -Headers $headers
-					}`,
+					}`),
 			},
 			Environment: map[string]string{
 				"SERVER":  "${var.octopus_server}",
