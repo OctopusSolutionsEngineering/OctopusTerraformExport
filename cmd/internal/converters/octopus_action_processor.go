@@ -208,7 +208,6 @@ func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[str
 	unnecessaryFields := []string{"Octopus.Action.Package.PackageId",
 		// This value is usually redundant and specified by the run_on_server property, but it doesn't work for runbooks in 0.12.2
 		// "Octopus.Action.RunOnServer",
-		"Octopus.Step.ConditionVariableExpression",
 		"Octopus.Action.EnabledFeatures",
 		"Octopus.Action.Aws.CloudFormationTemplateParametersRaw",
 		"Octopus.Action.Package.FeedId"}
