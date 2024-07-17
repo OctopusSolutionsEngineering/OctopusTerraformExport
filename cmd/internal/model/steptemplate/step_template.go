@@ -1,19 +1,21 @@
 package steptemplate
 
 type StepTemplate struct {
-	Id              string                   `json:"Id"`
-	Version         int                      `json:"Version"`
-	Name            string                   `json:"Name"`
-	Description     string                   `json:"Description"`
-	ActionType      string                   `json:"ActionType"`
-	Packages        []string                 `json:"Packages"`
-	GitDependencies []string                 `json:"GitDependencies"`
-	Meta            StepTemplateMeta         `json:"$Meta"`
-	Properties      StepTemplateProperties   `json:"Properties"`
-	LastModifiedBy  string                   `json:"LastModifiedBy"`
-	Category        string                   `json:"Category"`
-	StepPackageId   string                   `json:"StepPackageId"`
-	Parameters      []StepTemplateParameters `json:"Parameters"`
+	Id                        string                   `json:"Id"`
+	SpaceId                   *string                  `json:"SpaceId"`
+	Version                   int                      `json:"Version"`
+	Name                      string                   `json:"Name"`
+	Description               string                   `json:"Description"`
+	ActionType                string                   `json:"ActionType"`
+	Packages                  []string                 `json:"Packages"`
+	GitDependencies           []string                 `json:"GitDependencies"`
+	Meta                      StepTemplateMeta         `json:"$Meta"`
+	Properties                StepTemplateProperties   `json:"Properties"`
+	LastModifiedBy            string                   `json:"LastModifiedBy"`
+	Category                  string                   `json:"Category"`
+	StepPackageId             string                   `json:"StepPackageId"`
+	Parameters                []StepTemplateParameters `json:"Parameters"`
+	CommunityActionTemplateId *string                  `json:"CommunityActionTemplateId"`
 }
 
 type StepTemplateMeta struct {
