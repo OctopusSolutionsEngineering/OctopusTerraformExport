@@ -13,8 +13,9 @@ type Backend struct {
 }
 
 type RequiredProviders struct {
-	OctopusProvider ProviderDefinition `hcl:"octopusdeploy"`
-	ShellProvider   ProviderDefinition `hcl:"shell"`
+	OctopusProvider  ProviderDefinition `hcl:"octopusdeploy"`
+	ShellProvider    ProviderDefinition `hcl:"shell"`
+	ExternalProvider ProviderDefinition `hcl:"external"`
 }
 
 type ProviderDefinition struct {
@@ -35,6 +36,10 @@ type TerraformShellProvider struct {
 	EnableParallelism bool     `hcl:"enable_parallelism"`
 }
 
+type TerraformEmptyProvider struct {
+	Type string `hcl:"type,label"`
+}
+
 func (c TerraformConfig) CreateTerraformConfig(backend string, version string) TerraformConfig {
 	config := TerraformConfig{
 		RequiredProviders: RequiredProviders{
@@ -45,6 +50,10 @@ func (c TerraformConfig) CreateTerraformConfig(backend string, version string) T
 			ShellProvider: ProviderDefinition{
 				Source:  "scottwinkler/shell",
 				Version: "1.7.10",
+			},
+			ExternalProvider: ProviderDefinition{
+				Source:  "hashicorp/external",
+				Version: "2.3.3",
 			},
 		},
 		RequiredVersion: strutil.StrPointer(">= 1.6.0"),
