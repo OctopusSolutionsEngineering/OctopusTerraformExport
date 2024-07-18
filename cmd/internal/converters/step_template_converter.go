@@ -250,7 +250,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			Name: stepTemplateName,
 			LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
 				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading step template')
-					$state = Read-Host | ConvertFrom-JSON
+					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						$host.ui.WriteErrorLine('State ID is empty')
 						Write-Host "{}"
@@ -295,7 +295,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
 					Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)`),
 				Update: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Updating step template')
-					$state = Read-Host | ConvertFrom-JSON
+					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						$host.ui.WriteErrorLine('State ID is empty')
 						Write-Host "{}"
@@ -314,7 +314,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`)),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
-					$state = Read-Host | ConvertFrom-JSON
+					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						$host.ui.WriteErrorLine('State ID is empty')
 					} else {
@@ -367,13 +367,17 @@ func (c StepTemplateConverter) buildData(resourceName string, resource octopus.S
 		Program: []string{
 			"pwsh",
 			"-Command",
-			strutil.StripMultilineWhitespace(`$query = [Console]::In.ReadLine() | ConvertFrom-JSON
-			$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
-			$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
-			$keyValueResponse = @{}
-			$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null
-			$results = $keyValueResponse | ConvertTo-JSON -Depth 100
-			Write-Host $results`)},
+			strutil.StripMultilineWhitespace(`try {
+				$query = [Console]::In.ReadLine() | ConvertFrom-JSON
+				$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
+				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
+				$keyValueResponse = @{}
+				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null
+				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
+				Write-Host $results
+			} catch {
+				Write-Error $_.Exception.Message
+			}`)},
 		Query: map[string]string{
 			"name":    resource.Name,
 			"server":  "${var.octopus_server}",
