@@ -365,7 +365,7 @@ func (c OctopusActionProcessor) replaceStepTemplates(experimentalEnableStepTempl
 	if experimentalEnableStepTemplates {
 		for k, v := range properties {
 			for _, v2 := range dependencies.GetAllResource("ActionTemplates") {
-				if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
+				if len(v2.Id) != 0 && v == v2.Id {
 					properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 				}
 			}
