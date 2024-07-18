@@ -55,7 +55,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	}
 
 	resource := octopus.Runbook{}
-	foundRunbook, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	foundRunbook, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	}
 
 	parentResource := octopus.Project{}
-	foundProject, err := c.Client.GetResourceById("Projects", resource.ProjectId, &parentResource)
+	foundProject, err := c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &parentResource)
 
 	if err != nil {
 		return err

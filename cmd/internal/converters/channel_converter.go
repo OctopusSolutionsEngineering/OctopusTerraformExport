@@ -50,7 +50,7 @@ func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById(c.GetResourceType(), projectId, &project)
+	_, err = c.Client.GetSpaceResourceById(c.GetResourceType(), projectId, &project)
 
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById(c.GetResourceType(), projectId, &project)
+	_, err = c.Client.GetSpaceResourceById(c.GetResourceType(), projectId, &project)
 
 	if err != nil {
 		return err

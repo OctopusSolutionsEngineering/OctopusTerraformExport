@@ -68,14 +68,24 @@ func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceD
 	}
 
 	resource := octopus.StepTemplate{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
 	zap.L().Info("Step Template: " + resource.Id)
-	return c.toHcl(resource, false, dependencies)
+
+	var communityStepTemplate *octopus.CommunityStepTemplate = nil
+	if resource.CommunityActionTemplateId != nil {
+		communityStepTemplate = &octopus.CommunityStepTemplate{}
+		_, err := c.Client.GetGlobalResourceById("CommunityActionTemplates", strutil.EmptyIfNil(resource.CommunityActionTemplateId), communityStepTemplate)
+		if err != nil {
+			return err
+		}
+	}
+
+	return c.toHcl(resource, communityStepTemplate, false, dependencies)
 }
 
 func (c StepTemplateConverter) GetResourceType() string {
@@ -104,7 +114,17 @@ func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.Resou
 		resource := resourceWrapper.Res
 
 		zap.L().Info("Step Template: " + resource.Id)
-		err := c.toHcl(resource, stateless, dependencies)
+
+		var communityStepTemplate *octopus.CommunityStepTemplate = nil
+		if resource.CommunityActionTemplateId != nil {
+			communityStepTemplate = &octopus.CommunityStepTemplate{}
+			_, err := c.Client.GetGlobalResourceById("CommunityActionTemplates", strutil.EmptyIfNil(resource.CommunityActionTemplateId), communityStepTemplate)
+			if err != nil {
+				return err
+			}
+		}
+
+		err := c.toHcl(resource, communityStepTemplate, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -114,7 +134,7 @@ func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.Resou
 	return nil
 }
 
-func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communityStepTemplate *octopus.CommunityStepTemplate, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded step templates
 	if c.Excluder.IsResourceExcludedWithRegex(template.Name, c.ExcludeAllStepTemplates, c.ExcludeStepTemplates, c.ExcludeStepTemplatesRegex, c.ExcludeStepTemplatesExcept) {
 		return nil
@@ -145,12 +165,19 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 	}
 	dependencies.AddResource(stepTemplateResource)
 
+	// Get the external ID, defined as the community step template website
+	externalId := ""
+	if communityStepTemplate != nil {
+		externalId = communityStepTemplate.Website
+	}
+
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + stepTemplateName + ".tf"
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
 	thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Version}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
+	thisResource.ExternalID = externalId
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
@@ -201,8 +228,12 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, stateless bo
 	
 					$response = $null
 					if (-not [string]::IsNullOrEmpty($parsedTemplate.CommunityActionTemplateId)) {
-						# Community step templates are installed via another endpoint	
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($parsedTemplate.CommunityActionTemplateId)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+						# Find the step template with the matching external ID
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates?take=10000" -Method GET -Headers $headers
+						$communityTemplate = $response.content | ConvertFrom-Json | Select-Object -Expand Items | ? {$_.Website -eq "` + thisResource.ExternalID + `"} | % {
+							# Then install the step template
+							$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+						}
 					} else {
 						# Regular step templates are imported from their JSON representation
 

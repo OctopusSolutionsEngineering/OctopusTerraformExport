@@ -126,7 +126,7 @@ func (c OfflineDropTargetConverter) toHclById(id string, stateless bool, depende
 	}
 
 	resource := octopus.OfflineDropResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -160,7 +160,7 @@ func (c OfflineDropTargetConverter) ToHclLookupById(id string, dependencies *dat
 	}
 
 	resource := octopus.OfflineDropResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

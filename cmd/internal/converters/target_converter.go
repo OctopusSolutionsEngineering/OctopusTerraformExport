@@ -23,7 +23,7 @@ func (c TargetConverter) HasNoEnvironments(target octopus.TargetResource) (error
 		var exclusionError error = nil
 		filteredEnvironments := lo.Filter(target.GetEnvironmentIds(), func(item string, index int) bool {
 			environment := &octopus.Environment{}
-			exists, err := c.Client.GetResourceById("Environments", item, environment)
+			exists, err := c.Client.GetSpaceResourceById("Environments", item, environment)
 			if err != nil {
 				exclusionError = errors.Join(exclusionError, err)
 				return false

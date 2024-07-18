@@ -1918,7 +1918,7 @@ func TestVariableSetExport(t *testing.T) {
 					}
 
 					resource := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+					_, err = octopusClient.GetSpaceResourceById("Variables", v.VariableSetId, &resource)
 
 					firstVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.Variable" })
 					secondVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.SecretVariable" })
@@ -2038,7 +2038,7 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 					}
 
 					resource := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+					_, err = octopusClient.GetSpaceResourceById("Variables", v.VariableSetId, &resource)
 
 					firstVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.Variable" })
 					secondVar := lo.Filter(resource.Variables, func(x octopus.Variable, index int) bool { return x.Name == "Test.SecretVariable" })
@@ -2186,7 +2186,7 @@ func TestProjectExport(t *testing.T) {
 					found = true
 
 					variables := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
 						return errors.New("the project must have no variables")
@@ -2285,7 +2285,7 @@ func TestProjectVarExcludedAllExport(t *testing.T) {
 					found = true
 
 					variables := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
 						return errors.New("The project must not have any variables")
@@ -2353,7 +2353,7 @@ func TestProjectVarExcludedExport(t *testing.T) {
 					found = true
 
 					variables := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
 						return errors.New("The project must not have any variables")
@@ -2404,7 +2404,7 @@ func TestProjectVarExcludedRegexExport(t *testing.T) {
 					found = true
 
 					variables := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
 						return errors.New("The project must not have any variables")
@@ -2455,7 +2455,7 @@ func TestProjectVarExcludedExceptExport(t *testing.T) {
 					found = true
 
 					variables := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil || len(variables.Variables) != 0 {
 						return errors.New("The project must not have any variables")
@@ -2499,7 +2499,7 @@ func TestProjectChannelExport(t *testing.T) {
 					found = true
 
 					deploymentProcess := octopus.DeploymentProcess{}
-					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
+					_, err := octopusClient.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
 
 					if err != nil {
 						return err
@@ -2714,7 +2714,7 @@ func TestScriptModuleExport(t *testing.T) {
 					}
 
 					resource := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", v.VariableSetId, &resource)
+					_, err = octopusClient.GetSpaceResourceById("Variables", v.VariableSetId, &resource)
 
 					if len(resource.Variables) != 2 {
 						return errors.New("The library variable set must have two associated variables")
@@ -5431,7 +5431,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -5512,7 +5512,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				// Check the helm feed, used by a variable, was exported
 				err = func() error {
 					helmFeedResource := octopus.Feed{}
-					_, err = octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(helmFeed[0].Value), &helmFeedResource)
+					_, err = octopusClient.GetSpaceResourceById("Feeds", strutil.EmptyIfNil(helmFeed[0].Value), &helmFeedResource)
 
 					if err != nil {
 						return err
@@ -5536,7 +5536,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				// check rge account, used by a variable, was exported
 				err = func() error {
 					accountResource := octopus.Account{}
-					_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(usernamePassword[0].Value), &accountResource)
+					_, err = octopusClient.GetSpaceResourceById("Accounts", strutil.EmptyIfNil(usernamePassword[0].Value), &accountResource)
 
 					if err != nil {
 						return err
@@ -5560,7 +5560,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				// check rge worker pool, used by a variable, was exported
 				err = func() error {
 					workerPoolResource := octopus.WorkerPool{}
-					_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPool[0].Value), &workerPoolResource)
+					_, err = octopusClient.GetSpaceResourceById("WorkerPools", strutil.EmptyIfNil(workerPool[0].Value), &workerPoolResource)
 
 					if err != nil {
 						return err
@@ -5584,7 +5584,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 				// check the certificate, used by a variable, was exported
 				err = func() error {
 					certificateResource := octopus.Certificate{}
-					_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificate[0].Value), &certificateResource)
+					_, err = octopusClient.GetSpaceResourceById("Certificates", strutil.EmptyIfNil(certificate[0].Value), &certificateResource)
 
 					if err != nil {
 						return err
@@ -5940,7 +5940,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *testProject[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *testProject[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -5969,7 +5969,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				feed := octopus.Feed{}
-				_, err = octopusClient.GetResourceById("Feeds", strutil.EmptyIfNil(feedVar[0].Value), &feed)
+				_, err = octopusClient.GetSpaceResourceById("Feeds", strutil.EmptyIfNil(feedVar[0].Value), &feed)
 
 				if err != nil {
 					return err
@@ -5993,7 +5993,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				account := octopus.Account{}
-				_, err = octopusClient.GetResourceById("Accounts", strutil.EmptyIfNil(accountVar[0].Value), &account)
+				_, err = octopusClient.GetSpaceResourceById("Accounts", strutil.EmptyIfNil(accountVar[0].Value), &account)
 
 				if err != nil {
 					return err
@@ -6013,7 +6013,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				workerPool := octopus.WorkerPool{}
-				_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(workerPoolVar[0].Value), &workerPool)
+				_, err = octopusClient.GetSpaceResourceById("WorkerPools", strutil.EmptyIfNil(workerPoolVar[0].Value), &workerPool)
 
 				if err != nil {
 					return err
@@ -6033,7 +6033,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				certificate := octopus.Certificate{}
-				_, err = octopusClient.GetResourceById("Certificates", strutil.EmptyIfNil(certificateVar[0].Value), &certificate)
+				_, err = octopusClient.GetSpaceResourceById("Certificates", strutil.EmptyIfNil(certificateVar[0].Value), &certificate)
 
 				if err != nil {
 					return err
@@ -6067,7 +6067,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				runbookProcess := octopus.RunbookProcess{}
-				_, err = octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
+				_, err = octopusClient.GetSpaceResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
 
 				if err != nil {
 					return err
@@ -6278,7 +6278,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
-				found, err := octopusClient.GetResourceById("DeploymentProcesses",
+				found, err := octopusClient.GetSpaceResourceById("DeploymentProcesses",
 					strutil.EmptyIfNil(testProject[0].DeploymentProcessId),
 					&deploymentProcess)
 
@@ -6574,7 +6574,7 @@ func TestRunbookExport(t *testing.T) {
 					}
 
 					process := octopus.RunbookProcess{}
-					_, err := octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(v.RunbookProcessId), &process)
+					_, err := octopusClient.GetSpaceResourceById("RunbookProcesses", strutil.EmptyIfNil(v.RunbookProcessId), &process)
 
 					if err != nil {
 						return errors.New("Failed to retrieve the runbook process")
@@ -6747,7 +6747,7 @@ func TestSingleProjectWithAccountLookupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -6835,7 +6835,7 @@ func TestSingleProjectWithMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -6926,7 +6926,7 @@ func TestSingleProjectWithMachineScopedVarExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -7028,7 +7028,7 @@ func TestSingleProjectWithExcludedMachineScopedVarExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -7111,7 +7111,7 @@ func TestSingleProjectWithCertificateVarLookupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -7181,7 +7181,7 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
-				_, err = octopusClient.GetResourceById("DeploymentProcesses", *projectCollection.Items[0].DeploymentProcessId, &deploymentProcess)
+				_, err = octopusClient.GetSpaceResourceById("DeploymentProcesses", *projectCollection.Items[0].DeploymentProcessId, &deploymentProcess)
 
 				if err != nil {
 					return err
@@ -7201,7 +7201,7 @@ func TestSingleProjectWithFeedLookupExport(t *testing.T) {
 
 				for _, stepPackage := range deploymentProcess.Steps[0].Actions[0].Packages {
 					feed := octopus.Feed{}
-					_, err = octopusClient.GetResourceById("Feeds", *stepPackage.FeedId, &feed)
+					_, err = octopusClient.GetSpaceResourceById("Feeds", *stepPackage.FeedId, &feed)
 
 					if err != nil {
 						return err
@@ -7278,7 +7278,7 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
-				_, err = octopusClient.GetResourceById("DeploymentProcesses", *projectCollection.Items[0].DeploymentProcessId, &deploymentProcess)
+				_, err = octopusClient.GetSpaceResourceById("DeploymentProcesses", *projectCollection.Items[0].DeploymentProcessId, &deploymentProcess)
 
 				if err != nil {
 					return err
@@ -7293,7 +7293,7 @@ func TestDefaultWorkerPoolExplicitLookup(t *testing.T) {
 				}
 
 				workerPool := octopus.WorkerPool{}
-				_, err = octopusClient.GetResourceById("WorkerPools", deploymentProcess.Steps[0].Actions[0].WorkerPoolId, &workerPool)
+				_, err = octopusClient.GetSpaceResourceById("WorkerPools", deploymentProcess.Steps[0].Actions[0].WorkerPoolId, &workerPool)
 
 				if err != nil {
 					return err
@@ -7454,7 +7454,7 @@ func TestSingleProjectWithScriptModuleLookupExport(t *testing.T) {
 				}
 
 				resource := octopus.LibraryVariableSet{}
-				_, err = octopusClient.GetResourceById("LibraryVariableSets", projectCollection.Items[0].IncludedLibraryVariableSetIds[0], &resource)
+				_, err = octopusClient.GetSpaceResourceById("LibraryVariableSets", projectCollection.Items[0].IncludedLibraryVariableSetIds[0], &resource)
 
 				if err != nil {
 					return err
@@ -7507,7 +7507,7 @@ func TestProjectWithScriptModuleExport(t *testing.T) {
 					}
 
 					resource := octopus.LibraryVariableSet{}
-					_, err = octopusClient.GetResourceById("LibraryVariableSets", v.IncludedLibraryVariableSetIds[0], &resource)
+					_, err = octopusClient.GetSpaceResourceById("LibraryVariableSets", v.IncludedLibraryVariableSetIds[0], &resource)
 
 					if err != nil {
 						return err
@@ -7572,7 +7572,7 @@ func TestSingleProjectWithTagsetScopedVarLookupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -7642,7 +7642,7 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -7658,7 +7658,7 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				machine := octopus.CloudRegionResource{}
-				_, err = octopusClient.GetResourceById("Machines", scopedVar[0].Scope.Machine[0], &machine)
+				_, err = octopusClient.GetSpaceResourceById("Machines", scopedVar[0].Scope.Machine[0], &machine)
 
 				if err != nil {
 					return err
@@ -7673,7 +7673,7 @@ func TestSingleProjectWithTenantedMachineScopedVarLookupExport(t *testing.T) {
 				}
 
 				tenant := octopus.Tenant{}
-				_, err = octopusClient.GetResourceById("Tenants", machine.TenantIds[0], &tenant)
+				_, err = octopusClient.GetSpaceResourceById("Tenants", machine.TenantIds[0], &tenant)
 
 				if tenant.Name != "Team A" {
 					return errors.New("The tenant called Team A must have been exported")
@@ -8002,7 +8002,7 @@ func TestSingleProjectWithAccountAndTenantExport(t *testing.T) {
 				}
 
 				variableSet := octopus.VariableSet{}
-				_, err = octopusClient.GetResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
+				_, err = octopusClient.GetSpaceResourceById("Variables", *projectCollection.Items[0].VariableSetId, &variableSet)
 
 				if err != nil {
 					return err
@@ -8381,7 +8381,7 @@ func TestTenantedResources(t *testing.T) {
 			}
 
 			deploymentProcess := octopus.DeploymentProcess{}
-			_, err = octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project[0].DeploymentProcessId), &deploymentProcess)
+			_, err = octopusClient.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(project[0].DeploymentProcessId), &deploymentProcess)
 
 			if err != nil {
 				return err
@@ -8534,7 +8534,7 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					found = true
 
 					variables := octopus.VariableSet{}
-					_, err = octopusClient.GetResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
 					if err != nil {
 						return err
@@ -8549,7 +8549,7 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					workerPoolResource := octopus.WorkerPool{}
-					_, err = octopusClient.GetResourceById("WorkerPools", strutil.EmptyIfNil(variables.Variables[0].Value), &workerPoolResource)
+					_, err = octopusClient.GetSpaceResourceById("WorkerPools", strutil.EmptyIfNil(variables.Variables[0].Value), &workerPoolResource)
 
 					if err != nil {
 						return err
@@ -8560,7 +8560,7 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					deploymentProcess := octopus.DeploymentProcess{}
-					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
+					_, err := octopusClient.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
 
 					if err != nil {
 						return err
@@ -8590,7 +8590,7 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					runbookProcess := octopus.RunbookProcess{}
-					_, err = octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
+					_, err = octopusClient.GetSpaceResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookProcess)
 
 					if err != nil {
 						return err
@@ -9193,7 +9193,7 @@ func TestGitDependenciesExport(t *testing.T) {
 					found = true
 
 					deploymentProcess := octopus.DeploymentProcess{}
-					_, err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
+					_, err := octopusClient.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(v.DeploymentProcessId), &deploymentProcess)
 
 					if err != nil {
 						return err

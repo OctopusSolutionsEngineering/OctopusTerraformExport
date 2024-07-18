@@ -1,5 +1,19 @@
 package octopus
 
+type CommunityStepTemplate struct {
+	Id            string                   `json:"Id"`
+	Name          string                   `json:"Name"`
+	Type          string                   `json:"Type"`
+	Author        string                   `json:"Author"`
+	Description   string                   `json:"Description"`
+	Website       string                   `json:"Website"`
+	HistoryUrl    string                   `json:"HistoryUrl"`
+	Properties    map[string]string        `json:"Properties"`
+	Parameters    []StepTemplateParameters `json:"Parameters"`
+	Version       int                      `json:"Version"`
+	StepPackageId string                   `json:"StepPackageId"`
+}
+
 type StepTemplate struct {
 	Id                        string                   `json:"Id"`
 	SpaceId                   *string                  `json:"SpaceId"`

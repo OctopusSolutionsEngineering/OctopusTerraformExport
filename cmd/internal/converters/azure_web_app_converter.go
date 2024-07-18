@@ -127,7 +127,7 @@ func (c AzureWebAppTargetConverter) toHclById(id string, stateless bool, depende
 	}
 
 	resource := octopus.AzureWebAppResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func (c AzureWebAppTargetConverter) ToHclLookupById(id string, dependencies *dat
 	}
 
 	resource := octopus.AzureWebAppResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

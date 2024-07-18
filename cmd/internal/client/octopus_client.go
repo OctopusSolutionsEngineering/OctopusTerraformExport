@@ -23,7 +23,8 @@ type OctopusClient interface {
 	GetSpaces() ([]octopus2.Space, error)
 	EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error)
 	GetResource(resourceType string, resources any) (exists bool, funcErr error)
-	GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
+	GetSpaceResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
+	GetGlobalResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
 	GetResourceNameById(resourceType string, id string) (name string, funcErr error)
 	GetResourceNamesByIds(resourceType string, id []string) (name []string, funcErr error)
 	GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error)
@@ -147,6 +148,10 @@ func (o *OctopusApiClient) getSpaceUrl() (string, error) {
 	return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
 }
 
+func (o *OctopusApiClient) GetBaseUrl() (string, error) {
+	return fmt.Sprintf("%s/api", o.Url), nil
+}
+
 func (o *OctopusApiClient) GetSpaceBaseUrl() (string, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("GetSpaceBaseUrl - space can not be empty")
@@ -197,8 +202,14 @@ func (o *OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 	return req, nil
 }
 
-func (o *OctopusApiClient) getRequest(resourceType string, id string) (*http.Request, error) {
-	spaceUrl, err := o.GetSpaceBaseUrl()
+func (o *OctopusApiClient) getRequest(resourceType string, id string, global bool) (*http.Request, error) {
+	spaceUrl, err := func() (string, error) {
+		if global {
+			return o.GetBaseUrl()
+		}
+
+		return o.GetSpaceBaseUrl()
+	}()
 
 	if err != nil {
 		return nil, err
@@ -542,7 +553,15 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 	return true, nil
 }
 
-func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
+func (o *OctopusApiClient) GetSpaceResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
+	return o.getResourceById(resourceType, false, id, resources)
+}
+
+func (o *OctopusApiClient) GetGlobalResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
+	return o.getResourceById(resourceType, true, id, resources)
+}
+
+func (o *OctopusApiClient) getResourceById(resourceType string, global bool, id string, resources any) (exists bool, funcErr error) {
 	cacheHit := o.readCache(resourceType, id)
 	if cacheHit != nil {
 		zap.L().Debug("Cache hit on " + resourceType + " " + id)
@@ -558,7 +577,7 @@ func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resou
 
 	zap.L().Debug("Getting " + resourceType + " " + id)
 
-	req, err := o.getRequest(resourceType, id)
+	req, err := o.getRequest(resourceType, id, global)
 
 	if err != nil {
 		return false, err
@@ -631,7 +650,7 @@ func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (
 
 	zap.L().Debug("Getting " + resourceType + " " + id)
 
-	req, err := o.getRequest(resourceType, id)
+	req, err := o.getRequest(resourceType, id, false)
 
 	if err != nil {
 		return "", err

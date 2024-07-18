@@ -99,7 +99,7 @@ func (c CertificateConverter) toHclById(id string, stateless bool, dependencies 
 	}
 
 	resource := octopus.Certificate{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *data.Reso
 	}
 
 	certificate := octopus.Certificate{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &certificate)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &certificate)
 
 	if err != nil {
 		return err

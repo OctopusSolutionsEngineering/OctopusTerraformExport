@@ -52,14 +52,14 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	}
 
 	resource := octopus.RunbookProcess{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
 	runbook := octopus.Runbook{}
-	_, err = c.Client.GetResourceById("Runbooks", resource.RunbookId, &runbook)
+	_, err = c.Client.GetSpaceResourceById("Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
 		return err
@@ -85,14 +85,14 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	}
 
 	resource := octopus.RunbookProcess{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
 	}
 
 	runbook := octopus.Runbook{}
-	_, err = c.Client.GetResourceById("Runbooks", resource.RunbookId, &runbook)
+	_, err = c.Client.GetSpaceResourceById("Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
 		return err

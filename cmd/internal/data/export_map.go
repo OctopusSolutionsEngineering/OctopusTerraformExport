@@ -36,6 +36,9 @@ type ResourceDetails struct {
 	// Step templates have a version field that is calculated by Octopus. This value captures the current value from
 	// the space being exported.
 	VersionCurrent string
+	// Step templates can be based on community step templates. The URL of the community step template is used as
+	// and external ID that links resources between spaces.
+	ExternalID string
 	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
 	// Lookup is the ID of the resource created or looked up by Terraform

@@ -68,7 +68,7 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	}
 
 	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	}
 
 	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
