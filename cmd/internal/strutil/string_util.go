@@ -1,6 +1,7 @@
 package strutil
 
 import (
+	"github.com/samber/lo"
 	"regexp"
 	"strconv"
 	"strings"
@@ -196,4 +197,10 @@ func EscapeDollarCurlyPointer(input *string) *string {
 	}
 
 	return input
+}
+
+func StripMultilineWhitespace(input string) string {
+	return strings.Join(lo.Map(strings.Split(input, "\n"), func(item string, index int) string {
+		return strings.TrimSpace(item)
+	}), "\n")
 }

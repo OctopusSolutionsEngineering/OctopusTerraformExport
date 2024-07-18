@@ -96,7 +96,7 @@ func (c LifecycleConverter) toHclById(id string, stateless bool, dependencies *d
 	}
 
 	resource := octopus.Lifecycle{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.Resour
 	}
 
 	lifecycle := octopus.Lifecycle{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &lifecycle)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &lifecycle)
 
 	if err != nil {
 		return err

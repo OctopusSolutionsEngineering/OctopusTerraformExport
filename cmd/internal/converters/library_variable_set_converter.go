@@ -99,7 +99,7 @@ func (c *LibraryVariableSetConverter) toHclById(id string, stateless bool, depen
 	}
 
 	resource := octopus.LibraryVariableSet{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *d
 	}
 
 	resource := octopus.LibraryVariableSet{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -422,7 +422,7 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 
 func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.LibraryVariableSet, resourceName string, stateless bool) (string, error) {
 	variable := octopus.VariableSet{}
-	_, err := c.Client.GetResourceById("Variables", resource.VariableSetId, &variable)
+	_, err := c.Client.GetSpaceResourceById("Variables", resource.VariableSetId, &variable)
 
 	if err != nil {
 		return "", err

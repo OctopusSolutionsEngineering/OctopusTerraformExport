@@ -19,21 +19,22 @@ import (
 )
 
 type DeploymentProcessConverter struct {
-	Client                     client.OctopusClient
-	OctopusActionProcessor     OctopusActionProcessor
-	IgnoreProjectChanges       bool
-	WorkerPoolProcessor        OctopusWorkerPoolProcessor
-	ExcludeTenantTags          args.StringSliceArgs
-	ExcludeTenantTagSets       args.StringSliceArgs
-	Excluder                   ExcludeByName
-	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
-	LimitAttributeLength       int
-	ExcludeTerraformVariables  bool
-	ExcludeAllSteps            bool
-	ExcludeSteps               args.StringSliceArgs
-	ExcludeStepsRegex          args.StringSliceArgs
-	ExcludeStepsExcept         args.StringSliceArgs
-	IgnoreInvalidExcludeExcept bool
+	Client                          client.OctopusClient
+	OctopusActionProcessor          OctopusActionProcessor
+	IgnoreProjectChanges            bool
+	WorkerPoolProcessor             OctopusWorkerPoolProcessor
+	ExcludeTenantTags               args.StringSliceArgs
+	ExcludeTenantTagSets            args.StringSliceArgs
+	Excluder                        ExcludeByName
+	TagSetConverter                 ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength            int
+	ExcludeTerraformVariables       bool
+	ExcludeAllSteps                 bool
+	ExcludeSteps                    args.StringSliceArgs
+	ExcludeStepsRegex               args.StringSliceArgs
+	ExcludeStepsExcept              args.StringSliceArgs
+	IgnoreInvalidExcludeExcept      bool
+	ExperimentalEnableStepTemplates bool
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -68,7 +69,7 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -101,7 +102,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -128,7 +129,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	}
 
 	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -141,7 +142,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -161,7 +162,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	}
 
 	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -174,7 +175,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
 		return err
@@ -222,7 +223,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:                s.Name,
 				PackageRequirement:  s.PackageRequirement,
-				Properties:          c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
+				Properties:          c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, s.Properties, dependencies)),
 				Condition:           s.Condition,
 				ConditionExpression: strutil.NilIfEmpty(s.Properties["Octopus.Step.ConditionVariableExpression"]),
 				StartTrigger:        s.StartTrigger,
@@ -296,7 +297,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 								AcquisitionLocation:     p.AcquisitionLocation,
 								ExtractDuringDeployment: &p.ExtractDuringDeployment,
 								FeedId:                  feedId,
-								Properties:              c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies),
+								Properties:              c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, p.Properties, dependencies),
 							})
 					} else {
 						terraformResource.Step[i].Action[j].PrimaryPackage = &terraform.TerraformPackage{
@@ -305,7 +306,7 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 							AcquisitionLocation:     p.AcquisitionLocation,
 							ExtractDuringDeployment: nil,
 							FeedId:                  feedId,
-							Properties:              c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies),
+							Properties:              c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, p.Properties, dependencies),
 						}
 					}
 				}
@@ -336,10 +337,12 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 				sanitizedProperties, variables := sanitizer.SanitizeMap(projectName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
-				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
+				sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
+				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
+
 				hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
 
 				for _, propertyVariables := range variables {
@@ -393,7 +396,7 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 	}
 
 	// Export step templates
-	err = c.OctopusActionProcessor.ExportStepTemplates(resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportStepTemplates(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}

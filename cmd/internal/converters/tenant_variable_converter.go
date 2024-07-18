@@ -179,7 +179,7 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 		for id, value := range l.Variables {
 
 			libraryVariableSet := octopus.LibraryVariableSet{}
-			c.Client.GetResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
+			c.Client.GetSpaceResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
 			libraryVariableSetVariableName := lo.Filter(libraryVariableSet.Templates, func(item octopus.Template, index int) bool {
 				return item.Id == id
 			})
@@ -252,7 +252,7 @@ func (c TenantVariableConverter) GetResourceType() string {
 func (c TenantVariableConverter) isTenantExcludedByTag(tenantId string) (bool, error) {
 	// Ignore tenants with excluded tags
 	resource := octopus.Tenant{}
-	found, err := c.Client.GetResourceById("Tenants", tenantId, &resource)
+	found, err := c.Client.GetSpaceResourceById("Tenants", tenantId, &resource)
 
 	if err != nil {
 		return false, err
@@ -273,7 +273,7 @@ func (c *TenantVariableConverter) excludeProject(projectId string) (bool, error)
 	}
 
 	project := octopus.Project{}
-	_, err := c.Client.GetResourceById("Projects", projectId, &project)
+	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return false, err

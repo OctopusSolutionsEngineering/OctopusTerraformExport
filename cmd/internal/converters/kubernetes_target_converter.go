@@ -128,7 +128,7 @@ func (c KubernetesTargetConverter) toHclById(id string, stateless bool, dependen
 	}
 
 	resource := octopus.KubernetesEndpointResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *data
 	}
 
 	resource := octopus.KubernetesEndpointResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

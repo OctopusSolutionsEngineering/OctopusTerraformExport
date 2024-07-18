@@ -97,7 +97,7 @@ func (c EnvironmentConverter) toHclById(id string, stateless bool, dependencies 
 	}
 
 	resource := octopus.Environment{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.Reso
 	}
 
 	environment := octopus.Environment{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &environment)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &environment)
 
 	if err != nil {
 		return err

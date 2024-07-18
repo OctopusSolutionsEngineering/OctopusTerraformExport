@@ -48,6 +48,19 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 		}
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
+
+		shellScriptProvider := terraform2.TerraformShellProvider{
+			Type:              "shell",
+			Interpreter:       []string{"pwsh", "-Command"},
+			EnableParallelism: false,
+		}
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(shellScriptProvider, "provider"))
+
+		externalProvider := terraform2.TerraformEmptyProvider{
+			Type: "external",
+		}
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(externalProvider, "provider"))
+
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)

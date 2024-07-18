@@ -114,7 +114,7 @@ func (c *TenantConverter) ToHclById(id string, dependencies *data.ResourceDetail
 	}
 
 	resource := octopus2.Tenant{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return nil
@@ -435,7 +435,7 @@ func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
 	}
 
 	project := octopus2.Project{}
-	_, err := c.Client.GetResourceById("Projects", projectId, &project)
+	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return false, err

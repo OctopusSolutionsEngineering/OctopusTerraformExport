@@ -128,7 +128,7 @@ func (c AzureServiceFabricTargetConverter) toHclById(id string, stateless bool, 
 	}
 
 	resource := octopus.AzureServiceFabricResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 	}
 
 	resource := octopus.AzureServiceFabricResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

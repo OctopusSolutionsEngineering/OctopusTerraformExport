@@ -97,7 +97,7 @@ func (c MachinePolicyConverter) toHclById(id string, stateless bool, dependencie
 	}
 
 	resource := octopus.MachinePolicy{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

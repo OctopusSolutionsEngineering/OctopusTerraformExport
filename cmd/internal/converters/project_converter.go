@@ -114,7 +114,7 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *data.Resourc
 	}
 
 	project := octopus.Project{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	}
 
 	resource := octopus.Project{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func (c *ProjectConverter) ToHclStatelessById(id string, dependencies *data.Reso
 	}
 
 	project := octopus.Project{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
 		return err
@@ -210,7 +210,7 @@ func (c *ProjectConverter) ToHclById(id string, dependencies *data.ResourceDetai
 	}
 
 	project := octopus.Project{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &project)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
 		return err

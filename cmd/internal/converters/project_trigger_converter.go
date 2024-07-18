@@ -392,7 +392,7 @@ func (c ProjectTriggerConverter) buildFeedTriggerResources(projectTrigger octopu
 
 func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	project := octopus2.Project{}
-	_, err := c.Client.GetResourceById("Projects", projectId, &project)
+	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err

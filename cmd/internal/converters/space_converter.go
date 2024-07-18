@@ -41,6 +41,7 @@ type SpaceConverter struct {
 	AzureServiceFabricTargetConverter Converter
 	AzureWebAppTargetConverter        Converter
 	SpacePopulateConverter            Converter
+	StepTemplateConverter             Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
@@ -125,6 +126,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 
 	// Convert the azure web app targets
 	c.AzureWebAppTargetConverter.AllToHcl(dependencies)
+
+	// Convert all step dependencies
+	c.StepTemplateConverter.AllToHcl(dependencies)
 
 	// Include the space if it was requested
 	c.SpacePopulateConverter.AllToHcl(dependencies)

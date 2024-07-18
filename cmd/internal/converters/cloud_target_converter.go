@@ -126,7 +126,7 @@ func (c CloudRegionTargetConverter) toHclById(id string, stateless bool, depende
 	}
 
 	resource := octopus.CloudRegionResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -160,7 +160,7 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *dat
 	}
 
 	resource := octopus.CloudRegionResource{}
-	_, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err

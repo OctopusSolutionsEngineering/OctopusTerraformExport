@@ -92,7 +92,7 @@ func (c *VariableSetConverter) toHclByProjectIdBranchAndName(projectId string, b
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err
@@ -121,7 +121,7 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId str
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err
@@ -149,7 +149,7 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetResourceById("Projects", projectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err
@@ -204,7 +204,7 @@ func (c *VariableSetConverter) toHclByIdAndName(id string, recursive bool, state
 	}
 
 	resource := octopus.VariableSet{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -232,7 +232,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	}
 
 	resource := octopus.VariableSet{}
-	found, err := c.Client.GetResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return err
@@ -677,7 +677,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 
 	if strings.HasPrefix(parentId, "Projects") {
 		project := octopus.Project{}
-		_, projectErr := c.Client.GetResourceById("Projects", parentId, &project)
+		_, projectErr := c.Client.GetSpaceResourceById("Projects", parentId, &project)
 
 		if projectErr != nil {
 			return projectErr
@@ -698,14 +698,14 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 
 			if strings.HasPrefix(owner, "Runbooks") {
 				runbook := octopus.Runbook{}
-				_, runbookErr := c.Client.GetResourceById("Runbooks", owner, &runbook)
+				_, runbookErr := c.Client.GetSpaceResourceById("Runbooks", owner, &runbook)
 
 				if runbookErr != nil {
 					ownersError = errors.Join(ownersError, runbookErr)
 				} else {
 
 					project := octopus.Project{}
-					_, projectErr := c.Client.GetResourceById("Projects", runbook.ProjectId, &project)
+					_, projectErr := c.Client.GetSpaceResourceById("Projects", runbook.ProjectId, &project)
 
 					if projectErr != nil {
 						ownersError = errors.Join(ownersError, projectErr)
@@ -728,7 +728,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 		// Only variables assigned to a project can be scoped to individual actions
 		if project.DeploymentProcessId != nil {
 			deploymentProcess := octopus.DeploymentProcess{}
-			_, processErr := c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
+			_, processErr := c.Client.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
 
 			if processErr != nil {
 				return processErr
