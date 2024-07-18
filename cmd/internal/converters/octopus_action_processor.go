@@ -21,7 +21,7 @@ type OctopusActionProcessor struct {
 	GitCredentialsConverter ConverterAndLookupWithStatelessById
 	DetachProjectTemplates  bool
 	WorkerPoolProcessor     OctopusWorkerPoolProcessor
-	StepTemplateConverter   ConverterById
+	StepTemplateConverter   ConverterAndLookupById
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
@@ -418,7 +418,7 @@ func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, 
 	return nil
 }
 
-func (c OctopusActionProcessor) ExportStepTemplates(steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+func (c OctopusActionProcessor) ExportStepTemplates(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	if c.DetachProjectTemplates {
 		return nil
 	}
@@ -428,7 +428,19 @@ func (c OctopusActionProcessor) ExportStepTemplates(steps []octopus.Step, depend
 			for key, value := range action.Properties {
 				if key == "Octopus.Action.Template.Id" {
 					valueString := fmt.Sprint(value)
-					if err := c.StepTemplateConverter.ToHclById(valueString, dependencies); err != nil {
+
+					var err error
+					if recursive {
+						if stateless {
+							//err = c.StepTemplateConverter.ToHclStatelessById(valueString, dependencies)
+						} else {
+							err = c.StepTemplateConverter.ToHclById(valueString, dependencies)
+						}
+					} else if lookup {
+						err = c.StepTemplateConverter.ToHclLookupById(valueString, dependencies)
+					}
+
+					if err != nil {
 						return err
 					}
 				}

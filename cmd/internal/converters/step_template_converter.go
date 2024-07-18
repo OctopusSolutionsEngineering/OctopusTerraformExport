@@ -36,6 +36,49 @@ type StepTemplateConverter struct {
 	ExperimentalEnableStepTemplates bool
 }
 
+func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
+	if id == "" {
+		return nil
+	}
+
+	if dependencies.HasResource(id, c.GetResourceType()) {
+		return nil
+	}
+
+	template := octopus.StepTemplate{}
+	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &template)
+
+	if err != nil {
+		return err
+	}
+
+	if c.Excluder.IsResourceExcludedWithRegex(template.Name, c.ExcludeAllStepTemplates, c.ExcludeStepTemplates, c.ExcludeStepTemplatesRegex, c.ExcludeStepTemplatesExcept) {
+		return nil
+	}
+
+	thisResource := data.ResourceDetails{}
+
+	resourceName := "steptemplate_" + sanitizer.SanitizeName(template.Name)
+
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = template.Id
+	thisResource.Name = template.Name
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.Lookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + ")[0]}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformResource := c.buildData(resourceName, template)
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an step template called \""+template.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(keys(self.result)) != 0")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+	return nil
+}
+
 func (c StepTemplateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	if !c.ExperimentalEnableStepTemplates {
 		return
@@ -324,12 +367,13 @@ func (c StepTemplateConverter) buildData(resourceName string, resource octopus.S
 		Program: []string{
 			"pwsh",
 			"-Command",
-			`$query = Read-Host | ConvertFrom-JSON
+			strutil.StripMultilineWhitespace(`$query = [Console]::In.ReadLine() | ConvertFrom-JSON
 			$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
-			$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates" -Method GET -Headers $headers
+			$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
 			$keyValueResponse = @{}
-			$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name}
-			Write-Host ($keyValueResponse | ConvertTo-JSON -Depth 100)`},
+			$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null
+			$results = $keyValueResponse | ConvertTo-JSON -Depth 100
+			Write-Host $results`)},
 		Query: map[string]string{
 			"name":    resource.Name,
 			"server":  "${var.octopus_server}",
