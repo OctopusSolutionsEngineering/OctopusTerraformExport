@@ -18,20 +18,21 @@ import (
 )
 
 type RunbookProcessConverter struct {
-	Client                     client.OctopusClient
-	OctopusActionProcessor     OctopusActionProcessor
-	IgnoreProjectChanges       bool
-	WorkerPoolProcessor        OctopusWorkerPoolProcessor
-	ExcludeTenantTags          args.StringSliceArgs
-	ExcludeTenantTagSets       args.StringSliceArgs
-	Excluder                   ExcludeByName
-	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
-	LimitAttributeLength       int
-	ExcludeAllSteps            bool
-	ExcludeSteps               args.StringSliceArgs
-	ExcludeStepsRegex          args.StringSliceArgs
-	ExcludeStepsExcept         args.StringSliceArgs
-	IgnoreInvalidExcludeExcept bool
+	Client                          client.OctopusClient
+	OctopusActionProcessor          OctopusActionProcessor
+	IgnoreProjectChanges            bool
+	WorkerPoolProcessor             OctopusWorkerPoolProcessor
+	ExcludeTenantTags               args.StringSliceArgs
+	ExcludeTenantTagSets            args.StringSliceArgs
+	Excluder                        ExcludeByName
+	TagSetConverter                 ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength            int
+	ExcludeAllSteps                 bool
+	ExcludeSteps                    args.StringSliceArgs
+	ExcludeStepsRegex               args.StringSliceArgs
+	ExcludeStepsExcept              args.StringSliceArgs
+	IgnoreInvalidExcludeExcept      bool
+	ExperimentalEnableStepTemplates bool
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -145,7 +146,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 			terraformResource.Step[i] = terraform.TerraformStep{
 				Name:                s.Name,
 				PackageRequirement:  s.PackageRequirement,
-				Properties:          c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(s.Properties, dependencies)),
+				Properties:          c.OctopusActionProcessor.RemoveUnnecessaryStepFields(c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, s.Properties, dependencies)),
 				Condition:           s.Condition,
 				ConditionExpression: strutil.NilIfEmpty(s.Properties["Octopus.Step.ConditionVariableExpression"]),
 				StartTrigger:        s.StartTrigger,
@@ -213,7 +214,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 								AcquisitionLocation:     p.AcquisitionLocation,
 								ExtractDuringDeployment: &p.ExtractDuringDeployment,
 								FeedId:                  feedId,
-								Properties:              c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies),
+								Properties:              c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, p.Properties, dependencies),
 							})
 					} else {
 						terraformResource.Step[i].Action[j].PrimaryPackage = &terraform.TerraformPackage{
@@ -222,7 +223,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 							AcquisitionLocation:     p.AcquisitionLocation,
 							ExtractDuringDeployment: nil,
 							FeedId:                  feedId,
-							Properties:              c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies),
+							Properties:              c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, p.Properties, dependencies),
 						}
 					}
 				}
@@ -255,7 +256,7 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 				sanitizedProperties, variables := sanitizer2.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
-				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
+				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)

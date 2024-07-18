@@ -174,12 +174,12 @@ func (c OctopusActionProcessor) ConvertGitDependencies(gitDependencies []octopus
 	return result
 }
 
-func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) ReplaceIds(experimentalEnableStepTemplates bool, properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	properties = c.replaceAccountIds(properties, dependencies)
 	properties = c.replaceFeedIds(properties, dependencies)
 	properties = c.replaceProjectIds(properties, dependencies)
 	properties = c.replaceGitCredentialIds(properties, dependencies)
-	properties = c.replaceStepTemplates(properties, dependencies)
+	properties = c.replaceStepTemplates(experimentalEnableStepTemplates, properties, dependencies)
 	return properties
 }
 
@@ -359,11 +359,15 @@ func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]st
 
 // replaceStepTemplates looks for any property value that is a valid step template and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceStepTemplates(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
-	for k, v := range properties {
-		for _, v2 := range dependencies.GetAllResource("ActionTemplates") {
-			if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
-				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
+func (c OctopusActionProcessor) replaceStepTemplates(experimentalEnableStepTemplates bool, properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
+
+	// Only replace step template ids if they are not included in the model
+	if experimentalEnableStepTemplates {
+		for k, v := range properties {
+			for _, v2 := range dependencies.GetAllResource("ActionTemplates") {
+				if len(v2.Id) != 0 && strings.Contains(v, v2.Id) {
+					properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
+				}
 			}
 		}
 	}
