@@ -64,7 +64,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
+	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
 		file := hclwrite.NewEmptyFile()
