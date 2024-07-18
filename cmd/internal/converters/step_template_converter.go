@@ -361,6 +361,22 @@ func (c StepTemplateConverter) writeData(file *hclwrite.File, resource octopus.S
 }
 
 func (c StepTemplateConverter) buildData(resourceName string, resource octopus.StepTemplate) terraform.TerraformExternalData {
+	/*
+		Use Powershell to query the action templates.
+
+		I've noticed this happening occasionally when running the script. I don't think it's a problem with the script,
+		but may be specific to pwsh on Linux. There doesn't appear to be any solution other that retrying the terraform
+		apply operation:
+
+		The data source received an unexpected error while attempting to execute the
+		program.
+
+		The program was executed, however it returned no additional error messaging.
+
+		Program: /opt/microsoft/powershell/7/pwsh
+		State: signal: segmentation fault (core dumped)
+	*/
+
 	return terraform.TerraformExternalData{
 		Type: octopusdeployStepTemplateDataType,
 		Name: resourceName,
@@ -368,57 +384,13 @@ func (c StepTemplateConverter) buildData(resourceName string, resource octopus.S
 			"pwsh",
 			"-Command",
 			strutil.StripMultilineWhitespace(`
-			# Use a retry loop to make sure we don't fail a lookup due to a transient error
-			function Retry-Command {
-				[CmdletBinding()]
-				param (
-					[parameter(Mandatory, ValueFromPipeline)] 
-					[ValidateNotNullOrEmpty()]
-					[scriptblock] $ScriptBlock,
-					[int] $RetryCount = 3,
-					[int] $TimeoutInSecs = 30,
-					[string] $SuccessMessage = "Command executed successfuly!",
-					[string] $FailureMessage = "Failed to execute the command"
-					)
-					
-				process {
-					$Attempt = 1
-					$Flag = $true
-					
-					do {
-						try {
-							$PreviousPreference = $ErrorActionPreference
-							$ErrorActionPreference = 'Stop'
-							Invoke-Command -ScriptBlock $ScriptBlock -OutVariable Result              
-							$ErrorActionPreference = $PreviousPreference
-			
-							# flow control will execute the next line only if the command in the scriptblock executed without any errors
-							# if an error is thrown, flow control will go to the 'catch' block
-							$Flag = $false
-						}
-						catch {
-							if ($Attempt -gt $RetryCount) {
-								$Flag = $false
-							}
-							else {
-								Start-Sleep -Seconds $TimeoutInSecs
-								$Attempt = $Attempt + 1
-							}
-						}
-					}
-					While ($Flag)	
-				}
-			}
-							
-			Retry-Command -ScriptBlock {
 				$query = [Console]::In.ReadLine() | ConvertFrom-JSON
 				$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
 				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
 				$keyValueResponse = @{}
 				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null
 				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
-				Write-Host $results
-			}`)},
+				Write-Host $results`)},
 		Query: map[string]string{
 			"name":    resource.Name,
 			"server":  "${var.octopus_server}",
