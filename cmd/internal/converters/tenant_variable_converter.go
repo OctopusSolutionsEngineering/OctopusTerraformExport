@@ -179,7 +179,12 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 		for id, value := range l.Variables {
 
 			libraryVariableSet := octopus.LibraryVariableSet{}
-			c.Client.GetSpaceResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
+			_, err := c.Client.GetSpaceResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
+
+			if err != nil {
+				return err
+			}
+
 			libraryVariableSetVariableName := lo.Filter(libraryVariableSet.Templates, func(item octopus.Template, index int) bool {
 				return item.Id == id
 			})
