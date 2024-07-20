@@ -14,7 +14,7 @@ resource "octopusdeploy_tenant" "tenant_team_a" {
 
 }
 
-resource octopus_tenant_project "tenanta_project" {
+resource "octopusdeploy_tenant_project" "tenanta_project" {
   environment_ids = [data.octopusdeploy_environments.test.environments[0].id]
   project_id   = octopusdeploy_project.project_1.id
   tenant_id = octopusdeploy_tenant.tenant_team_a.id
@@ -27,7 +27,7 @@ resource "octopusdeploy_tenant" "tenant_team_b" {
   depends_on = [octopusdeploy_tag.tag_a, octopusdeploy_tag.tag_b]
 }
 
-resource octopus_tenant_project "tenantb_project" {
+resource "octopusdeploy_tenant_project" "tenantb_project" {
   environment_ids = [data.octopusdeploy_environments.test.environments[0].id]
   project_id   = octopusdeploy_project.project_2.id
   tenant_id    = octopusdeploy_tenant.tenant_team_b.id
@@ -40,7 +40,7 @@ resource "octopusdeploy_tenant" "tenant_team_c" {
   depends_on = [octopusdeploy_tag.tag_a, octopusdeploy_tag.tag_b]
 }
 
-resource octopus_tenant_project "tenantc_project" {
+resource "octopusdeploy_tenant_project" "tenantc_project" {
   environment_ids = [data.octopusdeploy_environments.test.environments[0].id]
   project_id   = octopusdeploy_project.project_2.id
   tenant_id = octopusdeploy_tenant.tenant_team_c.id

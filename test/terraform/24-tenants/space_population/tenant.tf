@@ -5,7 +5,7 @@ resource "octopusdeploy_tenant" "tenant_team_a" {
   depends_on  = [octopusdeploy_tag.tag_a, octopusdeploy_tag.tag_b, octopusdeploy_tag.tag_ignore]
 }
 
-resource octopus_tenant_project "team_a_frontend"{
+resource "octopusdeploy_tenant_project" "team_a_frontend"{
   environment_ids = [
     octopusdeploy_environment.test_environment.id,
     octopusdeploy_environment.development_environment.id,
@@ -23,7 +23,7 @@ resource "octopusdeploy_tenant" "tenant_excluded" {
 
 }
 
-resource octopus_tenant_project "excluded_frontend" {
+resource "octopusdeploy_tenant_project" "excluded_frontend" {
   environment_ids = [
     octopusdeploy_environment.test_environment.id,
     octopusdeploy_environment.development_environment.id,
