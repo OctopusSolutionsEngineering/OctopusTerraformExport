@@ -199,6 +199,15 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ExcludeTenantVariablesRegex:  nil,
 	}
 
+	tenantProjectVariableConverter := converters.TenantProjectVariableConverter{
+		Excluder:                     onverters.DefaultExcluder{},
+		ExcludeAllProjects:           false,
+		ExcludeAllTenantVariables:    false,
+		ExcludeTenantVariables:       nil,
+		ExcludeTenantVariablesExcept: nil,
+		ExcludeTenantVariablesRegex:  nil,
+	}
+
 	environmentConverter := converters.EnvironmentConverter{
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
@@ -226,24 +235,25 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Excluder: converters.DefaultExcluder{},
 	}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:                        &client,
-		ExcludeTenants:                nil,
-		ExcludeTenantsWithTags:        nil,
-		ExcludeTenantsExcept:          nil,
-		ExcludeAllTenants:             false,
-		Excluder:                      converters.DefaultExcluder{},
-		DummySecretVariableValues:     false,
-		DummySecretGenerator:          nil,
-		ExcludeProjects:               nil,
-		ExcludeProjectsExcept:         nil,
-		ExcludeProjectsRegex:          nil,
-		ExcludeAllProjects:            false,
-		ErrGroup:                      nil,
-		ExcludeAllTenantVariables:     false,
-		ExcludeTenantVariables:        nil,
-		ExcludeTenantVariablesExcept:  nil,
-		ExcludeTenantVariablesRegex:   nil,
-		TenantCommonVariableProcessor: tenantCommonVariableProcessor,
+		Client:                         &client,
+		ExcludeTenants:                 nil,
+		ExcludeTenantsWithTags:         nil,
+		ExcludeTenantsExcept:           nil,
+		ExcludeAllTenants:              false,
+		Excluder:                       converters.DefaultExcluder{},
+		DummySecretVariableValues:      false,
+		DummySecretGenerator:           nil,
+		ExcludeProjects:                nil,
+		ExcludeProjectsExcept:          nil,
+		ExcludeProjectsRegex:           nil,
+		ExcludeAllProjects:             false,
+		ErrGroup:                       nil,
+		ExcludeAllTenantVariables:      false,
+		ExcludeTenantVariables:         nil,
+		ExcludeTenantVariablesExcept:   nil,
+		ExcludeTenantVariablesRegex:    nil,
+		TenantCommonVariableProcessor:  tenantCommonVariableProcessor,
+		TenantProjectVariableConverter: tenantProjectVariableConverter,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                  &client,

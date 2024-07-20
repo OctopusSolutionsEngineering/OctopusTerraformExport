@@ -2,17 +2,10 @@ package converters
 
 import (
 	"errors"
-	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"github.com/hashicorp/hcl2/gohcl"
-	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"golang.org/x/sync/errgroup"
 )
@@ -20,24 +13,25 @@ import (
 const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_project_variable"
 
 type TenantVariableConverter struct {
-	Client                        client.OctopusClient
-	ExcludeTenants                args.StringSliceArgs
-	ExcludeTenantsWithTags        args.StringSliceArgs
-	ExcludeTenantsExcept          args.StringSliceArgs
-	ExcludeAllTenants             bool
-	Excluder                      ExcludeByName
-	DummySecretVariableValues     bool
-	DummySecretGenerator          DummySecretGenerator
-	ExcludeProjects               args.StringSliceArgs
-	ExcludeProjectsExcept         args.StringSliceArgs
-	ExcludeProjectsRegex          args.StringSliceArgs
-	ExcludeAllProjects            bool
-	ErrGroup                      *errgroup.Group
-	ExcludeAllTenantVariables     bool
-	ExcludeTenantVariables        args.StringSliceArgs
-	ExcludeTenantVariablesExcept  args.StringSliceArgs
-	ExcludeTenantVariablesRegex   args.StringSliceArgs
-	TenantCommonVariableProcessor TenantCommonVariableProcessor
+	Client                         client.OctopusClient
+	ExcludeTenants                 args.StringSliceArgs
+	ExcludeTenantsWithTags         args.StringSliceArgs
+	ExcludeTenantsExcept           args.StringSliceArgs
+	ExcludeAllTenants              bool
+	Excluder                       ExcludeByName
+	DummySecretVariableValues      bool
+	DummySecretGenerator           DummySecretGenerator
+	ExcludeProjects                args.StringSliceArgs
+	ExcludeProjectsExcept          args.StringSliceArgs
+	ExcludeProjectsRegex           args.StringSliceArgs
+	ExcludeAllProjects             bool
+	ErrGroup                       *errgroup.Group
+	ExcludeAllTenantVariables      bool
+	ExcludeTenantVariables         args.StringSliceArgs
+	ExcludeTenantVariablesExcept   args.StringSliceArgs
+	ExcludeTenantVariablesRegex    args.StringSliceArgs
+	TenantCommonVariableProcessor  TenantCommonVariableProcessor
+	TenantProjectVariableConverter TenantProjectVariableConverter
 }
 
 func (c TenantVariableConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -96,14 +90,6 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 		return nil
 	}
 
-	// Assume the tenant has added the data block to resolve existing tenants. Use that data block
-	// to test if any of the tenant variables should be created.
-	tenantName := "tenant_" + sanitizer.SanitizeName(tenant.TenantName)
-	var count *string = nil
-	if stateless {
-		count = strutil.StrPointer("${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 ? 0 : 1}")
-	}
-
 	// Don't attempt to link variables from excluded projects
 	var filterErr error = nil
 	filteredProjectVariables := lo.Filter(lo.Values[string, octopus.ProjectVariable](tenant.ProjectVariables), func(item octopus.ProjectVariable, index int) bool {
@@ -128,48 +114,9 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 				value := value
 
 				projectVariableIndex++
-				variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + sanitizer.SanitizeName(tenant.TenantName)
-
-				thisResource := data.ResourceDetails{}
-				thisResource.FileName = "space_population/" + variableName + ".tf"
-				thisResource.Id = templateId
-				thisResource.ResourceType = c.GetResourceType()
-				thisResource.Lookup = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + ".id}"
-
-				if stateless {
-					thisResource.Lookup = "${length(data." + octopusdeployTenantsDataType + "." + tenantName + ".tenants) != 0 " +
-						"? '' " +
-						": " + octopusdeployTenantProjectVariableResourceType + "." + variableName + "[0].id}"
-					thisResource.Dependency = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + "}"
-				} else {
-					thisResource.Lookup = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + ".id}"
+				if err := c.TenantProjectVariableConverter.ConvertTenantProjectVariable(stateless, tenant, p, env, value, projectVariableIndex, templateId, dependencies); err != nil {
+					return err
 				}
-
-				thisResource.ToHcl = func() (string, error) {
-					file := hclwrite.NewEmptyFile()
-
-					terraformResource := terraform2.TerraformTenantProjectVariable{
-						Type:          octopusdeployTenantProjectVariableResourceType,
-						Name:          variableName,
-						Count:         count,
-						Id:            nil,
-						EnvironmentId: dependencies.GetResource("Environments", env),
-						ProjectId:     dependencies.GetResource("Projects", p.ProjectId),
-						TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
-						TenantId:      dependencies.GetResource("Tenants", tenant.TenantId),
-						Value:         &value,
-					}
-
-					block := gohcl.EncodeAsBlock(terraformResource, "resource")
-
-					if stateless {
-						hcl.WriteLifecyclePreventDestroyAttribute(block)
-					}
-
-					file.Body().AppendBlock(block)
-					return string(file.Bytes()), nil
-				}
-				dependencies.AddResource(thisResource)
 			}
 		}
 	}
