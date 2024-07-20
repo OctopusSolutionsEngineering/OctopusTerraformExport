@@ -64,7 +64,7 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + variableName + ".tf"
 	thisResource.Id = tenantVariableId
-	thisResource.ResourceType = "TenantVariables/All"
+	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_tenant_common_variable." + variableName + ".id}"
 
 	/*
@@ -106,4 +106,8 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c TenantCommonVariableProcessor) GetResourceType() string {
+	return "TenantVariables/All"
 }

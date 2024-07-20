@@ -22,13 +22,13 @@ type TenantProjectVariableConverter struct {
 	ExcludeTenantVariablesRegex  args.StringSliceArgs
 }
 
-func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless bool, tenantVariable octopus.TenantVariable, projectVariable octopus.ProjectVariable, environmentId string, value string, projectVariableIndex int, tenantVariableId string, dependencies *data.ResourceDetailsCollection) error {
+func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless bool, tenantVariable octopus.TenantVariable, projectVariable octopus.ProjectVariable, environmentId string, value string, projectVariableIndex int, templateId string, dependencies *data.ResourceDetailsCollection) error {
 	variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + sanitizer.SanitizeName(tenantVariable.TenantName)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + variableName + ".tf"
-	thisResource.Id = tenantVariableId
-	thisResource.ResourceType = "TenantVariables/All"
+	thisResource.Id = templateId
+	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${" + octopusdeployTenantProjectVariableResourceType + "." + variableName + ".id}"
 
 	// Assume the tenant has added the data block to resolve existing tenants. Use that data block
@@ -59,7 +59,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 			Id:            nil,
 			EnvironmentId: dependencies.GetResource("Environments", environmentId),
 			ProjectId:     dependencies.GetResource("Projects", projectVariable.ProjectId),
-			TemplateId:    dependencies.GetResource("ProjectTemplates", tenantVariableId),
+			TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
 			TenantId:      dependencies.GetResource("Tenants", tenantVariable.TenantId),
 			Value:         &value,
 		}
@@ -76,4 +76,8 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c TenantProjectVariableConverter) GetResourceType() string {
+	return "TenantVariables/All"
 }

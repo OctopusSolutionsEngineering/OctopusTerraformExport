@@ -90,37 +90,18 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 		return nil
 	}
 
-	// Don't attempt to link variables from excluded projects
-	var filterErr error = nil
-	filteredProjectVariables := lo.Filter(lo.Values[string, octopus.ProjectVariable](tenant.ProjectVariables), func(item octopus.ProjectVariable, index int) bool {
-		varExcluded, varExcludedErr := c.excludeProject(item.ProjectId)
-		if varExcludedErr != nil {
-			filterErr = errors.Join(filterErr, varExcludedErr)
-			return false
-		}
-
-		return !varExcluded
-	})
-	if filterErr != nil {
-		return filterErr
+	if err2 := c.convertProjectVariables(tenant, stateless, dependencies); err2 != nil {
+		return err2
 	}
 
-	for _, p := range filteredProjectVariables {
-
-		projectVariableIndex := 0
-
-		for env, variable := range p.Variables {
-			for templateId, value := range variable {
-				value := value
-
-				projectVariableIndex++
-				if err := c.TenantProjectVariableConverter.ConvertTenantProjectVariable(stateless, tenant, p, env, value, projectVariableIndex, templateId, dependencies); err != nil {
-					return err
-				}
-			}
-		}
+	if err3 := c.convertCommonVariables(tenant, stateless, dependencies); err3 != nil {
+		return err3
 	}
 
+	return nil
+}
+
+func (c TenantVariableConverter) convertCommonVariables(tenant octopus.TenantVariable, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	for _, l := range tenant.LibraryVariables {
 		commonVariableIndex := 0
 
@@ -141,7 +122,42 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 			}
 		}
 	}
+	return nil
+}
 
+func (c TenantVariableConverter) convertProjectVariables(tenant octopus.TenantVariable, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	// Don't attempt to link variables from excluded projects
+	var filterErr error = nil
+	filteredProjectVariables := lo.Filter(lo.Values[string, octopus.ProjectVariable](tenant.ProjectVariables), func(item octopus.ProjectVariable, index int) bool {
+		varExcluded, varExcludedErr := c.excludeProject(item.ProjectId)
+		if varExcludedErr != nil {
+			filterErr = errors.Join(filterErr, varExcludedErr)
+			return false
+		}
+
+		return !varExcluded
+	})
+
+	if filterErr != nil {
+		return filterErr
+	}
+
+	for _, projectVariable := range filteredProjectVariables {
+
+		projectVariableIndex := 0
+
+		for environmentId, variable := range projectVariable.Variables {
+			for templateId, value := range variable {
+				value := value
+
+				projectVariableIndex++
+				if err := c.TenantProjectVariableConverter.ConvertTenantProjectVariable(
+					stateless, tenant, projectVariable, environmentId, value, projectVariableIndex, templateId, dependencies); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }
 
