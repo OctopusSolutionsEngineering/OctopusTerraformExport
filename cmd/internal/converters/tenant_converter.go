@@ -381,14 +381,6 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 				TenantTags:         c.Excluder.FilteredTenantTags(tenant.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 
-			projectEnvironments, err := c.getProjects(tenant.ProjectEnvironments, dependencies)
-
-			if err != nil {
-				return "", err
-			}
-
-			terraformResource.ProjectEnvironment = projectEnvironments
-
 			file := hclwrite.NewEmptyFile()
 
 			if stateless {
@@ -415,6 +407,18 @@ func (c *TenantConverter) toHcl(tenant octopus2.Tenant, recursive bool, lookup b
 
 			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
 			file.Body().AppendBlock(block)
+
+			// Build the links between the tenant and the projects
+			projectEnvironments, err := c.getProjects(tenant, dependencies)
+
+			if err != nil {
+				return "", err
+			}
+
+			for _, projectEnvironment := range projectEnvironments {
+				projectEnvironmentBlock := gohcl.EncodeAsBlock(projectEnvironment, "resource")
+				file.Body().AppendBlock(projectEnvironmentBlock)
+			}
 
 			return string(file.Bytes()), nil
 		}
@@ -444,13 +448,13 @@ func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
 	return c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept), nil
 }
 
-func (c *TenantConverter) getProjects(tags map[string][]string, dependencies *data.ResourceDetailsCollection) ([]terraform.TerraformProjectEnvironment, error) {
-	terraformProjectEnvironments := []terraform.TerraformProjectEnvironment{}
-	for k, v := range tags {
+func (c *TenantConverter) getProjects(tenant octopus2.Tenant, dependencies *data.ResourceDetailsCollection) ([]terraform.TerraformTenantProjectEnvironment, error) {
+	terraformProjectEnvironments := []terraform.TerraformTenantProjectEnvironment{}
+	for k, v := range tenant.ProjectEnvironments {
 		exclude, err := c.excludeProject(k)
 
 		if err != nil {
-			return []terraform.TerraformProjectEnvironment{}, err
+			return []terraform.TerraformTenantProjectEnvironment{}, err
 		}
 
 		if exclude {
@@ -461,9 +465,22 @@ func (c *TenantConverter) getProjects(tags map[string][]string, dependencies *da
 
 		// This shouldn't be empty, but test defensively anyway just in case.
 		if projectId != "" {
-			terraformProjectEnvironments = append(terraformProjectEnvironments, terraform.TerraformProjectEnvironment{
-				Environments: c.lookupEnvironments(v, dependencies),
-				ProjectId:    dependencies.GetResource("Projects", k),
+			project := octopus2.Project{}
+			_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
+
+			if err != nil {
+				return []terraform.TerraformTenantProjectEnvironment{}, err
+			}
+
+			resourceName := "tenant_project_" + sanitizer.SanitizeName(tenant.Name) + "_" + sanitizer.SanitizeName(project.Name)
+			terraformProjectEnvironments = append(terraformProjectEnvironments, terraform.TerraformTenantProjectEnvironment{
+				Type:           "octopusdeploy_tenant_project",
+				Name:           resourceName,
+				Count:          nil,
+				SpaceId:        strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", tenant.SpaceId)),
+				TenantId:       dependencies.GetResource("Tenants", tenant.Id),
+				ProjectId:      dependencies.GetResource("Projects", k),
+				EnvironmentIds: c.lookupEnvironments(v, dependencies),
 			})
 		}
 	}
