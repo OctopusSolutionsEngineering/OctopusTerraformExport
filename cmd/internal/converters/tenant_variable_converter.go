@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_project_variable"
@@ -239,7 +240,18 @@ func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, st
 						TenantId:             dependencies.GetResource("Tenants", tenant.TenantId),
 						Value:                &fixedValue,
 					}
-					file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+					block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+					// common variables rely on the link between a tenant and a project, and this can only
+					// be expressed in a depends_on attribute. We rely on the fact that the ID of the tenant project
+					// links has the tenant ID as a prefix.
+					tenantProjects := lo.FilterMap(dependencies.GetAllResource("TenantProject"), func(item data.ResourceDetails, index int) (string, bool) {
+						return hcl.RemoveInterpolation(item.Dependency), strings.HasPrefix(item.Id, tenant.TenantId)
+					})
+					hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(tenantProjects[:], ",")+"]")
+
+					file.Body().AppendBlock(block)
+
 					return string(file.Bytes()), nil
 				}
 				dependencies.AddResource(thisResource)
