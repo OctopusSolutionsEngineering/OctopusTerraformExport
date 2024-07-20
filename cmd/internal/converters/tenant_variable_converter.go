@@ -183,7 +183,7 @@ func (c TenantVariableConverter) isTenantExcludedByTag(tenantId string) (bool, e
 	return false, nil
 }
 
-func (c *TenantVariableConverter) excludeProject(projectId string) (bool, error) {
+func (c TenantVariableConverter) excludeProject(projectId string) (bool, error) {
 	if c.ExcludeAllProjects {
 		return true, nil
 	}
