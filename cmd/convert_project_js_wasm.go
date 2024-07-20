@@ -208,6 +208,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ExcludeTenantVariablesRegex:  nil,
 	}
 
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: false,
+	}
+
 	environmentConverter := converters.EnvironmentConverter{
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
@@ -256,11 +260,28 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		TenantProjectVariableConverter: tenantProjectVariableConverter,
 	}
 	tenantConverter := converters.TenantConverter{
-		Client:                  &client,
-		TenantVariableConverter: tenantVariableConverter,
-		EnvironmentConverter:    environmentConverter,
-		TagSetConverter:         &tagsetConverter,
-		Excluder:                converters.DefaultExcluder{},
+		Client:                   &client,
+		TenantVariableConverter:  tenantVariableConverter,
+		EnvironmentConverter:     environmentConverter,
+		TagSetConverter:          &tagsetConverter,
+		ExcludeTenantTagSets:     nil,
+		ExcludeTenantTags:        nil,
+		ExcludeTenants:           nil,
+		ExcludeTenantsRegex:      nil,
+		ExcludeTenantsWithTags:   nil,
+		ExcludeTenantsExcept:     nil,
+		ExcludeAllTenants:        false,
+		Excluder:                 converters.DefaultExcluder{},
+		ExcludeProjects:          nil,
+		ExcludeProjectsExcept:    nil,
+		ExcludeProjectsRegex:     nil,
+		ExcludeAllProjects:       false,
+		ErrGroup:                 nil,
+		IncludeIds:               false,
+		LimitResourceCount:       0,
+		IncludeSpaceInPopulation: false,
+		GenerateImportScripts:    false,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{

@@ -72,6 +72,36 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *data.R
 	return c.toHcl(resource, true, false, dependencies)
 }
 
+// ToHclByTenantIdAndProject is used by projects to export tenant variables relating to the project and any
+// library variable sets referenced by the project.
+// Tenant variables are a resource that don't fit nicely into the split between space level resources and
+// project level resources.
+// Tenant project variables have a clear dependency between a tenant and a project.
+// Tenant common variables have an implicit (and often hard to reason about) dependency between a tenant, project, and the
+// library variable set referenced by the project.
+// This means it is up to the project to define any tenant variables relating to the project, as these variables can
+// only be created once the project is available.
+func (c TenantVariableConverter) ToHclByTenantIdAndProject(id string, project octopus.Project, dependencies *data.ResourceDetailsCollection) error {
+	resource := octopus.TenantVariable{}
+	err := c.Client.GetAllResources("Tenants/"+id+"/Variables", &resource)
+
+	if err != nil {
+		return err
+	}
+
+	// only include library variables referenced by the project
+	resource.LibraryVariables = lo.PickBy(resource.LibraryVariables, func(key string, value octopus.LibraryVariable) bool {
+		return lo.Contains(project.IncludedLibraryVariableSetIds, value.LibraryVariableSetId)
+	})
+
+	// only include project variables for the project
+	resource.ProjectVariables = lo.PickBy(resource.ProjectVariables, func(key string, value octopus.ProjectVariable) bool {
+		return value.ProjectId == project.Id
+	})
+
+	return c.toHcl(resource, true, false, dependencies)
+}
+
 func (c TenantVariableConverter) toHcl(tenant octopus.TenantVariable, _ bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 
 	// Ignore excluded tenants

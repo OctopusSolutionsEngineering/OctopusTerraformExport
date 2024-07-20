@@ -213,6 +213,10 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
 	}
 
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+	}
+
 	stepTemplateConverter := converters.StepTemplateConverter{
 		ErrGroup:                        &group,
 		Client:                          &octopusClient,
@@ -323,6 +327,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    &octopusClient,
@@ -938,6 +943,10 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
 	}
 
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+	}
+
 	dependencies := data.ResourceDetailsCollection{}
 
 	stepTemplateConverter := converters.StepTemplateConverter{
@@ -1020,22 +1029,24 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		TenantVariableConverter:  tenantVariableConverter,
 		EnvironmentConverter:     environmentConverter,
 		TagSetConverter:          &tagsetConverter,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenants:           args.ExcludeTenants,
 		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
-		ExcludeAllTenants:        args.ExcludeAllTenants,
-		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
 		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
 		Excluder:                 converters.DefaultExcluder{},
-		ExcludeTenantTags:        args.ExcludeTenantTags,
-		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeProjects:          args.ExcludeProjects,
 		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
 		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
 		ExcludeAllProjects:       args.ExcludeAllProjects,
-		ExcludeProjects:          args.ExcludeProjects,
+		ErrGroup:                 nil,
 		IncludeIds:               args.IncludeIds,
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 
 	accountConverter := converters.AccountConverter{
@@ -1203,6 +1214,10 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
 	}
 
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+	}
+
 	dependencies := data.ResourceDetailsCollection{}
 
 	stepTemplateConverter := converters.StepTemplateConverter{
@@ -1322,22 +1337,24 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		TenantVariableConverter:  tenantVariableConverter,
 		EnvironmentConverter:     environmentConverter,
 		TagSetConverter:          &tagsetConverter,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenants:           args.ExcludeTenants,
 		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
-		ExcludeAllTenants:        args.ExcludeAllTenants,
-		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
 		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
 		Excluder:                 converters.DefaultExcluder{},
-		ExcludeTenantTags:        args.ExcludeTenantTags,
-		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeProjects:          args.ExcludeProjects,
 		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
 		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
 		ExcludeAllProjects:       args.ExcludeAllProjects,
-		ExcludeProjects:          args.ExcludeProjects,
+		ErrGroup:                 nil,
 		IncludeIds:               args.IncludeIds,
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{
