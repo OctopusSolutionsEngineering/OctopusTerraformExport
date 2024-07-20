@@ -13,41 +13,42 @@ import (
 )
 
 type Arguments struct {
-	ExperimentalEnableStepTemplates bool
-	Profiling                       bool
-	ExcludeTerraformVariables       bool
-	ExcludeSpaceCreation            bool
-	ConfigFile                      string
-	ConfigPath                      string
-	Version                         bool
-	IgnoreInvalidExcludeExcept      bool
-	Url                             string
-	ApiKey                          string
-	Space                           string
-	Destination                     string
-	Console                         bool
-	ProjectId                       Projects
-	ProjectName                     Projects
-	RunbookId                       string
-	RunbookName                     string
-	LookupProjectDependencies       bool
-	Stateless                       bool
-	StatelessAdditionalParams       StringSliceArgs
-	StepTemplateName                string
-	StepTemplateKey                 string
-	StepTemplateDescription         string
-	IgnoreCacManagedValues          bool
-	ExcludeCaCProjectSettings       bool
-	BackendBlock                    string
-	DetachProjectTemplates          bool
-	DefaultSecretVariableValues     bool
-	DummySecretVariableValues       bool
-	ProviderVersion                 string
-	ExcludeProvider                 bool
-	IncludeOctopusOutputVars        bool
-	LimitAttributeLength            int
-	LimitResourceCount              int
-	GenerateImportScripts           bool
+	ExperimentalEnableStepTemplates       bool
+	Profiling                             bool
+	ExcludeTerraformVariables             bool
+	ExcludeSpaceCreation                  bool
+	ConfigFile                            string
+	ConfigPath                            string
+	Version                               bool
+	IgnoreInvalidExcludeExcept            bool
+	Url                                   string
+	ApiKey                                string
+	Space                                 string
+	Destination                           string
+	Console                               bool
+	ProjectId                             Projects
+	ProjectName                           Projects
+	RunbookId                             string
+	RunbookName                           string
+	LookupProjectDependencies             bool
+	ExportTenantCommonVariablesForProject bool
+	Stateless                             bool
+	StatelessAdditionalParams             StringSliceArgs
+	StepTemplateName                      string
+	StepTemplateKey                       string
+	StepTemplateDescription               string
+	IgnoreCacManagedValues                bool
+	ExcludeCaCProjectSettings             bool
+	BackendBlock                          string
+	DetachProjectTemplates                bool
+	DefaultSecretVariableValues           bool
+	DummySecretVariableValues             bool
+	ProviderVersion                       string
+	ExcludeProvider                       bool
+	IncludeOctopusOutputVars              bool
+	LimitAttributeLength                  int
+	LimitResourceCount                    int
+	GenerateImportScripts                 bool
 
 	IgnoreProjectChanges         bool
 	IgnoreProjectVariableChanges bool
@@ -242,6 +243,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.RunbookId, "runbookId", "", "Limit the export to a single runbook. Runbooks are exported referencing external resources as data sources.")
 	flags.StringVar(&arguments.RunbookName, "runbookName", "", "Limit the export to a single runbook. Requires projectName or projectId. Runbooks are exported referencing external resources as data sources.")
 	flags.BoolVar(&arguments.LookupProjectDependencies, "lookupProjectDependencies", false, "Use data sources to lookup the external project dependencies. Use this when the destination space has existing environments, accounts, tenants, feeds, git credentials, and library variable sets that this project should reference.")
+	flags.BoolVar(&arguments.ExportTenantCommonVariablesForProject, "exportTenantCommonVariablesForProject", true, "When exporting a project, this option also exports tenant common variables for tenants linked to the project.")
 	flags.BoolVar(&arguments.IgnoreCacManagedValues, "ignoreCacManagedValues", true, "Pass this to exclude values managed by Config-as-Code from the exported Terraform. This includes non-sensitive variables, the deployment process, connectivity settings, and other project settings. This has no effect on projects that do not have CaC enabled.")
 	flags.BoolVar(&arguments.ExcludeCaCProjectSettings, "excludeCaCProjectSettings", false, "Pass this to exclude any Config-As-Code settings in the exported projects. Typically you set -ignoreCacManagedValues=false -excludeCaCProjectSettings=true to essentially \"convert\" a CaC project to a regular project. Values from the \"main\" or \"master\" branches will be used first, or just fall back to the first configured branch.")
 	flags.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")

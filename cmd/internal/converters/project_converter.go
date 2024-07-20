@@ -49,13 +49,15 @@ type ProjectConverter struct {
 	DummySecretGenerator        DummySecretGenerator
 	Excluder                    ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
-	LookupOnlyMode            bool
-	ErrGroup                  *errgroup.Group
-	ExcludeTerraformVariables bool
-	IncludeIds                bool
-	LimitResourceCount        int
-	IncludeSpaceInPopulation  bool
-	GenerateImportScripts     bool
+	LookupOnlyMode                        bool
+	ErrGroup                              *errgroup.Group
+	ExcludeTerraformVariables             bool
+	IncludeIds                            bool
+	LimitResourceCount                    int
+	IncludeSpaceInPopulation              bool
+	GenerateImportScripts                 bool
+	TenantCommonVariableProcessor         TenantCommonVariableProcessor
+	ExportTenantCommonVariablesForProject bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -366,22 +368,21 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 	projectName := "project_" + sanitizer.SanitizeName(project.Name)
 
 	if recursive {
-		err := c.exportDependencies(project, stateless, dependencies)
-
-		if err != nil {
+		if err := c.exportDependencies(project, stateless, dependencies); err != nil {
 			return err
 		}
 	} else if lookups {
-		err := c.exportDependencyLookups(project, dependencies)
-
-		if err != nil {
+		if err := c.exportDependencyLookups(project, dependencies); err != nil {
 			return err
 		}
+
+		if err := c.exportTenantCommonVariables(project, stateless, dependencies); err != nil {
+			return err
+		}
+
 	}
 
-	err := c.exportChildDependencies(recursive, lookups, stateless, project, projectName, dependencies)
-
-	if err != nil {
+	if err := c.exportChildDependencies(recursive, lookups, stateless, project, projectName, dependencies); err != nil {
 		return err
 	}
 
@@ -1220,6 +1221,60 @@ func (c *ProjectConverter) exportDependencies(project octopus.Project, stateless
 
 			if err != nil {
 				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *ProjectConverter) exportTenantCommonVariables(project octopus.Project, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if !c.ExportTenantCommonVariablesForProject {
+		return nil
+	}
+
+	// Find the project tenants
+	collection := octopus.GeneralCollection[octopus.Tenant]{}
+	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", project.Id})
+
+	if err != nil {
+		return err
+	}
+
+	for _, tenant := range collection.Items {
+
+		// Find the tenant variables
+		tenantVariable := octopus.TenantVariable{}
+		err := c.Client.GetAllResources("Tenants/"+tenant.Id+"/Variables", &tenantVariable)
+
+		if err != nil {
+			return err
+		}
+
+		// Loop over the common variables
+		for _, l := range tenantVariable.LibraryVariables {
+			commonVariableIndex := 0
+
+			for id, value := range l.Variables {
+
+				// We're only interested in common variables from library variable sets attached to this project
+				if !lo.Contains(project.IncludedLibraryVariableSetIds, l.LibraryVariableSetId) {
+					continue
+				}
+
+				libraryVariableSet := octopus.LibraryVariableSet{}
+				_, err := c.Client.GetSpaceResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
+
+				if err != nil {
+					return err
+				}
+
+				commonVariableIndex++
+
+				if err := c.TenantCommonVariableProcessor.ConvertTenantCommonVariable(
+					stateless, tenantVariable, id, value, libraryVariableSet, commonVariableIndex, dependencies); err != nil {
+					return err
+				}
 			}
 		}
 	}

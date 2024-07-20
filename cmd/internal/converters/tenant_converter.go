@@ -45,6 +45,7 @@ type TenantConverter struct {
 	LimitResourceCount       int
 	IncludeSpaceInPopulation bool
 	GenerateImportScripts    bool
+	TenantProjectConverter   TenantProjectConverter
 }
 
 func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -438,34 +439,7 @@ func (c *TenantConverter) createTenantProjects(tenant octopus.Tenant, dependenci
 			return err
 		}
 
-		resourceName := "tenant_project_" + sanitizer.SanitizeName(tenant.Name) + "_" + sanitizer.SanitizeName(project.Name)
-
-		tenantProject := data.ResourceDetails{}
-		tenantProject.FileName = "space_population/" + resourceName + ".tf"
-		tenantProject.Id = tenant.Id + "_" + project.Id
-		tenantProject.Name = tenant.Name + " " + project.Name
-		tenantProject.ResourceType = "TenantProject"
-		tenantProject.Lookup = "${" + octopusdeployTenantProjectResourceType + "." + resourceName + ".id}"
-		tenantProject.Dependency = "${" + octopusdeployTenantProjectResourceType + "." + resourceName + "}"
-
-		tenantProject.ToHcl = func() (string, error) {
-			terraformProjectEnvironments := terraform.TerraformTenantProjectEnvironment{
-				Type:           octopusdeployTenantProjectResourceType,
-				Name:           resourceName,
-				Count:          nil,
-				SpaceId:        strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", tenant.SpaceId)),
-				TenantId:       dependencies.GetResource("Tenants", tenant.Id),
-				ProjectId:      dependencies.GetResource("Projects", project.Id),
-				EnvironmentIds: c.lookupEnvironments(environmentId, dependencies),
-			}
-
-			file := hclwrite.NewEmptyFile()
-			projectEnvironmentBlock := gohcl.EncodeAsBlock(terraformProjectEnvironments, "resource")
-			file.Body().AppendBlock(projectEnvironmentBlock)
-			return string(file.Bytes()), nil
-		}
-
-		dependencies.AddResource(tenantProject)
+		c.TenantProjectConverter.LinkTenantToProject(tenant, project, environmentId, dependencies)
 	}
 
 	return nil

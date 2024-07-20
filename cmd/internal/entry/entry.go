@@ -195,6 +195,28 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 
 	dummySecretGenerator := converters.DummySecret{}
 
+	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           args.ExcludeAllProjects,
+		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:       args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+	}
+
+	tenantProjectVariableConverter := converters.TenantProjectVariableConverter{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           args.ExcludeAllProjects,
+		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:       args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+	}
+
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+	}
+
 	stepTemplateConverter := converters.StepTemplateConverter{
 		ErrGroup:                        &group,
 		Client:                          &octopusClient,
@@ -251,23 +273,25 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		GenerateImportScripts:     args.GenerateImportScripts,
 	}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:                       &octopusClient,
-		ExcludeTenants:               args.ExcludeTenants,
-		ExcludeTenantsWithTags:       args.ExcludeTenantsWithTags,
-		ExcludeAllTenants:            args.ExcludeAllTenants,
-		ExcludeTenantsExcept:         args.ExcludeTenantsExcept,
-		Excluder:                     converters.DefaultExcluder{},
-		DummySecretVariableValues:    args.DummySecretVariableValues,
-		DummySecretGenerator:         dummySecretGenerator,
-		ExcludeProjects:              args.ExcludeProjects,
-		ExcludeProjectsRegex:         args.ExcludeProjectsRegex,
-		ExcludeAllProjects:           args.ExcludeAllProjects,
-		ExcludeProjectsExcept:        args.ExcludeProjectsExcept,
-		ErrGroup:                     &group,
-		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
-		ExcludeTenantVariables:       args.ExcludeTenantVariables,
-		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
-		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		Client:                         &octopusClient,
+		ExcludeTenants:                 args.ExcludeTenants,
+		ExcludeTenantsWithTags:         args.ExcludeTenantsWithTags,
+		ExcludeAllTenants:              args.ExcludeAllTenants,
+		ExcludeTenantsExcept:           args.ExcludeTenantsExcept,
+		Excluder:                       converters.DefaultExcluder{},
+		DummySecretVariableValues:      args.DummySecretVariableValues,
+		DummySecretGenerator:           dummySecretGenerator,
+		ExcludeProjects:                args.ExcludeProjects,
+		ExcludeProjectsRegex:           args.ExcludeProjectsRegex,
+		ExcludeAllProjects:             args.ExcludeAllProjects,
+		ExcludeProjectsExcept:          args.ExcludeProjectsExcept,
+		ErrGroup:                       &group,
+		ExcludeAllTenantVariables:      args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:         args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept:   args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:    args.ExcludeTenantVariablesRegex,
+		TenantCommonVariableProcessor:  tenantCommonVariableProcessor,
+		TenantProjectVariableConverter: tenantProjectVariableConverter,
 	}
 	tagsetConverter := converters.TagSetConverter{
 		Client:                     &octopusClient,
@@ -303,6 +327,7 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    &octopusClient,
@@ -790,7 +815,6 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 			ErrGroup:                 &group,
 		},
 		ProjectConverter: &converters.ProjectConverter{
-			IncludeIds:                  args.IncludeIds,
 			Client:                      &octopusClient,
 			LifecycleConverter:          lifecycleConverter,
 			GitCredentialsConverter:     gitCredentialsConverter,
@@ -830,27 +854,31 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 				GenerateImportScripts: args.GenerateImportScripts,
 				EnvironmentConverter:  environmentConverter,
 			},
-			VariableSetConverter:      &variableSetConverter,
-			ChannelConverter:          channelConverter,
-			RunbookConverter:          &runbookConverter,
-			IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
-			ExcludeCaCProjectSettings: args.ExcludeCaCProjectSettings,
-			ExcludeAllRunbooks:        args.ExcludeAllRunbooks,
-			IgnoreProjectChanges:      args.IgnoreProjectChanges,
-			IgnoreProjectGroupChanges: false,
-			IgnoreProjectNameChanges:  false,
-			ExcludeProjects:           args.ExcludeProjects,
-			ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
-			ExcludeAllProjects:        args.ExcludeAllProjects,
-			ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
-			DummySecretVariableValues: args.DummySecretVariableValues,
-			DummySecretGenerator:      dummySecretGenerator,
-			Excluder:                  converters.DefaultExcluder{},
-			ErrGroup:                  &group,
-			ExcludeTerraformVariables: args.ExcludeTerraformVariables,
-			LimitResourceCount:        args.LimitResourceCount,
-			IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
-			GenerateImportScripts:     args.GenerateImportScripts,
+			VariableSetConverter:                  &variableSetConverter,
+			ChannelConverter:                      channelConverter,
+			RunbookConverter:                      &runbookConverter,
+			IgnoreCacManagedValues:                args.IgnoreCacManagedValues,
+			ExcludeCaCProjectSettings:             args.ExcludeCaCProjectSettings,
+			ExcludeAllRunbooks:                    args.ExcludeAllRunbooks,
+			IgnoreProjectChanges:                  args.IgnoreProjectChanges,
+			IgnoreProjectGroupChanges:             false,
+			IgnoreProjectNameChanges:              false,
+			ExcludeProjects:                       args.ExcludeProjects,
+			ExcludeProjectsExcept:                 args.ExcludeProjectsExcept,
+			ExcludeProjectsRegex:                  args.ExcludeProjectsRegex,
+			ExcludeAllProjects:                    args.ExcludeAllProjects,
+			DummySecretVariableValues:             args.DummySecretVariableValues,
+			DummySecretGenerator:                  dummySecretGenerator,
+			Excluder:                              converters.DefaultExcluder{},
+			LookupOnlyMode:                        false,
+			ErrGroup:                              &group,
+			ExcludeTerraformVariables:             args.ExcludeTerraformVariables,
+			IncludeIds:                            args.IncludeIds,
+			LimitResourceCount:                    args.LimitResourceCount,
+			IncludeSpaceInPopulation:              args.IncludeSpaceInPopulation,
+			GenerateImportScripts:                 args.GenerateImportScripts,
+			TenantCommonVariableProcessor:         tenantCommonVariableProcessor,
+			ExportTenantCommonVariablesForProject: false,
 		},
 		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -896,6 +924,28 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	dummySecretGenerator := converters.DummySecret{}
+
+	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           args.ExcludeAllProjects,
+		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:       args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+	}
+
+	tenantProjectVariableConverter := converters.TenantProjectVariableConverter{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           args.ExcludeAllProjects,
+		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:       args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+	}
+
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+	}
 
 	dependencies := data.ResourceDetailsCollection{}
 
@@ -954,43 +1004,49 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:                       &octopusClient,
-		ExcludeTenants:               args.ExcludeTenants,
-		ExcludeAllTenants:            args.ExcludeAllTenants,
-		ExcludeTenantsExcept:         args.ExcludeTenantsExcept,
-		Excluder:                     converters.DefaultExcluder{},
-		DummySecretVariableValues:    args.DummySecretVariableValues,
-		DummySecretGenerator:         dummySecretGenerator,
-		ExcludeProjectsExcept:        args.ExcludeProjectsExcept,
-		ExcludeProjectsRegex:         args.ExcludeProjectsRegex,
-		ExcludeAllProjects:           args.ExcludeAllProjects,
-		ExcludeProjects:              args.ExcludeProjects,
-		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
-		ExcludeTenantVariables:       args.ExcludeTenantVariables,
-		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
-		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		Client:                         &octopusClient,
+		ExcludeTenants:                 args.ExcludeTenants,
+		ExcludeTenantsWithTags:         nil,
+		ExcludeTenantsExcept:           args.ExcludeTenantsExcept,
+		ExcludeAllTenants:              args.ExcludeAllTenants,
+		Excluder:                       converters.DefaultExcluder{},
+		DummySecretVariableValues:      args.DummySecretVariableValues,
+		DummySecretGenerator:           dummySecretGenerator,
+		ExcludeProjects:                args.ExcludeProjects,
+		ExcludeProjectsExcept:          args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:           args.ExcludeProjectsRegex,
+		ExcludeAllProjects:             args.ExcludeAllProjects,
+		ErrGroup:                       nil,
+		ExcludeAllTenantVariables:      args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:         args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept:   args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:    args.ExcludeTenantVariablesRegex,
+		TenantCommonVariableProcessor:  tenantCommonVariableProcessor,
+		TenantProjectVariableConverter: tenantProjectVariableConverter,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                   &octopusClient,
 		TenantVariableConverter:  tenantVariableConverter,
 		EnvironmentConverter:     environmentConverter,
 		TagSetConverter:          &tagsetConverter,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenants:           args.ExcludeTenants,
 		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
-		ExcludeAllTenants:        args.ExcludeAllTenants,
-		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
 		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
 		Excluder:                 converters.DefaultExcluder{},
-		ExcludeTenantTags:        args.ExcludeTenantTags,
-		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeProjects:          args.ExcludeProjects,
 		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
 		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
 		ExcludeAllProjects:       args.ExcludeAllProjects,
-		ExcludeProjects:          args.ExcludeProjects,
+		ErrGroup:                 nil,
 		IncludeIds:               args.IncludeIds,
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 
 	accountConverter := converters.AccountConverter{
@@ -1044,14 +1100,39 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	projectConverter := &converters.ProjectConverter{
-		IncludeIds:                args.IncludeIds,
-		LookupOnlyMode:            true,
-		Client:                    &octopusClient,
-		Excluder:                  converters.DefaultExcluder{},
-		ExcludeTerraformVariables: args.ExcludeTerraformVariables,
-		LimitResourceCount:        args.LimitResourceCount,
-		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
-		GenerateImportScripts:     args.GenerateImportScripts,
+		Client:                                &octopusClient,
+		LifecycleConverter:                    nil,
+		GitCredentialsConverter:               nil,
+		LibraryVariableSetConverter:           nil,
+		ProjectGroupConverter:                 nil,
+		DeploymentProcessConverter:            nil,
+		TenantConverter:                       nil,
+		ProjectTriggerConverter:               nil,
+		VariableSetConverter:                  nil,
+		ChannelConverter:                      nil,
+		RunbookConverter:                      nil,
+		IgnoreCacManagedValues:                false,
+		ExcludeCaCProjectSettings:             false,
+		ExcludeAllRunbooks:                    false,
+		IgnoreProjectChanges:                  false,
+		IgnoreProjectGroupChanges:             false,
+		IgnoreProjectNameChanges:              false,
+		ExcludeProjects:                       nil,
+		ExcludeProjectsExcept:                 nil,
+		ExcludeProjectsRegex:                  nil,
+		ExcludeAllProjects:                    false,
+		DummySecretVariableValues:             false,
+		DummySecretGenerator:                  nil,
+		Excluder:                              converters.DefaultExcluder{},
+		LookupOnlyMode:                        true,
+		ErrGroup:                              nil,
+		ExcludeTerraformVariables:             args.ExcludeTerraformVariables,
+		IncludeIds:                            args.IncludeIds,
+		LimitResourceCount:                    args.LimitResourceCount,
+		IncludeSpaceInPopulation:              args.IncludeSpaceInPopulation,
+		GenerateImportScripts:                 args.GenerateImportScripts,
+		TenantCommonVariableProcessor:         tenantCommonVariableProcessor,
+		ExportTenantCommonVariablesForProject: false,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -1114,6 +1195,28 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	dummySecretGenerator := converters.DummySecret{}
+
+	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           args.ExcludeAllProjects,
+		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:       args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+	}
+
+	tenantProjectVariableConverter := converters.TenantProjectVariableConverter{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           args.ExcludeAllProjects,
+		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:       args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+	}
+
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+	}
 
 	dependencies := data.ResourceDetailsCollection{}
 
@@ -1209,45 +1312,49 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 		GenerateImportScripts:      args.GenerateImportScripts,
 	}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:                       &octopusClient,
-		ExcludeTenants:               args.ExcludeTenants,
-		ExcludeTenantsWithTags:       args.ExcludeTenantsWithTags,
-		ExcludeTenantsExcept:         args.ExcludeTenantsExcept,
-		ExcludeAllTenants:            args.ExcludeAllTenants,
-		Excluder:                     converters.DefaultExcluder{},
-		DummySecretVariableValues:    args.DummySecretVariableValues,
-		DummySecretGenerator:         dummySecretGenerator,
-		ExcludeProjects:              args.ExcludeProjects,
-		ExcludeProjectsExcept:        args.ExcludeProjectsExcept,
-		ExcludeProjectsRegex:         args.ExcludeProjectsRegex,
-		ExcludeAllProjects:           args.ExcludeAllProjects,
-		ErrGroup:                     nil,
-		ExcludeAllTenantVariables:    args.ExcludeAllTenantVariables,
-		ExcludeTenantVariables:       args.ExcludeTenantVariables,
-		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
-		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		Client:                         &octopusClient,
+		ExcludeTenants:                 args.ExcludeTenants,
+		ExcludeTenantsWithTags:         args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:           args.ExcludeTenantsExcept,
+		ExcludeAllTenants:              args.ExcludeAllTenants,
+		Excluder:                       converters.DefaultExcluder{},
+		DummySecretVariableValues:      args.DummySecretVariableValues,
+		DummySecretGenerator:           dummySecretGenerator,
+		ExcludeProjects:                args.ExcludeProjects,
+		ExcludeProjectsExcept:          args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:           args.ExcludeProjectsRegex,
+		ExcludeAllProjects:             args.ExcludeAllProjects,
+		ErrGroup:                       nil,
+		ExcludeAllTenantVariables:      args.ExcludeAllTenantVariables,
+		ExcludeTenantVariables:         args.ExcludeTenantVariables,
+		ExcludeTenantVariablesExcept:   args.ExcludeTenantVariablesExcept,
+		ExcludeTenantVariablesRegex:    args.ExcludeTenantVariablesRegex,
+		TenantCommonVariableProcessor:  tenantCommonVariableProcessor,
+		TenantProjectVariableConverter: tenantProjectVariableConverter,
 	}
 	tenantConverter := converters.TenantConverter{
 		Client:                   &octopusClient,
 		TenantVariableConverter:  tenantVariableConverter,
 		EnvironmentConverter:     environmentConverter,
 		TagSetConverter:          &tagsetConverter,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenants:           args.ExcludeTenants,
 		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
-		ExcludeAllTenants:        args.ExcludeAllTenants,
-		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
 		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
 		Excluder:                 converters.DefaultExcluder{},
-		ExcludeTenantTags:        args.ExcludeTenantTags,
-		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeProjects:          args.ExcludeProjects,
 		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
 		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
 		ExcludeAllProjects:       args.ExcludeAllProjects,
-		ExcludeProjects:          args.ExcludeProjects,
+		ErrGroup:                 nil,
 		IncludeIds:               args.IncludeIds,
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{
@@ -1702,8 +1809,6 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	}
 
 	projectConverter := converters.ProjectConverter{
-		IncludeIds:                  args.IncludeIds,
-		ExcludeAllRunbooks:          args.ExcludeAllRunbooks,
 		Client:                      &octopusClient,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
@@ -1743,25 +1848,31 @@ func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 			GenerateImportScripts: args.GenerateImportScripts,
 			EnvironmentConverter:  environmentConverter,
 		},
-		VariableSetConverter:      &variableSetConverter,
-		ChannelConverter:          channelConverter,
-		IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
-		ExcludeCaCProjectSettings: args.ExcludeCaCProjectSettings,
-		RunbookConverter:          &runbookConverter,
-		IgnoreProjectChanges:      args.IgnoreProjectChanges,
-		IgnoreProjectGroupChanges: args.IgnoreProjectGroupChanges,
-		IgnoreProjectNameChanges:  args.IgnoreProjectNameChanges,
-		ExcludeProjects:           nil,
-		DummySecretVariableValues: args.DummySecretVariableValues,
-		DummySecretGenerator:      dummySecretGenerator,
-		Excluder:                  converters.DefaultExcluder{},
-		ExcludeAllProjects:        false,
-		ExcludeProjectsRegex:      nil,
-		ExcludeProjectsExcept:     nil,
-		ExcludeTerraformVariables: args.ExcludeTerraformVariables,
-		LimitResourceCount:        args.LimitResourceCount,
-		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
-		GenerateImportScripts:     args.GenerateImportScripts,
+		VariableSetConverter:                  &variableSetConverter,
+		ChannelConverter:                      channelConverter,
+		RunbookConverter:                      &runbookConverter,
+		IgnoreCacManagedValues:                args.IgnoreCacManagedValues,
+		ExcludeCaCProjectSettings:             args.ExcludeCaCProjectSettings,
+		ExcludeAllRunbooks:                    args.ExcludeAllRunbooks,
+		IgnoreProjectChanges:                  args.IgnoreProjectChanges,
+		IgnoreProjectGroupChanges:             args.IgnoreProjectGroupChanges,
+		IgnoreProjectNameChanges:              args.IgnoreProjectNameChanges,
+		ExcludeProjects:                       nil,
+		ExcludeProjectsExcept:                 nil,
+		ExcludeProjectsRegex:                  nil,
+		ExcludeAllProjects:                    false,
+		DummySecretVariableValues:             args.DummySecretVariableValues,
+		DummySecretGenerator:                  dummySecretGenerator,
+		Excluder:                              converters.DefaultExcluder{},
+		LookupOnlyMode:                        false,
+		ErrGroup:                              nil,
+		ExcludeTerraformVariables:             args.ExcludeTerraformVariables,
+		IncludeIds:                            args.IncludeIds,
+		LimitResourceCount:                    args.LimitResourceCount,
+		IncludeSpaceInPopulation:              args.IncludeSpaceInPopulation,
+		GenerateImportScripts:                 args.GenerateImportScripts,
+		TenantCommonVariableProcessor:         tenantCommonVariableProcessor,
+		ExportTenantCommonVariablesForProject: args.ExportTenantCommonVariablesForProject,
 	}
 
 	if args.LookupProjectDependencies {

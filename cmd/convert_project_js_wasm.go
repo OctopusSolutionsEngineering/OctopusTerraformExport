@@ -190,6 +190,28 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 
 	stepTemplateConverter := StepTemplateConverter{}
 
+	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
+		Excluder:                     converters.DefaultExcluder{},
+		ExcludeAllProjects:           false,
+		ExcludeAllTenantVariables:    false,
+		ExcludeTenantVariables:       nil,
+		ExcludeTenantVariablesExcept: nil,
+		ExcludeTenantVariablesRegex:  nil,
+	}
+
+	tenantProjectVariableConverter := converters.TenantProjectVariableConverter{
+		Excluder:                     onverters.DefaultExcluder{},
+		ExcludeAllProjects:           false,
+		ExcludeAllTenantVariables:    false,
+		ExcludeTenantVariables:       nil,
+		ExcludeTenantVariablesExcept: nil,
+		ExcludeTenantVariablesRegex:  nil,
+	}
+
+	tenantProjectConverter := converters.TenantProjectConverter{
+		IncludeSpaceInPopulation: false,
+	}
+
 	environmentConverter := converters.EnvironmentConverter{
 		Client:   &client,
 		Excluder: converters.DefaultExcluder{},
@@ -217,15 +239,49 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Excluder: converters.DefaultExcluder{},
 	}
 	tenantVariableConverter := converters.TenantVariableConverter{
-		Client:   &client,
-		Excluder: converters.DefaultExcluder{},
+		Client:                         &client,
+		ExcludeTenants:                 nil,
+		ExcludeTenantsWithTags:         nil,
+		ExcludeTenantsExcept:           nil,
+		ExcludeAllTenants:              false,
+		Excluder:                       converters.DefaultExcluder{},
+		DummySecretVariableValues:      false,
+		DummySecretGenerator:           nil,
+		ExcludeProjects:                nil,
+		ExcludeProjectsExcept:          nil,
+		ExcludeProjectsRegex:           nil,
+		ExcludeAllProjects:             false,
+		ErrGroup:                       nil,
+		ExcludeAllTenantVariables:      false,
+		ExcludeTenantVariables:         nil,
+		ExcludeTenantVariablesExcept:   nil,
+		ExcludeTenantVariablesRegex:    nil,
+		TenantCommonVariableProcessor:  tenantCommonVariableProcessor,
+		TenantProjectVariableConverter: tenantProjectVariableConverter,
 	}
 	tenantConverter := converters.TenantConverter{
-		Client:                  &client,
-		TenantVariableConverter: tenantVariableConverter,
-		EnvironmentConverter:    environmentConverter,
-		TagSetConverter:         &tagsetConverter,
-		Excluder:                converters.DefaultExcluder{},
+		Client:                   &client,
+		TenantVariableConverter:  tenantVariableConverter,
+		EnvironmentConverter:     environmentConverter,
+		TagSetConverter:          &tagsetConverter,
+		ExcludeTenantTagSets:     nil,
+		ExcludeTenantTags:        nil,
+		ExcludeTenants:           nil,
+		ExcludeTenantsRegex:      nil,
+		ExcludeTenantsWithTags:   nil,
+		ExcludeTenantsExcept:     nil,
+		ExcludeAllTenants:        false,
+		Excluder:                 converters.DefaultExcluder{},
+		ExcludeProjects:          nil,
+		ExcludeProjectsExcept:    nil,
+		ExcludeProjectsRegex:     nil,
+		ExcludeAllProjects:       false,
+		ErrGroup:                 nil,
+		IncludeIds:               false,
+		LimitResourceCount:       0,
+		IncludeSpaceInPopulation: false,
+		GenerateImportScripts:    false,
+		TenantProjectConverter:   tenantProjectConverter,
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{
@@ -492,7 +548,6 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 	}
 
 	err := (&converters.ProjectConverter{
-		ExcludeAllRunbooks:          false,
 		Client:                      &client,
 		LifecycleConverter:          lifecycleConverter,
 		GitCredentialsConverter:     gitCredentialsConverter,
@@ -523,12 +578,31 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			Client:               &client,
 			EnvironmentConverter: environmentConverter,
 		},
-		VariableSetConverter:      &variableSetConverter,
-		ChannelConverter:          channelConverter,
-		RunbookConverter:          &runbookConverter,
-		IgnoreCacManagedValues:    false,
-		ExcludeCaCProjectSettings: false,
-		Excluder:                  converters.DefaultExcluder{},
+		VariableSetConverter:                  &variableSetConverter,
+		ChannelConverter:                      channelConverter,
+		RunbookConverter:                      &runbookConverter,
+		IgnoreCacManagedValues:                false,
+		ExcludeCaCProjectSettings:             false,
+		ExcludeAllRunbooks:                    false,
+		IgnoreProjectChanges:                  false,
+		IgnoreProjectGroupChanges:             false,
+		IgnoreProjectNameChanges:              false,
+		ExcludeProjects:                       nil,
+		ExcludeProjectsExcept:                 nil,
+		ExcludeProjectsRegex:                  nil,
+		ExcludeAllProjects:                    false,
+		DummySecretVariableValues:             false,
+		DummySecretGenerator:                  nil,
+		Excluder:                              converters.DefaultExcluder{},
+		LookupOnlyMode:                        false,
+		ErrGroup:                              nil,
+		ExcludeTerraformVariables:             false,
+		IncludeIds:                            false,
+		LimitResourceCount:                    0,
+		IncludeSpaceInPopulation:              false,
+		GenerateImportScripts:                 false,
+		TenantCommonVariableProcessor:         tenantCommonVariableProcessor,
+		ExportTenantCommonVariablesForProject: true,
 	}).ToHclByIdWithLookups(projectId, &dependencies)
 
 	if err != nil {
