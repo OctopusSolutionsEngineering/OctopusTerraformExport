@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
+	"strings"
 )
 
 // TenantCommonVariableProcessor is used to serialize the tenant common variables.
@@ -87,7 +89,18 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 			TenantId:             dependencies.GetResource("Tenants", tenantVariable.TenantId),
 			Value:                &fixedValue,
 		}
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// common variables rely on the link between a tenant and a project, and this can only
+		// be expressed in a depends_on attribute. We rely on the fact that the ID of the tenant project
+		// links has the tenant ID as a prefix.
+		tenantProjects := lo.FilterMap(dependencies.GetAllResource("TenantProject"), func(item data.ResourceDetails, index int) (string, bool) {
+			return hcl.RemoveInterpolation(item.Dependency), strings.HasPrefix(item.Id, tenantVariable.TenantId)
+		})
+		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(tenantProjects[:], ",")+"]")
+
+		file.Body().AppendBlock(block)
+
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
