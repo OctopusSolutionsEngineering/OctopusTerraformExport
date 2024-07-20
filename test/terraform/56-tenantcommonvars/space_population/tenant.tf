@@ -16,6 +16,7 @@ resource "octopusdeploy_tenant_common_variable" "tenantcommonvariable1_variablea
   template_id             = "${octopusdeploy_library_variable_set.library_variable_set_variables_variableset.template[0].id}"
   tenant_id               = "${octopusdeploy_tenant.tenant_team_a.id}"
   value                   = "Override Variable A"
+  depends_on = [octopusdeploy_tenant_project.tenanta_project]
 }
 
 resource "octopusdeploy_tenant_common_variable" "tenantcommonvariable1_variableb" {
@@ -23,6 +24,7 @@ resource "octopusdeploy_tenant_common_variable" "tenantcommonvariable1_variableb
   template_id             = "${octopusdeploy_library_variable_set.library_variable_set_variables_variableset.template[1].id}"
   tenant_id               = "${octopusdeploy_tenant.tenant_team_a.id}"
   value                   = "Override Variable B"
+  depends_on = [octopusdeploy_tenant_project.tenanta_project]
 }
 
 resource "octopusdeploy_tenant_common_variable" "tenantcommonvariable1_secret" {
@@ -30,4 +32,5 @@ resource "octopusdeploy_tenant_common_variable" "tenantcommonvariable1_secret" {
   template_id             = "${octopusdeploy_library_variable_set.library_variable_set_variables_variableset.template[2].id}"
   tenant_id               = "${octopusdeploy_tenant.tenant_team_a.id}"
   value                   = "Override Secret"
+  depends_on = [octopusdeploy_tenant_project.tenanta_project]
 }
