@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 const octopusdeployTenantProjectVariableResourceType = "octopusdeploy_tenant_project_variable"
