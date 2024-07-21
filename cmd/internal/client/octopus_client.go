@@ -807,9 +807,10 @@ func (o *OctopusApiClient) readCollectionCache(cacheId string) []byte {
 }
 
 func (o *OctopusApiClient) cacheCollectionResult(resourceType string, cacheId string, body []byte) {
-	// Only worker pools and tag sets are looked up by other resources. Worker pools may be looked
+	// Only some collections are looked up by other resources. Worker pools may be looked
 	// up to find the default worker pool. Tag sets are looked up to add terraform dependencies.
-	if resourceType != "WorkerPools" && resourceType != "TagSets" && resourceType != "Environments" {
+	// Environments are exported by projects.
+	if !lo.Contains([]string{"WorkerPools", "TagSets", "Environments"}, resourceType) {
 		return
 	}
 
