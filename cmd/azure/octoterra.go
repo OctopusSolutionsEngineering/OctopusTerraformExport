@@ -87,7 +87,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files, err := entry.Entry(webArgs)
+	files, err := entry.Entry(webArgs, "")
 
 	if err != nil {
 		handleError(err, w)

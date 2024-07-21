@@ -67,7 +67,7 @@ func main() {
 		errorExit("lookupProjectDependencies can not be used with stepTemplate")
 	}
 
-	files, err := entry.Entry(parseArgs)
+	files, err := entry.Entry(parseArgs, Version)
 
 	if err != nil {
 		errorExit(err.Error())

@@ -18,7 +18,7 @@ import (
 )
 
 // Entry takes the arguments, exports the Octopus resources to HCL in strings and returns the strings mapped to file names.
-func Entry(parseArgs args.Arguments) (map[string]string, error) {
+func Entry(parseArgs args.Arguments, version string) (map[string]string, error) {
 
 	if parseArgs.Profiling {
 		f, err := os.Create("octoterra.prof")
@@ -37,7 +37,7 @@ func Entry(parseArgs args.Arguments) (map[string]string, error) {
 		projectIds := []string{}
 
 		for _, project := range parseArgs.ProjectName {
-			projectId, err := ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, project)
+			projectId, err := ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, project, version)
 
 			if err != nil {
 				return nil, err
@@ -50,7 +50,7 @@ func Entry(parseArgs args.Arguments) (map[string]string, error) {
 	}
 
 	if parseArgs.RunbookName != "" {
-		runbookId, err := ConvertRunbookNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectId[0], parseArgs.RunbookName)
+		runbookId, err := ConvertRunbookNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectId[0], parseArgs.RunbookName, version)
 
 		if err != nil {
 			return nil, err
@@ -59,7 +59,7 @@ func Entry(parseArgs args.Arguments) (map[string]string, error) {
 		parseArgs.RunbookId = runbookId
 	}
 
-	dependencies, err := getDependencies(parseArgs)
+	dependencies, err := getDependencies(parseArgs, version)
 
 	if err != nil {
 		return nil, err
@@ -100,24 +100,24 @@ func logDummyValues(dependencies *data.ResourceDetailsCollection) {
 	}
 }
 
-func getDependencies(parseArgs args.Arguments) (*data.ResourceDetailsCollection, error) {
+func getDependencies(parseArgs args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 	if parseArgs.RunbookId != "" {
 		zap.L().Info("Exporting runbook " + parseArgs.RunbookId + " in space " + parseArgs.Space)
-		files, err := ConvertRunbookToTerraform(parseArgs)
+		files, err := ConvertRunbookToTerraform(parseArgs, version)
 		if err != nil {
 			return nil, err
 		}
 		return files, nil
 	} else if len(parseArgs.ProjectId) != 0 {
 		zap.L().Info("Exporting project(s) " + strings.Join(parseArgs.ProjectId, ", ") + " in space " + parseArgs.Space)
-		files, err := ConvertProjectToTerraform(parseArgs)
+		files, err := ConvertProjectToTerraform(parseArgs, version)
 		if err != nil {
 			return nil, err
 		}
 		return files, nil
 	} else {
 		zap.L().Info("Exporting space " + parseArgs.Space)
-		files, err := ConvertSpaceToTerraform(parseArgs)
+		files, err := ConvertSpaceToTerraform(parseArgs, version)
 		if err != nil {
 			return nil, err
 		}
@@ -125,11 +125,12 @@ func getDependencies(parseArgs args.Arguments) (*data.ResourceDetailsCollection,
 	}
 }
 
-func ConvertProjectNameToId(url string, space string, apiKey string, name string) (string, error) {
+func ConvertProjectNameToId(url string, space string, apiKey string, name string, version string) (string, error) {
 	octopusClient := client.OctopusApiClient{
-		Url:    url,
-		Space:  space,
-		ApiKey: apiKey,
+		Url:     url,
+		Space:   space,
+		ApiKey:  apiKey,
+		Version: version,
 	}
 
 	collection := octopus.GeneralCollection[octopus.Project]{}
@@ -153,11 +154,12 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	return "", errors.New("did not find project with name " + name + " in space " + space)
 }
 
-func ConvertRunbookNameToId(url string, space string, apiKey string, projectId string, runbookName string) (string, error) {
+func ConvertRunbookNameToId(url string, space string, apiKey string, projectId string, runbookName string, version string) (string, error) {
 	octopusClient := client.OctopusApiClient{
-		Url:    url,
-		Space:  space,
-		ApiKey: apiKey,
+		Url:     url,
+		Space:   space,
+		ApiKey:  apiKey,
+		Version: version,
 	}
 
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
@@ -181,14 +183,15 @@ func ConvertRunbookNameToId(url string, space string, apiKey string, projectId s
 	return "", errors.New("did not find runbook with name " + runbookName + " for the project " + projectId + " in space " + space)
 }
 
-func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollection, error) {
+func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 	group := errgroup.Group{}
 	group.SetLimit(10)
 
 	octopusClient := client.OctopusApiClient{
-		Url:    args.Url,
-		Space:  args.Space,
-		ApiKey: args.ApiKey,
+		Url:     args.Url,
+		Space:   args.Space,
+		ApiKey:  args.ApiKey,
+		Version: version,
 	}
 
 	dependencies := data.ResourceDetailsCollection{}
@@ -916,12 +919,13 @@ func ConvertSpaceToTerraform(args args.Arguments) (*data.ResourceDetailsCollecti
 	return &dependencies, nil
 }
 
-func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollection, error) {
+func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
-		Url:    args.Url,
-		Space:  args.Space,
-		ApiKey: args.ApiKey,
+		Url:     args.Url,
+		Space:   args.Space,
+		ApiKey:  args.ApiKey,
+		Version: version,
 	}
 
 	dummySecretGenerator := converters.DummySecret{}
@@ -1189,12 +1193,13 @@ func ConvertRunbookToTerraform(args args.Arguments) (*data.ResourceDetailsCollec
 	return &dependencies, nil
 }
 
-func ConvertProjectToTerraform(args args.Arguments) (*data.ResourceDetailsCollection, error) {
+func ConvertProjectToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
-		Url:    args.Url,
-		Space:  args.Space,
-		ApiKey: args.ApiKey,
+		Url:     args.Url,
+		Space:   args.Space,
+		ApiKey:  args.ApiKey,
+		Version: version,
 	}
 
 	dummySecretGenerator := converters.DummySecret{}

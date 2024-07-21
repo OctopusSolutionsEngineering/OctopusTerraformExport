@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/avast/retry-go/v4"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -19,8 +20,8 @@ import (
 
 type OctopusClient interface {
 	GetSpaceBaseUrl() (string, error)
-	GetSpace(resources *octopus2.Space) error
-	GetSpaces() ([]octopus2.Space, error)
+	GetSpace(resources *octopus.Space) error
+	GetSpaces() ([]octopus.Space, error)
 	EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error)
 	GetResource(resourceType string, resources any) (exists bool, funcErr error)
 	GetSpaceResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
@@ -31,9 +32,10 @@ type OctopusClient interface {
 }
 
 type OctopusApiClient struct {
-	Url    string
-	ApiKey string
-	Space  string
+	Url     string
+	ApiKey  string
+	Space   string
+	Version string
 	// spaceId is what Space resolves to after a lookup. We cache the result to save on future lookups.
 	spaceId string
 	// mu is the mutex to lock the update of the SpaceId parameter
@@ -44,6 +46,14 @@ type OctopusApiClient struct {
 	// collectionCache is a map of resource types to their collections
 	collectionCache   map[string][]byte
 	collectionCacheMu sync.Mutex
+}
+
+func (o *OctopusApiClient) buildUserAgent() string {
+	if o.Version == "" {
+		return "octoterra"
+	}
+
+	return "ototerra/" + o.Version + " (" + runtime.GOOS + " " + runtime.GOARCH + ")"
 }
 
 func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
@@ -61,6 +71,8 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	}
+
+	req.Header.Set("User-Agent", o.buildUserAgent())
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -88,6 +100,8 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	}
 
+	req.Header.Set("User-Agent", o.buildUserAgent())
+
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -105,7 +119,7 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		}
 	}(res.Body)
 
-	collection := octopus2.GeneralCollection[octopus2.Space]{}
+	collection := octopus.GeneralCollection[octopus.Space]{}
 	err = json.NewDecoder(res.Body).Decode(&collection)
 
 	if err != nil {
@@ -199,6 +213,8 @@ func (o *OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	}
 
+	req.Header.Set("User-Agent", o.buildUserAgent())
+
 	return req, nil
 }
 
@@ -226,6 +242,8 @@ func (o *OctopusApiClient) getRequest(resourceType string, id string, global boo
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	}
+
+	req.Header.Set("User-Agent", o.buildUserAgent())
 
 	return req, nil
 }
@@ -271,10 +289,12 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	}
 
+	req.Header.Set("User-Agent", o.buildUserAgent())
+
 	return req, nil
 }
 
-func (o *OctopusApiClient) GetSpace(resources *octopus2.Space) (funcErr error) {
+func (o *OctopusApiClient) GetSpace(resources *octopus.Space) (funcErr error) {
 	req, err := o.getSpaceRequest()
 
 	if err != nil {
@@ -300,7 +320,7 @@ func (o *OctopusApiClient) GetSpace(resources *octopus2.Space) (funcErr error) {
 	return json.NewDecoder(res.Body).Decode(resources)
 }
 
-func (o *OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) {
+func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
 	requestURL := fmt.Sprintf("%s/api/Spaces", o.Url)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -312,6 +332,8 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	}
+
+	req.Header.Set("User-Agent", o.buildUserAgent())
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -330,7 +352,7 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus2.Space, funcErr error) 
 		}
 	}(res.Body)
 
-	collection := octopus2.GeneralCollection[octopus2.Space]{}
+	collection := octopus.GeneralCollection[octopus.Space]{}
 	err = json.NewDecoder(res.Body).Decode(&collection)
 
 	if err != nil {
@@ -344,7 +366,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
 
 	// Get the details of the space
-	space, err := func() (*octopus2.Space, error) {
+	space, err := func() (*octopus.Space, error) {
 		getReq, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 		if err != nil {
@@ -354,6 +376,8 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 		if o.ApiKey != "" {
 			getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 		}
+
+		getReq.Header.Set("User-Agent", o.buildUserAgent())
 
 		getRes, err := http.DefaultClient.Do(getReq)
 
@@ -378,7 +402,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return nil, errors.New("Status code was " + fmt.Sprint(getRes.StatusCode) + " with body " + body)
 		}
 
-		space := octopus2.Space{}
+		space := octopus.Space{}
 		err = json.NewDecoder(getRes.Body).Decode(&space)
 
 		if err != nil {
@@ -414,6 +438,8 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 		if o.ApiKey != "" {
 			putReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 		}
+
+		putReq.Header.Set("User-Agent", o.buildUserAgent())
 
 		putRes, err := http.DefaultClient.Do(putReq)
 
@@ -451,6 +477,8 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 		if o.ApiKey != "" {
 			req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 		}
+
+		req.Header.Set("User-Agent", o.buildUserAgent())
 
 		res, err := http.DefaultClient.Do(req)
 
@@ -530,7 +558,7 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 	}
 
 	if res.StatusCode != 200 {
-		errorResponse := octopus2.ErrorResponse{}
+		errorResponse := octopus.ErrorResponse{}
 		err = json.Unmarshal(body, &errorResponse)
 
 		if err == nil {
@@ -634,7 +662,7 @@ func (o *OctopusApiClient) GetResourceNamesByIds(resourceType string, id []strin
 }
 
 func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (name string, funcErr error) {
-	nameId := octopus2.NameId{}
+	nameId := octopus.NameId{}
 	cacheHit := o.readCache(resourceType, id)
 	if cacheHit != nil {
 		zap.L().Debug("Cache hit on " + resourceType + " " + id)
