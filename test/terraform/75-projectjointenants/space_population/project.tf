@@ -58,10 +58,12 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
   }
 }
 
+# This is one way to find a template based on a name
 output "lvs_common_template_id" {
   value = tolist([for tmp in data.octopusdeploy_library_variable_sets.variable.library_variable_sets[0].template : tmp.id if tmp.name == "template"])[0]
 }
 
+# The template_ids is more convenient though
 output "lvs_common_template_id_2" {
-  value = "${data.octopusdeploy_library_variable_sets.variable.library_variable_sets[0].template_ids[\"template\"]}"
+  value = "${data.octopusdeploy_library_variable_sets.variable.library_variable_sets[0].template_ids["template"]}"
 }
