@@ -53,7 +53,7 @@ func (o *OctopusApiClient) buildUserAgent() string {
 		return "octoterra"
 	}
 
-	return "ototerra/" + o.Version + " (" + runtime.GOOS + " " + runtime.GOARCH + ")"
+	return "octoterra/" + o.Version + " (" + runtime.GOOS + " " + runtime.GOARCH + ")"
 }
 
 func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
