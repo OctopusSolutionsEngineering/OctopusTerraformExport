@@ -1,8 +1,8 @@
 resource "octopusdeploy_tenant_project_variable" "tenantprojectvariable6_team_a" {
-  environment_id = "${octopusdeploy_environment.development_environment.id}"
-  project_id     = "${octopusdeploy_project.deploy_frontend_project.id}"
-  template_id    = "${octopusdeploy_project.deploy_frontend_project.template[0].id}"
-  tenant_id      = "${octopusdeploy_tenant.tenant_team_a.id}"
+  environment_id = octopusdeploy_environment.development_environment.id
+  project_id     = octopusdeploy_project.deploy_frontend_project.id
+  template_id    = octopusdeploy_project.deploy_frontend_project.template[0].id
+  tenant_id      = octopusdeploy_tenant.tenant_team_a.id
   value          = "my value"
 }
 
