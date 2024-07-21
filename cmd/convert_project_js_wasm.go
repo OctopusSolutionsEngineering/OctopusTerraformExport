@@ -603,6 +603,10 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		GenerateImportScripts:                 false,
 		TenantCommonVariableProcessor:         tenantCommonVariableProcessor,
 		ExportTenantCommonVariablesForProject: true,
+		LookupProjectLinkTenants:              false,
+		TenantProjectConverter:                tenantProjectConverter,
+		TenantVariableConverter:               tenantVariableConverter,
+		EnvironmentConverter:                  environmentConverter,
 	}).ToHclByIdWithLookups(projectId, &dependencies)
 
 	if err != nil {

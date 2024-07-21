@@ -426,6 +426,7 @@ func exportProjectLookupImportAndTest(
 				ExcludeAllTargets:                argumnets.ExcludeAllTargets,
 				RunbookId:                        runbookId,
 				RunbookName:                      "",
+				LookupProjectLinkTenants:         argumnets.LookupProjectLinkTenants,
 			}
 
 			var dependencies *data.ResourceDetailsCollection = nil
@@ -9226,6 +9227,88 @@ func TestGitDependenciesExport(t *testing.T) {
 
 			if !found {
 				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestProjectTenantLinks verifies that a project can recreate tenant links and variables to an existing tenant
+func TestProjectTenantLinks(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/75-projectjointenants/space_creation",
+		"../test/terraform/75-projectjointenants/space_prepopulation",
+		"../test/terraform/75-projectjointenants/space_population",
+		"../test/terraform/75-projectjointenants/space_creation",
+		"../test/terraform/75-projectjointenants/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			LookupProjectLinkTenants: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := []octopus.TenantVariable{}
+			if err := octopusClient.GetAllResources("TenantVariables/All", &collection); err != nil {
+				return err
+			}
+
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			if err := octopusClient.GetAllResources("Environments", &environments); err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			foundProjectVar := false
+			foundCommonVar := false
+			for _, tenantVariable := range collection {
+				for _, project := range tenantVariable.ProjectVariables {
+					if project.ProjectName == resourceName {
+						for environmentId, variables := range project.Variables {
+							for _, value := range variables {
+
+								environment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+									return item.Id == environmentId
+								})
+
+								if environment[0].Name == "Development" {
+									foundProjectVar = true
+									if value != "my project variable" {
+										return errors.New("The tenant project variable must have a value of \"my project variable\" (was \"" + value + "\")")
+									}
+								}
+							}
+						}
+					}
+				}
+
+				for _, commonVariables := range tenantVariable.LibraryVariables {
+					if commonVariables.LibraryVariableSetName == "Octopus Variables" {
+						for _, variable := range commonVariables.Variables {
+							if stringVariable, ok := variable.(string); ok {
+								foundCommonVar = true
+								if stringVariable != "my common variable" {
+									return errors.New("The tenant common variable must have a value of \"my common variable\" (was \"" + stringVariable + "\")")
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if !foundProjectVar {
+				return errors.New("Space must have an tenant project variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			if !foundCommonVar {
+				return errors.New("Space must have an tenant common variable for the project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil

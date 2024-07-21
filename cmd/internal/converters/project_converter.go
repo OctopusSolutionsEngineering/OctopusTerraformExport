@@ -35,6 +35,7 @@ type ProjectConverter struct {
 	VariableSetConverter        ConverterAndLookupByProjectIdAndName
 	ChannelConverter            ConverterAndLookupByProjectIdWithTerraDependencies
 	RunbookConverter            ConverterAndLookupByIdAndName
+	EnvironmentConverter        ConverterAndLookupWithStatelessById
 	IgnoreCacManagedValues      bool
 	ExcludeCaCProjectSettings   bool
 	ExcludeAllRunbooks          bool
@@ -49,15 +50,16 @@ type ProjectConverter struct {
 	DummySecretGenerator        DummySecretGenerator
 	Excluder                    ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
-	LookupOnlyMode                        bool
-	ErrGroup                              *errgroup.Group
-	ExcludeTerraformVariables             bool
-	IncludeIds                            bool
-	LimitResourceCount                    int
-	IncludeSpaceInPopulation              bool
-	GenerateImportScripts                 bool
-	TenantCommonVariableProcessor         TenantCommonVariableProcessor
-	ExportTenantCommonVariablesForProject bool
+	LookupOnlyMode            bool
+	ErrGroup                  *errgroup.Group
+	ExcludeTerraformVariables bool
+	IncludeIds                bool
+	LimitResourceCount        int
+	IncludeSpaceInPopulation  bool
+	GenerateImportScripts     bool
+	LookupProjectLinkTenants  bool
+	TenantProjectConverter    TenantProjectConverter
+	TenantVariableConverter   ToHclByTenantIdAndProject
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -376,7 +378,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			return err
 		}
 
-		if err := c.exportTenantCommonVariables(project, stateless, dependencies); err != nil {
+		if err := c.linkTenantsAndCreateVars(project, stateless, dependencies); err != nil {
 			return err
 		}
 
@@ -1133,6 +1135,18 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 		return err
 	}
 
+	// Export all environments (a tenant could link to any environment for runbooks, regardless of the lifecycles)
+	environments := octopus.GeneralCollection[octopus.Environment]{}
+	if err := c.Client.GetAllResources("Environments", &environments); err != nil {
+		return err
+	}
+
+	for _, environment := range environments.Items {
+		if err := c.EnvironmentConverter.ToHclLookupById(environment.Id, dependencies); err != nil {
+			return err
+		}
+	}
+
 	// Export the git credentials
 	if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
 		err = c.GitCredentialsConverter.ToHclLookupById(project.PersistenceSettings.Credentials.Id, dependencies)
@@ -1228,14 +1242,14 @@ func (c *ProjectConverter) exportDependencies(project octopus.Project, stateless
 	return nil
 }
 
-func (c *ProjectConverter) exportTenantCommonVariables(project octopus.Project, stateless bool, dependencies *data.ResourceDetailsCollection) error {
-	if !c.ExportTenantCommonVariablesForProject {
+func (c *ProjectConverter) linkTenantsAndCreateVars(project octopus.Project, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	if !c.LookupProjectLinkTenants {
 		return nil
 	}
 
 	// Find the project tenants
 	collection := octopus.GeneralCollection[octopus.Tenant]{}
-	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", project.Id})
+	err := c.Client.GetAllResources("Tenants", &collection, []string{"projectId", project.Id})
 
 	if err != nil {
 		return err
@@ -1243,39 +1257,14 @@ func (c *ProjectConverter) exportTenantCommonVariables(project octopus.Project, 
 
 	for _, tenant := range collection.Items {
 
-		// Find the tenant variables
-		tenantVariable := octopus.TenantVariable{}
-		err := c.Client.GetAllResources("Tenants/"+tenant.Id+"/Variables", &tenantVariable)
-
-		if err != nil {
-			return err
+		// Link the tenants to the project
+		if environmentIds, ok := tenant.ProjectEnvironments[project.Id]; ok {
+			c.TenantProjectConverter.LinkTenantToProject(tenant, project, environmentIds, dependencies)
 		}
 
-		// Loop over the common variables
-		for _, l := range tenantVariable.LibraryVariables {
-			commonVariableIndex := 0
-
-			for id, value := range l.Variables {
-
-				// We're only interested in common variables from library variable sets attached to this project
-				if !lo.Contains(project.IncludedLibraryVariableSetIds, l.LibraryVariableSetId) {
-					continue
-				}
-
-				libraryVariableSet := octopus.LibraryVariableSet{}
-				_, err := c.Client.GetSpaceResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
-
-				if err != nil {
-					return err
-				}
-
-				commonVariableIndex++
-
-				if err := c.TenantCommonVariableProcessor.ConvertTenantCommonVariable(
-					stateless, tenantVariable, id, value, libraryVariableSet, commonVariableIndex, dependencies); err != nil {
-					return err
-				}
-			}
+		// Create the project tenant variables
+		if err := c.TenantVariableConverter.ToHclByTenantIdAndProject(tenant.Id, project, dependencies); err != nil {
+			return err
 		}
 	}
 

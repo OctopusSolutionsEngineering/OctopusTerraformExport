@@ -1,6 +1,9 @@
 package converters
 
-import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+import (
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+)
 
 // DummySecretGenerator defines the service used to generate dummy secret values
 type DummySecretGenerator interface {
@@ -231,4 +234,11 @@ type Converter interface {
 	AllToHcl(dependencies *data.ResourceDetailsCollection)
 	// AllToStatelessHcl converts all the resources of a given type to a stateless HCL module suitable for a step template.
 	AllToStatelessHcl(dependencies *data.ResourceDetailsCollection)
+}
+
+// ToHclByTenantIdAndProject exports tenant common and project variables for a project.
+// This is used when the project is responsible for defining the variables associated with an existing tenant when the
+// tenant could not define any variables until the project was available.
+type ToHclByTenantIdAndProject interface {
+	ToHclByTenantIdAndProject(id string, project octopus.Project, dependencies *data.ResourceDetailsCollection) error
 }

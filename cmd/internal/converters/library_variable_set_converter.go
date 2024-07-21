@@ -152,10 +152,8 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *d
 
 	dependencies.AddResource(thisResource)
 
-	// All the variable templates need to be exported so they can be referenced individually.
-	// There is no scenario where we use these lookups now. Either the space is exported, and the library variable set templates
-	// are exported by getTemplateLookup(). Or we export a project with lookups, in which case tenant variables are not exported.
-	// However, we may use this in the future, so we will keep it for now.
+	// Export templates individually so projects can reference them when creating tenant common variables if
+	// -lookupProjectLinkTenants is passed in as an argument.
 	for _, template := range resource.Templates {
 		if template.Name == nil {
 			continue
@@ -165,7 +163,7 @@ func (c *LibraryVariableSetConverter) ToHclLookupById(id string, dependencies *d
 		templateResource.Id = template.Id
 		templateResource.Name = strutil.EmptyIfNil(template.Name)
 		templateResource.ResourceType = "CommonTemplateMap"
-		templateResource.Lookup = "tolist([for tmp in data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].id.template : tmp.id if tmp.name == \"" + strutil.EmptyIfNil(template.Name) + "\"])[0]"
+		templateResource.Lookup = "${data." + octopusdeployLibraryVariableSetsDataType + "." + resourceName + ".library_variable_sets[0].template_ids[\"" + strutil.EmptyIfNil(template.Name) + "\"]}"
 		dependencies.AddResource(templateResource)
 	}
 

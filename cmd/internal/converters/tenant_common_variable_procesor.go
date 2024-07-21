@@ -85,11 +85,16 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 			Count:                count,
 			Id:                   nil,
 			LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", libraryVariableSet.Id),
-			TemplateId:           dependencies.GetResource("CommonTemplateMap", tenantVariableId),
+			TemplateId:           "",
 			TenantId:             dependencies.GetResource("Tenants", tenantVariable.TenantId),
 			Value:                &fixedValue,
 		}
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// The template ID may be a string like
+		// "${data.octopusdeploy_library_variable_sets.variable.library_variable_sets[0].template_ids["template"]}"
+		// and this can not have the quotes in the expression (i.e. "template") escaped. So we write the attribute directly.
+		hcl.WriteUnquotedAttribute(block, "template_id", "\""+dependencies.GetResource("CommonTemplateMap", tenantVariableId)+"\"")
 
 		// common variables rely on the link between a tenant and a project, and this can only
 		// be expressed in a depends_on attribute. We rely on the fact that the ID of the tenant project
