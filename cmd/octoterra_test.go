@@ -9256,9 +9256,12 @@ func TestProjectTenantLinks(t *testing.T) {
 			octopusClient := createClient(container, recreatedSpaceId)
 
 			collection := []octopus.TenantVariable{}
-			err := octopusClient.GetAllResources("TenantVariables/All", &collection)
+			if err := octopusClient.GetAllResources("TenantVariables/All", &collection); err != nil {
+				return err
+			}
 
-			if err != nil {
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			if err := octopusClient.GetAllResources("Environments", &environments); err != nil {
 				return err
 			}
 
@@ -9268,12 +9271,18 @@ func TestProjectTenantLinks(t *testing.T) {
 			for _, tenantVariable := range collection {
 				for _, project := range tenantVariable.ProjectVariables {
 					if project.ProjectName == resourceName {
-						for _, variables := range project.Variables {
+						for environmentId, variables := range project.Variables {
 							for _, value := range variables {
-								// we expect one project variable to be defined
-								foundProjectVar = true
-								if value != "my project variable" {
-									return errors.New("The tenant project variable must have a value of \"my project variable\" (was \"" + value + "\")")
+
+								environment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+									return item.Id == environmentId
+								})
+
+								if environment[0].Name == "Development" {
+									foundProjectVar = true
+									if value != "my project variable" {
+										return errors.New("The tenant project variable must have a value of \"my project variable\" (was \"" + value + "\")")
+									}
 								}
 							}
 						}
