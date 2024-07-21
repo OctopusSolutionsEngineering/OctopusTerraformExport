@@ -159,7 +159,7 @@ func exportSpaceImportAndTest(
 				ExcludeProjectGroupsExcept:       arguments.ExcludeProjectGroupsExcept,
 			}
 
-			dependencies, err := entry.ConvertSpaceToTerraform(args)
+			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
 
 			if err != nil {
 				return err
@@ -231,7 +231,7 @@ func exportProjectImportAndTest(
 		[]string{},
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName)
+			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName, "")
 
 			if err != nil {
 				return err
@@ -291,7 +291,7 @@ func exportProjectImportAndTest(
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 			}
 
-			dependencies, err := entry.ConvertProjectToTerraform(args)
+			dependencies, err := entry.ConvertProjectToTerraform(args, "")
 
 			if err != nil {
 				return err
@@ -377,14 +377,14 @@ func exportProjectLookupImportAndTest(
 		prepopulateSpaceVars,
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName)
+			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName, "")
 			if err != nil {
 				return err
 			}
 
 			runbookId := ""
 			if argumnets.RunbookName != "" {
-				runbookId, err = entry.ConvertRunbookNameToId(url, space, test.ApiKey, projectId, argumnets.RunbookName)
+				runbookId, err = entry.ConvertRunbookNameToId(url, space, test.ApiKey, projectId, argumnets.RunbookName, "")
 
 				if err != nil {
 					return err
@@ -431,9 +431,9 @@ func exportProjectLookupImportAndTest(
 
 			var dependencies *data.ResourceDetailsCollection = nil
 			if args.RunbookId != "" {
-				dependencies, err = entry.ConvertRunbookToTerraform(args)
+				dependencies, err = entry.ConvertRunbookToTerraform(args, "")
 			} else {
-				dependencies, err = entry.ConvertProjectToTerraform(args)
+				dependencies, err = entry.ConvertProjectToTerraform(args, "")
 			}
 
 			if err != nil {
