@@ -66,7 +66,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	thisResource.VersionLookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
+	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
@@ -87,7 +87,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisVersionsResource.Name = template.Name
 	thisVersionsResource.ResourceType = c.GetResourceType() + "_Versions"
 	thisVersionsResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	thisVersionsResource.VersionLookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
+	thisVersionsResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
 	thisVersionsResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisVersionsResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildDataVersions(resourceName+"_versions", template)
