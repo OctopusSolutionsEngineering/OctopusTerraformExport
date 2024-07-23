@@ -14,14 +14,15 @@ import (
 // OctopusActionProcessor exposes a bunch of common functions for exporting the processes associated with
 // projects and runbooks.
 type OctopusActionProcessor struct {
-	FeedConverter           ConverterAndLookupWithStatelessById
-	AccountConverter        ConverterAndLookupWithStatelessById
-	WorkerPoolConverter     ConverterAndLookupWithStatelessById
-	EnvironmentConverter    ConverterAndLookupWithStatelessById
-	GitCredentialsConverter ConverterAndLookupWithStatelessById
-	DetachProjectTemplates  bool
-	WorkerPoolProcessor     OctopusWorkerPoolProcessor
-	StepTemplateConverter   ConverterAndLookupById
+	FeedConverter                   ConverterAndLookupWithStatelessById
+	AccountConverter                ConverterAndLookupWithStatelessById
+	WorkerPoolConverter             ConverterAndLookupWithStatelessById
+	EnvironmentConverter            ConverterAndLookupWithStatelessById
+	GitCredentialsConverter         ConverterAndLookupWithStatelessById
+	DetachProjectTemplates          bool
+	ExperimentalEnableStepTemplates bool
+	WorkerPoolProcessor             OctopusWorkerPoolProcessor
+	StepTemplateConverter           ConverterAndLookupById
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
@@ -222,7 +223,8 @@ func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[str
 
 // DetachStepTemplates detaches step templates, which is achieved by removing the template properties
 func (c OctopusActionProcessor) DetachStepTemplates(properties map[string]string) map[string]string {
-	if !c.DetachProjectTemplates {
+	// don't proceed if we are not detaching step templates or have enabled step template support
+	if !c.DetachProjectTemplates || c.ExperimentalEnableStepTemplates {
 		return properties
 	}
 
