@@ -656,10 +656,10 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
-			ManagementEndpoint:              strutil.NilIfEmptyPointer(account.ServiceManagementEndpointBaseUri),
-			StorageEndpointSuffix:           strutil.NilIfEmptyPointer(account.ServiceManagementEndpointSuffix),
+			ManagementEndpoint:              strutil.EmptyPointerIfNil(account.ServiceManagementEndpointBaseUri),
+			StorageEndpointSuffix:           strutil.EmptyPointerIfNil(account.ServiceManagementEndpointSuffix),
 			SubscriptionId:                  account.SubscriptionNumber,
-			AzureEnvironment:                strutil.NilIfEmptyPointer(account.AzureEnvironment),
+			AzureEnvironment:                strutil.DefaultPointerIfEmptyOrNil(account.AzureEnvironment, "AzureCloud"),
 			Certificate:                     &certVariable,
 			Count:                           c.getCount(stateless, resourceName),
 		}
