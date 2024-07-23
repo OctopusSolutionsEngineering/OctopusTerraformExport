@@ -452,7 +452,7 @@ func (c StepTemplateConverter) buildDataVersions(resourceName string, resource o
 				$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
 				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
 				$keyValueResponse = @{}
-				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Version} | Out-Null
+				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Version.ToString()} | Out-Null
 				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
 				Write-Host $results`)},
 		Query: map[string]string{
