@@ -56,6 +56,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 		return nil
 	}
 
+	// The first resource maps the step template name to the ID
 	thisResource := data.ResourceDetails{}
 
 	resourceName := "steptemplate_" + sanitizer.SanitizeName(template.Name)
@@ -65,6 +66,8 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
+	thisResource.VersionLookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
+	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
 		file := hclwrite.NewEmptyFile()
@@ -76,6 +79,27 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	}
 
 	dependencies.AddResource(thisResource)
+
+	// The second resource maps the step template name to the version
+	thisVersionsResource := data.ResourceDetails{}
+	thisVersionsResource.FileName = "space_population/" + resourceName + "_versions.tf"
+	thisVersionsResource.Id = template.Id
+	thisVersionsResource.Name = template.Name
+	thisVersionsResource.ResourceType = c.GetResourceType() + "_Versions"
+	thisVersionsResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
+	thisVersionsResource.VersionLookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
+	thisVersionsResource.VersionCurrent = strconv.Itoa(*template.Version)
+	thisVersionsResource.ToHcl = func() (string, error) {
+		terraformResource := c.buildDataVersions(resourceName+"_versions", template)
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(terraformResource, "data")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an step template called \""+template.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(keys(self.result)) != 0")
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisVersionsResource)
 	return nil
 }
 
@@ -389,6 +413,46 @@ func (c StepTemplateConverter) buildData(resourceName string, resource octopus.S
 				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
 				$keyValueResponse = @{}
 				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null
+				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
+				Write-Host $results`)},
+		Query: map[string]string{
+			"name":    resource.Name,
+			"server":  "${var.octopus_server}",
+			"apikey":  "${var.octopus_apikey}",
+			"spaceid": "${var.octopus_space_id}",
+		},
+	}
+}
+
+func (c StepTemplateConverter) buildDataVersions(resourceName string, resource octopus.StepTemplate) terraform.TerraformExternalData {
+	/*
+		Use Powershell to query the action templates.
+
+		I've noticed this happening occasionally when running the script. I don't think it's a problem with the script,
+		but may be specific to pwsh on Linux. There doesn't appear to be any solution other that retrying the terraform
+		apply operation:
+
+		The data source received an unexpected error while attempting to execute the
+		program.
+
+		The program was executed, however it returned no additional error messaging.
+
+		Program: /opt/microsoft/powershell/7/pwsh
+		State: signal: segmentation fault (core dumped)
+	*/
+
+	return terraform.TerraformExternalData{
+		Type: octopusdeployStepTemplateDataType,
+		Name: resourceName,
+		Program: []string{
+			"pwsh",
+			"-Command",
+			strutil.StripMultilineWhitespace(`
+				$query = [Console]::In.ReadLine() | ConvertFrom-JSON
+				$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
+				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
+				$keyValueResponse = @{}
+				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Version} | Out-Null
 				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
 				Write-Host $results`)},
 		Query: map[string]string{
