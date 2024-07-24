@@ -63,7 +63,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 			ProjectId:     dependencies.GetResource("Projects", projectVariable.ProjectId),
 			TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
 			TenantId:      dependencies.GetResource("Tenants", tenantVariable.TenantId),
-			Value:         &value,
+			Value:         strutil.EscapeDollarCurlyPointer(&value),
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
