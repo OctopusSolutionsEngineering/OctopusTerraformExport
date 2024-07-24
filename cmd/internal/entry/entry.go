@@ -218,6 +218,20 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 
 	tenantProjectConverter := converters.TenantProjectConverter{
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		ErrGroup:                 &group,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
+		ExcludeTenants:           args.ExcludeTenants,
+		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
+		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
+		ExcludeProjects:          args.ExcludeProjects,
+		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
+		ExcludeAllProjects:       args.ExcludeAllProjects,
+		Excluder:                 converters.DefaultExcluder{},
+		Client:                   &octopusClient,
 	}
 
 	stepTemplateConverter := converters.StepTemplateConverter{
@@ -909,6 +923,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		FeedConverter:                     feedConverter,
 		ErrGroup:                          &group,
 		StepTemplateConverter:             stepTemplateConverter,
+		TenantProjectConverter:            tenantProjectConverter,
 	}
 
 	if args.Stateless {
@@ -959,6 +974,20 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 
 	tenantProjectConverter := converters.TenantProjectConverter{
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		ErrGroup:                 nil,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
+		ExcludeTenants:           args.ExcludeTenants,
+		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
+		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
+		ExcludeProjects:          args.ExcludeProjects,
+		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
+		ExcludeAllProjects:       args.ExcludeAllProjects,
+		Excluder:                 converters.DefaultExcluder{},
+		Client:                   &octopusClient,
 	}
 
 	dependencies := data.ResourceDetailsCollection{}
@@ -1241,6 +1270,20 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 
 	tenantProjectConverter := converters.TenantProjectConverter{
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		ErrGroup:                 nil,
+		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
+		ExcludeTenantTags:        args.ExcludeTenantTags,
+		ExcludeTenants:           args.ExcludeTenants,
+		ExcludeTenantsRegex:      args.ExcludeTenantsRegex,
+		ExcludeTenantsWithTags:   args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:     args.ExcludeTenantsExcept,
+		ExcludeAllTenants:        args.ExcludeAllTenants,
+		ExcludeProjects:          args.ExcludeProjects,
+		ExcludeProjectsExcept:    args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:     args.ExcludeProjectsRegex,
+		ExcludeAllProjects:       args.ExcludeAllProjects,
+		Excluder:                 converters.DefaultExcluder{},
+		Client:                   &octopusClient,
 	}
 
 	dependencies := data.ResourceDetailsCollection{}

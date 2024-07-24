@@ -42,6 +42,7 @@ type SpaceConverter struct {
 	AzureWebAppTargetConverter        Converter
 	SpacePopulateConverter            Converter
 	StepTemplateConverter             Converter
+	TenantProjectConverter            Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
@@ -90,6 +91,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 
 	// Convert the tenants
 	c.TenantConverter.AllToHcl(dependencies)
+
+	// Link the tenants
+	c.TenantProjectConverter.AllToHcl(dependencies)
 
 	// Convert the certificates
 	c.CertificateConverter.AllToHcl(dependencies)
