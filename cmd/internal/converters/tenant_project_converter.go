@@ -37,7 +37,7 @@ func (c TenantProjectConverter) AllToStatelessHcl(dependencies *data.ResourceDet
 
 }
 
-func (c *TenantProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+func (c TenantProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
