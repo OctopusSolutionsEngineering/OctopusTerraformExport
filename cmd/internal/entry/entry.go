@@ -885,6 +885,13 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			LookupProjectLinkTenants:  false,
 			TenantProjectConverter:    tenantProjectConverter,
 			EnvironmentConverter:      environmentConverter,
+			ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+			ExcludeTenantTags:         args.ExcludeTenantTags,
+			ExcludeTenants:            args.ExcludeTenants,
+			ExcludeTenantsRegex:       args.ExcludeTenantsRegex,
+			ExcludeTenantsWithTags:    args.ExcludeTenantsWithTags,
+			ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
+			ExcludeAllTenants:         args.ExcludeAllTenants,
 		},
 		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -1142,6 +1149,13 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		LookupProjectLinkTenants:    false,
 		TenantProjectConverter:      tenantProjectConverter,
 		EnvironmentConverter:        environmentConverter,
+		ExcludeTenantTagSets:        args.ExcludeTenantTagSets,
+		ExcludeTenantTags:           args.ExcludeTenantTags,
+		ExcludeTenants:              args.ExcludeTenants,
+		ExcludeTenantsRegex:         args.ExcludeTenantsRegex,
+		ExcludeTenantsWithTags:      args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:        args.ExcludeTenantsExcept,
+		ExcludeAllTenants:           args.ExcludeAllTenants,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -1888,6 +1902,13 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LookupProjectLinkTenants:  args.LookupProjectLinkTenants,
 		TenantProjectConverter:    tenantProjectConverter,
 		EnvironmentConverter:      environmentConverter,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenants:            args.ExcludeTenants,
+		ExcludeTenantsRegex:       args.ExcludeTenantsRegex,
+		ExcludeTenantsWithTags:    args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
+		ExcludeAllTenants:         args.ExcludeAllTenants,
 	}
 
 	if args.LookupProjectDependencies {

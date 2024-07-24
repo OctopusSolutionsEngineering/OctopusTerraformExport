@@ -60,6 +60,13 @@ type ProjectConverter struct {
 	LookupProjectLinkTenants  bool
 	TenantProjectConverter    TenantProjectConverter
 	TenantVariableConverter   ToHclByTenantIdAndProject
+	ExcludeTenantTagSets      args.StringSliceArgs
+	ExcludeTenantTags         args.StringSliceArgs
+	ExcludeTenants            args.StringSliceArgs
+	ExcludeTenantsRegex       args.StringSliceArgs
+	ExcludeTenantsWithTags    args.StringSliceArgs
+	ExcludeTenantsExcept      args.StringSliceArgs
+	ExcludeAllTenants         bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -1256,6 +1263,18 @@ func (c *ProjectConverter) linkTenantsAndCreateVars(project octopus.Project, sta
 	}
 
 	for _, tenant := range collection.Items {
+
+		// Ignore excluded tenants
+		if c.Excluder.IsResourceExcludedWithRegex(tenant.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsRegex, c.ExcludeTenantsExcept) {
+			continue
+		}
+
+		// Ignore tenants with excluded tags
+		if c.ExcludeTenantsWithTags != nil && tenant.TenantTags != nil && lo.SomeBy(tenant.TenantTags, func(item string) bool {
+			return lo.IndexOf(c.ExcludeTenantsWithTags, item) != -1
+		}) {
+			continue
+		}
 
 		// Link the tenants to the project
 		if environmentIds, ok := tenant.ProjectEnvironments[project.Id]; ok {
