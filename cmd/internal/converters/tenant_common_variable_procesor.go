@@ -87,7 +87,7 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 			LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", libraryVariableSet.Id),
 			TemplateId:           "",
 			TenantId:             dependencies.GetResource("Tenants", tenantVariable.TenantId),
-			Value:                &fixedValue,
+			Value:                strutil.EscapeDollarCurlyPointer(&fixedValue),
 		}
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
