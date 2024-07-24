@@ -41,7 +41,7 @@ func (c *TenantProjectConverter) AllToHcl(dependencies *data.ResourceDetailsColl
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c *TenantProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c TenantProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllTenants {
 		return nil
 	}
