@@ -24,6 +24,8 @@ github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-2024
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240622231527-24df7b6eaa48/go.mod h1:/QwYrEWP690YoKAR9lUVEv2y1Ta0HY08OaWb4LMZCAw=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240719212421-8ce08b064754 h1:hjzBxnvJqglXl78bhOcb4JF/RD7QAJzGeUbcYUzII1A=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240719212421-8ce08b064754/go.mod h1:Oq9KbiRNDBB5jFmrwnrgLX0urIqR/1ptY18TzkqXm7M=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240724191058-08769889aef1 h1:AQ3wabRA06CejxDdQBA0SuOrn100ve4+pfDRQQRnIxg=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20240724191058-08769889aef1/go.mod h1:Oq9KbiRNDBB5jFmrwnrgLX0urIqR/1ptY18TzkqXm7M=
 github.com/PurpleSec/escape v1.0.0 h1:25crJCsGmePlY6sTggm+qTg0xABcb7A0nUFgNas+N+U=
 github.com/PurpleSec/escape v1.0.0/go.mod h1:y7jqOGecytNh1ROko233Z91ER9NHNuepiLgZtkrDMME=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
