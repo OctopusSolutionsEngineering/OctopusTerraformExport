@@ -416,8 +416,15 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 
 	dependencies.AddResource(thisResource)
 
-	// add all the project links
-	return c.createTenantProjects(tenant, dependencies)
+	// The tenant is responsible for linking projects only when exporting the space
+	// i.e. not when this tenant is being exported as a dependency of a project
+	if recursive && !lookup {
+		if err := c.createTenantProjects(tenant, dependencies); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *TenantConverter) createTenantProjects(tenant octopus.Tenant, dependencies *data.ResourceDetailsCollection) error {
