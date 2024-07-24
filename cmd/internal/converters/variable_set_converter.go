@@ -937,7 +937,8 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 		thisResource.ToHcl = func() (string, error) {
 
 			// Replace anything that looks like an octopus resource reference
-			value := c.getAccount(v.Value, dependencies)
+			value := strutil.EscapeDollarCurlyPointer(v.Value)
+			value = c.getAccount(value, dependencies)
 			value = c.getFeeds(value, dependencies)
 			value = c.getCertificates(value, dependencies)
 			value = c.getWorkerPools(value, dependencies)
