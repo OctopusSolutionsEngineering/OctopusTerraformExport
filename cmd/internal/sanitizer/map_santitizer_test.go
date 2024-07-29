@@ -6,12 +6,12 @@ import (
 )
 
 func TestMapSanitizer(t *testing.T) {
-	sanitizedMap, _ := SanitizeMap("parent",
+	sanitizedMap, _ := MapSanitizer{}.SanitizeMap("parent",
 		"actionname",
 		map[string]any{
 			"input":  "test",
 			"input2": octopus.Variable{},
-		})
+		}, nil)
 
 	if sanitizedMap["input"] != "test" {
 		t.Fatal("String should be passed through with o changes")
