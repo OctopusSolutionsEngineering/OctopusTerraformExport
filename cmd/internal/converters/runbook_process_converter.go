@@ -5,6 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -33,6 +34,8 @@ type RunbookProcessConverter struct {
 	ExcludeStepsExcept              args.StringSliceArgs
 	IgnoreInvalidExcludeExcept      bool
 	ExperimentalEnableStepTemplates bool
+	DummySecretGenerator            dummy.DummySecretGenerator
+	DummySecretVariableValues       bool
 }
 
 func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -253,7 +256,10 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 		for _, s := range validSteps {
 			for _, a := range s.Actions {
 				properties := a.Properties
-				sanitizedProperties, variables := sanitizer2.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties)
+				sanitizedProperties, variables := sanitizer2.MapSanitizer{
+					DummySecretGenerator:      c.DummySecretGenerator,
+					DummySecretVariableValues: c.DummySecretVariableValues,
+				}.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)

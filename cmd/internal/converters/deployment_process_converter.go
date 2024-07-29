@@ -5,6 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -35,6 +36,8 @@ type DeploymentProcessConverter struct {
 	ExcludeStepsExcept              args.StringSliceArgs
 	IgnoreInvalidExcludeExcept      bool
 	ExperimentalEnableStepTemplates bool
+	DummySecretGenerator            dummy.DummySecretGenerator
+	DummySecretVariableValues       bool
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -334,7 +337,10 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 		for _, s := range validSteps {
 			for _, a := range s.Actions {
 				properties := a.Properties
-				sanitizedProperties, variables := sanitizer.SanitizeMap(projectName, strutil.EmptyIfNil(a.Name), properties)
+				sanitizedProperties, variables := sanitizer.MapSanitizer{
+					DummySecretGenerator:      c.DummySecretGenerator,
+					DummySecretVariableValues: c.DummySecretVariableValues,
+				}.SanitizeMap(projectName, strutil.EmptyIfNil(a.Name), properties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)

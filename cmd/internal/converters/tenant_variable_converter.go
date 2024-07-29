@@ -5,6 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/samber/lo"
 	"golang.org/x/sync/errgroup"
@@ -20,7 +21,7 @@ type TenantVariableConverter struct {
 	ExcludeAllTenants              bool
 	Excluder                       ExcludeByName
 	DummySecretVariableValues      bool
-	DummySecretGenerator           DummySecretGenerator
+	DummySecretGenerator           dummy.DummySecretGenerator
 	ExcludeProjects                args.StringSliceArgs
 	ExcludeProjectsExcept          args.StringSliceArgs
 	ExcludeProjectsRegex           args.StringSliceArgs

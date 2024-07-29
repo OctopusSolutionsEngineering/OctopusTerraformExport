@@ -1,4 +1,13 @@
-package converters
+package dummy
+
+// DummySecretGenerator defines the service used to generate dummy secret values
+type DummySecretGenerator interface {
+	GetDummySecret() *string
+	GetDummyCertificate() *string
+	GetDummyCertificateNoPass() *string
+	GetDummyCertificateBase64() *string
+	GetDummyCertificatePassword() *string
+}
 
 // DummySecret is a simple service that returns the dummy value to use in place of a secret.
 // This is required because the Octopus API never exports secrets, so octoterra can not

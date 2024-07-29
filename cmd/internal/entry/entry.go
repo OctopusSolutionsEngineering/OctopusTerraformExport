@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/collections"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"go.uber.org/zap"
@@ -196,7 +197,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 
 	dependencies := data.ResourceDetailsCollection{}
 
-	dummySecretGenerator := converters.DummySecret{}
+	dummySecretGenerator := dummy.DummySecret{}
 
 	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
 		Excluder:                     converters.DefaultExcluder{},
@@ -799,6 +800,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			ExcludeStepsExcept:              args.ExcludeStepsExcept,
 			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
 			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+			DummySecretGenerator:            dummySecretGenerator,
+			DummySecretVariableValues:       args.DummySecretVariableValues,
 		},
 		EnvironmentConverter:     environmentConverter,
 		ExcludedRunbooks:         nil,
@@ -865,6 +868,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 				ExcludeStepsExcept:              args.ExcludeStepsExcept,
 				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
 				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+				DummySecretGenerator:            dummySecretGenerator,
+				DummySecretVariableValues:       args.DummySecretVariableValues,
 			},
 			TenantConverter: &tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -952,7 +957,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		Version: version,
 	}
 
-	dummySecretGenerator := converters.DummySecret{}
+	dummySecretGenerator := dummy.DummySecret{}
 
 	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
 		Excluder:                     converters.DefaultExcluder{},
@@ -1215,6 +1220,8 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 			ExcludeStepsExcept:              args.ExcludeStepsExcept,
 			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
 			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+			DummySecretGenerator:            dummySecretGenerator,
+			DummySecretVariableValues:       args.DummySecretVariableValues,
 		},
 		EnvironmentConverter:     environmentConverter,
 		ExcludedRunbooks:         nil,
@@ -1248,7 +1255,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		Version: version,
 	}
 
-	dummySecretGenerator := converters.DummySecret{}
+	dummySecretGenerator := dummy.DummySecret{}
 
 	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
 		Excluder:                     converters.DefaultExcluder{},
@@ -1862,6 +1869,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			ExcludeStepsExcept:              args.ExcludeStepsExcept,
 			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
 			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+			DummySecretGenerator:            dummySecretGenerator,
+			DummySecretVariableValues:       args.DummySecretVariableValues,
 		},
 		EnvironmentConverter:     environmentConverter,
 		ProjectConverter:         nil,
@@ -1910,6 +1919,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			ExcludeStepsExcept:              args.ExcludeStepsExcept,
 			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
 			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+			DummySecretGenerator:            dummySecretGenerator,
+			DummySecretVariableValues:       args.DummySecretVariableValues,
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

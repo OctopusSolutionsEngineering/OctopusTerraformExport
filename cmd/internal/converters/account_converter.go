@@ -5,6 +5,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -21,7 +22,7 @@ type AccountConverter struct {
 	EnvironmentConverter      ConverterById
 	TenantConverter           ConverterById
 	DummySecretVariableValues bool
-	DummySecretGenerator      DummySecretGenerator
+	DummySecretGenerator      dummy.DummySecretGenerator
 	ExcludeTenantTags         args.StringSliceArgs
 	ExcludeTenantTagSets      args.StringSliceArgs
 	Excluder                  ExcludeByName

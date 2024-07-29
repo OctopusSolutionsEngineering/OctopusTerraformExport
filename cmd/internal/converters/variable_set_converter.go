@@ -6,6 +6,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -56,7 +57,7 @@ type VariableSetConverter struct {
 	ExcludeTenantTagSets              args.StringSliceArgs
 	ExcludeTenantTags                 args.StringSliceArgs
 	IgnoreProjectChanges              bool
-	DummySecretGenerator              DummySecretGenerator
+	DummySecretGenerator              dummy.DummySecretGenerator
 
 	Excluder                  ExcludeByName
 	ErrGroup                  *errgroup.Group

@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -47,7 +48,7 @@ type ProjectConverter struct {
 	ExcludeProjectsRegex        args.StringSliceArgs
 	ExcludeAllProjects          bool
 	DummySecretVariableValues   bool
-	DummySecretGenerator        DummySecretGenerator
+	DummySecretGenerator        dummy.DummySecretGenerator
 	Excluder                    ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
 	LookupOnlyMode            bool

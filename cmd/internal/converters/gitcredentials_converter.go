@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -22,7 +23,7 @@ type GitCredentialsConverter struct {
 	Client                    client.OctopusClient
 	SpaceResourceName         string
 	DummySecretVariableValues bool
-	DummySecretGenerator      DummySecretGenerator
+	DummySecretGenerator      dummy.DummySecretGenerator
 	ExcludeAllGitCredentials  bool
 	ErrGroup                  *errgroup.Group
 	IncludeIds                bool
