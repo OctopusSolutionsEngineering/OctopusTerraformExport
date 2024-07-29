@@ -19,6 +19,7 @@ type Step struct {
 type Action struct {
 	Id                            string
 	Name                          *string
+	Slug                          *string
 	ActionType                    *string
 	Notes                         *string
 	IsDisabled                    bool

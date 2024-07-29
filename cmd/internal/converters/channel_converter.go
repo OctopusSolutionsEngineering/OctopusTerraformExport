@@ -12,8 +12,10 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"net/url"
 	"strings"
 )
 
@@ -58,7 +60,14 @@ func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Channel: " + resource.Id)
+
 		project := octopus.Project{}
+		_, err = c.Client.GetSpaceResourceById(c.GetResourceType(), projectId, &project)
+
+		if err != nil {
+			return err
+		}
+
 		err = c.toHcl(resource, project, true, false, stateless, terraformDependencies, dependencies)
 
 		if err != nil {
@@ -141,6 +150,18 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		}
 	}
 
+	// CaC projects use action slugs to reference deployment actions in package rules.
+	// Terraform needs the action names. So we need to look up the deployment process to get the action slugs and convert
+	// then to action names
+	var resource *octopus.DeploymentProcess = nil
+	if project.HasCacConfigured() {
+		resource = &octopus.DeploymentProcess{}
+		_, err := c.Client.GetResource("Projects/"+project.Id+"/"+url.QueryEscape(project.PersistenceSettings.DefaultBranch)+"/deploymentprocesses", resource)
+		if err != nil {
+			return err
+		}
+	}
+
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = channel.Name
 	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
@@ -194,7 +215,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),
 				ProjectId:    dependencies.GetResource("Projects", channel.ProjectId),
 				IsDefault:    channel.IsDefault,
-				Rule:         c.convertRules(channel.Rules),
+				Rule:         c.convertRules(channel.Rules, resource),
 				TenantTags:   c.Excluder.FilteredTenantTags(channel.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 			file := hclwrite.NewEmptyFile()
@@ -250,11 +271,11 @@ func (c ChannelConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/channels"
 }
 
-func (c ChannelConverter) convertRules(rules []octopus.Rule) []terraform.TerraformRule {
+func (c ChannelConverter) convertRules(rules []octopus.Rule, deploymentprocess *octopus.DeploymentProcess) []terraform.TerraformRule {
 	terraformRules := make([]terraform.TerraformRule, 0)
 	for _, v := range rules {
 		terraformRules = append(terraformRules, terraform.TerraformRule{
-			ActionPackage: c.convertActionPackages(v.ActionPackages),
+			ActionPackage: c.convertActionPackages(v.ActionPackages, deploymentprocess),
 			Tag:           v.Tag,
 			VersionRange:  v.VersionRange,
 		})
@@ -262,11 +283,30 @@ func (c ChannelConverter) convertRules(rules []octopus.Rule) []terraform.Terrafo
 	return terraformRules
 }
 
-func (c ChannelConverter) convertActionPackages(actionPackages []octopus.ActionPackage) []terraform.TerraformActionPackage {
+func (c ChannelConverter) convertActionPackages(actionPackages []octopus.ActionPackage, deploymentprocess *octopus.DeploymentProcess) []terraform.TerraformActionPackage {
 	collection := make([]terraform.TerraformActionPackage, 0)
 	for _, v := range actionPackages {
+
+		// Assume the supplied deployment action is valid
+		deploymentAction := v.DeploymentAction
+
+		// However, if we have deployment process, we will check to see if the deployment action matches
+		// an action slug. This is the case when converting a CaC project.
+		if deploymentprocess != nil {
+			actions := lo.FlatMap(deploymentprocess.Steps, func(item octopus.Step, index int) []octopus.Action {
+				return item.Actions
+			})
+			action := lo.Filter(actions, func(item octopus.Action, index int) bool {
+				return item.Slug != nil && *item.Slug == *deploymentAction
+			})
+
+			if len(action) == 1 {
+				deploymentAction = action[0].Name
+			}
+		}
+
 		collection = append(collection, terraform.TerraformActionPackage{
-			DeploymentAction: v.DeploymentAction,
+			DeploymentAction: deploymentAction,
 			PackageReference: v.PackageReference,
 		})
 	}
