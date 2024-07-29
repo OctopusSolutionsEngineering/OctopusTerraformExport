@@ -52,7 +52,7 @@ func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById(c.GetResourceType(), projectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err
@@ -60,13 +60,6 @@ func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Channel: " + resource.Id)
-
-		project := octopus.Project{}
-		_, err = c.Client.GetSpaceResourceById(c.GetResourceType(), projectId, &project)
-
-		if err != nil {
-			return err
-		}
 
 		err = c.toHcl(resource, project, true, false, stateless, terraformDependencies, dependencies)
 
@@ -89,7 +82,7 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 	}
 
 	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById(c.GetResourceType(), projectId, &project)
+	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
 		return err
