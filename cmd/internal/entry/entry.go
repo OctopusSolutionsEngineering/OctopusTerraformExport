@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"os"
@@ -82,23 +83,28 @@ func Entry(parseArgs args.Arguments, version string) (map[string]string, error) 
 			return nil, err
 		}
 
-		logDummyValues(dependencies)
+		dummyLogs := logDummyValues(dependencies)
+
+		zap.L().Info(dummyLogs)
+		files["dummy_values.txt"] = dummyLogs
 
 		return files, nil
 	}
 }
 
-func logDummyValues(dependencies *data.ResourceDetailsCollection) {
+func logDummyValues(dependencies *data.ResourceDetailsCollection) string {
 	if len(dependencies.DummyVariables) == 0 {
-		return
+		return ""
 	}
 
-	zap.L().Info("The follow dummy values were defined for sensitive values and certificates.")
-	zap.L().Info("These values must be defined when applying the module, or manually updated after the module is applied.")
+	message := strutil.StripMultilineWhitespace(`The follow dummy values were defined for sensitive values and certificates.
+		These values must be defined when applying the module, or manually updated after the module is applied`)
 
 	for _, dummy := range dependencies.DummyVariables {
-		zap.L().Info("Dummy value defined for variable " + dummy.VariableName + " associated with " + dummy.ResourceType + " called " + dummy.ResourceName)
+		message += "Dummy value defined for variable " + dummy.VariableName + " associated with " + dummy.ResourceType + " called " + dummy.ResourceName + "\n"
 	}
+
+	return message
 }
 
 func getDependencies(parseArgs args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
