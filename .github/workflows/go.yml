@@ -278,6 +278,39 @@ jobs:
             octoterra_macos_amd64
             octoterra_macos_arm64
             functions/octoterra_linux_amd64_azure.zip
+      # We need to upload artifacts to S3 as a fallback when api rate limits mean people can't download from GitHub releases
+      - uses: shallwefootball/s3-upload-action@master
+        name: Upload S3 Linux
+        with:
+          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          aws_bucket: octopus-solutions-engineering-mirror
+          source_dir: ctoterra_linux_amd64
+          destination_dir: ''
+      - uses: shallwefootball/s3-upload-action@master
+        name: Upload S3 Windows
+        with:
+          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          aws_bucket: octopus-solutions-engineering-mirror
+          source_dir: octoterra_windows_amd64.exe
+          destination_dir: ''
+      - uses: shallwefootball/s3-upload-action@master
+        name: Upload S3 macOS amd64
+        with:
+          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          aws_bucket: octopus-solutions-engineering-mirror
+          source_dir: octoterra_macos_amd64
+          destination_dir: ''
+      - uses: shallwefootball/s3-upload-action@master
+        name: Upload S3 macOS arm64
+        with:
+          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          aws_bucket: octopus-solutions-engineering-mirror
+          source_dir: octoterra_macos_arm64
+          destination_dir: ''
       - name: Push packages to Octopus Deploy
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         uses: OctopusDeploy/push-package-action@v3
