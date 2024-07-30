@@ -279,38 +279,50 @@ jobs:
             octoterra_macos_arm64
             functions/octoterra_linux_amd64_azure.zip
       # We need to upload artifacts to S3 as a fallback when api rate limits mean people can't download from GitHub releases
-      - uses: shallwefootball/s3-upload-action@master
-        name: Upload S3 Linux
+      - name: Upload file to bucket
+        uses: a-sync/s3-uploader@master
         with:
-          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
-          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
-          aws_bucket: octopus-solutions-engineering-mirror
-          source_dir: octoterra_linux_amd64
-          destination_dir: ''
-      - uses: shallwefootball/s3-upload-action@master
-        name: Upload S3 Windows
+          args: --acl public-read
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          AWS_REGION: 'us-east-1'
+          S3_BUCKET: octopus-solutions-engineering-mirror
+          S3_KEY: octoterra_linux_amd64
+          FILE: ./octoterra_linux_amd64
+      - name: Upload file to bucket
+        uses: a-sync/s3-uploader@master
         with:
-          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
-          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
-          aws_bucket: octopus-solutions-engineering-mirror
-          source_dir: octoterra_windows_amd64.exe
-          destination_dir: ''
-      - uses: shallwefootball/s3-upload-action@master
-        name: Upload S3 macOS amd64
+          args: --acl public-read
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          AWS_REGION: 'us-east-1'
+          S3_BUCKET: octopus-solutions-engineering-mirror
+          S3_KEY: octoterra_macos_arm64
+          FILE: ./octoterra_macos_arm64
+      - name: Upload file to bucket
+        uses: a-sync/s3-uploader@master
         with:
-          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
-          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
-          aws_bucket: octopus-solutions-engineering-mirror
-          source_dir: octoterra_macos_amd64
-          destination_dir: ''
-      - uses: shallwefootball/s3-upload-action@master
-        name: Upload S3 macOS arm64
+          args: --acl public-read
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          AWS_REGION: 'us-east-1'
+          S3_BUCKET: octopus-solutions-engineering-mirror
+          S3_KEY: octoterra_macos_amd64
+          FILE: ./octoterra_macos_amd64
+      - name: Upload file to bucket
+        uses: a-sync/s3-uploader@master
         with:
-          aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
-          aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
-          aws_bucket: octopus-solutions-engineering-mirror
-          source_dir: octoterra_macos_arm64
-          destination_dir: ''
+          args: --acl public-read
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
+          AWS_REGION: 'us-east-1'
+          S3_BUCKET: octopus-solutions-engineering-mirror
+          S3_KEY: octoterra_windows_amd64.exe
+          FILE: ./octoterra_windows_amd64.exe
       - name: Push packages to Octopus Deploy
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         uses: OctopusDeploy/push-package-action@v3
