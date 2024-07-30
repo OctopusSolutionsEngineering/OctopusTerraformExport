@@ -285,7 +285,7 @@ jobs:
           aws_key_id: ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_ACCESS_KEY }}
           aws_secret_access_key:  ${{ secrets.OCTOPUS_SOLUTIONS_ENGINEERING_MIRROR_SECRET_KEY }}
           aws_bucket: octopus-solutions-engineering-mirror
-          source_dir: ctoterra_linux_amd64
+          source_dir: octoterra_linux_amd64
           destination_dir: ''
       - uses: shallwefootball/s3-upload-action@master
         name: Upload S3 Windows
