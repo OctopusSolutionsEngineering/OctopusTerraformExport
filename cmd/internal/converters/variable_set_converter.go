@@ -964,9 +964,12 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-			// When using dummy values, we expect the secrets will be updated later
-			if c.DummySecretVariableValues || stateless {
-
+			if c.IgnoreProjectChanges {
+				// Ignore all changes
+				hcl.WriteLifecycleAllAttribute(block)
+			} else if c.DummySecretVariableValues || stateless {
+				// When using dummy values, we expect the secrets will be updated later
+				// Ignore all changes if requested
 				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
 				block.Body().AppendBlock(lifecycleBlock)
@@ -1001,11 +1004,6 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 					}
 				}
 				hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
-			}
-
-			// Ignore all changes if requested
-			if c.IgnoreProjectChanges {
-				hcl.WriteLifecycleAllAttribute(block)
 			}
 
 			file.Body().AppendBlock(block)
