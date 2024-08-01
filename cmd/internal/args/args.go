@@ -2,17 +2,20 @@ package args
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"flag"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
+	"net/http"
 	"os"
 	"strings"
 )
 
 type Arguments struct {
+	InsecureTls                     bool
 	ExperimentalEnableStepTemplates bool
 	Profiling                       bool
 	ExcludeTerraformVariables       bool
@@ -228,6 +231,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.IncludeIds, "includeIds", false, "For internal use only. Include the \"id\" field on generated resources. Note that this is almost always unnecessary and undesirable.")
 	flags.BoolVar(&arguments.IncludeSpaceInPopulation, "includeSpaceInPopulation", false, "For internal use only. Include the space resource in the space population script. Note that this is almost always unnecessary and undesirable, as the space resources are included in the space creation module.")
 	flags.BoolVar(&arguments.GenerateImportScripts, "generateImportScripts", false, "Generate Bash and Powershell scripts used to import resources into the Terraform state.")
+	flags.BoolVar(&arguments.InsecureTls, "insecureTls", false, "Ignore certificate errors when connecting to the Octopus server.")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
 	flags.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
@@ -378,7 +382,18 @@ func ParseArgs(args []string) (Arguments, string, error) {
 		return Arguments{}, "", err
 	}
 
+	if err := arguments.ConfigureGlobalSettings(); err != nil {
+		return Arguments{}, "", err
+	}
+
 	return arguments, buf.String(), nil
+}
+
+func (arguments *Arguments) ConfigureGlobalSettings() error {
+	if arguments.InsecureTls {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	return nil
 }
 
 // ValidateExcludeExceptArgs removes any resource named in a Exclude<ResourceType>Except argument that does not
