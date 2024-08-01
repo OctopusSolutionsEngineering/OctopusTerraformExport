@@ -29,6 +29,10 @@ jobs:
       - name: Clone the Terraform provider source
         run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
         shell: bash
+      - name: Check out the 0.22.0 release branch
+        run: git checkout release/0.22.0
+        shell: bash
+        working-directory: terraform-provider-octopusdeploy
       - name: Build the Terraform provider from source
         run: go build -o terraform-provider-octopusdeploy
         working-directory: terraform-provider-octopusdeploy
