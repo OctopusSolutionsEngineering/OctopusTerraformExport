@@ -110,6 +110,7 @@ func exportSpaceImportAndTest(
 				ProjectId:                        []string{},
 				ProjectName:                      []string{},
 				LookupProjectDependencies:        false,
+				GenerateImportScripts:            true,
 				IgnoreCacManagedValues:           arguments.IgnoreCacManagedValues,
 				BackendBlock:                     arguments.BackendBlock,
 				DetachProjectTemplates:           arguments.DetachProjectTemplates,
