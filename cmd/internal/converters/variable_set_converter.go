@@ -1107,6 +1107,7 @@ func (c *VariableSetConverter) convertSecretValue(variable octopus.Variable, res
 	}
 
 	// The heredoc string introduces a line break at the end of the string. We remove it here.
+	// See https://discuss.hashicorp.com/t/trailing-new-line-in-key-vault-after-using-heredoc-syntax/14561
 	if c.DefaultSecretVariableValues {
 		value := "${replace(var." + resourceName + ", \"\\n$\", \"\")}"
 		return &value
