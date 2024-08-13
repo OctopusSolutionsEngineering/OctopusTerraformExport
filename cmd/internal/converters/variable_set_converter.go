@@ -1102,12 +1102,18 @@ func (c *VariableSetConverter) GetGroupResourceType(projectId string) string {
 }
 
 func (c *VariableSetConverter) convertSecretValue(variable octopus.Variable, resourceName string) *string {
-	if variable.IsSensitive {
-		value := "${var." + resourceName + "}"
+	if !variable.IsSensitive {
+		return nil
+	}
+
+	// The heredoc string introduces a line break at the end of the string. We remove it here.
+	if c.DefaultSecretVariableValues {
+		value := "${replace(var." + resourceName + ", \"\\n$\", \"\")}"
 		return &value
 	}
 
-	return nil
+	value := "${var." + resourceName + "}"
+	return &value
 }
 
 func (c *VariableSetConverter) convertValue(variable octopus.Variable, resourceName string) *string {
