@@ -956,7 +956,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				ResourceName:   v.Name,
 				ResourceType:   v.Type,
 				Description:    v.Description,
-				SensitiveValue: sensitiveValue,
+				SensitiveValue: nil,
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
 				Scope:          c.convertScope(v, dependencies),
