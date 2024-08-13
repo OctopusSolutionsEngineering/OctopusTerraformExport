@@ -964,6 +964,10 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
+			if sensitiveValue != nil {
+				hcl.WriteUnquotedAttribute(block, "sensitive_value", strutil.EmptyIfNil(sensitiveValue))
+			}
+
 			if c.IgnoreProjectChanges || c.DummySecretVariableValues || stateless {
 				ignoreAll := terraform.EmptyBlock{}
 				lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
@@ -1109,11 +1113,11 @@ func (c *VariableSetConverter) convertSecretValue(variable octopus.Variable, res
 	// The heredoc string introduces a line break at the end of the string. We remove it here.
 	// See https://discuss.hashicorp.com/t/trailing-new-line-in-key-vault-after-using-heredoc-syntax/14561
 	if c.DefaultSecretVariableValues {
-		value := "${replace(var." + resourceName + ", \"\\n$\", \"\")}"
+		value := "replace(var." + resourceName + ", \"\\n$\", \"\")"
 		return &value
 	}
 
-	value := "${var." + resourceName + "}"
+	value := "var." + resourceName
 	return &value
 }
 
