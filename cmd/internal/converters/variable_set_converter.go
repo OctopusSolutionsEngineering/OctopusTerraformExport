@@ -972,8 +972,8 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				if c.IgnoreProjectChanges {
 					// Ignore all changes if requested
 					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "all")
-				} else if c.DummySecretVariableValues {
-					// When using dummy values, we expect the secrets will be updated later
+				} else if c.DummySecretVariableValues && !c.DefaultSecretVariableValues {
+					// When using dummy values, and not using default secret values, we expect the secrets will be updated later
 					hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[sensitive_value]")
 				}
 
