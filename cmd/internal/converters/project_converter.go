@@ -785,7 +785,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			collection = append(collection, terraform.TerraformTemplate{
 				Name:     v.Name,
 				Label:    v.Label,
-				HelpText: strutil.EmptyPointerIfNil(v.HelpText),
+				HelpText: v.HelpText,
 				// Is this a bug? This may need to have a field for sensitive values, but the provider does
 				// not expose that today.
 				DefaultValue:    strutil.StrPointer("${var." + variableName + "}"),
@@ -795,7 +795,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			collection = append(collection, terraform.TerraformTemplate{
 				Name:            v.Name,
 				Label:           v.Label,
-				HelpText:        strutil.EmptyPointerIfNil(v.HelpText),
+				HelpText:        v.HelpText,
 				DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
 				DisplaySettings: v.DisplaySettings,
 			})
