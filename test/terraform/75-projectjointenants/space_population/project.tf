@@ -55,6 +55,7 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
     label            = "Test"
     default_value    = "Test"
     display_settings = { "Octopus.ControlType" = "SingleLineText" }
+    help_text = ""
   }
 }
 

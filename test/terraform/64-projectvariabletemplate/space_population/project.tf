@@ -35,6 +35,7 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
     name             = "Project Template Variable"
     label            = "Test"
     default_value    = "Test"
+    help_text = ""
     display_settings = { "Octopus.ControlType" = "Sensitive" }
   }
 
@@ -42,6 +43,7 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
     name             = "Project Template Variable 2"
     label            = "Test2"
     default_value    = "Test2"
+    help_text = ""
     display_settings = { "Octopus.ControlType" = "SingleLineText" }
   }
 }

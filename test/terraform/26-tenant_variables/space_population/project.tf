@@ -34,6 +34,7 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
     name             = "Project Template Variable"
     label            = "Test"
     default_value    = "Test"
+    help_text = ""
     display_settings = { "Octopus.ControlType" = "SingleLineText" }
   }
 }
