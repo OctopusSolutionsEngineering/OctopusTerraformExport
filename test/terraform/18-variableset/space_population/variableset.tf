@@ -33,7 +33,7 @@ resource "octopusdeploy_variable" "secret" {
   is_sensitive = true
   is_editable = true
   owner_id = octopusdeploy_library_variable_set.octopus_library_variable_set.id
-  value = "True"
+  sensitive_value = "True"
 }
 
 resource "octopusdeploy_variable" "tag_scoped" {
