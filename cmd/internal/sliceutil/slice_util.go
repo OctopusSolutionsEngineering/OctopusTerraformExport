@@ -9,3 +9,11 @@ func Contains(a []string, x string) bool {
 	}
 	return false
 }
+
+func NilIfEmpty[T any](s []T) []T {
+	if s == nil || len(s) == 0 {
+		return nil
+	}
+
+	return s
+}

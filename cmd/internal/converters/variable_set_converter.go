@@ -12,6 +12,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
@@ -1199,12 +1200,12 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependenc
 		len(variable.Scope.TenantTag) != 0 {
 
 		return &terraform.TerraformProjectVariableScope{
-			Actions:      actions,
-			Channels:     channels,
-			Environments: environments,
-			Machines:     machines,
-			Roles:        variable.Scope.Role,
-			TenantTags:   c.Excluder.FilteredTenantTags(variable.Scope.TenantTag, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Actions:      sliceutil.NilIfEmpty(actions),
+			Channels:     sliceutil.NilIfEmpty(channels),
+			Environments: sliceutil.NilIfEmpty(environments),
+			Machines:     sliceutil.NilIfEmpty(machines),
+			Roles:        sliceutil.NilIfEmpty(variable.Scope.Role),
+			TenantTags:   sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(variable.Scope.TenantTag, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
 		}
 	}
 
