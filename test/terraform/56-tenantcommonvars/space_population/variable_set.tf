@@ -19,7 +19,7 @@ resource "octopusdeploy_library_variable_set" "library_variable_set_variables_va
   template {
     name             = "secret"
     label            = ""
-    default_value    = ""
+    default_value    = null
     help_text = ""
     display_settings = { "Octopus.ControlType" = "Sensitive" }
   }
