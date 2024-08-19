@@ -25,6 +25,6 @@ type TerraformPhase struct {
 
 type TerraformPolicy struct {
 	QuantityToKeep    int    `hcl:"quantity_to_keep"`
-	ShouldKeepForever bool   `hcl:"should_keep_forever"`
+	ShouldKeepForever *bool  `hcl:"should_keep_forever"`
 	Unit              string `hcl:"unit"`
 }

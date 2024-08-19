@@ -8,3 +8,11 @@ func FalseIfNil(input *bool) bool {
 
 	return *input
 }
+
+func NilIfFalse(input bool) *bool {
+	if input == false {
+		return nil
+	}
+
+	return &input
+}

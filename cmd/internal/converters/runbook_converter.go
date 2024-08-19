@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -416,7 +417,7 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *t
 func (c *RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terraform.RetentionPolicy {
 	return &terraform.RetentionPolicy{
 		QuantityToKeep:    runbook.RunRetentionPolicy.QuantityToKeep,
-		ShouldKeepForever: runbook.RunRetentionPolicy.ShouldKeepForever,
+		ShouldKeepForever: boolutil.NilIfFalse(runbook.RunRetentionPolicy.ShouldKeepForever),
 	}
 }
 
