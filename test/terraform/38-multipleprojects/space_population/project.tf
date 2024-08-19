@@ -20,7 +20,7 @@ resource "octopusdeploy_project" "project_1" {
   discrete_channel_release             = false
   is_disabled                          = false
   is_discrete_channel_release          = false
-  is_version_controlled                = false
+  is_version_controlled                = true
   lifecycle_id                         = data.octopusdeploy_lifecycles.lifecycle_default_lifecycle.lifecycles[0].id
   name                                 = "Test"
   project_group_id                     = octopusdeploy_project_group.project_group_test.id
