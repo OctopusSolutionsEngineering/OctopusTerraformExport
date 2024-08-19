@@ -4,21 +4,21 @@ resource "octopusdeploy_library_variable_set" "library_variable_set_variables_va
 
   template {
     name             = "VariableA"
-    label            = ""
+    label            = "This is a variable"
     default_value    = "a"
     help_text = ""
     display_settings = { "Octopus.ControlType" = "SingleLineText" }
   }
   template {
     name             = "VariableB"
-    label            = ""
+    label            = "This is a variable"
     default_value    = "b"
     help_text = ""
     display_settings = { "Octopus.ControlType" = "SingleLineText" }
   }
   template {
     name             = "secret"
-    label            = ""
+    label            = "This is a secret variable"
     default_value    = null
     help_text = ""
     display_settings = { "Octopus.ControlType" = "Sensitive" }
