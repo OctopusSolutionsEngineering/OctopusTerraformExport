@@ -158,6 +158,8 @@ func exportSpaceImportAndTest(
 				ExcludeProjectGroups:             arguments.ExcludeProjectGroups,
 				ExcludeProjectGroupsRegex:        arguments.ExcludeProjectGroupsRegex,
 				ExcludeProjectGroupsExcept:       arguments.ExcludeProjectGroupsExcept,
+				ExcludeAllEnvironments:           arguments.ExcludeAllEnvironments,
+				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
@@ -4419,6 +4421,38 @@ func TestCloudRegionTargetExport(t *testing.T) {
 
 			if !foundResource {
 				return errors.New("Space must have a target \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestTargetWithNoEnvironmentsExport verifies that a target with no environments is excluded
+func TestTargetWithNoEnvironmentsExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/33-cloudregiontarget/space_creation",
+		"../test/terraform/33-cloudregiontarget/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			ExcludeAllEnvironments:           true,
+			ExcludeTargetsWithNoEnvironments: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
+			err := octopusClient.GetAllResources("Machines", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			if len(collection.Items) != 0 {
+				return errors.New("space must have no targets")
 			}
 
 			return nil
