@@ -838,7 +838,10 @@ func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) *t
 func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *data.ResourceDetailsCollection) []string {
 	collection := make([]string, 0)
 	for _, v := range setIds {
-		collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
+		libraryVariableSet := dependencies.GetResource("LibraryVariableSets", v)
+		if libraryVariableSet != "" {
+			collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
+		}
 	}
 	return collection
 }
