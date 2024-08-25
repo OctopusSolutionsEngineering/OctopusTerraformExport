@@ -8,5 +8,5 @@ resource "octopusdeploy_ssh_key_account" "account_ssh" {
   private_key_file                  = "unused"
   username                          = "admin"
   # Because of https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/343
-  private_key_passphrase            = file("dummycert3.txt")
+  private_key_passphrase            = file("dummycert2.txt")
 }
