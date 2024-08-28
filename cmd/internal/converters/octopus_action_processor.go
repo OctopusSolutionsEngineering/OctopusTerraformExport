@@ -420,6 +420,35 @@ func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, 
 	return nil
 }
 
+func (c OctopusActionProcessor) ExportGitCredentials(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+	for _, step := range steps {
+		for _, action := range step.Actions {
+			for _, gitDependency := range action.GitDependencies {
+				if gitDependency.GitCredentialId == nil {
+					continue
+				}
+
+				var err error
+				if recursive {
+					if stateless {
+						err = c.GitCredentialsConverter.ToHclStatelessById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
+					} else {
+						err = c.EnvironmentConverter.ToHclById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
+					}
+				} else if lookup {
+					err = c.EnvironmentConverter.ToHclLookupById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
+				}
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c OctopusActionProcessor) ExportStepTemplates(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	if c.DetachProjectTemplates {
 		return nil

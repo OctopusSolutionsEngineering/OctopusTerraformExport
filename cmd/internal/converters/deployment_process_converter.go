@@ -407,6 +407,12 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 		return err
 	}
 
+	// Export git credentials
+	err = c.OctopusActionProcessor.ExportGitCredentials(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
