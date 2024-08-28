@@ -433,10 +433,10 @@ func (c OctopusActionProcessor) ExportGitCredentials(recursive bool, lookup bool
 					if stateless {
 						err = c.GitCredentialsConverter.ToHclStatelessById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
 					} else {
-						err = c.EnvironmentConverter.ToHclById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
+						err = c.GitCredentialsConverter.ToHclById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
 					}
 				} else if lookup {
-					err = c.EnvironmentConverter.ToHclLookupById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
+					err = c.GitCredentialsConverter.ToHclLookupById(strutil.EmptyIfNil(gitDependency.GitCredentialId), dependencies)
 				}
 
 				if err != nil {
