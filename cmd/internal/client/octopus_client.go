@@ -576,8 +576,8 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 
 	if err != nil {
 		zap.L().Error(string(body))
-		return false, fmt.Errorf("error in OctopusApiClient.GetResource loading resource type %s into type %s: %w",
-			resourceType, reflect.TypeOf(resources).String(), err)
+		return false, fmt.Errorf("error in OctopusApiClient.GetResource loading resource type %s into type %s from %s: %w",
+			resourceType, reflect.TypeOf(resources).String(), body, err)
 	}
 
 	return true, nil
@@ -599,8 +599,8 @@ func (o *OctopusApiClient) getResourceById(resourceType string, global bool, id 
 		err := o.unmarshal(resources, cacheHit)
 
 		if err != nil {
-			return false, fmt.Errorf("error in OctopusApiClient.getResourceById loading resource type %s with id %s into type %s: %w",
-				resourceType, id, reflect.TypeOf(resources).String(), err)
+			return false, fmt.Errorf("error in OctopusApiClient.getResourceById loading resource type %s with id %s into type %s from %s: %w",
+				resourceType, id, reflect.TypeOf(resources).String(), cacheHit, err)
 		}
 
 		return true, nil
@@ -645,8 +645,8 @@ func (o *OctopusApiClient) getResourceById(resourceType string, global bool, id 
 	err = o.unmarshal(resources, body)
 
 	if err != nil {
-		return false, fmt.Errorf("error in OctopusApiClient.getResourceById loading resource type %s with id %s into type %s: %w",
-			resourceType, id, reflect.TypeOf(resources).String(), err)
+		return false, fmt.Errorf("error in OctopusApiClient.getResourceById loading resource type %s with id %s into type %s from %s: %w",
+			resourceType, id, reflect.TypeOf(resources).String(), body, err)
 	}
 
 	return true, nil
@@ -674,8 +674,8 @@ func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (
 		err := o.unmarshal(&nameId, cacheHit)
 
 		if err != nil {
-			return "", fmt.Errorf("error in OctopusApiClient.GetResourceNameById loading resource type %s with id %s into type %s: %w",
-				resourceType, id, reflect.TypeOf(nameId).String(), err)
+			return "", fmt.Errorf("error in OctopusApiClient.GetResourceNameById loading resource type %s with id %s into type %s from %s: %w",
+				resourceType, id, reflect.TypeOf(nameId).String(), cacheHit, err)
 		}
 
 		return nameId.Name, nil
@@ -720,8 +720,8 @@ func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (
 	err = o.unmarshal(&nameId, body)
 
 	if err != nil {
-		return "", fmt.Errorf("error in OctopusApiClient.GetResourceNameById loading resource type %s with id %s into type %s: %w",
-			resourceType, id, reflect.TypeOf(nameId).String(), err)
+		return "", fmt.Errorf("error in OctopusApiClient.GetResourceNameById loading resource type %s with id %s into type %s from %s: %w",
+			resourceType, id, reflect.TypeOf(nameId).String(), body, err)
 	}
 
 	return nameId.Name, nil
@@ -767,8 +767,8 @@ func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
 
 	if err != nil {
 		zap.L().Error(string(body))
-		return fmt.Errorf("error in OctopusApiClient.unmarshal loading resource into type %s: %w",
-			reflect.TypeOf(resources).String(), err)
+		return fmt.Errorf("error in OctopusApiClient.unmarshal loading resource into type %s from %s: %w",
+			reflect.TypeOf(resources).String(), body, err)
 	}
 
 	return nil
@@ -788,8 +788,8 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 		err := json.Unmarshal(cacheHit, resources)
 
 		if err != nil {
-			return fmt.Errorf("error in OctopusApiClient.GetAllResources loading resource type %s into type %s: %w",
-				resourceType, reflect.TypeOf(resources).String(), err)
+			return fmt.Errorf("error in OctopusApiClient.GetAllResources loading resource type %s into type %s from %s: %w",
+				resourceType, reflect.TypeOf(resources).String(), cacheHit, err)
 		}
 
 		return nil
@@ -831,8 +831,8 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 	err = o.unmarshal(resources, body)
 
 	if err != nil {
-		return fmt.Errorf("error in OctopusApiClient.GetAllResources loading resource type %s into type %s: %w",
-			resourceType, reflect.TypeOf(resources).String(), err)
+		return fmt.Errorf("error in OctopusApiClient.GetAllResources loading resource type %s into type %s from %s: %w",
+			resourceType, reflect.TypeOf(resources).String(), body, err)
 	}
 
 	return nil
