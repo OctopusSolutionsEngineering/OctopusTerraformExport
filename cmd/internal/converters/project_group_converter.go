@@ -104,7 +104,7 @@ func (c ProjectGroupConverter) toHclById(id string, stateless bool, dependencies
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.ProjectGroup: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {
@@ -128,7 +128,7 @@ func (c ProjectGroupConverter) ToHclLookupById(id string, dependencies *data.Res
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.ProjectGroup: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjectGroups, c.ExcludeProjectGroups, c.ExcludeProjectGroupsRegex, c.ExcludeProjectGroupsExcept) {

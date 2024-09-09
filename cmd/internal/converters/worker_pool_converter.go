@@ -98,7 +98,7 @@ func (c WorkerPoolConverter) toHclById(id string, stateless bool, dependencies *
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.WorkerPool: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllWorkerpools, c.ExcludeWorkerpools, c.ExcludeWorkerpoolsRegex, c.ExcludeWorkerpoolsExcept) {
@@ -122,7 +122,7 @@ func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *data.Resou
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &pool)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.WorkerPool: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(pool.Name, c.ExcludeAllWorkerpools, c.ExcludeWorkerpools, c.ExcludeWorkerpoolsRegex, c.ExcludeWorkerpoolsExcept) {

@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -25,7 +26,7 @@ func (c TargetConverter) HasNoEnvironments(target octopus.TargetResource) (error
 			environment := &octopus.Environment{}
 			exists, err := c.Client.GetSpaceResourceById("Environments", item, environment)
 			if err != nil {
-				exclusionError = errors.Join(exclusionError, err)
+				exclusionError = errors.Join(exclusionError, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Environment: %w", err))
 				return false
 			}
 

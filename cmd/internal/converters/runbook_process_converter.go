@@ -59,14 +59,14 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.RunbookProcess: %w", err)
 	}
 
 	runbook := octopus.Runbook{}
 	_, err = c.Client.GetSpaceResourceById("Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Runbook: %w", err)
 	}
 
 	// Projects with no deployment process will not have a deployment process resources.
@@ -92,14 +92,14 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.RunbookProcess: %w", err)
 	}
 
 	runbook := octopus.Runbook{}
 	_, err = c.Client.GetSpaceResourceById("Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Runbook: %w", err)
 	}
 
 	// Projects with no deployment process will not have a deployment process resources.

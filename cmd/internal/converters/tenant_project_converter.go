@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -50,7 +51,7 @@ func (c TenantProjectConverter) allToHcl(stateless bool, dependencies *data.Reso
 	err := c.Client.GetAllResources("Tenants", &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
 	for _, resource := range collection.Items {

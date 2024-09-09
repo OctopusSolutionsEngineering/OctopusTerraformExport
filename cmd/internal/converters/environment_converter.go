@@ -100,7 +100,7 @@ func (c EnvironmentConverter) toHclById(id string, stateless bool, dependencies 
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Environment: %w", err)
 	}
 
 	zap.L().Info("Environment: " + resource.Id)
@@ -120,7 +120,7 @@ func (c EnvironmentConverter) ToHclLookupById(id string, dependencies *data.Reso
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &environment)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Environment: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(environment.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {

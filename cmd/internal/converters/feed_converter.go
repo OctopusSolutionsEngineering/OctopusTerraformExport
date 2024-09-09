@@ -109,7 +109,7 @@ func (c FeedConverter) toHclById(id string, stateless bool, dependencies *data.R
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Feed: %w", err)
 	}
 
 	zap.L().Info("Feed: " + resource.Id)
@@ -129,7 +129,7 @@ func (c FeedConverter) ToHclLookupById(id string, dependencies *data.ResourceDet
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Feed: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllFeeds, c.ExcludeFeeds, c.ExcludeFeedsRegex, c.ExcludeFeedsExcept) {

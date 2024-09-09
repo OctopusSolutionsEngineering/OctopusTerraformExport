@@ -49,7 +49,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &template)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.StepTemplate: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(template.Name, c.ExcludeAllStepTemplates, c.ExcludeStepTemplates, c.ExcludeStepTemplatesRegex, c.ExcludeStepTemplatesExcept) {
@@ -138,7 +138,7 @@ func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceD
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.StepTemplate: %w", err)
 	}
 
 	zap.L().Info("Step Template: " + resource.Id)

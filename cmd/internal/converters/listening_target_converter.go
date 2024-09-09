@@ -129,7 +129,7 @@ func (c ListeningTargetConverter) toHclById(id string, stateless bool, dependenc
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.ListeningEndpointResource: %w", err)
 	}
 
 	if !c.isListeningTarget(resource) {
@@ -163,7 +163,7 @@ func (c ListeningTargetConverter) ToHclLookupById(id string, dependencies *data.
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.ListeningEndpointResource: %w", err)
 	}
 
 	// Ignore excluded targets

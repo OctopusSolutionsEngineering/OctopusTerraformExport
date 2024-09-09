@@ -100,7 +100,7 @@ func (c LifecycleConverter) toHclById(id string, stateless bool, dependencies *d
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Lifecycle: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {
@@ -126,7 +126,7 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.Resour
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &lifecycle)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Lifecycle: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(lifecycle.Name, c.ExcludeAllLifecycles, c.ExcludeLifecycles, c.ExcludeLifecyclesRegex, c.ExcludeLifecyclesExcept) {

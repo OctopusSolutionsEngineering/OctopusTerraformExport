@@ -65,7 +65,7 @@ func (c *TenantConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
 	for _, resource := range collection.Items {
@@ -97,7 +97,7 @@ func (c *TenantConverter) toHclByProjectId(projectId string, stateless bool, dep
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
 	if err != nil {
-		return nil
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
 	for _, resource := range collection.Items {
@@ -119,7 +119,7 @@ func (c *TenantConverter) ToHclById(id string, dependencies *data.ResourceDetail
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return nil
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Tenant: %w", err)
 	}
 
 	if found {
@@ -139,7 +139,7 @@ func (c *TenantConverter) ToHclLookupByProjectId(projectId string, dependencies 
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection, []string{"projectId", projectId})
 
 	if err != nil {
-		return nil
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
 	for _, tenant := range collection.Items {
@@ -443,7 +443,7 @@ func (c *TenantConverter) createTenantProjects(tenant octopus.Tenant, dependenci
 		_, err = c.Client.GetSpaceResourceById("Projects", projectIO, &project)
 
 		if err != nil {
-			return err
+			return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 		}
 
 		c.TenantProjectConverter.LinkTenantToProject(tenant, project, environmentId, dependencies)
@@ -465,7 +465,7 @@ func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
 	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept), nil
@@ -486,7 +486,7 @@ func (c *TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive
 	err := c.Client.GetAllResources("TagSets", &collection)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.TagSet]: %w", err)
 	}
 
 	terraformDependencies := map[string][]string{}

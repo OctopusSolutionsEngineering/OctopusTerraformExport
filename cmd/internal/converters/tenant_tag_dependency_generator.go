@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -23,7 +24,7 @@ func (t TenantTagDependencyGenerator) AddAndWriteTagSetDependencies(client clien
 	err := client.GetAllResources("TagSets", &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.TagSet]: %w", err)
 	}
 
 	tagSets, tags, err := t.FindDependencies(tenantTags, collection)

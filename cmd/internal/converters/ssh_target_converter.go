@@ -134,7 +134,7 @@ func (c SshTargetConverter) toHclById(id string, stateless bool, dependencies *d
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.SshEndpointResource: %w", err)
 	}
 
 	if !c.isSsh(resource) {
@@ -172,7 +172,7 @@ func (c SshTargetConverter) ToHclLookupById(id string, dependencies *data.Resour
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.SshEndpointResource: %w", err)
 	}
 
 	// Ignore excluded targets

@@ -97,7 +97,7 @@ func (c *VariableSetConverter) toHclByProjectIdBranchAndName(projectId string, b
 	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
@@ -126,7 +126,7 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId str
 	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
@@ -147,14 +147,14 @@ func (c *VariableSetConverter) ToHclByProjectIdAndName(projectId string, parentN
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.VariableSet: %w", err)
 	}
 
 	project := octopus.Project{}
 	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
@@ -179,7 +179,7 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdAndName(projectId string, p
 	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	ignoreSecrets := project.HasCacConfigured() && c.IgnoreCacManagedValues
@@ -209,7 +209,7 @@ func (c *VariableSetConverter) toHclByIdAndName(id string, recursive bool, state
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.VariableSet: %w", err)
 	}
 
 	// Some CaC enabled projects have no variable set.
@@ -237,7 +237,7 @@ func (c *VariableSetConverter) ToHclLookupByIdAndName(id string, parentName stri
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.VariableSet: %w", err)
 	}
 
 	// Some CaC enabled projects have no variable set.
@@ -682,7 +682,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 		_, projectErr := c.Client.GetSpaceResourceById("Projects", parentId, &project)
 
 		if projectErr != nil {
-			return projectErr
+			return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", projectErr)
 		}
 
 		// Only variables assigned to a project can be scoped to owners
@@ -703,14 +703,14 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 				_, runbookErr := c.Client.GetSpaceResourceById("Runbooks", owner, &runbook)
 
 				if runbookErr != nil {
-					ownersError = errors.Join(ownersError, runbookErr)
+					ownersError = errors.Join(ownersError, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Runbook: %w", runbookErr))
 				} else {
 
 					project := octopus.Project{}
 					_, projectErr := c.Client.GetSpaceResourceById("Projects", runbook.ProjectId, &project)
 
 					if projectErr != nil {
-						ownersError = errors.Join(ownersError, projectErr)
+						ownersError = errors.Join(ownersError, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", projectErr))
 					}
 
 					return project.Name + ":" + runbook.Name
@@ -733,7 +733,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 			_, processErr := c.Client.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
 
 			if processErr != nil {
-				return processErr
+				return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.DeploymentProcess: %w", processErr)
 			}
 
 			scopedActions = lo.FilterMap(v.Scope.Action, func(actionId string, index int) (string, bool) {
@@ -1661,7 +1661,7 @@ func (c *VariableSetConverter) addTagSetDependencies(variable octopus.Variable, 
 	err := c.Client.GetAllResources("TagSets", &collection)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.TagSet]: %w", err)
 	}
 
 	terraformDependencies := map[string][]string{}

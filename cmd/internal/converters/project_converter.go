@@ -129,7 +129,7 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *data.Resourc
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	thisResource := data.ResourceDetails{}
@@ -186,7 +186,7 @@ func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	zap.L().Info("Project: " + resource.Id)
@@ -206,7 +206,7 @@ func (c *ProjectConverter) ToHclStatelessById(id string, dependencies *data.Reso
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.toHcl(project, true, false, true, dependencies)
@@ -225,7 +225,7 @@ func (c *ProjectConverter) ToHclById(id string, dependencies *data.ResourceDetai
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.toHcl(project, true, false, false, dependencies)
@@ -1111,7 +1111,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 	// Export all environments (a tenant could link to any environment for runbooks, regardless of the lifecycles)
 	environments := octopus.GeneralCollection[octopus.Environment]{}
 	if err := c.Client.GetAllResources("Environments", &environments); err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Environment]: %w", err)
 	}
 
 	for _, environment := range environments.Items {
@@ -1225,7 +1225,7 @@ func (c *ProjectConverter) linkTenantsAndCreateVars(project octopus.Project, sta
 	err := c.Client.GetAllResources("Tenants", &collection, []string{"projectId", project.Id})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
 	for _, tenant := range collection.Items {

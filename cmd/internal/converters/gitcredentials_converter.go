@@ -97,7 +97,7 @@ func (c GitCredentialsConverter) toHclById(id string, stateless bool, dependenci
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.GitCredentials: %w", err)
 	}
 
 	zap.L().Info("Git Credentials: " + resource.Id)
@@ -121,7 +121,7 @@ func (c GitCredentialsConverter) ToHclLookupById(id string, dependencies *data.R
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &gitCredentials)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.GitCredentials: %w", err)
 	}
 
 	return c.toHcl(gitCredentials, false, true, false, dependencies)

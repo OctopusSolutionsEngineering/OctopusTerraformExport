@@ -8,7 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dateutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
-	octopus2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -33,11 +33,11 @@ type ProjectTriggerConverter struct {
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
-	collection := octopus2.GeneralCollection[octopus2.ProjectTrigger]{}
+	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.ProjectTrigger]: %w", err)
 	}
 
 	for _, resource := range collection.Items {
@@ -204,7 +204,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 	})
 }
 
-func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, recursive bool, lookup bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, recursive bool, lookup bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	// Some triggers are not supported
 	supportedTriggers := []string{"MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter"}
 	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {
@@ -226,7 +226,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus2.ProjectTrigger, r
 	return c.buildFeedTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
 }
 
-func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	if projectTrigger.Filter.FilterType != "MachineFilter" {
 		return
 	}
@@ -292,7 +292,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus2.Proj
 	dependencies.AddResource(thisResource)
 }
 
-func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = projectTrigger.Name
 	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
@@ -375,7 +375,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus2.P
 	dependencies.AddResource(thisResource)
 }
 
-func (c ProjectTriggerConverter) buildFeedTriggerResources(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) buildFeedTriggerResources(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	if projectTrigger.Filter.FilterType != "FeedFilter" {
 		return nil
 	}
@@ -390,12 +390,12 @@ func (c ProjectTriggerConverter) buildFeedTriggerResources(projectTrigger octopu
 	return c.buildFeedTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
 }
 
-func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
-	project := octopus2.Project{}
+func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	project := octopus.Project{}
 	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	thisResource := data.ResourceDetails{}
@@ -460,8 +460,8 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus2.Projec
 	return nil
 }
 
-func (c ProjectTriggerConverter) buildTriggerPackages(projectTrigger octopus2.ProjectTrigger) []terraform.TerraformProjectFeedTriggerPackage {
-	return lo.Map(projectTrigger.Filter.Packages, func(packageReference octopus2.ProjectTriggerFilterPackage, index int) terraform.TerraformProjectFeedTriggerPackage {
+func (c ProjectTriggerConverter) buildTriggerPackages(projectTrigger octopus.ProjectTrigger) []terraform.TerraformProjectFeedTriggerPackage {
+	return lo.Map(projectTrigger.Filter.Packages, func(packageReference octopus.ProjectTriggerFilterPackage, index int) terraform.TerraformProjectFeedTriggerPackage {
 		return terraform.TerraformProjectFeedTriggerPackage{
 			DeploymentActionSlug: packageReference.DeploymentActionSlug,
 			PackageReference:     packageReference.PackageReference,
@@ -469,7 +469,7 @@ func (c ProjectTriggerConverter) buildTriggerPackages(projectTrigger octopus2.Pr
 	})
 }
 
-func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger octopus2.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	supportedTypes := []string{"OnceDailySchedule", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule"}
 
 	if slices.Index(supportedTypes, projectTrigger.Filter.FilterType) == -1 {
@@ -486,7 +486,7 @@ func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger o
 	c.buildScheduledTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
 }
 
-func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerContinuousDailySchedule, error) {
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuousDailySchedule(projectTrigger octopus.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerContinuousDailySchedule, error) {
 	if projectTrigger.Filter.FilterType != "ContinuousDailySchedule" {
 		return nil, nil
 	}
@@ -513,7 +513,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerContinuous
 	}, nil
 }
 
-func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule, error) {
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMonthSchedule(projectTrigger octopus.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaysPerMonthSchedule, error) {
 	if projectTrigger.Filter.FilterType != "DaysPerMonthSchedule" {
 		return nil, nil
 	}
@@ -533,7 +533,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerDaysPerMon
 	}, nil
 }
 
-func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger octopus2.ProjectTrigger) *terraform.TerraformProjectScheduledTriggerCronExpressionSchedule {
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpressionSchedule(projectTrigger octopus.ProjectTrigger) *terraform.TerraformProjectScheduledTriggerCronExpressionSchedule {
 	if projectTrigger.Filter.FilterType != "CronExpressionSchedule" {
 		return nil
 	}
@@ -543,7 +543,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerCronExpres
 	}
 }
 
-func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerRunRunbookAction {
+func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbookAction(projectTrigger octopus.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerRunRunbookAction {
 	if projectTrigger.Action.ActionType != "RunRunbook" {
 		return nil
 	}
@@ -554,7 +554,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbook
 	}
 }
 
-func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaily, error) {
+func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus.ProjectTrigger) (*terraform.TerraformProjectScheduledTriggerDaily, error) {
 	if projectTrigger.Filter.FilterType != "OnceDailySchedule" {
 		return nil, nil
 	}
@@ -571,7 +571,7 @@ func (c ProjectTriggerConverter) buildOnceDailySchedule(projectTrigger octopus2.
 	}, nil
 }
 
-func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction {
+func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octopus.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction {
 	if projectTrigger.Action.ActionType != "DeployNewRelease" {
 		return nil
 	}
@@ -583,7 +583,7 @@ func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octo
 	}
 }
 
-func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus2.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction {
+func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger octopus.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectScheduledTriggerDeployLatestReleaseAction {
 	if projectTrigger.Action.ActionType != "DeployLatestRelease" {
 		return nil
 	}
@@ -611,7 +611,7 @@ func (c ProjectTriggerConverter) GetResourceType() string {
 	return "ProjectTriggers"
 }
 
-func (c ProjectTriggerConverter) exportEnvironments(projectTrigger octopus2.ProjectTrigger, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c ProjectTriggerConverter) exportEnvironments(projectTrigger octopus.ProjectTrigger, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	environments := []string{}
 	environments = append(environments, projectTrigger.Filter.EnvironmentIds...)
 	environments = append(environments, projectTrigger.Action.SourceEnvironmentIds...)

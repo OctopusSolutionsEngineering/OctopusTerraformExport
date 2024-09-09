@@ -59,7 +59,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	foundRunbook, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Runbook: %w", err)
 	}
 
 	if !foundRunbook {
@@ -70,7 +70,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	foundProject, err := c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &parentResource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	if !foundProject {
@@ -98,7 +98,7 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
 	}
 
 	for _, resource := range collection.Items {
@@ -122,7 +122,7 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
 	}
 
 	for _, resource := range collection.Items {

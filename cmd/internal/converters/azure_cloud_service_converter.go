@@ -130,7 +130,7 @@ func (c AzureCloudServiceTargetConverter) toHclById(id string, stateless bool, d
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.AzureCloudServiceResource: %w", err)
 	}
 
 	if !c.isAzureCloudService(resource) {
@@ -164,7 +164,7 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.AzureCloudServiceResource: %w", err)
 	}
 
 	if !c.isAzureCloudService(resource) {

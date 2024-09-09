@@ -103,7 +103,7 @@ func (c CertificateConverter) toHclById(id string, stateless bool, dependencies 
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Certificate: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {
@@ -127,7 +127,7 @@ func (c CertificateConverter) ToHclLookupById(id string, dependencies *data.Reso
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &certificate)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Certificate: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(certificate.Name, c.ExcludeAllCertificates, c.ExcludeCertificates, c.ExcludeCertificatesRegex, c.ExcludeCertificatesExcept) {

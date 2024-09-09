@@ -129,7 +129,7 @@ func (c PollingTargetConverter) toHclById(id string, stateless bool, dependencie
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.PollingEndpointResource: %w", err)
 	}
 
 	if !c.isPollingTarget(resource) {
@@ -163,7 +163,7 @@ func (c PollingTargetConverter) ToHclLookupById(id string, dependencies *data.Re
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.PollingEndpointResource: %w", err)
 	}
 
 	// Ignore excluded targets

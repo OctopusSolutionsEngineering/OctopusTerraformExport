@@ -75,7 +75,7 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
@@ -108,7 +108,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
@@ -135,7 +135,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.DeploymentProcess: %w", err)
 	}
 
 	// Projects with no deployment process will not have a deployment process resources.
@@ -148,7 +148,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	zap.L().Info("Deployment Process: " + resource.Id)
@@ -168,7 +168,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.DeploymentProcess: %w", err)
 	}
 
 	// Projects with no deployment process will not have a deployment process resources.
@@ -181,7 +181,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)

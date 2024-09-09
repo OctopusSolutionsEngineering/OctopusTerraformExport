@@ -48,14 +48,14 @@ func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Channel]: %w", err)
 	}
 
 	project := octopus.Project{}
 	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	for _, resource := range collection.Items {
@@ -78,14 +78,14 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Channel]: %w", err)
 	}
 
 	project := octopus.Project{}
 	_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	for _, resource := range collection.Items {

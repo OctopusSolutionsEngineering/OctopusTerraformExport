@@ -2,6 +2,7 @@ package converters
 
 import (
 	"errors"
+	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -48,7 +49,7 @@ func (c TenantVariableConverter) allToHcl(stateless bool, dependencies *data.Res
 	err := c.Client.GetAllResources(c.GetResourceType(), &collection)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type []octopus.TenantVariable: %w", err)
 	}
 
 	for _, resource := range collection {
@@ -67,7 +68,7 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *data.R
 	err := c.Client.GetAllResources("Tenants/"+id+"/Variables", &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.TenantVariable: %w", err)
 	}
 
 	return c.toHcl(resource, true, false, dependencies)
@@ -142,7 +143,7 @@ func (c TenantVariableConverter) convertCommonVariables(tenant octopus.TenantVar
 			_, err := c.Client.GetSpaceResourceById("LibraryVariableSets", l.LibraryVariableSetId, &libraryVariableSet)
 
 			if err != nil {
-				return err
+				return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.LibraryVariableSet: %w", err)
 			}
 
 			commonVariableIndex++
@@ -202,7 +203,7 @@ func (c TenantVariableConverter) isTenantExcludedByTag(tenantId string) (bool, e
 	found, err := c.Client.GetSpaceResourceById("Tenants", tenantId, &resource)
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Tenant: %w", err)
 	}
 
 	if found && resource.TenantTags != nil && c.ExcludeTenantsWithTags != nil {
@@ -223,7 +224,7 @@ func (c TenantVariableConverter) excludeProject(projectId string) (bool, error) 
 	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
 	return c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept), nil

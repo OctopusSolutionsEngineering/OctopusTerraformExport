@@ -102,7 +102,7 @@ func (c AccountConverter) toHclById(id string, stateless bool, dependencies *dat
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Account: %w", err)
 	}
 
 	zap.L().Info("Account: " + resource.Id)
@@ -122,7 +122,7 @@ func (c AccountConverter) ToHclLookupById(id string, dependencies *data.Resource
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Account: %w", err)
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllAccounts, c.ExcludeAccounts, c.ExcludeAccountsRegex, c.ExcludeAccountsExcept) {

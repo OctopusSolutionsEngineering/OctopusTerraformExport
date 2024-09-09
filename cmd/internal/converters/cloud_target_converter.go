@@ -129,7 +129,7 @@ func (c CloudRegionTargetConverter) toHclById(id string, stateless bool, depende
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.CloudRegionResource: %w", err)
 	}
 
 	if !c.isCloudTarget(resource) {
@@ -163,7 +163,7 @@ func (c CloudRegionTargetConverter) ToHclLookupById(id string, dependencies *dat
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.CloudRegionResource: %w", err)
 	}
 
 	// Ignore excluded targets

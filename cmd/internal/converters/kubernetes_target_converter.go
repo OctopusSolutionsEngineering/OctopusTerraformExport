@@ -131,7 +131,7 @@ func (c KubernetesTargetConverter) toHclById(id string, stateless bool, dependen
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.KubernetesEndpointResource: %w", err)
 	}
 
 	if !c.isKubernetesTarget(resource) {
@@ -165,7 +165,7 @@ func (c KubernetesTargetConverter) ToHclLookupById(id string, dependencies *data
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.KubernetesEndpointResource: %w", err)
 	}
 
 	// Ignore excluded targets
