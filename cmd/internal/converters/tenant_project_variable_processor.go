@@ -24,7 +24,7 @@ type TenantProjectVariableConverter struct {
 	ExcludeTenantVariablesRegex  args.StringSliceArgs
 }
 
-func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless bool, tenantVariable octopus.TenantVariable, projectVariable octopus.ProjectVariable, environmentId string, value string, projectVariableIndex int, templateId string, dependencies *data.ResourceDetailsCollection) error {
+func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless bool, tenantVariable octopus.TenantVariable, projectVariable octopus.ProjectVariable, environmentId string, value any, projectVariableIndex int, templateId string, dependencies *data.ResourceDetailsCollection) error {
 	variableName := "tenantprojectvariable_" + fmt.Sprint(projectVariableIndex) + "_" + sanitizer.SanitizeName(tenantVariable.TenantName)
 
 	thisResource := data.ResourceDetails{}
@@ -54,6 +54,16 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
+		/*
+			Tenants can define secrets, in which case value is an object indicating the state of the
+			secret, but not the value. In this case we can only export an empty string.
+			TODO: Create a variable to override this value if needed.
+		*/
+		fixedValue := ""
+		if stringValue, ok := value.(string); ok {
+			fixedValue = stringValue
+		}
+
 		terraformResource := terraform.TerraformTenantProjectVariable{
 			Type:          octopusdeployTenantProjectVariableResourceType,
 			Name:          variableName,
@@ -63,7 +73,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 			ProjectId:     dependencies.GetResource("Projects", projectVariable.ProjectId),
 			TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
 			TenantId:      dependencies.GetResource("Tenants", tenantVariable.TenantId),
-			Value:         strutil.EscapeDollarCurlyPointer(&value),
+			Value:         strutil.EscapeDollarCurlyPointer(&fixedValue),
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
