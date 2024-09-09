@@ -3226,8 +3226,14 @@ func TestTenantVariablesExport(t *testing.T) {
 							for _, value := range variables {
 								// we expect one project variable to be defined
 								found = true
-								if value != "my value" {
-									return errors.New("The tenant project variable must have a value of \"my value\" (was \"" + value + "\")")
+
+								fixedValue := ""
+								if stringValue, ok := value.(string); ok {
+									fixedValue = stringValue
+								}
+
+								if fixedValue != "my value" {
+									return errors.New("The tenant project variable must have a value of \"my value\" (was \"" + fixedValue + "\")")
 								}
 							}
 						}
@@ -9387,8 +9393,14 @@ func TestProjectTenantLinks(t *testing.T) {
 
 								if environment[0].Name == "Development" {
 									foundProjectVar = true
-									if value != "my project variable" {
-										return errors.New("The tenant project variable must have a value of \"my project variable\" (was \"" + value + "\")")
+
+									fixedValue := ""
+									if stringValue, ok := value.(string); ok {
+										fixedValue = stringValue
+									}
+
+									if fixedValue != "my project variable" {
+										return errors.New("The tenant project variable must have a value of \"my project variable\" (was \"" + fixedValue + "\")")
 									}
 								}
 							}
