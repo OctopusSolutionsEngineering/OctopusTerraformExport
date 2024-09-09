@@ -33,6 +33,7 @@ octoterra*.json
 octoterra.yaml
 
 octoterra
+octoterra-cli
 
 .idea/copilot
 
