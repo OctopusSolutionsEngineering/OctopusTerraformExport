@@ -920,6 +920,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			ExcludeTenantsWithTags:    args.ExcludeTenantsWithTags,
 			ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
 			ExcludeAllTenants:         args.ExcludeAllTenants,
+			IgnoreCacErrors:           args.IgnoreCacErrors,
 		},
 		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,
@@ -1199,6 +1200,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantsWithTags:      args.ExcludeTenantsWithTags,
 		ExcludeTenantsExcept:        args.ExcludeTenantsExcept,
 		ExcludeAllTenants:           args.ExcludeAllTenants,
+		IgnoreCacErrors:             args.IgnoreCacErrors,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -1976,6 +1978,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantsWithTags:    args.ExcludeTenantsWithTags,
 		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
 		ExcludeAllTenants:         args.ExcludeAllTenants,
+		IgnoreCacErrors:           args.IgnoreCacErrors,
 	}
 
 	if args.LookupProjectDependencies {

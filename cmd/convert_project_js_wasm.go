@@ -628,6 +628,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		TenantProjectConverter:                tenantProjectConverter,
 		TenantVariableConverter:               tenantVariableConverter,
 		EnvironmentConverter:                  environmentConverter,
+		IgnoreCacErrors:                       false,
 	}).ToHclByIdWithLookups(projectId, &dependencies)
 
 	if err != nil {
