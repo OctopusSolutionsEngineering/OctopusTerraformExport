@@ -33,6 +33,7 @@ type ChannelConverter struct {
 	LimitResourceCount       int
 	IncludeDefaultChannel    bool
 	IncludeSpaceInPopulation bool
+	IgnoreCacErrors          bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -150,7 +151,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	if project.HasCacConfigured() {
 		resource = &octopus.DeploymentProcess{}
 		_, err := c.Client.GetResource("Projects/"+project.Id+"/"+url.QueryEscape(project.PersistenceSettings.DefaultBranch)+"/deploymentprocesses", resource)
-		if err != nil {
+		if err != nil && !c.IgnoreCacErrors {
 			return err
 		}
 	}

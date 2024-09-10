@@ -38,6 +38,7 @@ type DeploymentProcessConverter struct {
 	ExperimentalEnableStepTemplates bool
 	DummySecretGenerator            dummy.DummySecretGenerator
 	DummySecretVariableValues       bool
+	IgnoreCacErrors                 bool
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -62,7 +63,11 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/deploymentprocesses", &resource)
 
 	if err != nil {
-		return err
+		if !c.IgnoreCacErrors {
+			return err
+		} else {
+			found = false
+		}
 	}
 
 	// Projects with no deployment process will not have a deployment process resources.
@@ -95,7 +100,11 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/deploymentprocesses", &resource)
 
 	if err != nil {
-		return err
+		if !c.IgnoreCacErrors {
+			return err
+		} else {
+			found = false
+		}
 	}
 
 	// Projects with no deployment process will not have a deployment process resources.

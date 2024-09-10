@@ -242,6 +242,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		Excluder:             converters.DefaultExcluder{},
 		ExcludeTenantTags:    nil,
 		ExcludeTenantTagSets: nil,
+		IgnoreCacErrors:      false,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -514,6 +515,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
+		IgnoreCacErrors: false,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:               &client,
@@ -590,6 +592,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExperimentalEnableStepTemplates: false,
 			DummySecretGenerator:            nil,
 			DummySecretVariableValues:       false,
+			IgnoreCacErrors:                 false,
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{

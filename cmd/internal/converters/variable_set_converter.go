@@ -67,6 +67,7 @@ type VariableSetConverter struct {
 	StatelessAdditionalParams args.StringSliceArgs
 	GenerateImportScripts     bool
 	EnvironmentFilter         EnvironmentFilter
+	IgnoreCacErrors           bool
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -86,7 +87,11 @@ func (c *VariableSetConverter) toHclByProjectIdBranchAndName(projectId string, b
 	found, err := c.Client.GetResource("Projects/"+projectId+"/"+url.QueryEscape(branch)+"/variables", &resource)
 
 	if err != nil {
-		return err
+		if !c.IgnoreCacErrors {
+			return err
+		} else {
+			found = false
+		}
 	}
 
 	if !found {
@@ -115,7 +120,11 @@ func (c *VariableSetConverter) ToHclLookupByProjectIdBranchAndName(projectId str
 	found, err := c.Client.GetResource("Projects/"+projectId+"/"+url.QueryEscape(branch)+"/variables", &resource)
 
 	if err != nil {
-		return err
+		if !c.IgnoreCacErrors {
+			return err
+		} else {
+			found = false
+		}
 	}
 
 	if !found {

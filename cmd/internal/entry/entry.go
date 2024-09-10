@@ -409,6 +409,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeDefaultChannel:    args.IncludeDefaultChannel,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		IgnoreCacErrors:          args.IgnoreCacErrors,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -755,6 +756,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
+		IgnoreCacErrors: args.IgnoreCacErrors,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -876,6 +878,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 				DummySecretGenerator:            dummySecretGenerator,
 				DummySecretVariableValues:       args.DummySecretVariableValues,
+				IgnoreCacErrors:                 args.IgnoreCacErrors,
 			},
 			TenantConverter: &tenantConverter,
 			ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -1377,6 +1380,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeDefaultChannel:    args.IncludeDefaultChannel,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		IgnoreCacErrors:          args.IgnoreCacErrors,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -1787,6 +1791,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
+		IgnoreCacErrors: args.IgnoreCacErrors,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -1825,6 +1830,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
+		IgnoreCacErrors: args.IgnoreCacErrors,
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
@@ -1927,6 +1933,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 			DummySecretGenerator:            dummySecretGenerator,
 			DummySecretVariableValues:       args.DummySecretVariableValues,
+			IgnoreCacErrors:                 args.IgnoreCacErrors,
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
