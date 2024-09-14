@@ -68,6 +68,7 @@ type ProjectConverter struct {
 	ExcludeTenantsWithTags    args.StringSliceArgs
 	ExcludeTenantsExcept      args.StringSliceArgs
 	ExcludeAllTenants         bool
+	IgnoreCacErrors           bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -1044,7 +1045,7 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 				dependencies)
 		}
 
-		if err != nil {
+		if err != nil && !c.IgnoreCacErrors {
 			return err
 		}
 	}
