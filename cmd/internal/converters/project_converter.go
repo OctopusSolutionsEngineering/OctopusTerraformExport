@@ -18,6 +18,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"slices"
 	"strings"
 )
 
@@ -1109,14 +1110,28 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 		return err
 	}
 
-	// Export all environments (a tenant could link to any environment for runbooks, regardless of the lifecycles)
-	environments := octopus.GeneralCollection[octopus.Environment]{}
-	if err := c.Client.GetAllResources("Environments", &environments); err != nil {
-		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Environment]: %w", err)
+	// Export any environment that a tenant was linked to.
+	// Get all the tenants.
+	tenantsCollection := octopus.GeneralCollection[octopus.Tenant]{}
+	if err := c.Client.GetAllResources("Tenants", &tenantsCollection, []string{"projectId", project.Id}); err != nil {
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
-	for _, environment := range environments.Items {
-		if err := c.EnvironmentConverter.ToHclLookupById(environment.Id, dependencies); err != nil {
+	// Get the environments that the tenants are linked to for this project
+	tenantEnvironments := []string{}
+	for _, item := range tenantsCollection.Items {
+		if _, ok := item.ProjectEnvironments[project.Id]; ok {
+			for _, environmentId := range tenantsCollection.Items[0].ProjectEnvironments[project.Id] {
+				if !slices.Contains(tenantEnvironments, environmentId) {
+					tenantEnvironments = append(tenantEnvironments, environmentId)
+				}
+			}
+		}
+	}
+
+	// Link those environments
+	for _, environment := range tenantEnvironments {
+		if err := c.EnvironmentConverter.ToHclLookupById(environment, dependencies); err != nil {
 			return err
 		}
 	}

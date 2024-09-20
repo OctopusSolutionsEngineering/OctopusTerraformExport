@@ -428,8 +428,8 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 }
 
 func (c *TenantConverter) createTenantProjects(tenant octopus.Tenant, dependencies *data.ResourceDetailsCollection) error {
-	for projectIO, environmentId := range tenant.ProjectEnvironments {
-		exclude, err := c.excludeProject(projectIO)
+	for projectId, environmentId := range tenant.ProjectEnvironments {
+		exclude, err := c.excludeProject(projectId)
 
 		if err != nil {
 			return err
@@ -440,7 +440,7 @@ func (c *TenantConverter) createTenantProjects(tenant octopus.Tenant, dependenci
 		}
 
 		project := octopus.Project{}
-		_, err = c.Client.GetSpaceResourceById("Projects", projectIO, &project)
+		_, err = c.Client.GetSpaceResourceById("Projects", projectId, &project)
 
 		if err != nil {
 			return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
