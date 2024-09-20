@@ -10,7 +10,7 @@ type TerraformEnvironment struct {
 	Description                            *string                                          `hcl:"description"`
 	AllowDynamicInfrastructure             bool                                             `hcl:"allow_dynamic_infrastructure"`
 	UseGuidedFailure                       bool                                             `hcl:"use_guided_failure"`
-	SortOrder                              int                                              `hcl:"sort_order"`
+	SortOrder                              *int                                             `hcl:"sort_order"`
 	JiraExtensionSettings                  *TerraformJiraExtensionSettings                  `hcl:"jira_extension_settings,block"`
 	JiraServiceManagementExtensionSettings *TerraformJiraServiceManagementExtensionSettings `hcl:"jira_service_management_extension_settings,block"`
 	ServicenowExtensionSettings            *TerraformServicenowExtensionSettings            `hcl:"servicenow_extension_settings,block"`

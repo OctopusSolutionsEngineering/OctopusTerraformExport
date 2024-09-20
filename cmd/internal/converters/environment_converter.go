@@ -348,7 +348,7 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 			UseGuidedFailure:           environment.UseGuidedFailure,
 			// The new provider is strict, and fields must not change value.
 			// Sort order is hard to guarantee, so it is not included.
-			//SortOrder:                  environment.SortOrder,
+			//SortOrder: environment.SortOrder,
 			JiraExtensionSettings: &terraform.TerraformJiraExtensionSettings{
 				EnvironmentType: c.getJiraExtensionSettings(environment),
 			},
