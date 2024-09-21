@@ -57,6 +57,9 @@ func main() {
 		if parseArgs.StepTemplateName == "" {
 			errorExit("stepTemplate requires stepTemplateName to be defined")
 		}
+
+		// Don't generate scripts
+		parseArgs.GenerateImportScripts = false
 	}
 
 	if !parseArgs.ExcludeCaCProjectSettings && parseArgs.ExcludeAllGitCredentials {
