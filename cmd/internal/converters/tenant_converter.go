@@ -69,7 +69,7 @@ func (c *TenantConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 	}
 
 	for _, resource := range collection.Items {
-		zap.L().Info("Tenant: " + resource.Id)
+		zap.L().Info("Tenant: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
@@ -101,7 +101,7 @@ func (c *TenantConverter) toHclByProjectId(projectId string, stateless bool, dep
 	}
 
 	for _, resource := range collection.Items {
-		zap.L().Info("Tenant: " + resource.Id)
+		zap.L().Info("Tenant: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, true, false, stateless, dependencies)
 		if err != nil {
 			return nil
@@ -123,7 +123,7 @@ func (c *TenantConverter) ToHclById(id string, dependencies *data.ResourceDetail
 	}
 
 	if found {
-		zap.L().Info("Tenant: " + resource.Id)
+		zap.L().Info("Tenant: " + resource.Id + " " + resource.Name)
 		return c.toHcl(resource, true, false, false, dependencies)
 	}
 

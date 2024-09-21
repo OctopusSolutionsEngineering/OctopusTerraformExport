@@ -71,7 +71,7 @@ func (c ProjectGroupConverter) allToHcl(stateless bool, dependencies *data.Resou
 			continue
 		}
 
-		zap.L().Info("Project Group: " + resource.Id)
+		zap.L().Info("Project Group: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
@@ -111,7 +111,7 @@ func (c ProjectGroupConverter) toHclById(id string, stateless bool, dependencies
 		return nil
 	}
 
-	zap.L().Info("Project Group: " + resource.Id)
+	zap.L().Info("Project Group: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, false, false, stateless, dependencies)
 }
 

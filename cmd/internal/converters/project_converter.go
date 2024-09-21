@@ -109,7 +109,7 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceD
 		}
 
 		c.ErrGroup.Go(func() error {
-			zap.L().Info("Project: " + resource.Id)
+			zap.L().Info("Project: " + resource.Id + " " + resource.Name)
 			return c.toHcl(resource, false, false, stateless, dependencies)
 		})
 
@@ -191,7 +191,7 @@ func (c *ProjectConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
-	zap.L().Info("Project: " + resource.Id)
+	zap.L().Info("Project: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, false, true, false, dependencies)
 }
 

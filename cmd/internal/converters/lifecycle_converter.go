@@ -67,7 +67,7 @@ func (c LifecycleConverter) allToHcl(stateless bool, dependencies *data.Resource
 			continue
 		}
 
-		zap.L().Info("Lifecycle: " + resource.Id)
+		zap.L().Info("Lifecycle: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
@@ -107,7 +107,7 @@ func (c LifecycleConverter) toHclById(id string, stateless bool, dependencies *d
 		return nil
 	}
 
-	zap.L().Info("Lifecycle: " + resource.Id)
+	zap.L().Info("Lifecycle: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, false, stateless, dependencies)
 
 }

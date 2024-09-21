@@ -71,7 +71,7 @@ func (c CertificateConverter) allToHcl(stateless bool, dependencies *data.Resour
 			continue
 		}
 
-		zap.L().Info("Certificate: " + resource.Id)
+		zap.L().Info("Certificate: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -110,7 +110,7 @@ func (c CertificateConverter) toHclById(id string, stateless bool, dependencies 
 		return nil
 	}
 
-	zap.L().Info("Certificate: " + resource.Id)
+	zap.L().Info("Certificate: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

@@ -79,7 +79,7 @@ func (c ListeningTargetConverter) allToHcl(stateless bool, dependencies *data.Re
 			continue
 		}
 
-		zap.L().Info("Listening Target: " + resource.Id)
+		zap.L().Info("Listening Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -146,7 +146,7 @@ func (c ListeningTargetConverter) toHclById(id string, stateless bool, dependenc
 		return nil
 	}
 
-	zap.L().Info("Listening Target: " + resource.Id)
+	zap.L().Info("Listening Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

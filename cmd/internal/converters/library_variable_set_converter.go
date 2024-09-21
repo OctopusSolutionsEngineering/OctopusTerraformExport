@@ -71,7 +71,7 @@ func (c *LibraryVariableSetConverter) allToHcl(stateless bool, dependencies *dat
 			continue
 		}
 
-		zap.L().Info("Library Variable Set: " + resource.Id)
+		zap.L().Info("Library Variable Set: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -106,7 +106,7 @@ func (c *LibraryVariableSetConverter) toHclById(id string, stateless bool, depen
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.LibraryVariableSet: %w", err)
 	}
 
-	zap.L().Info("Library Variable Set: " + resource.Id)
+	zap.L().Info("Library Variable Set: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

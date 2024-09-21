@@ -81,7 +81,7 @@ func (c KubernetesTargetConverter) allToHcl(stateless bool, dependencies *data.R
 			continue
 		}
 
-		zap.L().Info("Kubernetes Target: " + resource.Id)
+		zap.L().Info("Kubernetes Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -148,7 +148,7 @@ func (c KubernetesTargetConverter) toHclById(id string, stateless bool, dependen
 		return nil
 	}
 
-	zap.L().Info("Kubernetes Target: " + resource.Id)
+	zap.L().Info("Kubernetes Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

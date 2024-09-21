@@ -66,7 +66,7 @@ func (c WorkerPoolConverter) allToHcl(stateless bool, dependencies *data.Resourc
 			continue
 		}
 
-		zap.L().Info("Worker Pool: " + resource.Id)
+		zap.L().Info("Worker Pool: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
@@ -105,7 +105,7 @@ func (c WorkerPoolConverter) toHclById(id string, stateless bool, dependencies *
 		return nil
 	}
 
-	zap.L().Info("Worker Pool: " + resource.Id)
+	zap.L().Info("Worker Pool: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, false, stateless, dependencies)
 }
 

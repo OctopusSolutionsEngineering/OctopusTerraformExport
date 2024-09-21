@@ -80,7 +80,7 @@ func (c OfflineDropTargetConverter) allToHcl(stateless bool, dependencies *data.
 			continue
 		}
 
-		zap.L().Info("Offline Drop Target: " + resource.Id)
+		zap.L().Info("Offline Drop Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -147,7 +147,7 @@ func (c OfflineDropTargetConverter) toHclById(id string, stateless bool, depende
 		return nil
 	}
 
-	zap.L().Info("Offline Drop Target: " + resource.Id)
+	zap.L().Info("Offline Drop Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

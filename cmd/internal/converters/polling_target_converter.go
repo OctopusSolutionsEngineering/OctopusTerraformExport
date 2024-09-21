@@ -79,7 +79,7 @@ func (c PollingTargetConverter) allToHcl(stateless bool, dependencies *data.Reso
 			continue
 		}
 
-		zap.L().Info("Polling Target: " + resource.Id)
+		zap.L().Info("Polling Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -146,7 +146,7 @@ func (c PollingTargetConverter) toHclById(id string, stateless bool, dependencie
 		return nil
 	}
 
-	zap.L().Info("Polling Target: " + resource.Id)
+	zap.L().Info("Polling Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

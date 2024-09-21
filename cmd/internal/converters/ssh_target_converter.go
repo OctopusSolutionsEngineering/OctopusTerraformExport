@@ -80,7 +80,7 @@ func (c SshTargetConverter) allToHcl(stateless bool, dependencies *data.Resource
 			continue
 		}
 
-		zap.L().Info("SSH Target: " + resource.Id)
+		zap.L().Info("SSH Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -151,7 +151,7 @@ func (c SshTargetConverter) toHclById(id string, stateless bool, dependencies *d
 		return nil
 	}
 
-	zap.L().Info("SSH Target: " + resource.Id)
+	zap.L().Info("SSH Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

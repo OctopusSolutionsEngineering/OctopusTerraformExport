@@ -79,7 +79,7 @@ func (c CloudRegionTargetConverter) allToHcl(stateless bool, dependencies *data.
 			continue
 		}
 
-		zap.L().Info("Cloud Target: " + resource.Id)
+		zap.L().Info("Cloud Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -146,7 +146,7 @@ func (c CloudRegionTargetConverter) toHclById(id string, stateless bool, depende
 		return nil
 	}
 
-	zap.L().Info("Cloud Target: " + resource.Id)
+	zap.L().Info("Cloud Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

@@ -141,7 +141,7 @@ func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceD
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.StepTemplate: %w", err)
 	}
 
-	zap.L().Info("Step Template: " + resource.Id)
+	zap.L().Info("Step Template: " + resource.Id + " " + resource.Name)
 
 	var communityStepTemplate *octopus.CommunityStepTemplate = nil
 	if resource.CommunityActionTemplateId != nil {
@@ -180,7 +180,7 @@ func (c StepTemplateConverter) allToHcl(stateless bool, dependencies *data.Resou
 
 		resource := resourceWrapper.Res
 
-		zap.L().Info("Step Template: " + resource.Id)
+		zap.L().Info("Step Template: " + resource.Id + " " + resource.Name)
 
 		var communityStepTemplate *octopus.CommunityStepTemplate = nil
 		if resource.CommunityActionTemplateId != nil {

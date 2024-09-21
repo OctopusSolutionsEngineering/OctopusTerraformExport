@@ -68,7 +68,7 @@ func (c MachinePolicyConverter) allToHcl(stateless bool, dependencies *data.Reso
 			continue
 		}
 
-		zap.L().Info("Machine Policy: " + resource.Id)
+		zap.L().Info("Machine Policy: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -107,7 +107,7 @@ func (c MachinePolicyConverter) toHclById(id string, stateless bool, dependencie
 		return nil
 	}
 
-	zap.L().Info("Machine Policy: " + resource.Id)
+	zap.L().Info("Machine Policy: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

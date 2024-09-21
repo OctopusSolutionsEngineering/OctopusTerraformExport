@@ -84,7 +84,7 @@ func (c AzureCloudServiceTargetConverter) allToHcl(stateless bool, dependencies 
 			continue
 		}
 
-		zap.L().Info("Azure Cloud Service Target: " + resource.Id)
+		zap.L().Info("Azure Cloud Service Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -147,7 +147,7 @@ func (c AzureCloudServiceTargetConverter) toHclById(id string, stateless bool, d
 		return nil
 	}
 
-	zap.L().Info("Azure Cloud Service Target: " + resource.Id)
+	zap.L().Info("Azure Cloud Service Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

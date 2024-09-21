@@ -70,7 +70,7 @@ func (c AccountConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 			continue
 		}
 
-		zap.L().Info("Account: " + resource.Id)
+		zap.L().Info("Account: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -105,7 +105,7 @@ func (c AccountConverter) toHclById(id string, stateless bool, dependencies *dat
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Account: %w", err)
 	}
 
-	zap.L().Info("Account: " + resource.Id)
+	zap.L().Info("Account: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

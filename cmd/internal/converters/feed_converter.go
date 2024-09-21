@@ -77,7 +77,7 @@ func (c FeedConverter) allToHcl(stateless bool, dependencies *data.ResourceDetai
 			continue
 		}
 
-		zap.L().Info("Feed: " + resource.Id)
+		zap.L().Info("Feed: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, false, stateless, dependencies)
 
 		if err != nil {
@@ -112,7 +112,7 @@ func (c FeedConverter) toHclById(id string, stateless bool, dependencies *data.R
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Feed: %w", err)
 	}
 
-	zap.L().Info("Feed: " + resource.Id)
+	zap.L().Info("Feed: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, false, stateless, dependencies)
 }
 

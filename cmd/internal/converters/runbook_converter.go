@@ -77,7 +77,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 		return errors.New("failed to find project with id " + resource.ProjectId)
 	}
 
-	zap.L().Info("Runbook: " + resource.Id)
+	zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, parentResource.Name, false, true, false, dependencies)
 }
 
@@ -102,7 +102,7 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 	}
 
 	for _, resource := range collection.Items {
-		zap.L().Info("Runbook: " + resource.Id)
+		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, projectName, recursive, false, stateless, dependencies)
 
 		if err != nil {
@@ -126,7 +126,7 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 	}
 
 	for _, resource := range collection.Items {
-		zap.L().Info("Runbook: " + resource.Id)
+		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, projectName, false, true, false, dependencies)
 
 		if err != nil {

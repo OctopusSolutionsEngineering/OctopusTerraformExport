@@ -80,7 +80,7 @@ func (c AzureWebAppTargetConverter) allToHcl(stateless bool, dependencies *data.
 			continue
 		}
 
-		zap.L().Info("Azure Web App Target: " + resource.Id)
+		zap.L().Info("Azure Web App Target: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -147,7 +147,7 @@ func (c AzureWebAppTargetConverter) toHclById(id string, stateless bool, depende
 		return nil
 	}
 
-	zap.L().Info("Azure Web App Target: " + resource.Id)
+	zap.L().Info("Azure Web App Target: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 

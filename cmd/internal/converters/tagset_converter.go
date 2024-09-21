@@ -65,7 +65,7 @@ func (c *TagSetConverter) allToHcl(stateless bool, dependencies *data.ResourceDe
 			continue
 		}
 
-		zap.L().Info("Tagset: " + resource.Id)
+		zap.L().Info("Tagset: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, stateless, dependencies)
 
 		if err != nil {
