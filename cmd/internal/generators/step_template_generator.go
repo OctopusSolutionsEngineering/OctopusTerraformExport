@@ -91,6 +91,11 @@ func (s StepTemplateGenerator) createTemplate(collection *data.ResourceDetailsCo
 			continue
 		}
 
+		// Do not export supporting files like bash or powershell scripts
+		if !strings.HasSuffix(resource.FileName, ".tf") {
+			continue
+		}
+
 		hcl, err := resource.ToHcl()
 
 		if err != nil {
