@@ -852,7 +852,10 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 		return false
 	}
 
-	c.toBashImport(octopusdeploy_nuget_feed_resource_type, resourceName, resource.Name, dependencies)
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeploy_nuget_feed_resource_type, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
