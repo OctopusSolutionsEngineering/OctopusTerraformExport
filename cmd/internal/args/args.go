@@ -503,7 +503,7 @@ func overrideArgs(flags *flag.FlagSet, configPath string, configFile string) err
 	// environment variables are prefixed, e.g. a flag like --number
 	// binds to an environment variable STING_NUMBER. This helps
 	// avoid conflicts.
-	v.SetEnvPrefix("octolint")
+	v.SetEnvPrefix("octoterra")
 
 	// Environment variables can't have dashes in them, so bind them to their equivalent
 	// keys with underscores, e.g. --favorite-color to STING_FAVORITE_COLOR
