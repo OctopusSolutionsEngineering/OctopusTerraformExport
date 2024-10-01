@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"github.com/samber/lo"
 	"regexp"
 	"strings"
 )
@@ -18,7 +19,8 @@ func LimitAttributeLength(length int, retainVariables bool, input string) string
 		if retainVariables {
 			matches := variableRe.FindAllString(input, -1)
 			if len(matches) > 0 {
-				sanitizedValue += " " + strings.Join(matches, " ")
+				// only paste the unique variables that appear in the rest of the script
+				sanitizedValue += " " + strings.Join(lo.Uniq(matches), " ")
 			}
 		}
 
