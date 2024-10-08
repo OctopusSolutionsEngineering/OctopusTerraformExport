@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
@@ -51,7 +52,14 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.WriteFile(file.Name(), []byte(respBytes), 0644)
+	configJson, err := sanitizeConfig(respBytes)
+
+	if err != nil {
+		handleError(err, w)
+		return
+	}
+
+	err = os.WriteFile(file.Name(), configJson, 0644)
 
 	if err != nil {
 		handleError(err, w)
@@ -104,6 +112,18 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte(sb.String())); err != nil {
 		zap.L().Error(err.Error())
 	}
+}
+
+// sanitizeConfig removes sensitive information from the config so it is not
+// persisted to the disk.
+func sanitizeConfig(rawConfig []byte) ([]byte, error) {
+	config := map[string]string{}
+	if err := json.Unmarshal(rawConfig, &config); err != nil {
+		return nil, err
+	}
+	delete(config, "apiKey")
+	delete(config, "url")
+	return json.Marshal(config)
 }
 
 func handleError(err error, w http.ResponseWriter) {
