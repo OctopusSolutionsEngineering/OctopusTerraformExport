@@ -15,6 +15,7 @@
 # vendor/
 
 octoterra
+octoterra-azure
 octoterra.exe
 
 **/.terraform.lock.hcl

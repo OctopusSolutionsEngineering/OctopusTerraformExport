@@ -115,6 +115,8 @@ func (c StepTemplateConverter) AllToStatelessHcl(dependencies *data.ResourceDeta
 	if !c.ExperimentalEnableStepTemplates {
 		return
 	}
+
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {

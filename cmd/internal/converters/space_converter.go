@@ -214,6 +214,9 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 	// Convert the azure web app targets
 	c.AzureWebAppTargetConverter.AllToStatelessHcl(dependencies)
 
+	// Convert step templates
+	c.StepTemplateConverter.AllToStatelessHcl(dependencies)
+
 	return c.ErrGroup.Wait()
 }
 

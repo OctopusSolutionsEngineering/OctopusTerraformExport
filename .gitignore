@@ -34,6 +34,7 @@ octoterra.yaml
 
 octoterra
 octoterra-cli
+octoterra-azure
 
 .idea/copilot
 
