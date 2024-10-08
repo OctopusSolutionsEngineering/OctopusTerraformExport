@@ -117,7 +117,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 // sanitizeConfig removes sensitive information from the config so it is not
 // persisted to the disk.
 func sanitizeConfig(rawConfig []byte) ([]byte, error) {
-	config := map[string]string{}
+	config := map[string]any{}
 	if err := json.Unmarshal(rawConfig, &config); err != nil {
 		return nil, err
 	}
