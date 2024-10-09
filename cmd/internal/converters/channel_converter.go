@@ -175,6 +175,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		// anything useful anyway.
 		// In the event that we have resources that depend on the default channel (like project triggers),
 		// they get this hard coded value. It isn't correct, but we need to provide something.
+		// That said, triggers will create, even if the project does not own Channel-1.
 		thisResource.Lookup = "Channels-1"
 
 		// TODO: This needs to be project specific to mean anything
