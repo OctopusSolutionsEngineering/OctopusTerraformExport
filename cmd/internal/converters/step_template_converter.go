@@ -65,8 +65,8 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
+	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "[0].result)[0]}"
+	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions[0])[0]}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
@@ -244,18 +244,21 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	thisResource.FileName = "space_population/" + stepTemplateName + ".tf"
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
-	thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Version}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ExternalID = externalId
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
+		thisResource.VersionLookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
+			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + "_versions)[0] " +
+			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Version}"
+		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
 			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Id}"
+		thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Version}"
 	}
 
 	thisResource.ToHcl = func() (string, error) {
@@ -360,7 +363,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		if stateless {
 			c.writeData(file, template, stepTemplateName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ") != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -379,11 +382,15 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	return nil
 }
 
-// writeData appends the data block for stateless modules
+// writeData appends the data blocks for stateless modules
 func (c StepTemplateConverter) writeData(file *hclwrite.File, resource octopus.StepTemplate, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
+
+	terraformResourceVersions := c.buildDataVersions(resourceName+"_versions", resource)
+	blockVersions := gohcl.EncodeAsBlock(terraformResourceVersions, "data")
+	file.Body().AppendBlock(blockVersions)
 }
 
 func (c StepTemplateConverter) buildData(resourceName string, resource octopus.StepTemplate) terraform.TerraformExternalData {
