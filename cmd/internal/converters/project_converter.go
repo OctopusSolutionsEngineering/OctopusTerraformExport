@@ -1052,7 +1052,11 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 	}
 
 	// Export the triggers
-	err = c.ProjectTriggerConverter.ToHclByProjectIdAndName(project.Id, project.Name, recursive, lookup, dependencies)
+	if stateless {
+		err = c.ProjectTriggerConverter.ToHclStatelessByProjectIdAndName(project.Id, project.Name, recursive, lookup, dependencies)
+	} else {
+		err = c.ProjectTriggerConverter.ToHclByProjectIdAndName(project.Id, project.Name, recursive, lookup, dependencies)
+	}
 
 	if err != nil {
 		return err

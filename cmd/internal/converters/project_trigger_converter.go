@@ -33,6 +33,14 @@ type ProjectTriggerConverter struct {
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectIdAndName(projectId, projectName, recursive, lookup, false, dependencies)
+}
+
+func (c ProjectTriggerConverter) ToHclStatelessByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByProjectIdAndName(projectId, projectName, recursive, lookup, true, dependencies)
+}
+
+func (c ProjectTriggerConverter) toHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
 
@@ -42,7 +50,7 @@ func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, proje
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Project Trigger: " + resource.Id + " " + resource.Name)
-		err = c.toHcl(resource, recursive, lookup, false, projectId, projectName, dependencies)
+		err = c.toHcl(resource, recursive, lookup, stateless, projectId, projectName, dependencies)
 		if err != nil {
 			return err
 		}
