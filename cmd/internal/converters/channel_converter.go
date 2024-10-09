@@ -159,13 +159,25 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = channel.Name
 	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
+	projectResourceName := "project_" + sanitizer.SanitizeName(project.Name)
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = channel.Id
 	thisResource.ResourceType = c.GetResourceType()
 
 	if channel.Name == "Default" && !c.IncludeDefaultChannel {
-		// TODO: Many channels are called default! But there is no way to look up a channel based on its project.
-		thisResource.Lookup = "${data." + octopusdeployChannelDataType + "." + resourceName + ".channels[0].id}"
+		thisResource.Dependency = "${" + octopusdeployProjectResourceType + "." + projectResourceName + "}"
+
+		// TODO: this is a hack.
+		// The situation here is that we need to expose the default channel to new resources. However,
+		// the project may not be created yet. What we really need is a way to depend on the default channel
+		// of a project resource, but this is not exposed. Even if the channel data lookup was project
+		// specific, data blocks are queried before resources are created, so it wouldn't return
+		// anything useful anyway.
+		// In the event that we have resources that depend on the default channel (like project triggers),
+		// they get this hard coded value. It isn't correct, but we need to provide something.
+		thisResource.Lookup = "Channels-1"
+
+		// TODO: This needs to be project specific to mean anything
 		thisResource.ToHcl = func() (string, error) {
 			data := terraform.TerraformChannelData{
 				Name:        resourceName,
@@ -184,16 +196,16 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			return string(file.Bytes()), nil
 		}
 	} else {
+		thisResource.Dependency = "${" + octopusdeployChannelResourceType + "." + resourceName + "}"
 
 		if stateless {
 			// TODO: because we can not retrieve a project specific channel from a data block, there is no good way
 			// to construct a lookup here if the project exists. That said, if the project exists, no other resource
 			// that might look up a channel (like project variables) will be created either, so nothing will ever use
 			// the lookup. So we just use an empty string for the lookup.
-			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + resourceName + ".projects) != 0 " +
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
 				"? null " +
 				": " + octopusdeployChannelResourceType + "." + resourceName + "[0].id}"
-			thisResource.Dependency = "${" + octopusdeployChannelResourceType + "." + resourceName + "}"
 		} else {
 			thisResource.Lookup = "${" + octopusdeployChannelResourceType + "." + resourceName + ".id}"
 		}
