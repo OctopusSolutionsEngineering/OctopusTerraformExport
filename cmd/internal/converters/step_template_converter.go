@@ -250,7 +250,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
+		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
 			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
@@ -360,7 +360,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		if stateless {
 			c.writeData(file, template, stepTemplateName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeploySshConnectionDeploymentTargetDataType + "." + stepTemplateName + ".deployment_targets) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ") != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
