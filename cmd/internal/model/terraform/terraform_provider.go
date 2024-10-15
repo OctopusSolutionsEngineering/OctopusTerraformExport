@@ -53,7 +53,7 @@ func (c TerraformConfig) CreateTerraformConfig(backend string, version string) T
 			},
 			ExternalProvider: ProviderDefinition{
 				Source:  "hashicorp/external",
-				Version: "2.3.3",
+				Version: "2.3.4",
 			},
 		},
 		RequiredVersion: strutil.StrPointer(">= 1.6.0"),
