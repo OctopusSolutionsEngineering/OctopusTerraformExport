@@ -279,7 +279,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			environmentVars["FEED_"+v2.Id] = v2.Lookup
 		}
 
-		stepTemplateBody := "Get-Content -Raw -Path ` + stepTemplateName + `.json"
+		stepTemplateBody := "Get-Content -Raw -Path " + stepTemplateName + ".json"
 
 		if stateless {
 			stepTemplateJson, err := json.Marshal(template)
