@@ -317,5 +317,17 @@ func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool,
 		return err
 	}
 
+	// Export step templates
+	err = c.OctopusActionProcessor.ExportStepTemplates(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export git credentials
+	err = c.OctopusActionProcessor.ExportGitCredentials(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
