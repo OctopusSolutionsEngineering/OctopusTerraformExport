@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -65,6 +66,10 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
+	/*
+		The result attribute of a data source is a map of key-value pairs. The key is the step template ID, and the value
+		is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
+	*/
 	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "[0].result)[0]}"
 	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions[0])[0]}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
@@ -274,6 +279,18 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			environmentVars["FEED_"+v2.Id] = v2.Lookup
 		}
 
+		stepTemplateBody := "Get-Content -Raw -Path " + stepTemplateName + ".json"
+
+		if stateless {
+			stepTemplateJson, err := json.Marshal(template)
+			if err != nil {
+				return "", err
+			}
+
+			stepTemplateJsonEncoded := base64.StdEncoding.EncodeToString(stepTemplateJson)
+			stepTemplateBody = "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"" + stepTemplateJsonEncoded + "\"))"
+		}
+
 		terraformResource := terraform.TerraformShellScript{
 			Type: octopusdeployStepTemplateResourceType,
 			Name: stepTemplateName,
@@ -295,7 +312,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					}`)),
 				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create step template')
 					$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-					$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+					$body = ` + stepTemplateBody + `
 					$parsedTemplate = $body | ConvertFrom-Json -Depth 100
 	
 					$response = $null
@@ -330,7 +347,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						Write-Host "{}"
 					} else {
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$body = Get-Content -Raw -Path ` + stepTemplateName + `.json
+						$body = ` + stepTemplateBody + `
 
 						# Replace feed IDs with lookup values passed in via env vars
 						gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
@@ -363,7 +380,11 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		if stateless {
 			c.writeData(file, template, stepTemplateName)
-			terraformResource.Count = strutil.StrPointer("${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 ? 0 : 1}")
+			/*
+				When the step template is stateless, the resource is created if the data source does not return any results.
+				We measure the presence of results by the length of the keys of the result attribute of the data source.
+			*/
+			terraformResource.Count = strutil.StrPointer("${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
