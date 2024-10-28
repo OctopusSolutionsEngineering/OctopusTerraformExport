@@ -71,7 +71,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 		is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
 	*/
 	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions)[0]}"
+	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
