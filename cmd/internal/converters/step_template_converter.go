@@ -70,7 +70,7 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 		The result attribute of a data source is a map of key-value pairs. The key is the step template ID, and the value
 		is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
 	*/
-	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + "[0].result)[0]}"
+	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
 	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions)[0]}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
