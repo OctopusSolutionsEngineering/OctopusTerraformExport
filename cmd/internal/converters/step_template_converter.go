@@ -71,7 +71,11 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 		is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
 	*/
 	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions)[0]}"
+	/*
+		The result attribute of the versions data source is a map of key-value pairs. The key is the step template ID, and the value
+		is the step template version. So the values() is used to get the values, and the only value is the step template version.
+	*/
+	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
@@ -255,10 +259,10 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 	if stateless {
 		thisResource.VersionLookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
-			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + "_versions)[0] " +
+			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + "_versions.result)[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Version}"
 		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
-			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")[0] " +
+			"? keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
