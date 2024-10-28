@@ -67,8 +67,51 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
 	/*
-		The result attribute of a data source is a map of key-value pairs. The key is the step template ID, and the value
-		is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
+			The result attribute of a data source is a map of key-value pairs. The key is the step template ID, and the value
+			is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
+
+			The output JSON looks like this:
+
+			"steptemplate_add_cluster_as_deployment_target": {
+		        "sensitive": true,
+		        "type": [
+		          "object",
+		          {
+		            "id": "string",
+		            "program": [
+		              "list",
+		              "string"
+		            ],
+		            "query": [
+		              "map",
+		              "string"
+		            ],
+		            "result": [
+		              "map",
+		              "string"
+		            ],
+		            "working_dir": "string"
+		          }
+		        ],
+		        "value": {
+		          "id": "-",
+		          "program": [
+		            "pwsh",
+		            "-Command",
+		            "\n$query = [Console]::In.ReadLine() | ConvertFrom-JSON\n$headers = @{ \"X-Octopus-ApiKey\" = $query.apikey }\n$response = Invoke-WebRequest -Uri \"$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000\" -Method GET -Headers $headers\n$keyValueResponse = @{}\n$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null\n$results = $keyValueResponse | ConvertTo-JSON -Depth 100\nWrite-Host $results"
+		          ],
+		          "query": {
+		            "apikey": "API-xxx",
+		            "name": "Add cluster as deployment target",
+		            "server": "https://mattc.octopus.app",
+		            "spaceid": "Spaces-282"
+		          },
+		          "result": {
+		            "ActionTemplates-862": "Add cluster as deployment target"
+		          },
+		          "working_dir": null
+		        }
+			}
 	*/
 	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
 	/*
