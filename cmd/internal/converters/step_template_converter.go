@@ -301,10 +301,13 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		thisResource.VersionLookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
+		/*
+			If the length of the result attribute is zero, we did not find an existing step template.
+		*/
+		thisResource.VersionLookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
 			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + "_versions.result)[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Version}"
-		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ")) != 0 " +
+		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
 			"? keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)[0] " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
