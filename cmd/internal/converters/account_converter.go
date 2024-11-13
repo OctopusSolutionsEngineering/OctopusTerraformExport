@@ -315,6 +315,7 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = account.Id
 	thisResource.Name = account.Name
+	thisResource.Source = &account
 	thisResource.ResourceType = c.GetResourceType()
 
 	if account.AccountType == "AmazonWebServicesAccount" {

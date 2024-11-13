@@ -1,6 +1,7 @@
 package data
 
 import (
+	comparable2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/comparable"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 	"sync"
@@ -55,6 +56,8 @@ type ResourceDetails struct {
 	ToHcl ToHcl
 	// A collection of any parameters that relate to the resource. These are used when building up a step template.
 	Parameters []ResourceParameter
+	// A reference to the source resource
+	Source comparable2.OctopusResource
 }
 
 // The DummyVariableReference struct defines the details of a variable that had a dummy value injected into it.
