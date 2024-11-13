@@ -177,6 +177,7 @@ func (c AzureServiceFabricTargetConverter) ToHclLookupById(id string, dependenci
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + octopusdeployAzureServiceFabricClusterDeploymentDataType + "." + resourceName + ".deployment_targets[0].id}"
+	thisResource.Source = &resource
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()

@@ -195,6 +195,7 @@ func (c AzureCloudServiceTargetConverter) ToHclLookupById(id string, dependencie
 	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${data." + azureCloudServiceDeploymentDataType + "." + resourceName + ".deployment_targets[0].id}"
+	thisResource.Source = &resource
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()
