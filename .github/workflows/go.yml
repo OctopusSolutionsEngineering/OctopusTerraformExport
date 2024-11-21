@@ -251,6 +251,25 @@ jobs:
           zip -r octoterra_linux_amd64_azure.zip . -x local.settings.json
           cp octoterra_linux_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
         working-directory: functions
+      # Create azure zip for macos (amd64+arm64)
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_macos_amd64_azure cmd/azure/octoterra.go
+        env:
+          GOOS: darwin
+          GOARCH: amd64
+          CGO_ENABLED: 0     
+      - run: |
+          zip -r octoterra_macos_amd64_azure.zip . -x local.settings.json
+          cp octoterra_macos_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+        working-directory: functions
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_macos_arm64_azure cmd/azure/octoterra.go
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+          CGO_ENABLED: 0     
+      - run: |
+          zip -r octoterra_macos_arm64_azure.zip . -x local.settings.json
+          cp octoterra_macos_arm64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+        working-directory: functions  
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
           GOOS: windows
@@ -283,6 +302,8 @@ jobs:
             octoterra_macos_amd64
             octoterra_macos_arm64
             functions/octoterra_linux_amd64_azure.zip
+            functions/octoterra_macos_amd64_azure.zip
+            functions/octoterra_macos_arm64_azure.zip
       - name: Push packages to Octopus Deploy
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         uses: OctopusDeploy/push-package-action@v3
