@@ -259,7 +259,6 @@ jobs:
           CGO_ENABLED: 0     
       - run: |
           zip -r octoterra_macos_amd64_azure.zip . -x local.settings.json -x octoterra_linux_amd64_azure -x octoterra_linux_amd64_azure.zip
-          cp octoterra_macos_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
         working-directory: functions
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_macos_arm64_azure cmd/azure/octoterra.go
         env:
@@ -268,7 +267,6 @@ jobs:
           CGO_ENABLED: 0     
       - run: |
           zip -r octoterra_macos_arm64_azure.zip . -x local.settings.json -x octoterra_linux_amd64_azure -x octoterra_linux_amd64_azure.zip -x octoterra_macos_amd64_azure -x octoterra_macos_amd64_azure.zip
-          cp octoterra_macos_arm64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
         working-directory: functions  
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
