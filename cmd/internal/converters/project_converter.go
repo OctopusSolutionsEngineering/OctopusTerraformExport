@@ -796,7 +796,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 		} else {
 			collection = append(collection, terraform.TerraformTemplate{
 				Name:     v.Name,
-				Label:    v.Label,
+				Label:    strutil.NilIfEmptyPointer(v.Label),
 				HelpText: v.HelpText,
 				// The Octopus API treats an empty string as a null value, so we need to handle that here. This fixes
 				// the error:
