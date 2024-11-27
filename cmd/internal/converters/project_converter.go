@@ -798,7 +798,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 				Name:            v.Name,
 				Label:           v.Label,
 				HelpText:        v.HelpText,
-				DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
+				DefaultValue:    strutil.NilIfEmptyPointer(strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString())),
 				DisplaySettings: v.DisplaySettings,
 			})
 		}
