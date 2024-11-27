@@ -795,9 +795,12 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			})
 		} else {
 			collection = append(collection, terraform.TerraformTemplate{
-				Name:            v.Name,
-				Label:           v.Label,
-				HelpText:        v.HelpText,
+				Name:     v.Name,
+				Label:    v.Label,
+				HelpText: v.HelpText,
+				// The Octopus API treats an empty string as a null value, so we need to handle that here. This fixes
+				// the error:
+				// "produced an unexpected new value: .template[0].default_value: was cty.StringVal(""), but now null
 				DefaultValue:    strutil.NilIfEmptyPointer(strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString())),
 				DisplaySettings: v.DisplaySettings,
 			})
