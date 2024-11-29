@@ -333,5 +333,11 @@ func (c *RunbookProcessConverter) exportDependencies(recursive bool, lookup bool
 		return err
 	}
 
+	// Export projects, typically referenced in a "Deploy a release" step
+	err = c.OctopusActionProcessor.ExportProjects(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

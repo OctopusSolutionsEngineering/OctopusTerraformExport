@@ -6255,6 +6255,67 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				return err
 			}
 
+			err = func() error {
+				// Make sure the "deploy a release" step found a valid project
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+				err = octopusClient.GetAllResources("Runbooks", &runbookCollection)
+
+				if err != nil {
+					return err
+				}
+
+				runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+					return item.Name == "MyRunbook3"
+				})
+
+				if len(runbook) != 1 {
+					return errors.New("expected to find a runbook called MyRunbook3")
+				}
+
+				runbookProcess := octopus.RunbookProcess{}
+				_, err = octopusClient.GetSpaceResourceById(
+					"RunbookProcesses",
+					strutil.EmptyIfNil(runbook[0].RunbookProcessId),
+					&runbookProcess)
+
+				if err != nil {
+					return err
+				}
+
+				deployReleaseStep := lo.Filter(runbookProcess.Steps, func(item octopus.Step, index int) bool {
+					return strutil.EmptyIfNil(item.Actions[0].ActionType) == "Octopus.DeployRelease"
+				})
+
+				if len(deployReleaseStep) != 1 {
+					return errors.New("expected to find a step of type Octopus.DeployRelease")
+				}
+
+				lookupProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Lookup project"
+				})
+
+				if len(lookupProject) != 1 {
+					return errors.New("expected to find a project called \"Lookup project\"")
+				}
+
+				if deployReleaseStep[0].Actions[0].Properties["Octopus.Action.DeployRelease.ProjectId"] != lookupProject[0].Id {
+					return errors.New("Action should have project set to " + lookupProject[0].Id + " (was" + deployReleaseStep[0].Actions[0].Properties["Octopus.Action.DeployRelease.ProjectId"].(string) + " )")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
 			return nil
 		})
 }
@@ -6301,7 +6362,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				})
 
 				if len(testProject) != 1 {
-					return errors.New("The project must be called \"Test 2\"")
+					return errors.New("the project must be called \"Test 2\"")
 				}
 
 				workerPoolCollection := octopus.GeneralCollection[octopus.WorkerPool]{}
@@ -6316,7 +6377,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				})
 
 				if len(dockerWorkerPool) != 1 {
-					return errors.New("Should have created a worker pool called \"Docker\"")
+					return errors.New("should have created a worker pool called \"Docker\"")
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
@@ -6329,7 +6390,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				}
 
 				if !found {
-					return errors.New("Expected to find a deployment process")
+					return errors.New("expected to find a deployment process")
 				}
 
 				if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != dockerWorkerPool[0].Id {
