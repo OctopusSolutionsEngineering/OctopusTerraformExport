@@ -31,7 +31,7 @@ type ProjectConverter struct {
 	GitCredentialsConverter     ConverterAndLookupWithStatelessById
 	LibraryVariableSetConverter ConverterAndLookupWithStatelessById
 	ProjectGroupConverter       ConverterAndLookupWithStatelessById
-	DeploymentProcessConverter  ConverterAndLookupByIdAndNameOrBranch
+	DeploymentProcessConverter  ConverterAndLookupByIdAndNameOrBranchWithProjects
 	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterAndLookupByProjectIdAndName

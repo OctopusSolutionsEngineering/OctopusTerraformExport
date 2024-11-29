@@ -21,7 +21,7 @@ import (
 
 type DeploymentProcessConverter struct {
 	Client                          client.OctopusClient
-	OctopusActionProcessor          OctopusActionProcessor
+	OctopusActionProcessor          *OctopusActionProcessor
 	IgnoreProjectChanges            bool
 	WorkerPoolProcessor             OctopusWorkerPoolProcessor
 	ExcludeTenantTags               args.StringSliceArgs
@@ -39,6 +39,10 @@ type DeploymentProcessConverter struct {
 	DummySecretGenerator            dummy.DummySecretGenerator
 	DummySecretVariableValues       bool
 	IgnoreCacErrors                 bool
+}
+
+func (c DeploymentProcessConverter) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
+	c.OctopusActionProcessor = actionProcessor
 }
 
 func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -418,6 +422,12 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 
 	// Export git credentials
 	err = c.OctopusActionProcessor.ExportGitCredentials(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export git credentials
+	err = c.OctopusActionProcessor.ExportProjects(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
