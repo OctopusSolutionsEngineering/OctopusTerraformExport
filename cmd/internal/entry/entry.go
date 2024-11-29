@@ -936,6 +936,10 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ProjectExporter:                 projectConverter,
 	}
 
+	// Projects and runbooks have circular references to other projects. For example, a project can have
+	// a "Deploy a release" step, which references another project.
+	// The ProjectExporter field on the OctopusActionProcessor is set to the same instance of the project converter
+	// that references the OctopusActionProcessor.
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
@@ -1976,8 +1980,10 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ProjectExporter:                 &projectConverter,
 	}
 
-	// Projects and runbook have circular references to other projects. For example, a project can have
+	// Projects and runbooks have circular references to other projects. For example, a project can have
 	// a "Deploy a release" step, which references another project.
+	// The ProjectExporter field on the OctopusActionProcessor is set to the same instance of the project converter
+	// that references the OctopusActionProcessor.
 	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
