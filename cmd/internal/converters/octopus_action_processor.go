@@ -425,16 +425,16 @@ func (c OctopusActionProcessor) ExportProjects(recursive bool, lookup bool, stat
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			for _, prop := range action.Properties {
-				for _, account := range regexes.ProjectsRegex.FindAllString(fmt.Sprint(prop), -1) {
+				for _, project := range regexes.ProjectsRegex.FindAllString(fmt.Sprint(prop), -1) {
 					var err error
 					if recursive {
 						if stateless {
-							err = c.ProjectExporter.ToHclStatelessById(account, dependencies)
+							err = c.ProjectExporter.ToHclStatelessById(project, dependencies)
 						} else {
-							err = c.ProjectExporter.ToHclById(account, dependencies)
+							err = c.ProjectExporter.ToHclById(project, dependencies)
 						}
 					} else if lookup {
-						err = c.ProjectExporter.ToHclLookupById(account, dependencies)
+						err = c.ProjectExporter.ToHclLookupById(project, dependencies)
 					}
 
 					if err != nil {

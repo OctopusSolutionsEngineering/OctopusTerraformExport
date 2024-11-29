@@ -136,15 +136,17 @@ func (c *ProjectConverter) ToHclLookupById(id string, dependencies *data.Resourc
 
 	thisResource := data.ResourceDetails{}
 
-	thisResource.FileName = "space_population/parent_project.tf"
+	projectName := "project_" + sanitizer.SanitizeName(project.Name)
+
+	thisResource.FileName = "space_population/project_" + projectName + ".tf"
 	thisResource.Id = project.Id
 	thisResource.Name = project.Name
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data." + octopusdeployProjectsDataType + ".parent_project.projects[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployProjectsDataType + "." + projectName + ".projects[0].id}"
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := c.buildData("parent_project", "${var.parent_project_name}")
+		terraformResource := c.buildData(projectName, "${var."+projectName+"_name}")
 		projectNameVariable := terraform.TerraformVariable{
-			Name:        "parent_project_name",
+			Name:        projectName + "_name",
 			Type:        "string",
 			Nullable:    false,
 			Sensitive:   false,

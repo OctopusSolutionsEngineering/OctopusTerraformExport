@@ -822,7 +822,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GitCredentialsConverter:     gitCredentialsConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
-		DeploymentProcessConverter: converters.DeploymentProcessConverter{
+		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
 			Client:                          &octopusClient,
 			OctopusActionProcessor:          nil,
 			IgnoreProjectChanges:            false,
@@ -1898,7 +1898,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		GitCredentialsConverter:     gitCredentialsConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
-		DeploymentProcessConverter: converters.DeploymentProcessConverter{
+		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
 			Client:                          &octopusClient,
 			OctopusActionProcessor:          nil,
 			IgnoreProjectChanges:            args.IgnoreProjectChanges,
