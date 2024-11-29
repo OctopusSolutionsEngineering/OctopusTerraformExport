@@ -102,6 +102,51 @@ resource "octopusdeploy_project" "project_1" {
   }
 }
 
+resource "octopusdeploy_deployment_process" "deployment_process_project_one" {
+  project_id = "${octopusdeploy_project.project_1.id}"
+
+  step {
+    condition           = "Success"
+    name                = "Deploy a Release"
+    package_requirement = "LetOctopusDecide"
+    start_trigger       = "StartAfterPrevious"
+
+    action {
+      action_type                        = "Octopus.DeployRelease"
+      name                               = "Deploy a Release"
+      condition                          = "Success"
+      run_on_server                      = true
+      is_disabled                        = false
+      can_be_used_for_project_versioning = true
+      is_required                        = false
+      worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
+      worker_pool_variable               = ""
+      properties                         = {
+        "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
+        "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
+      }
+      environments                       = []
+      excluded_environments              = []
+      channels                           = []
+      tenant_tags                        = []
+
+      primary_package {
+        package_id           = data.octopusdeploy_projects.other.projects[0].id
+        acquisition_location = "NotAcquired"
+        feed_id              = data.octopusdeploy_feeds.project_feed.feeds[0].id
+        properties           = {}
+      }
+
+      features = []
+    }
+
+    properties   = {}
+    target_roles = []
+  }
+
+  depends_on = []
+}
+
 resource "octopusdeploy_variable" "excluded_variable" {
   owner_id = octopusdeploy_project.project_1.id
   type     = "String"
