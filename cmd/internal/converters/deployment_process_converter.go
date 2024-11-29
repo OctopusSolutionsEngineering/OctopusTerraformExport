@@ -21,7 +21,7 @@ import (
 
 type DeploymentProcessConverter struct {
 	Client                          client.OctopusClient
-	OctopusActionProcessor          OctopusActionProcessor
+	OctopusActionProcessor          *OctopusActionProcessor
 	IgnoreProjectChanges            bool
 	WorkerPoolProcessor             OctopusWorkerPoolProcessor
 	ExcludeTenantTags               args.StringSliceArgs
@@ -41,15 +41,19 @@ type DeploymentProcessConverter struct {
 	IgnoreCacErrors                 bool
 }
 
-func (c DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
+	c.OctopusActionProcessor = actionProcessor
+}
+
+func (c *DeploymentProcessConverter) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclByIdAndBranch(parentId, branch, recursive, false, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclByIdAndBranch(parentId, branch, true, true, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
 	}
@@ -86,7 +90,7 @@ func (c DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch s
 	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
 	}
@@ -123,15 +127,15 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, br
 	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclByIdAndName(id, "", recursive, false, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclByIdAndName(id, "", true, true, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -164,7 +168,7 @@ func (c DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recurs
 	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -196,7 +200,7 @@ func (c DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, 
 	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
-func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, project octopus.Project, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, project octopus.Project, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := data.ResourceDetails{}
@@ -381,11 +385,11 @@ func (c DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, pr
 	return nil
 }
 
-func (c DeploymentProcessConverter) GetResourceType() string {
+func (c *DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
 	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
@@ -422,10 +426,16 @@ func (c DeploymentProcessConverter) exportDependencies(recursive bool, lookup bo
 		return err
 	}
 
+	// Export projects, typically referenced in a "Deploy a release" step
+	err = c.OctopusActionProcessor.ExportProjects(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (c DeploymentProcessConverter) writePackageIdVariable(file *hclwrite.File, defaultValue string, projectName string, stepName string, packageName string) string {
+func (c *DeploymentProcessConverter) writePackageIdVariable(file *hclwrite.File, defaultValue string, projectName string, stepName string, packageName string) string {
 	if c.ExcludeTerraformVariables {
 		return defaultValue
 	}

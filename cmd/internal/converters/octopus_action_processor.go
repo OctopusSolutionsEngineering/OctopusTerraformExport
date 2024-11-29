@@ -19,6 +19,7 @@ type OctopusActionProcessor struct {
 	WorkerPoolConverter             ConverterAndLookupWithStatelessById
 	EnvironmentConverter            ConverterAndLookupWithStatelessById
 	GitCredentialsConverter         ConverterAndLookupWithStatelessById
+	ProjectExporter                 ConverterAndLookupWithStatelessById
 	DetachProjectTemplates          bool
 	ExperimentalEnableStepTemplates bool
 	WorkerPoolProcessor             OctopusWorkerPoolProcessor
@@ -412,6 +413,33 @@ func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, 
 
 				if err != nil {
 					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c OctopusActionProcessor) ExportProjects(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+	for _, step := range steps {
+		for _, action := range step.Actions {
+			for _, prop := range action.Properties {
+				for _, project := range regexes.ProjectsRegex.FindAllString(fmt.Sprint(prop), -1) {
+					var err error
+					if recursive {
+						if stateless {
+							err = c.ProjectExporter.ToHclStatelessById(project, dependencies)
+						} else {
+							err = c.ProjectExporter.ToHclById(project, dependencies)
+						}
+					} else if lookup {
+						err = c.ProjectExporter.ToHclLookupById(project, dependencies)
+					}
+
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
