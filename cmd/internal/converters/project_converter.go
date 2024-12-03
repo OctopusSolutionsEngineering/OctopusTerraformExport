@@ -788,7 +788,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 
 			collection = append(collection, terraform.TerraformTemplate{
 				Name:     v.Name,
-				Label:    v.Label,
+				Label:    strutil.NilIfEmptyPointer(v.Label),
 				HelpText: v.HelpText,
 				// Is this a bug? This may need to have a field for sensitive values, but the provider does
 				// not expose that today.
