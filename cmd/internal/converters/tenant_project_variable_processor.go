@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -22,6 +23,8 @@ type TenantProjectVariableConverter struct {
 	ExcludeTenantVariables       args.StringSliceArgs
 	ExcludeTenantVariablesExcept args.StringSliceArgs
 	ExcludeTenantVariablesRegex  args.StringSliceArgs
+	DummySecretVariableValues    bool
+	DummySecretGenerator         dummy.DummySecretGenerator
 }
 
 func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless bool, tenantVariable octopus.TenantVariable, projectVariable octopus.ProjectVariable, environmentId string, value any, projectVariableIndex int, templateId string, dependencies *data.ResourceDetailsCollection) error {
@@ -54,15 +57,35 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
-		/*
-			Tenants can define secrets, in which case value is an object indicating the state of the
-			secret, but not the value. In this case we can only export an empty string.
-			TODO: Create a variable to override this value if needed.
-		*/
-		fixedValue := ""
-		if stringValue, ok := value.(string); ok {
-			fixedValue = stringValue
+		tenantProjectVariableValue := terraform.TerraformVariable{
+			Name:        variableName + "_value",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   false,
+			Description: "The value of the tenant project variable",
+			Default:     nil,
 		}
+
+		// Define a secret value with an optional dummy default
+		if _, ok := value.(map[string]any); ok {
+			if c.DummySecretVariableValues {
+				tenantProjectVariableValue.Default = c.DummySecretGenerator.GetDummySecret()
+			}
+			dependencies.AddDummy(data.DummyVariableReference{
+				VariableName: variableName + "_value",
+				ResourceName: tenantVariable.TenantName,
+				ResourceType: c.GetResourceType(),
+			})
+		}
+
+		// Define the default value
+		if stringValue, ok := value.(string); ok {
+			tenantProjectVariableValue.Default = strutil.StrPointer(stringValue)
+		}
+
+		variableBlock := gohcl.EncodeAsBlock(tenantProjectVariableValue, "variable")
+		hcl.WriteUnquotedAttribute(variableBlock, "type", "string")
+		file.Body().AppendBlock(variableBlock)
 
 		terraformResource := terraform.TerraformTenantProjectVariable{
 			Type:          octopusdeployTenantProjectVariableResourceType,
@@ -73,7 +96,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 			ProjectId:     dependencies.GetResource("Projects", projectVariable.ProjectId),
 			TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
 			TenantId:      dependencies.GetResource("Tenants", tenantVariable.TenantId),
-			Value:         strutil.EscapeDollarCurlyPointer(&fixedValue),
+			Value:         strutil.StrPointer("${var." + variableName + "_value}"),
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")

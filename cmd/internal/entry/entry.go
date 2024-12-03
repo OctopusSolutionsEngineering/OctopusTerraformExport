@@ -221,6 +221,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ExcludeTenantVariables:       args.ExcludeTenantVariables,
 		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		DummySecretVariableValues:    args.DummySecretVariableValues,
+		DummySecretGenerator:         dummySecretGenerator,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{
@@ -987,6 +989,8 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantVariables:       args.ExcludeTenantVariables,
 		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		DummySecretVariableValues:    args.DummySecretVariableValues,
+		DummySecretGenerator:         dummySecretGenerator,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{
@@ -1290,6 +1294,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantVariables:       args.ExcludeTenantVariables,
 		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		DummySecretVariableValues:    args.DummySecretVariableValues,
+		DummySecretGenerator:         dummySecretGenerator,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{
