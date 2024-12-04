@@ -80,7 +80,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 
 		// Define the default value
 		if stringValue, ok := value.(string); ok {
-			tenantProjectVariableValue.Default = strutil.StrPointer(stringValue)
+			tenantProjectVariableValue.Default = strutil.StrPointer(strutil.EscapeDollarCurly(stringValue))
 		}
 
 		variableBlock := gohcl.EncodeAsBlock(tenantProjectVariableValue, "variable")
