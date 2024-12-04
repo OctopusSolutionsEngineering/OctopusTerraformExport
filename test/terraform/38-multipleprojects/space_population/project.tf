@@ -40,7 +40,7 @@ resource "octopusdeploy_project" "project_1" {
   git_library_persistence_settings {
     git_credential_id  = "${octopusdeploy_git_credential.gitcredential_matt.id}"
     url                = "https://github.com/mcasperson/octogittest.git"
-    base_path          = ".octopus/integrationtest"
+    base_path          = ".octopus/integrationtest-${timestamp()}"
     default_branch     = "main"
     protected_branches = ["test"]
   }
