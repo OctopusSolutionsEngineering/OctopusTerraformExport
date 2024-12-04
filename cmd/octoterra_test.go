@@ -5960,7 +5960,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(projectCollection.Items) != 2 {
-					return errors.New("There must only be two projects")
+					return errors.New("there must only be two projects")
 				}
 
 				testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
@@ -5968,17 +5968,17 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(testProject) != 1 {
-					return errors.New("The project must be called \"Test\"")
+					return errors.New("the project must be called \"Test\"")
 				}
 
 				if len(testProject[0].IncludedLibraryVariableSetIds) != 1 {
-					return errors.New("The project must link to only 1 variable set (as the others were excluded)")
+					return errors.New("the project must link to only 1 variable set (as the others were excluded)")
 				}
 
 				// Verify that the variable set was imported
 
 				if testProject[0].VariableSetId == nil {
-					return errors.New("The project must have a variable set")
+					return errors.New("the project must have a variable set")
 				}
 
 				variableSet := octopus.VariableSet{}
@@ -5989,7 +5989,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(variableSet.Variables) != 6 {
-					return errors.New("The project must have 6 variables")
+					return errors.New("the project must have 6 variables")
 				}
 
 				if !lo.SomeBy(variableSet.Variables, func(item octopus.Variable) bool {
@@ -6007,7 +6007,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(feedVar) != 1 {
-					return errors.New("The project must have 1 variable called \"HelmFeed\"")
+					return errors.New("the project must have 1 variable called \"HelmFeed\"")
 				}
 
 				feed := octopus.Feed{}
@@ -6018,11 +6018,11 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if strutil.EmptyIfNil(feed.FeedType) != "Helm" {
-					return errors.New("The project must reference the helm feed as a variable")
+					return errors.New("the project must reference the helm feed as a variable")
 				}
 
 				if len(testProject[0].IncludedLibraryVariableSetIds) != 1 {
-					return errors.New("The project must link to only 1 variable set (as the others were excluded)")
+					return errors.New("the project must link to only 1 variable set (as the others were excluded)")
 				}
 
 				// Ensure a variable that referenced an account was correctly recreated
@@ -6031,7 +6031,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(accountVar) != 1 {
-					return errors.New("The project must have 1 variable called \"AwsAccount\"")
+					return errors.New("the project must have 1 variable called \"AwsAccount\"")
 				}
 
 				account := octopus.Account{}
@@ -6042,7 +6042,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if account.AccountType != "AmazonWebServicesAccount" {
-					return errors.New("The project must reference the aws account as a variable")
+					return errors.New("the project must reference the aws account as a variable")
 				}
 
 				// Ensure a variable that referenced wokrer pools was correctly recreated
@@ -6051,7 +6051,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(workerPoolVar) != 1 {
-					return errors.New("The project must have 1 variable called \"WorkerPool\"")
+					return errors.New("the project must have 1 variable called \"WorkerPool\"")
 				}
 
 				workerPool := octopus.WorkerPool{}
@@ -6062,7 +6062,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if workerPool.Name != "Default Worker Pool" {
-					return errors.New("The project must reference the default worker pool as a variable")
+					return errors.New("the project must reference the default worker pool as a variable")
 				}
 
 				// Ensure a variable that referenced certificates was correctly recreated
@@ -6071,7 +6071,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(certificateVar) != 1 {
-					return errors.New("The project must have 1 variable called \"Certificate\"")
+					return errors.New("the project must have 1 variable called \"Certificate\"")
 				}
 
 				certificate := octopus.Certificate{}
@@ -6082,7 +6082,31 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if certificate.Name != "Test" {
-					return errors.New("The project must reference the certificate called \"Test\"")
+					return errors.New("the project must reference the certificate called \"Test\"")
+				}
+
+				// Ensure the "deploy a release" step has updated the target project
+				deploymentProcess := octopus.DeploymentProcess{}
+				found, err := octopusClient.GetResource("Projects/"+testProject[0].Id+"/main/deploymentprocesses", &deploymentProcess)
+
+				if err != nil {
+					return err
+				}
+
+				if !found {
+					return errors.New("expected to find a deployment process")
+				}
+
+				lookupProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Lookup project"
+				})
+
+				if len(lookupProject) != 1 {
+					return errors.New("expected to find a project called \"Lookup project\"")
+				}
+
+				if deploymentProcess.Steps[0].Actions[0].Properties["Octopus.Action.DeployRelease.ProjectId"] != lookupProject[0].Id {
+					return errors.New("Action should have project set to " + lookupProject[0].Id + " (was" + deploymentProcess.Steps[0].Actions[0].Properties["Octopus.Action.DeployRelease.ProjectId"].(string) + " )")
 				}
 
 				return nil
@@ -6105,7 +6129,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(runbook) != 1 {
-					return errors.New("Should have created a runbook called \"MyRunbook3\"")
+					return errors.New("should have created a runbook called \"MyRunbook3\"")
 				}
 
 				runbookProcess := octopus.RunbookProcess{}
@@ -6116,7 +6140,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) != "#{HelmFeed}" {
-					return errors.New("Package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
+					return errors.New("package feed should have been \"#{HelmFeed}\" (was" + strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].Packages[0].FeedId) + " )")
 				}
 
 				return nil
@@ -6139,7 +6163,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				})
 
 				if len(project) != 1 {
-					return errors.New("Should have created a project called \"Lookup project\"")
+					return errors.New("should have created a project called \"Lookup project\"")
 				}
 
 				return nil
@@ -6166,7 +6190,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if !foundChannel {
-					return errors.New("The space must have a channel called \"Test 1\"")
+					return errors.New("the space must have a channel called \"Test 1\"")
 				}
 
 				return nil
@@ -6186,15 +6210,15 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test" })) != 1 {
-					return errors.New("The space must have a library variable set called \"Test\"")
+					return errors.New("the space must have a library variable set called \"Test\"")
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test2" })) != 1 {
-					return errors.New("The space must have a library variable set called \"Test2\"")
+					return errors.New("the space must have a library variable set called \"Test2\"")
 				}
 
 				if len(lo.Filter(collection.Items, func(item octopus.LibraryVariableSet, index int) bool { return item.Name == "Test3" })) != 1 {
-					return errors.New("The space must have a library variable set called \"Test3\"")
+					return errors.New("the space must have a library variable set called \"Test3\"")
 				}
 
 				return nil
@@ -6221,7 +6245,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if !foundTrigger {
-					return errors.New("The space must have a trigger called \"Test 1\"")
+					return errors.New("the space must have a trigger called \"Test 1\"")
 				}
 
 				return nil
@@ -6241,11 +6265,72 @@ func TestSingleProjectLookupExport(t *testing.T) {
 				}
 
 				if len(collection.Items) != 1 {
-					return errors.New("One runbook should have been exported")
+					return errors.New("one runbook should have been exported")
 				}
 
 				if collection.Items[0].Name != "MyRunbook3" {
-					return errors.New("The runbook should be called MyRunbook3")
+					return errors.New("the runbook should be called MyRunbook3")
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return err
+			}
+
+			err = func() error {
+				// Make sure the "deploy a release" step found a valid project
+				projectCollection := octopus.GeneralCollection[octopus.Project]{}
+				err := octopusClient.GetAllResources("Projects", &projectCollection)
+
+				if err != nil {
+					return err
+				}
+
+				runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+				err = octopusClient.GetAllResources("Runbooks", &runbookCollection)
+
+				if err != nil {
+					return err
+				}
+
+				runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+					return item.Name == "MyRunbook3"
+				})
+
+				if len(runbook) != 1 {
+					return errors.New("expected to find a runbook called MyRunbook3")
+				}
+
+				runbookProcess := octopus.RunbookProcess{}
+				_, err = octopusClient.GetSpaceResourceById(
+					"RunbookProcesses",
+					strutil.EmptyIfNil(runbook[0].RunbookProcessId),
+					&runbookProcess)
+
+				if err != nil {
+					return err
+				}
+
+				deployReleaseStep := lo.Filter(runbookProcess.Steps, func(item octopus.Step, index int) bool {
+					return strutil.EmptyIfNil(item.Actions[0].ActionType) == "Octopus.DeployRelease"
+				})
+
+				if len(deployReleaseStep) != 1 {
+					return errors.New("expected to find a step of type Octopus.DeployRelease")
+				}
+
+				lookupProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+					return item.Name == "Lookup project"
+				})
+
+				if len(lookupProject) != 1 {
+					return errors.New("expected to find a project called \"Lookup project\"")
+				}
+
+				if deployReleaseStep[0].Actions[0].Properties["Octopus.Action.DeployRelease.ProjectId"] != lookupProject[0].Id {
+					return errors.New("Action should have project set to " + lookupProject[0].Id + " (was" + deployReleaseStep[0].Actions[0].Properties["Octopus.Action.DeployRelease.ProjectId"].(string) + " )")
 				}
 
 				return nil
@@ -6301,7 +6386,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				})
 
 				if len(testProject) != 1 {
-					return errors.New("The project must be called \"Test 2\"")
+					return errors.New("the project must be called \"Test 2\"")
 				}
 
 				workerPoolCollection := octopus.GeneralCollection[octopus.WorkerPool]{}
@@ -6316,7 +6401,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				})
 
 				if len(dockerWorkerPool) != 1 {
-					return errors.New("Should have created a worker pool called \"Docker\"")
+					return errors.New("should have created a worker pool called \"Docker\"")
 				}
 
 				deploymentProcess := octopus.DeploymentProcess{}
@@ -6329,7 +6414,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 				}
 
 				if !found {
-					return errors.New("Expected to find a deployment process")
+					return errors.New("expected to find a deployment process")
 				}
 
 				if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != dockerWorkerPool[0].Id {

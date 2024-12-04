@@ -85,6 +85,10 @@ type ConverterLookupByIdWithBranch interface {
 	ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
 }
 
+type ActionProcessor interface {
+	SetActionProcessor(actionProcessor *OctopusActionProcessor)
+}
+
 // ConverterAndLookupByIdAndName converts an individual resource by ID to HCL and to a data lookup
 type ConverterAndLookupByIdAndName interface {
 	ConverterByIdWithName
@@ -96,6 +100,23 @@ type ConverterAndLookupByIdAndNameOrBranch interface {
 	ConverterByIdWithName
 	ConverterLookupByIdWithName
 	ConverterLookupByIdWithBranch
+}
+
+// ConverterAndLookupByIdAndNameWithProjects converts an individual resource by ID to HCL and to a data lookup
+// with references to projects
+type ConverterAndLookupByIdAndNameWithProjects interface {
+	ConverterByIdWithName
+	ConverterLookupByIdWithName
+	ActionProcessor
+}
+
+// ConverterAndLookupByIdAndNameOrBranchWithProjects converts an individual resource by ID or git branch to HCL and to a data lookup
+// with references to projects
+type ConverterAndLookupByIdAndNameOrBranchWithProjects interface {
+	ConverterByIdWithName
+	ConverterLookupByIdWithName
+	ConverterLookupByIdWithBranch
+	ActionProcessor
 }
 
 // ConverterByIdWithNameAndParent converts a resource by its ID, uses the supplied name, and has a reference to its parent

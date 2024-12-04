@@ -25,7 +25,7 @@ const octopusdeployRunbookResourceType = "octopusdeploy_runbook"
 
 type RunbookConverter struct {
 	Client                       client.OctopusClient
-	RunbookProcessConverter      ConverterAndLookupByIdAndName
+	RunbookProcessConverter      ConverterAndLookupByIdAndNameWithProjects
 	EnvironmentConverter         ConverterAndLookupWithStatelessById
 	ProjectConverter             ConverterAndLookupWithStatelessById
 	ExcludedRunbooks             args.StringSliceArgs

@@ -206,6 +206,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ExcludeTenantVariables:       nil,
 		ExcludeTenantVariablesExcept: nil,
 		ExcludeTenantVariablesRegex:  nil,
+		DummySecretVariableValues:    false,
+		DummySecretGenerator:         nil,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{

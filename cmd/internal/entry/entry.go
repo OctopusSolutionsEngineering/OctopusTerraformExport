@@ -221,6 +221,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ExcludeTenantVariables:       args.ExcludeTenantVariables,
 		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		DummySecretVariableValues:    args.DummySecretVariableValues,
+		DummySecretGenerator:         dummySecretGenerator,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{
@@ -782,19 +784,9 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 
 	runbookConverter := converters.RunbookConverter{
 		Client: &octopusClient,
-		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client: &octopusClient,
-			OctopusActionProcessor: converters.OctopusActionProcessor{
-				FeedConverter:                   feedConverter,
-				AccountConverter:                accountConverter,
-				WorkerPoolConverter:             workerPoolConverter,
-				EnvironmentConverter:            environmentConverter,
-				DetachProjectTemplates:          args.DetachProjectTemplates,
-				WorkerPoolProcessor:             workerPoolProcessor,
-				GitCredentialsConverter:         gitCredentialsConverter,
-				StepTemplateConverter:           stepTemplateConverter,
-				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			},
+		RunbookProcessConverter: &converters.RunbookProcessConverter{
+			Client:                          &octopusClient,
+			OctopusActionProcessor:          nil,
 			IgnoreProjectChanges:            false,
 			WorkerPoolProcessor:             workerPoolProcessor,
 			ExcludeTenantTags:               args.ExcludeTenantTags,
@@ -826,6 +818,76 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GenerateImportScripts:    args.GenerateImportScripts,
 	}
 
+	projectConverter := &converters.ProjectConverter{
+		Client:                      &octopusClient,
+		LifecycleConverter:          lifecycleConverter,
+		GitCredentialsConverter:     gitCredentialsConverter,
+		LibraryVariableSetConverter: &libraryVariableSetConverter,
+		ProjectGroupConverter:       projectGroupConverter,
+		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
+			Client:                          &octopusClient,
+			OctopusActionProcessor:          nil,
+			IgnoreProjectChanges:            false,
+			WorkerPoolProcessor:             workerPoolProcessor,
+			ExcludeTenantTags:               args.ExcludeTenantTags,
+			ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
+			Excluder:                        converters.DefaultExcluder{},
+			TagSetConverter:                 &tagsetConverter,
+			LimitAttributeLength:            args.LimitAttributeLength,
+			ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
+			ExcludeAllSteps:                 args.ExcludeAllSteps,
+			ExcludeSteps:                    args.ExcludeSteps,
+			ExcludeStepsRegex:               args.ExcludeStepsRegex,
+			ExcludeStepsExcept:              args.ExcludeStepsExcept,
+			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
+			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+			DummySecretGenerator:            dummySecretGenerator,
+			DummySecretVariableValues:       args.DummySecretVariableValues,
+			IgnoreCacErrors:                 args.IgnoreCacErrors,
+		},
+		TenantConverter: &tenantConverter,
+		ProjectTriggerConverter: converters.ProjectTriggerConverter{
+			Client:                &octopusClient,
+			LimitResourceCount:    args.LimitResourceCount,
+			GenerateImportScripts: args.GenerateImportScripts,
+			EnvironmentConverter:  environmentConverter,
+		},
+		VariableSetConverter:      &variableSetConverter,
+		ChannelConverter:          channelConverter,
+		RunbookConverter:          &runbookConverter,
+		IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
+		ExcludeCaCProjectSettings: args.ExcludeCaCProjectSettings,
+		ExcludeAllRunbooks:        args.ExcludeAllRunbooks,
+		IgnoreProjectChanges:      args.IgnoreProjectChanges,
+		IgnoreProjectGroupChanges: false,
+		IgnoreProjectNameChanges:  false,
+		ExcludeProjects:           args.ExcludeProjects,
+		ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
+		ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
+		ExcludeAllProjects:        args.ExcludeAllProjects,
+		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
+		Excluder:                  converters.DefaultExcluder{},
+		LookupOnlyMode:            false,
+		ErrGroup:                  &group,
+		ExcludeTerraformVariables: args.ExcludeTerraformVariables,
+		IncludeIds:                args.IncludeIds,
+		LimitResourceCount:        args.LimitResourceCount,
+		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		GenerateImportScripts:     args.GenerateImportScripts,
+		LookupProjectLinkTenants:  false,
+		TenantProjectConverter:    tenantProjectConverter,
+		EnvironmentConverter:      environmentConverter,
+		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
+		ExcludeTenantTags:         args.ExcludeTenantTags,
+		ExcludeTenants:            args.ExcludeTenants,
+		ExcludeTenantsRegex:       args.ExcludeTenantsRegex,
+		ExcludeTenantsWithTags:    args.ExcludeTenantsWithTags,
+		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
+		ExcludeAllTenants:         args.ExcludeAllTenants,
+		IgnoreCacErrors:           args.IgnoreCacErrors,
+	}
+
 	spaceConverter := converters.SpaceConverter{
 		Client:                      &octopusClient,
 		ExcludeSpaceCreation:        args.ExcludeSpaceCreation,
@@ -843,85 +905,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			IncludeIds:               args.IncludeIds,
 			ErrGroup:                 &group,
 		},
-		ProjectConverter: &converters.ProjectConverter{
-			Client:                      &octopusClient,
-			LifecycleConverter:          lifecycleConverter,
-			GitCredentialsConverter:     gitCredentialsConverter,
-			LibraryVariableSetConverter: &libraryVariableSetConverter,
-			ProjectGroupConverter:       projectGroupConverter,
-			DeploymentProcessConverter: converters.DeploymentProcessConverter{
-				Client: &octopusClient,
-				OctopusActionProcessor: converters.OctopusActionProcessor{
-					FeedConverter:                   feedConverter,
-					AccountConverter:                accountConverter,
-					WorkerPoolConverter:             workerPoolConverter,
-					EnvironmentConverter:            environmentConverter,
-					DetachProjectTemplates:          args.DetachProjectTemplates,
-					WorkerPoolProcessor:             workerPoolProcessor,
-					GitCredentialsConverter:         gitCredentialsConverter,
-					StepTemplateConverter:           stepTemplateConverter,
-					ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-				},
-				IgnoreProjectChanges:            false,
-				WorkerPoolProcessor:             workerPoolProcessor,
-				ExcludeTenantTags:               args.ExcludeTenantTags,
-				ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
-				Excluder:                        converters.DefaultExcluder{},
-				TagSetConverter:                 &tagsetConverter,
-				LimitAttributeLength:            args.LimitAttributeLength,
-				ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
-				ExcludeAllSteps:                 args.ExcludeAllSteps,
-				ExcludeSteps:                    args.ExcludeSteps,
-				ExcludeStepsRegex:               args.ExcludeStepsRegex,
-				ExcludeStepsExcept:              args.ExcludeStepsExcept,
-				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
-				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-				DummySecretGenerator:            dummySecretGenerator,
-				DummySecretVariableValues:       args.DummySecretVariableValues,
-				IgnoreCacErrors:                 args.IgnoreCacErrors,
-			},
-			TenantConverter: &tenantConverter,
-			ProjectTriggerConverter: converters.ProjectTriggerConverter{
-				Client:                &octopusClient,
-				LimitResourceCount:    args.LimitResourceCount,
-				GenerateImportScripts: args.GenerateImportScripts,
-				EnvironmentConverter:  environmentConverter,
-			},
-			VariableSetConverter:      &variableSetConverter,
-			ChannelConverter:          channelConverter,
-			RunbookConverter:          &runbookConverter,
-			IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
-			ExcludeCaCProjectSettings: args.ExcludeCaCProjectSettings,
-			ExcludeAllRunbooks:        args.ExcludeAllRunbooks,
-			IgnoreProjectChanges:      args.IgnoreProjectChanges,
-			IgnoreProjectGroupChanges: false,
-			IgnoreProjectNameChanges:  false,
-			ExcludeProjects:           args.ExcludeProjects,
-			ExcludeProjectsExcept:     args.ExcludeProjectsExcept,
-			ExcludeProjectsRegex:      args.ExcludeProjectsRegex,
-			ExcludeAllProjects:        args.ExcludeAllProjects,
-			DummySecretVariableValues: args.DummySecretVariableValues,
-			DummySecretGenerator:      dummySecretGenerator,
-			Excluder:                  converters.DefaultExcluder{},
-			LookupOnlyMode:            false,
-			ErrGroup:                  &group,
-			ExcludeTerraformVariables: args.ExcludeTerraformVariables,
-			IncludeIds:                args.IncludeIds,
-			LimitResourceCount:        args.LimitResourceCount,
-			IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
-			GenerateImportScripts:     args.GenerateImportScripts,
-			LookupProjectLinkTenants:  false,
-			TenantProjectConverter:    tenantProjectConverter,
-			EnvironmentConverter:      environmentConverter,
-			ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
-			ExcludeTenantTags:         args.ExcludeTenantTags,
-			ExcludeTenants:            args.ExcludeTenants,
-			ExcludeTenantsRegex:       args.ExcludeTenantsRegex,
-			ExcludeTenantsWithTags:    args.ExcludeTenantsWithTags,
-			ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
-			ExcludeAllTenants:         args.ExcludeAllTenants,
-			IgnoreCacErrors:           args.IgnoreCacErrors,
-		},
+		ProjectConverter:                  projectConverter,
 		TenantConverter:                   &tenantConverter,
 		CertificateConverter:              certificateConverter,
 		TenantVariableConverter:           tenantVariableConverter,
@@ -940,6 +924,26 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		StepTemplateConverter:             stepTemplateConverter,
 		TenantProjectConverter:            tenantProjectConverter,
 	}
+
+	octopusActionProcessor := converters.OctopusActionProcessor{
+		FeedConverter:                   feedConverter,
+		AccountConverter:                accountConverter,
+		WorkerPoolConverter:             workerPoolConverter,
+		EnvironmentConverter:            environmentConverter,
+		DetachProjectTemplates:          args.DetachProjectTemplates,
+		WorkerPoolProcessor:             workerPoolProcessor,
+		GitCredentialsConverter:         gitCredentialsConverter,
+		StepTemplateConverter:           stepTemplateConverter,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		ProjectExporter:                 projectConverter,
+	}
+
+	// Projects and runbooks have circular references to other projects. For example, a project can have
+	// a "Deploy a release" step, which references another project.
+	// The ProjectExporter field on the OctopusActionProcessor is set to the same instance of the project converter
+	// that references the OctopusActionProcessor.
+	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
+	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
 	if args.Stateless {
 		err := spaceConverter.AllToStatelessHcl(&dependencies)
@@ -985,6 +989,8 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantVariables:       args.ExcludeTenantVariables,
 		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		DummySecretVariableValues:    args.DummySecretVariableValues,
+		DummySecretGenerator:         dummySecretGenerator,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{
@@ -1205,19 +1211,9 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 
 	runbookConverter := converters.RunbookConverter{
 		Client: &octopusClient,
-		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client: &octopusClient,
-			OctopusActionProcessor: converters.OctopusActionProcessor{
-				FeedConverter:                   feedConverter,
-				AccountConverter:                accountConverter,
-				WorkerPoolConverter:             workerPoolConverter,
-				EnvironmentConverter:            environmentConverter,
-				DetachProjectTemplates:          args.DetachProjectTemplates,
-				WorkerPoolProcessor:             workerPoolProcessor,
-				GitCredentialsConverter:         gitCredentialsConverter,
-				StepTemplateConverter:           stepTemplateConverter,
-				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			},
+		RunbookProcessConverter: &converters.RunbookProcessConverter{
+			Client:                          &octopusClient,
+			OctopusActionProcessor:          nil,
 			IgnoreProjectChanges:            args.IgnoreProjectChanges,
 			WorkerPoolProcessor:             workerPoolProcessor,
 			ExcludeTenantTags:               args.ExcludeTenantTags,
@@ -1247,6 +1243,20 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 	}
+
+	octopusActionProcessor := converters.OctopusActionProcessor{
+		FeedConverter:                   feedConverter,
+		AccountConverter:                accountConverter,
+		WorkerPoolConverter:             workerPoolConverter,
+		EnvironmentConverter:            environmentConverter,
+		DetachProjectTemplates:          args.DetachProjectTemplates,
+		WorkerPoolProcessor:             workerPoolProcessor,
+		GitCredentialsConverter:         gitCredentialsConverter,
+		StepTemplateConverter:           stepTemplateConverter,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+	}
+
+	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
 	err := runbookConverter.ToHclByIdWithLookups(args.RunbookId, &dependencies)
 
@@ -1284,6 +1294,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantVariables:       args.ExcludeTenantVariables,
 		ExcludeTenantVariablesExcept: args.ExcludeTenantVariablesExcept,
 		ExcludeTenantVariablesRegex:  args.ExcludeTenantVariablesRegex,
+		DummySecretVariableValues:    args.DummySecretVariableValues,
+		DummySecretGenerator:         dummySecretGenerator,
 	}
 
 	tenantProjectConverter := converters.TenantProjectConverter{
@@ -1857,19 +1869,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 
 	runbookConverter := converters.RunbookConverter{
 		Client: &octopusClient,
-		RunbookProcessConverter: converters.RunbookProcessConverter{
-			Client: &octopusClient,
-			OctopusActionProcessor: converters.OctopusActionProcessor{
-				FeedConverter:                   feedConverter,
-				AccountConverter:                accountConverter,
-				WorkerPoolConverter:             workerPoolConverter,
-				EnvironmentConverter:            environmentConverter,
-				DetachProjectTemplates:          args.DetachProjectTemplates,
-				WorkerPoolProcessor:             workerPoolProcessor,
-				GitCredentialsConverter:         gitCredentialsConverter,
-				StepTemplateConverter:           stepTemplateConverter,
-				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			},
+		RunbookProcessConverter: &converters.RunbookProcessConverter{
+			Client:                          &octopusClient,
+			OctopusActionProcessor:          nil,
 			IgnoreProjectChanges:            args.IgnoreProjectChanges,
 			WorkerPoolProcessor:             workerPoolProcessor,
 			ExcludeTenantTags:               args.ExcludeTenantTags,
@@ -1906,19 +1908,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		GitCredentialsConverter:     gitCredentialsConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
-		DeploymentProcessConverter: converters.DeploymentProcessConverter{
-			Client: &octopusClient,
-			OctopusActionProcessor: converters.OctopusActionProcessor{
-				FeedConverter:                   feedConverter,
-				AccountConverter:                accountConverter,
-				WorkerPoolConverter:             workerPoolConverter,
-				EnvironmentConverter:            environmentConverter,
-				DetachProjectTemplates:          args.DetachProjectTemplates,
-				WorkerPoolProcessor:             workerPoolProcessor,
-				GitCredentialsConverter:         gitCredentialsConverter,
-				StepTemplateConverter:           stepTemplateConverter,
-				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			},
+		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
+			Client:                          &octopusClient,
+			OctopusActionProcessor:          nil,
 			IgnoreProjectChanges:            args.IgnoreProjectChanges,
 			WorkerPoolProcessor:             workerPoolProcessor,
 			ExcludeTenantTags:               args.ExcludeTenantTags,
@@ -1980,6 +1972,26 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeAllTenants:         args.ExcludeAllTenants,
 		IgnoreCacErrors:           args.IgnoreCacErrors,
 	}
+
+	octopusActionProcessor := converters.OctopusActionProcessor{
+		FeedConverter:                   feedConverter,
+		AccountConverter:                accountConverter,
+		WorkerPoolConverter:             workerPoolConverter,
+		EnvironmentConverter:            environmentConverter,
+		DetachProjectTemplates:          args.DetachProjectTemplates,
+		WorkerPoolProcessor:             workerPoolProcessor,
+		GitCredentialsConverter:         gitCredentialsConverter,
+		StepTemplateConverter:           stepTemplateConverter,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		ProjectExporter:                 &projectConverter,
+	}
+
+	// Projects and runbooks have circular references to other projects. For example, a project can have
+	// a "Deploy a release" step, which references another project.
+	// The ProjectExporter field on the OctopusActionProcessor is set to the same instance of the project converter
+	// that references the OctopusActionProcessor.
+	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
+	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
 	if args.LookupProjectDependencies {
 		for _, project := range args.ProjectId {

@@ -20,7 +20,7 @@ import (
 
 type RunbookProcessConverter struct {
 	Client                          client.OctopusClient
-	OctopusActionProcessor          OctopusActionProcessor
+	OctopusActionProcessor          *OctopusActionProcessor
 	IgnoreProjectChanges            bool
 	WorkerPoolProcessor             OctopusWorkerPoolProcessor
 	ExcludeTenantTags               args.StringSliceArgs
@@ -38,15 +38,19 @@ type RunbookProcessConverter struct {
 	DummySecretVariableValues       bool
 }
 
-func (c RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
+	c.OctopusActionProcessor = actionProcessor
+}
+
+func (c *RunbookProcessConverter) ToHclByIdAndName(id string, runbookName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclByIdAndName(id, runbookName, recursive, false, dependencies)
 }
 
-func (c RunbookProcessConverter) ToHclStatelessByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) ToHclStatelessByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclByIdAndName(id, runbookName, true, true, dependencies)
 }
 
-func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) toHclByIdAndName(id string, runbookName string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -79,7 +83,7 @@ func (c RunbookProcessConverter) toHclByIdAndName(id string, runbookName string,
 	return c.toHcl(resource, runbook.ProjectId, recursive, false, stateless, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -112,7 +116,7 @@ func (c RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName s
 	return c.toHcl(resource, runbook.ProjectId, false, true, false, runbookName, dependencies)
 }
 
-func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectId string, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectId string, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbookName)
 
 	thisResource := data.ResourceDetails{}
@@ -288,11 +292,11 @@ func (c RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectI
 	return nil
 }
 
-func (c RunbookProcessConverter) GetResourceType() string {
+func (c *RunbookProcessConverter) GetResourceType() string {
 	return "RunbookProcesses"
 }
 
-func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
 	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
@@ -325,6 +329,12 @@ func (c RunbookProcessConverter) exportDependencies(recursive bool, lookup bool,
 
 	// Export git credentials
 	err = c.OctopusActionProcessor.ExportGitCredentials(recursive, lookup, stateless, resource.Steps, dependencies)
+	if err != nil {
+		return err
+	}
+
+	// Export projects, typically referenced in a "Deploy a release" step
+	err = c.OctopusActionProcessor.ExportProjects(recursive, lookup, stateless, resource.Steps, dependencies)
 	if err != nil {
 		return err
 	}
