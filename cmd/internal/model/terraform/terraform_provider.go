@@ -45,7 +45,7 @@ func (c TerraformConfig) CreateTerraformConfig(backend string, version string) T
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: ProviderDefinition{
 				Source:  "OctopusDeployLabs/octopusdeploy",
-				Version: strutil.DefaultIfEmpty(version, "0.37.1"),
+				Version: strutil.DefaultIfEmpty(version, "0.38.0"),
 			},
 			ShellProvider: ProviderDefinition{
 				Source:  "scottwinkler/shell",
