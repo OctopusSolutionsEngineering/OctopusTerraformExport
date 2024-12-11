@@ -356,10 +356,10 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsExcept, "excludeProjectsExcept", "All projects except those defined with excludeProjectsExcept are excluded. This is only used when exporting a space.")
 
-	flags.BoolVar(&arguments.ExcludeAllChannels, "excludeAllChannels", false, "Exclude all channels from being exported. WARNING: Variables that were scoped to channels will become unscoped.")
-	flags.Var(&arguments.ExcludeChannels, "excludeChannels", "Exclude a channel from being exported. WARNING: Variables that were scoped to channels will become unscoped.")
-	flags.Var(&arguments.ExcludeChannelsRegex, "excludeChannelsRegex", "Exclude a channel from being exported. WARNING: Variables that were scoped to channels will become unscoped.")
-	flags.Var(&arguments.ExcludeChannelsExcept, "excludeChannelsExcept", "All channels except those defined with excludeChannelsExcept are excluded. WARNING: Variables that were scoped to channels will become unscoped.")
+	flags.BoolVar(&arguments.ExcludeAllChannels, "excludeAllChannels", false, "Exclude all channels from being exported. WARNING: Variables and steps that were scoped to channels will become unscoped.")
+	flags.Var(&arguments.ExcludeChannels, "excludeChannels", "Exclude a channel from being exported. WARNING: Variables and steps that were scoped to channels will become unscoped.")
+	flags.Var(&arguments.ExcludeChannelsRegex, "excludeChannelsRegex", "Exclude a channel from being exported. WARNING: Variables and steps that were scoped to channels will become unscoped.")
+	flags.Var(&arguments.ExcludeChannelsExcept, "excludeChannelsExcept", "All channels except those defined with excludeChannelsExcept are excluded. WARNING: Variables and steps that were scoped to channels will become unscoped.")
 
 	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
 
