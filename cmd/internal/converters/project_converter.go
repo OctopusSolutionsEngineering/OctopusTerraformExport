@@ -1126,9 +1126,13 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Tenant]: %w", err)
 	}
 
+	filteredTenants := lo.Filter(tenantsCollection.Items, func(item octopus.Tenant, index int) bool {
+		return !c.Excluder.IsResourceExcludedWithRegex(item.Name, c.ExcludeAllTenants, c.ExcludeTenants, c.ExcludeTenantsRegex, c.ExcludeTenantsExcept)
+	})
+
 	// Get the environments that the tenants are linked to for this project
 	tenantEnvironments := []string{}
-	for _, item := range tenantsCollection.Items {
+	for _, item := range filteredTenants {
 		if _, ok := item.ProjectEnvironments[project.Id]; ok {
 			for _, environmentId := range tenantsCollection.Items[0].ProjectEnvironments[project.Id] {
 				if !slices.Contains(tenantEnvironments, environmentId) {
@@ -1140,8 +1144,7 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 
 	// Tenants can also have variables scoped to environments that are no longer linked to the project.
 	// For example, runbooks can run for tenants against environments that are not linked to deployments.
-	for _, item := range tenantsCollection.Items {
-
+	for _, item := range filteredTenants {
 		resource := octopus.TenantVariable{}
 		err := c.Client.GetAllResources("Tenants/"+item.Id+"/Variables", &resource)
 
