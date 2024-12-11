@@ -412,6 +412,10 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeDefaultChannel:    args.IncludeDefaultChannel,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		IgnoreCacErrors:          args.IgnoreCacErrors,
+		ExcludeAllChannels:       args.ExcludeAllChannels,
+		ExcludeChannels:          args.ExcludeChannels,
+		ExcludeChannelsRegex:     args.ExcludeChannelsRegex,
+		ExcludeChannelsExcept:    args.ExcludeChannelsExcept,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -1391,10 +1395,16 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
 		Excluder:                 converters.DefaultExcluder{},
+		ErrGroup:                 nil,
+		IncludeIds:               false,
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeDefaultChannel:    args.IncludeDefaultChannel,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		IgnoreCacErrors:          args.IgnoreCacErrors,
+		ExcludeAllChannels:       args.ExcludeAllChannels,
+		ExcludeChannels:          args.ExcludeChannels,
+		ExcludeChannelsRegex:     args.ExcludeChannelsRegex,
+		ExcludeChannelsExcept:    args.ExcludeChannelsExcept,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -1939,6 +1949,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,
 		RunbookConverter:          &runbookConverter,
+		EnvironmentConverter:      environmentConverter,
 		IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
 		ExcludeCaCProjectSettings: args.ExcludeCaCProjectSettings,
 		ExcludeAllRunbooks:        args.ExcludeAllRunbooks,
@@ -1959,10 +1970,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
-		TenantVariableConverter:   tenantVariableConverter,
 		LookupProjectLinkTenants:  args.LookupProjectLinkTenants,
 		TenantProjectConverter:    tenantProjectConverter,
-		EnvironmentConverter:      environmentConverter,
+		TenantVariableConverter:   tenantVariableConverter,
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		ExcludeTenantTags:         args.ExcludeTenantTags,
 		ExcludeTenants:            args.ExcludeTenants,

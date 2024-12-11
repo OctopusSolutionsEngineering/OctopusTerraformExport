@@ -93,6 +93,11 @@ type Arguments struct {
 	ExcludeStepsRegex  StringSliceArgs
 	ExcludeStepsExcept StringSliceArgs
 
+	ExcludeAllChannels    bool
+	ExcludeChannels       StringSliceArgs
+	ExcludeChannelsRegex  StringSliceArgs
+	ExcludeChannelsExcept StringSliceArgs
+
 	ExcludeAllRunbooks    bool
 	ExcludeRunbooks       StringSliceArgs
 	ExcludeRunbooksRegex  StringSliceArgs
@@ -350,6 +355,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsExcept, "excludeProjectsExcept", "All projects except those defined with excludeProjectsExcept are excluded. This is only used when exporting a space.")
+
+	flags.BoolVar(&arguments.ExcludeAllChannels, "excludeAllChannels", false, "Exclude all channels from being exported. WARNING: Variables that were scoped to channels will become unscoped.")
+	flags.Var(&arguments.ExcludeChannels, "excludeChannels", "Exclude a channel from being exported. WARNING: Variables that were scoped to channels will become unscoped.")
+	flags.Var(&arguments.ExcludeChannelsRegex, "excludeChannelsRegex", "Exclude a channel from being exported. WARNING: Variables that were scoped to channels will become unscoped.")
+	flags.Var(&arguments.ExcludeChannelsExcept, "excludeChannelsExcept", "All channels except those defined with excludeChannelsExcept are excluded. WARNING: Variables that were scoped to channels will become unscoped.")
 
 	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
 

@@ -34,6 +34,10 @@ type ChannelConverter struct {
 	IncludeDefaultChannel    bool
 	IncludeSpaceInPopulation bool
 	IgnoreCacErrors          bool
+	ExcludeAllChannels       bool
+	ExcludeChannels          args.StringSliceArgs
+	ExcludeChannelsRegex     args.StringSliceArgs
+	ExcludeChannelsExcept    args.StringSliceArgs
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -121,6 +125,10 @@ func (c ChannelConverter) writeData(file *hclwrite.File, name string, resourceNa
 }
 
 func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, stateless bool, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
+	if c.Excluder.IsResourceExcludedWithRegex(channel.Name, c.ExcludeAllChannels, c.ExcludeChannels, c.ExcludeChannelsRegex, c.ExcludeChannelsExcept) {
+		return nil
+	}
+
 	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
 		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + channel.Id)
 		return nil
