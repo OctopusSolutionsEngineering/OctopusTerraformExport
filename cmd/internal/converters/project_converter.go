@@ -1144,17 +1144,19 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 
 	// Tenants can also have variables scoped to environments that are no longer linked to the project.
 	// For example, runbooks can run for tenants against environments that are not linked to deployments.
-	for _, item := range filteredTenants {
-		resource := octopus.TenantVariable{}
-		err := c.Client.GetAllResources("Tenants/"+item.Id+"/Variables", &resource)
+	if c.LookupProjectLinkTenants {
+		for _, item := range filteredTenants {
+			resource := octopus.TenantVariable{}
+			err := c.Client.GetAllResources("Tenants/"+item.Id+"/Variables", &resource)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		for environmentId, _ := range resource.ProjectVariables {
-			if !slices.Contains(tenantEnvironments, environmentId) {
-				tenantEnvironments = append(tenantEnvironments, environmentId)
+			for environmentId, _ := range resource.ProjectVariables {
+				if !slices.Contains(tenantEnvironments, environmentId) {
+					tenantEnvironments = append(tenantEnvironments, environmentId)
+				}
 			}
 		}
 	}
