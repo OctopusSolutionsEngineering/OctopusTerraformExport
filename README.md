@@ -241,6 +241,4 @@ The following resources have yet to be exported:
 * octopusdeploy_user_role
 
 Features:
-* Exclude channels
 * Exclude triggers
-* Ignore tenanted, versioning
