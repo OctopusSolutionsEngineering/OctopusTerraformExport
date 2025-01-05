@@ -38,6 +38,7 @@ type ChannelConverter struct {
 	ExcludeChannels          args.StringSliceArgs
 	ExcludeChannelsRegex     args.StringSliceArgs
 	ExcludeChannelsExcept    args.StringSliceArgs
+	ExcludeInvalidChannels   bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -127,6 +128,23 @@ func (c ChannelConverter) writeData(file *hclwrite.File, name string, resourceNa
 func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project, recursive bool, lookup bool, stateless bool, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
 	if c.Excluder.IsResourceExcludedWithRegex(channel.Name, c.ExcludeAllChannels, c.ExcludeChannels, c.ExcludeChannelsRegex, c.ExcludeChannelsExcept) {
 		return nil
+	}
+
+	/*
+		It is possible to define a channel that references deployment steps or packages that no longer exist. This option
+		allows us to skip channels that are invalid.
+	*/
+	if c.ExcludeInvalidChannels {
+		invalid, err := c.isInvalid(channel, project)
+
+		if err != nil {
+			return err
+		}
+
+		if invalid {
+			zap.L().Info("Channel " + channel.Name + " (" + channel.Id + ") is invalid - skipping ")
+			return nil
+		}
 	}
 
 	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
@@ -267,6 +285,45 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 	}
 	dependencies.AddResource(thisResource)
 	return nil
+}
+
+func (c ChannelConverter) isInvalid(channel octopus.Channel, project octopus.Project) (bool, error) {
+	resource := octopus.DeploymentProcess{}
+	if project.HasCacConfigured() {
+		if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+url.QueryEscape(project.PersistenceSettings.DefaultBranch)+"/deploymentprocesses", &resource); err != nil {
+			return true, err
+		}
+	} else {
+		if _, err := c.Client.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &resource); err != nil {
+			return true, err
+		}
+	}
+
+	for _, rule := range channel.Rules {
+		for _, actionPackage := range rule.ActionPackages {
+			_, stepExists := lo.Find(resource.Steps, func(item octopus.Step) bool {
+				action, actionExists := lo.Find(item.Actions, func(item octopus.Action) bool {
+					return item.Name == actionPackage.DeploymentAction
+				})
+
+				if !actionExists {
+					_, packageExists := lo.Find(action.Packages, func(item octopus.Package) bool {
+						return item.Name == actionPackage.DeploymentAction
+					})
+
+					return packageExists
+				}
+
+				return false
+			})
+
+			if !stepExists {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func (c ChannelConverter) getLifecycleId(lifecycleId string, dependencies *data.ResourceDetailsCollection) *string {
