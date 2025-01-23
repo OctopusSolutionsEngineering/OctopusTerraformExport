@@ -440,6 +440,23 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			versionControlled = false
 		}
 
+		// We need to grab the settings from either:
+		// * the top level project settings for a regular project
+		// * branch settings for a CaC enabled project
+		// Regardless of where the settings come from, they are all saved as a top level setting in Terraform,
+		// because there is no such thing as branch level settings in a Terraform project
+		connectivityPolicy, err := c.convertConnectivityPolicy(project)
+
+		if err != nil {
+			return "", err
+		}
+
+		versioningStrategy, err := c.convertVersioningStrategy(project)
+
+		if err != nil {
+			return "", err
+		}
+
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
@@ -457,11 +474,11 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			IncludedLibraryVariableSets:            c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
 			TenantedDeploymentParticipation:        &tenanted,
 			Template:                               projectTemplates,
-			ConnectivityPolicy:                     c.convertConnectivityPolicy(project),
+			ConnectivityPolicy:                     connectivityPolicy,
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
-			VersioningStrategy:                     c.convertVersioningStrategy(project),
+			VersioningStrategy:                     versioningStrategy,
 		}
 
 		// There is no point ignoring changes for stateless exports
@@ -830,16 +847,41 @@ func (c *ProjectConverter) getLookup(stateless bool, projectName string, index i
 	return "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(index) + "].id}"
 }
 
-func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) *terraform.TerraformConnectivityPolicy {
-	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
-		return nil
-	}
-
+func (c *ProjectConverter) convertDatabaseConnectivityPolicy(project octopus.Project) (*terraform.TerraformConnectivityPolicy, error) {
+	// otherwise, use the top level settings
 	return &terraform.TerraformConnectivityPolicy{
 		AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
 		ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
 		SkipMachineBehavior:         project.ProjectConnectivityPolicy.SkipMachineBehavior,
+	}, nil
+}
+
+func (c *ProjectConverter) convertCaCConnectivityPolicy(project octopus.Project) (*terraform.TerraformConnectivityPolicy, error) {
+	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
+	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
+		return nil, err
 	}
+
+	return &terraform.TerraformConnectivityPolicy{
+		AllowDeploymentsToNoTargets: deploymentSettings.ConnectivityPolicy.AllowDeploymentsToNoTargets,
+		ExcludeUnhealthyTargets:     deploymentSettings.ConnectivityPolicy.ExcludeUnhealthyTargets,
+		SkipMachineBehavior:         deploymentSettings.ConnectivityPolicy.SkipMachineBehavior,
+	}, nil
+}
+
+func (c *ProjectConverter) convertConnectivityPolicy(project octopus.Project) (*terraform.TerraformConnectivityPolicy, error) {
+	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
+		return nil, nil
+	}
+
+	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored.
+	// The actual values come from branch specific settings.
+	if project.HasCacConfigured() {
+		return c.convertCaCConnectivityPolicy(project)
+	}
+
+	// otherwise, use the top level settings
+	return c.convertDatabaseConnectivityPolicy(project)
 }
 
 func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependencies *data.ResourceDetailsCollection) []string {
@@ -895,14 +937,10 @@ func (c *ProjectConverter) convertUsernamePasswordGitPersistence(project octopus
 	}
 }
 
-func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *terraform.TerraformVersioningStrategy {
-	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
-		return nil
-	}
-
+func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
 	// Don't define a versioning strategy if it is not set
 	if project.VersioningStrategy.Template == "" {
-		return nil
+		return nil, nil
 	}
 
 	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
@@ -911,7 +949,7 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *t
 	// simply return nil.
 	if strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId) != "" ||
 		project.VersioningStrategy.DonorPackage != nil {
-		return nil
+		return nil, nil
 	}
 
 	versioningStrategy := terraform.TerraformVersioningStrategy{
@@ -927,7 +965,47 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) *t
 		}
 	}
 
-	return &versioningStrategy
+	return &versioningStrategy, nil
+}
+
+func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
+	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
+		return nil, err
+	}
+
+	if deploymentSettings.VersioningStrategy.Template == "" {
+		return nil, nil
+	}
+
+	versioningStrategy := terraform.TerraformVersioningStrategy{
+		Template:           deploymentSettings.VersioningStrategy.Template,
+		DonorPackageStepId: nil,
+		DonorPackage:       nil,
+	}
+
+	if project.VersioningStrategy.DonorPackage != nil {
+		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
+			DeploymentAction: deploymentSettings.VersioningStrategy.DonorPackage.DeploymentAction,
+			PackageReference: deploymentSettings.VersioningStrategy.DonorPackage.PackageReference,
+		}
+	}
+
+	return &versioningStrategy, nil
+}
+
+func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
+		return nil, nil
+	}
+
+	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored..
+	// The actual values come from branch specific settings.
+	if project.HasCacConfigured() {
+		return c.convertCaCVersioningStrategy(project)
+	}
+
+	return c.convertDatabaseVersioningStrategy(project)
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.

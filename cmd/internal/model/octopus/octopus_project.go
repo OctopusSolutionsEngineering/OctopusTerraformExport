@@ -6,6 +6,19 @@ type ProjectConnectivityPolicy struct {
 	SkipMachineBehavior         string
 }
 
+type ProjectCacDeploymentSettings struct {
+	Id                              string
+	SpaceId                         string
+	ProjectId                       string
+	ConnectivityPolicy              ProjectConnectivityPolicy
+	DefaultGuidedFailureMode        string
+	VersioningStrategy              VersioningStrategy
+	ReleaseNotesTemplate            *string
+	DefaultToSkipIfAlreadyInstalled bool
+	DeploymentChangesTemplate       *string
+	ForcePackageDownload            bool
+}
+
 type Template struct {
 	Id              string
 	Name            *string
