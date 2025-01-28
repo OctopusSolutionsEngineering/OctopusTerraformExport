@@ -798,7 +798,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
 		// Don't import duplicates
-		if dependencies.HasResource(v.Id, c.GetResourceType()) {
+		if dependencies.HasResource(v.GetVariableSetId(&resource), c.GetResourceType()) {
 			continue
 		}
 
@@ -920,7 +920,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			thisResource.FileName = "space_population/project_variable_" + resourceName + ".tf"
 		}
 
-		thisResource.Id = v.Id
+		thisResource.Id = v.GetVariableSetId(&resource)
 		thisResource.Name = v.Name
 		thisResource.ResourceType = c.GetResourceType()
 		thisResource.Lookup = "${" + octopusdeployVariableResourceType + "." + resourceName + ".id}"

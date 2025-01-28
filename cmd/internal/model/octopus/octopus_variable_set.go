@@ -2,6 +2,7 @@ package octopus
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/samber/lo"
 	"strings"
 )
@@ -22,6 +23,12 @@ type Variable struct {
 	Type        string
 	IsSensitive bool
 	Prompt      Prompt
+}
+
+// GetVariableSetId returns the ID of the variable set and the variable. This generates a unique value
+// because cloning a project results in duplicate variable IDs.
+func (v *Variable) GetVariableSetId(variableSet *VariableSet) string {
+	return strutil.EmptyIfNil(variableSet.Id) + "-" + v.Id
 }
 
 type Scope struct {
