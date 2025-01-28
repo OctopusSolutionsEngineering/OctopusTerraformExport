@@ -1,5 +1,7 @@
 package octopus
 
+import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+
 type DeploymentProcess struct {
 	Id        string
 	ProjectId string
@@ -14,6 +16,18 @@ type Step struct {
 	Condition          *string
 	StartTrigger       *string
 	Actions            []Action
+}
+
+// GenerateDeploymentProcessId generates a unique identifier for the deployment process. This solves an issue
+// where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
+func (a *Step) GenerateDeploymentProcessId(deploymentProcess *DeploymentProcess) string {
+	return deploymentProcess.Id + "-" + strutil.EmptyIfNil(a.Id)
+}
+
+// GenerateRunbookProcessId generates a unique identifier for the deployment process. This solves an issue
+// where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
+func (a *Step) GenerateRunbookProcessId(runbookProcess *RunbookProcess) string {
+	return runbookProcess.Id + "-" + strutil.EmptyIfNil(a.Id)
 }
 
 type Action struct {
@@ -40,11 +54,13 @@ type Action struct {
 }
 
 // GenerateDeploymentProcessId generates a unique identifier for the deployment process. This solves an issue
-// where a deployment process has been copied and pasted in Git, reusing step and action IDs.
+// where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
 func (a *Action) GenerateDeploymentProcessId(deploymentProcess *DeploymentProcess) string {
 	return deploymentProcess.Id + "-" + a.Id
 }
 
+// GenerateRunbookProcessId generates a unique identifier for the deployment process. This solves an issue
+// where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
 func (a *Action) GenerateRunbookProcessId(runbookProcess *RunbookProcess) string {
 	return runbookProcess.Id + "-" + a.Id
 }
