@@ -104,6 +104,11 @@ func (c *ProjectConverter) allToHcl(stateless bool, dependencies *data.ResourceD
 		}
 
 		resource := resourceWrapper.Res
+
+		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
+			continue
+		}
+
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
 			continue
 		}
@@ -367,6 +372,11 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 }
 
 func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	// Don't import twice
+	if dependencies.HasResource(project.Id, c.GetResourceType()) {
+		return nil
+	}
+
 	// Ignore excluded projects
 	if c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept) {
 		return nil

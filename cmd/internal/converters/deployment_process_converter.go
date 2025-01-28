@@ -248,6 +248,11 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 			}
 
 			for j, a := range s.Actions {
+				// Don't import duplicates
+				if dependencies.HasResource(a.Id, "Actions") {
+					continue
+				}
+
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
 				actionResource.Id = a.Id

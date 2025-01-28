@@ -797,6 +797,11 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive bool, lookup bool, stateless bool, ignoreSecrets bool, parentName string, parentLookup string, parentCount *string, dependencies *data.ResourceDetailsCollection) error {
 	nameCount := map[string]int{}
 	for _, v := range resource.Variables {
+		// Don't import duplicates
+		if dependencies.HasResource(v.Id, c.GetResourceType()) {
+			continue
+		}
+
 		// Do not export regular variables if ignoring cac managed values
 		if ignoreSecrets && !v.IsSensitive {
 			continue

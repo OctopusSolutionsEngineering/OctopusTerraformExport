@@ -49,6 +49,10 @@ func (c ProjectTriggerConverter) toHclByProjectIdAndName(projectId string, proje
 	}
 
 	for _, resource := range collection.Items {
+		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
+			return nil
+		}
+
 		zap.L().Info("Project Trigger: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, recursive, lookup, stateless, projectId, projectName, dependencies)
 		if err != nil {

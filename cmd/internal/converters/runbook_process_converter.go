@@ -162,6 +162,10 @@ func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project
 			}
 
 			for j, a := range s.Actions {
+				// Don't import duplicates
+				if dependencies.HasResource(a.Id, "Actions") {
+					continue
+				}
 
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""

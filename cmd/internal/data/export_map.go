@@ -84,7 +84,13 @@ func (c *ResourceDetailsCollection) AddDummy(reference DummyVariableReference) {
 	c.DummyVariables = append(c.DummyVariables, reference)
 }
 
-// HasResource returns true if the resource with the id and resourceType exist in the collection, and false otherwise
+/*
+HasResource returns true if the resource with the id and resourceType exist in the collection, and false otherwise.
+While this method is thread-safe, it is not a guarantee that two goroutines are not processing the same resource
+concurrently. If HasResource returns true, it is safe to assume the resource has been processed by other goroutines
+and exit early. If HasResource returns false, the resource should be processed, but the results may be discarded
+by the AddResource method if another goroutine has processed the same resource in the meantime.
+*/
 func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -112,8 +118,14 @@ func (c *ResourceDetailsCollection) AddResource(resources ...ResourceDetails) {
 			return resource.Id != "" && resource.ResourceType != "" && item.Id == resource.Id && item.ResourceType == resource.ResourceType
 		})
 
+		/*
+			When running with multiple goroutines it is possible to have a race condition where a call to HasResource
+			returns false, indicating that a converter should go ahead and process the resource. But by the time
+			AddResource is called, another goroutine has added the same resource. This check is to ensure that the
+			resource is not added twice.
+		*/
 		if len(existing) > 0 {
-			zap.L().Error("Resource already exists in collection: " + resource.Id + " of type " + resource.ResourceType)
+			return
 		}
 	}
 

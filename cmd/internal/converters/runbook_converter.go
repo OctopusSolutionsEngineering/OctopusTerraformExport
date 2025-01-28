@@ -102,6 +102,10 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 	}
 
 	for _, resource := range collection.Items {
+		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
+			return nil
+		}
+
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, projectName, recursive, false, stateless, dependencies)
 
