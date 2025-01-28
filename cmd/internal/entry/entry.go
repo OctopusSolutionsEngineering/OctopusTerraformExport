@@ -1054,11 +1054,14 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    &octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
+		ErrGroup:                  nil,
 		IncludeIds:                args.IncludeIds,
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
@@ -1157,15 +1160,19 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,
+		ErrGroup:                 nil,
 		ExcludeWorkerpools:       args.ExcludeWorkerpools,
 		ExcludeWorkerpoolsRegex:  args.ExcludeWorkerpoolsRegex,
 		ExcludeWorkerpoolsExcept: args.ExcludeWorkerpoolsExcept,
 		ExcludeAllWorkerpools:    args.ExcludeAllWorkerpools,
 		Excluder:                 converters.DefaultExcluder{},
 		LimitResourceCount:       args.LimitResourceCount,
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 	}
 
@@ -1254,6 +1261,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -1266,6 +1274,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		GitCredentialsConverter:         gitCredentialsConverter,
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		ProjectExporter:                 projectConverter,
 	}
 
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
@@ -1361,6 +1370,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 	lifecycleConverter := converters.LifecycleConverter{
 		Client:                   &octopusClient,
@@ -1379,7 +1389,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	gitCredentialsConverter := converters.GitCredentialsConverter{
 		Client:                    &octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
+		DummySecretGenerator:      dummySecretGenerator,
 		ExcludeAllGitCredentials:  args.ExcludeAllGitCredentials,
+		ErrGroup:                  nil,
 		IncludeIds:                args.IncludeIds,
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
@@ -1486,6 +1498,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeIds:                   args.IncludeIds,
 		IncludeSpaceInPopulation:     args.IncludeSpaceInPopulation,
 		GenerateImportScripts:        args.GenerateImportScripts,
+		ErrGroup:                     nil,
 	}
 	accountConverter := converters.AccountConverter{
 		Client:                    &octopusClient,
@@ -1505,6 +1518,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 	certificateConverter := converters.CertificateConverter{
 		Client:                    &octopusClient,
@@ -1550,6 +1564,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeIds:               args.IncludeIds,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -1576,6 +1591,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -1601,6 +1617,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -1626,6 +1643,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -1679,6 +1697,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -1705,6 +1724,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -1732,6 +1752,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -1758,6 +1779,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:       args.LimitResourceCount,
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	feedConverter := converters.FeedConverter{
@@ -1773,15 +1795,19 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
 	}
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,
+		ErrGroup:                 nil,
 		ExcludeWorkerpools:       args.ExcludeWorkerpools,
 		ExcludeWorkerpoolsRegex:  args.ExcludeWorkerpoolsRegex,
 		ExcludeWorkerpoolsExcept: args.ExcludeWorkerpoolsExcept,
 		ExcludeAllWorkerpools:    args.ExcludeAllWorkerpools,
 		Excluder:                 converters.DefaultExcluder{},
 		LimitResourceCount:       args.LimitResourceCount,
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 	}
 
@@ -1829,7 +1855,6 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
 		Client:                            &octopusClient,
-		LimitAttributeLength:              args.LimitAttributeLength,
 		ChannelConverter:                  channelConverter,
 		EnvironmentConverter:              environmentConverter,
 		TagSetConverter:                   &tagsetConverter,
@@ -1849,14 +1874,18 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IgnoreCacManagedValues:            args.IgnoreCacManagedValues,
 		DefaultSecretVariableValues:       args.DefaultSecretVariableValues,
 		DummySecretVariableValues:         args.DummySecretVariableValues,
+		ExcludeAllProjectVariables:        args.ExcludeAllProjectVariables,
+		ExcludeProjectVariables:           args.ExcludeProjectVariables,
+		ExcludeProjectVariablesExcept:     args.ExcludeProjectVariablesExcept,
+		ExcludeProjectVariablesRegex:      args.ExcludeProjectVariablesRegex,
+		ExcludeTenantTagSets:              args.ExcludeTenantTagSets,
+		ExcludeTenantTags:                 args.ExcludeTenantTags,
+		IgnoreProjectChanges:              args.IgnoreProjectChanges,
 		DummySecretGenerator:              dummySecretGenerator,
-		ExcludeAllProjectVariables:        false,
-		ExcludeProjectVariables:           nil,
-		ExcludeProjectVariablesExcept:     nil,
-		ExcludeProjectVariablesRegex:      nil,
-		IgnoreProjectChanges:              false,
 		Excluder:                          converters.DefaultExcluder{},
+		ErrGroup:                          nil,
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
+		LimitAttributeLength:              args.LimitAttributeLength,
 		StatelessAdditionalParams:         args.StatelessAdditionalParams,
 		GenerateImportScripts:             args.GenerateImportScripts,
 		EnvironmentFilter: converters.EnvironmentFilter{
@@ -1878,12 +1907,14 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		Excluder:                         converters.DefaultExcluder{},
 		LimitResourceCount:               args.LimitResourceCount,
 		GenerateImportScripts:            args.GenerateImportScripts,
+		ErrGroup:                         nil,
 	}
 
 	workerPoolProcessor := converters.OctopusWorkerPoolProcessor{
 		WorkerPoolConverter:     workerPoolConverter,
 		LookupDefaultWorkerPool: args.LookUpDefaultWorkerPools,
 		Client:                  &octopusClient,
+		ErrGroup:                nil,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -1919,6 +1950,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		ErrGroup:                 nil,
 	}
 
 	projectConverter := converters.ProjectConverter{
