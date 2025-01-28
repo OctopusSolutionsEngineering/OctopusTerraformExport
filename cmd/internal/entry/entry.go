@@ -373,6 +373,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeIds:                args.IncludeIds,
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		GenerateImportScripts:     args.GenerateImportScripts,
 	}
 
 	lifecycleConverter := converters.LifecycleConverter{
@@ -460,6 +461,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ExcludeAllWorkerpools:    args.ExcludeAllWorkerpools,
 		Excluder:                 converters.DefaultExcluder{},
 		LimitResourceCount:       args.LimitResourceCount,
+		IncludeIds:               args.IncludeIds,
+		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		GenerateImportScripts:    args.GenerateImportScripts,
 	}
 
@@ -829,6 +832,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GitCredentialsConverter:     gitCredentialsConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
+		TenantVariableConverter:     tenantVariableConverter,
 		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
 			Client:                          &octopusClient,
 			OctopusActionProcessor:          nil,
@@ -856,6 +860,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			LimitResourceCount:    args.LimitResourceCount,
 			GenerateImportScripts: args.GenerateImportScripts,
 			EnvironmentConverter:  environmentConverter,
+			IncludeIds:            args.IncludeIds,
 		},
 		VariableSetConverter:      &variableSetConverter,
 		ChannelConverter:          channelConverter,
@@ -1128,6 +1133,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantTagSets:      args.ExcludeTenantTagSets,
 		Excluder:                  converters.DefaultExcluder{},
 		TagSetConverter:           &tagsetConverter,
+		ErrGroup:                  nil,
 		ExcludeAccounts:           args.ExcludeAccounts,
 		ExcludeAccountsRegex:      args.ExcludeAccountsRegex,
 		ExcludeAccountsExcept:     args.ExcludeAccountsExcept,
@@ -1135,6 +1141,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeIds:                args.IncludeIds,
 		LimitResourceCount:        args.LimitResourceCount,
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		GenerateImportScripts:     args.GenerateImportScripts,
 	}
 
 	feedConverter := converters.FeedConverter{

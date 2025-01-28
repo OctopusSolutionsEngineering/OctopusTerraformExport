@@ -21,7 +21,6 @@ const octopusdeployGitCredentialResourceType = "octopusdeploy_git_credential"
 
 type GitCredentialsConverter struct {
 	Client                    client.OctopusClient
-	SpaceResourceName         string
 	DummySecretVariableValues bool
 	DummySecretGenerator      dummy.DummySecretGenerator
 	ExcludeAllGitCredentials  bool
