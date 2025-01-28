@@ -163,13 +163,13 @@ func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project
 
 			for j, a := range s.Actions {
 				// Don't import duplicates
-				if dependencies.HasResource(a.Id, "Actions") {
+				if dependencies.HasResource(a.GenerateRunbookProcessId(&resource), "Actions") {
 					continue
 				}
 
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
-				actionResource.Id = a.Id
+				actionResource.Id = a.GenerateRunbookProcessId(&resource)
 				actionResource.ResourceType = "Actions"
 				actionResource.Lookup = "${octopusdeploy_runbook_process." + resourceName + ".step[" + fmt.Sprint(i) + "].action[" + fmt.Sprint(j) + "].id}"
 				dependencies.AddResource(actionResource)
@@ -184,6 +184,10 @@ func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project
 				workerPool := ""
 				if len(workerPoolId) != 0 {
 					workerPool = dependencies.GetResource("WorkerPools", workerPoolId)
+				}
+
+				if strutil.EmptyIfNil(s.Name) == "Email Team of Status (Always Run)" {
+					zap.L().Warn("Action type is nil")
 				}
 
 				terraformResource.Step[i].Action[j] = terraform.TerraformAction{

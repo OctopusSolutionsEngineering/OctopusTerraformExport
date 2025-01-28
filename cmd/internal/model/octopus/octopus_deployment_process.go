@@ -39,6 +39,16 @@ type Action struct {
 	GitDependencies               []GitDependency
 }
 
+// GenerateDeploymentProcessId generates a unique identifier for the deployment process. This solves an issue
+// where a deployment process has been copied and pasted in Git, reusing step and action IDs.
+func (a *Action) GenerateDeploymentProcessId(deploymentProcess *DeploymentProcess) string {
+	return deploymentProcess.Id + "-" + a.Id
+}
+
+func (a *Action) GenerateRunbookProcessId(runbookProcess *RunbookProcess) string {
+	return runbookProcess.Id + "-" + a.Id
+}
+
 type GitDependency struct {
 	Name                         *string
 	RepositoryUri                *string

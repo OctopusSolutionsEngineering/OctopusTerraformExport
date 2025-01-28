@@ -249,13 +249,13 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 
 			for j, a := range s.Actions {
 				// Don't import duplicates
-				if dependencies.HasResource(a.Id, "Actions") {
+				if dependencies.HasResource(a.GenerateDeploymentProcessId(&resource), "Actions") {
 					continue
 				}
 
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
-				actionResource.Id = a.Id
+				actionResource.Id = a.GenerateDeploymentProcessId(&resource)
 				actionResource.ResourceType = "Actions"
 				actionResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".step[" + fmt.Sprint(i) + "].action[" + fmt.Sprint(j) + "].id}"
 				dependencies.AddResource(actionResource)
@@ -270,6 +270,10 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 				workerPool := ""
 				if len(workerPoolId) != 0 {
 					workerPool = dependencies.GetResource("WorkerPools", workerPoolId)
+				}
+
+				if strutil.EmptyIfNil(s.Name) == "Email Team of Status (Always Run)" {
+					zap.L().Warn("Action type is nil")
 				}
 
 				terraformResource.Step[i].Action[j] = terraform.TerraformAction{
