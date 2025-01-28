@@ -65,6 +65,10 @@ func (c ChannelConverter) toHclByProjectIdWithTerraDependencies(projectId string
 	}
 
 	for _, resource := range collection.Items {
+		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
+			continue
+		}
+
 		zap.L().Info("Channel: " + resource.Id + " " + resource.Name)
 
 		err = c.toHcl(resource, project, true, false, stateless, terraformDependencies, dependencies)
@@ -95,6 +99,10 @@ func (c ChannelConverter) ToHclLookupByProjectIdWithTerraDependencies(projectId 
 	}
 
 	for _, resource := range collection.Items {
+		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
+			continue
+		}
+
 		zap.L().Info("Channel: " + resource.Id + " " + resource.Name)
 		err = c.toHcl(resource, project, false, true, false, terraformDependencies, dependencies)
 
