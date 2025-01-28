@@ -113,23 +113,19 @@ func (c *ResourceDetailsCollection) AddResource(resources ...ResourceDetails) {
 		c.Resources = []ResourceDetails{}
 	}
 
-	for _, resource := range resources {
-		existing := lo.Filter(c.Resources, func(item ResourceDetails, index int) bool {
-			return resource.Id != "" && resource.ResourceType != "" && item.Id == resource.Id && item.ResourceType == resource.ResourceType
+	/*
+		When running with multiple goroutines it is possible to have a race condition where a call to HasResource
+		returns false, indicating that a converter should go ahead and process the resource. But by the time
+		AddResource is called, another goroutine has added the same resource. This check is to ensure that the
+		resource is not added twice.
+	*/
+	fixedResources := lo.Filter(resources, func(resource ResourceDetails, index int) bool {
+		return !lo.ContainsBy(c.Resources, func(existingResource ResourceDetails) bool {
+			return resource.Id != "" && resource.ResourceType != "" && existingResource.Id == resource.Id && existingResource.ResourceType == resource.ResourceType
 		})
+	})
 
-		/*
-			When running with multiple goroutines it is possible to have a race condition where a call to HasResource
-			returns false, indicating that a converter should go ahead and process the resource. But by the time
-			AddResource is called, another goroutine has added the same resource. This check is to ensure that the
-			resource is not added twice.
-		*/
-		if len(existing) > 0 {
-			return
-		}
-	}
-
-	c.Resources = append(c.Resources, resources...)
+	c.Resources = append(c.Resources, fixedResources...)
 }
 
 // GetAllResource returns a slice of resources in the collection of type resourceType
