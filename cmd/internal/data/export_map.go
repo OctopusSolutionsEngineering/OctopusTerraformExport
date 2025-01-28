@@ -2,6 +2,7 @@ package data
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"sync"
 )
@@ -98,7 +99,7 @@ func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) 
 }
 
 // AddResource adds a resource to the collection
-func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
+func (c *ResourceDetailsCollection) AddResource(resources ...ResourceDetails) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -106,7 +107,17 @@ func (c *ResourceDetailsCollection) AddResource(resource ...ResourceDetails) {
 		c.Resources = []ResourceDetails{}
 	}
 
-	c.Resources = append(c.Resources, resource...)
+	for _, resource := range resources {
+		existing := lo.Filter(c.Resources, func(item ResourceDetails, index int) bool {
+			return resource.Id != "" && resource.ResourceType != "" && item.Id == resource.Id && item.ResourceType == resource.ResourceType
+		})
+
+		if len(existing) > 0 {
+			zap.L().Error("Resource already exists in collection: " + resource.Id + " of type " + resource.ResourceType)
+		}
+	}
+
+	c.Resources = append(c.Resources, resources...)
 }
 
 // GetAllResource returns a slice of resources in the collection of type resourceType
