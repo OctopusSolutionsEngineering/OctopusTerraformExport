@@ -1220,9 +1220,9 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 
 	// Get the environments that the tenants are linked to for this project
 	tenantEnvironments := []string{}
-	for _, item := range filteredTenants {
-		if _, ok := item.ProjectEnvironments[project.Id]; ok {
-			for _, environmentId := range tenantsCollection.Items[0].ProjectEnvironments[project.Id] {
+	for _, tenant := range filteredTenants {
+		if _, ok := tenant.ProjectEnvironments[project.Id]; ok {
+			for _, environmentId := range tenant.ProjectEnvironments[project.Id] {
 				if !slices.Contains(tenantEnvironments, environmentId) {
 					tenantEnvironments = append(tenantEnvironments, environmentId)
 				}
