@@ -8,6 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
 	"strings"
 )
 
@@ -399,7 +400,7 @@ func (c OctopusActionProcessor) GetRoles(properties map[string]string) []string 
 func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
 	for _, step := range steps {
 		for _, action := range step.Actions {
-			for _, environment := range action.Environments {
+			for _, environment := range lo.Union(action.Environments, action.ExcludedEnvironments) {
 				var err error
 				if recursive {
 					if stateless {
