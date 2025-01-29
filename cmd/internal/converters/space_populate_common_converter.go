@@ -67,8 +67,11 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 }
 
 func (c TerraformProviderGenerator) createTerraformConfig(directory string, dependencies *data.ResourceDetailsCollection) {
-	if c.ExcludeProvider {
-		return
+
+	// When creating a module, we need to define the required providers, but not the backend
+	backend := ""
+	if !c.ExcludeProvider {
+		backend = c.TerraformBackend
 	}
 
 	thisResource := data.ResourceDetails{}
@@ -77,7 +80,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(c.TerraformBackend, c.ProviderVersion)
+		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 		return string(file.Bytes()), nil
