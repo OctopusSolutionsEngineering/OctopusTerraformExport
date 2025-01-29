@@ -1193,7 +1193,7 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 	return &display
 }
 
-func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProjectVariableScope {
+func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableSet octopus.VariableSet, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVariableScope, error) {
 	filteredEnvironments := c.EnvironmentFilter.FilterEnvironmentScope(variable.Scope.Environment)
 
 	// Removing all environment scoping may not have been the intention
@@ -1201,7 +1201,28 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependenc
 		zap.L().Warn("WARNING: Variable " + variable.Name + " removed all environment scopes.")
 	}
 
-	actions := dependencies.GetResources("Actions", variable.Scope.Action...)
+	// Get a list of action IDs that includes the deployment process ID. This is because action IDs are
+	// not guaranteed to be unique and are saved in the dependencies with the deployment process ID as a prefix.
+	// If the variable set belongs to a library variable set, it can't be scoped to action, and so the profix
+	// won't be used.
+	actionPrefix, err := c.getDeploymentProcessFromVariable(variableSet)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fixedActionIds := lo.Map(variable.Scope.Action, func(actionId string, index int) string {
+		return actionPrefix + "-" + actionId
+	})
+
+	// We should always find a prefix if there were any variable scopes. There may be edge cases
+	// where the action was deleted after the variable was created, for example a CaC project edited
+	// the deployment process but not the variable scopes.
+	if len(actionPrefix) == 0 && len(variable.Scope.Action) != 0 {
+		zap.L().Warn("WARNING: Variable " + variable.Name + " has action scopes but we did not find the deployment process. This means variables arr scoped to actions that do not exist.")
+	}
+
+	actions := dependencies.GetResources("Actions", fixedActionIds...)
 	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
 	environments := dependencies.GetResources("Environments", filteredEnvironments...)
 	machines := dependencies.GetResources("Machines", variable.Scope.Machine...)
@@ -1220,11 +1241,26 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, dependenc
 			Machines:     sliceutil.NilIfEmpty(machines),
 			Roles:        sliceutil.NilIfEmpty(variable.Scope.Role),
 			TenantTags:   sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(variable.Scope.TenantTag, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
-		}
+		}, nil
 	}
 
-	return nil
+	return nil, nil
 
+}
+
+func (c *VariableSetConverter) getDeploymentProcessFromVariable(variableSet octopus.VariableSet) (string, error) {
+	if strings.HasPrefix(strutil.EmptyIfNil(variableSet.OwnerId), "Projects") {
+		project := octopus.Project{}
+		_, err := c.Client.GetSpaceResourceById("Projects", strutil.EmptyIfNil(variableSet.OwnerId), &project)
+
+		if err != nil {
+			return "", err
+		}
+
+		return strutil.EmptyIfNil(project.DeploymentProcessId), nil
+	}
+
+	return "", nil
 }
 
 func (c *VariableSetConverter) exportAccounts(recursive bool, lookup bool, stateless bool, value *string, dependencies *data.ResourceDetailsCollection) error {
