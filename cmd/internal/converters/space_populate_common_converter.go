@@ -68,7 +68,8 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 
 func (c TerraformProviderGenerator) createTerraformConfig(directory string, dependencies *data.ResourceDetailsCollection) {
 
-	// When creating a module, we need to define the required providers, but not the backend
+	// When creating a module, we need to define the required providers, but not the backend.
+	// https://developer.hashicorp.com/terraform/language/modules/develop/providers#provider-version-constraints-in-modules
 	backend := ""
 	if !c.ExcludeProvider {
 		backend = c.TerraformBackend
