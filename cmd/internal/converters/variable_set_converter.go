@@ -961,6 +961,11 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 
 			normalValue := c.writeTerraformVariablesForString(file, v, resourceName, value)
 			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, resourceName, dependencies)
+			scope, err := c.convertScope(v, resource, dependencies)
+
+			if err != nil {
+				return "", err
+			}
 
 			terraformResource := terraform.TerraformProjectVariable{
 				Name:           resourceName,
@@ -974,7 +979,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				SensitiveValue: nil,
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
-				Scope:          c.convertScope(v, dependencies),
+				Scope:          scope,
 			}
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
