@@ -4773,7 +4773,9 @@ func TestOfflineDropTargetExcludeAllExport(t *testing.T) {
 		})
 }
 
-// TestAzureCloudServiceTargetExport verifies that a azure cloud service target can be reimported with the correct settings
+// TestAzureCloudServiceTargetExport verifies that a azure cloud service target can be reimported with the correct settings.
+// Azure cloud targets are deprecated and not supported in the latest versions of Octopus.
+// Leaving this test here in case we need to validate older versions of Octopus.
 //func TestAzureCloudServiceTargetExport(t *testing.T) {
 //	exportSpaceImportAndTest(t,
 //		"../test/terraform/35-azurecloudservicetarget/space_creation",

@@ -30,7 +30,6 @@ resource "octopusdeploy_variable" "scoped_var" {
   value    = "test"
   scope {
     machines = [
-      #octopusdeploy_azure_cloud_service_deployment_target.azure.id,
       octopusdeploy_azure_service_fabric_cluster_deployment_target.target_service_fabric.id,
       octopusdeploy_azure_web_app_deployment_target.target_web_app.id,
       octopusdeploy_cloud_region_deployment_target.target_region1.id,
