@@ -8474,11 +8474,11 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					if len(variables.Variables) != 1 {
-						return errors.New("The project must have a single variable.")
+						return errors.New("The project must have a single variable (found " + fmt.Sprint(len(variables.Variables)) + ").")
 					}
 
 					if variables.Variables[0].Name != "WorkerPool" {
-						return errors.New("The project must have a single variable called \"WorkerPool\".")
+						return errors.New("The project must have a single variable called \"WorkerPool\" (found " + variables.Variables[0].Name + ").")
 					}
 
 					workerPoolResource := octopus.WorkerPool{}
@@ -8489,7 +8489,7 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					if workerPoolResource.Name != "Static pool" {
-						return errors.New("The project must have a variable referencing a worker pool called \"Static pool\".")
+						return errors.New("The project must have a variable referencing a worker pool called \"Static pool\" (was " + workerPoolResource.Name + ").")
 					}
 
 					deploymentProcess := octopus.DeploymentProcess{}
@@ -8500,11 +8500,11 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].WorkerPoolVariable) != "#{WorkerPool}" {
-						return errors.New("Deployment process should have a worker pool variable of \"#{WorkerPool}\".")
+						return errors.New("Deployment process should have a worker pool variable of \"#{WorkerPool}\" (was " + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].WorkerPoolVariable) + ").")
 					}
 
 					if deploymentProcess.Steps[0].Actions[0].WorkerPoolId != "" {
-						return errors.New("Deployment process should have an empty worker pool.")
+						return errors.New("Deployment process should have an empty worker pool (was " + deploymentProcess.Steps[0].Actions[0].WorkerPoolId + ").")
 					}
 
 					runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
@@ -8530,11 +8530,11 @@ func TestProjectWorkerPoolVariableExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].WorkerPoolVariable) != "#{WorkerPool}" {
-						return errors.New("Runbook step should have had a worker pool variable of \"#{WorkerPool}\".")
+						return errors.New("Runbook step should have had a worker pool variable of \"#{WorkerPool}\" (was " + strutil.EmptyIfNil(runbookProcess.Steps[0].Actions[0].WorkerPoolVariable) + ").")
 					}
 
 					if runbookProcess.Steps[0].Actions[0].WorkerPoolId != "" {
-						return errors.New("Runbook step should have had an empty worker pool ID.")
+						return errors.New("Runbook step should have had an empty worker pool ID (was " + runbookProcess.Steps[0].Actions[0].WorkerPoolId + ").")
 					}
 				}
 			}
