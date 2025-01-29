@@ -30,7 +30,7 @@ resource "octopusdeploy_variable" "scoped_var" {
   value    = "test"
   scope {
     machines = [
-      octopusdeploy_azure_cloud_service_deployment_target.azure.id,
+      #octopusdeploy_azure_cloud_service_deployment_target.azure.id,
       octopusdeploy_azure_service_fabric_cluster_deployment_target.target_service_fabric.id,
       octopusdeploy_azure_web_app_deployment_target.target_web_app.id,
       octopusdeploy_cloud_region_deployment_target.target_region1.id,
@@ -41,6 +41,8 @@ resource "octopusdeploy_variable" "scoped_var" {
       octopusdeploy_ssh_connection_deployment_target.ssh.id
     ]
   }
+
+  depends_on = [octopusdeploy_deployment_process.test]
 }
 
 output "octopus_project_1" {
@@ -69,5 +71,43 @@ resource "octopusdeploy_project" "project_2" {
     allow_deployments_to_no_targets = false
     exclude_unhealthy_targets       = false
     skip_machine_behavior           = "SkipUnavailableMachines"
+  }
+}
+
+resource "octopusdeploy_deployment_process" "test" {
+  project_id = octopusdeploy_project.project_1.id
+
+  step {
+    condition           = "Success"
+    name                = "Get MySQL Host"
+    package_requirement = "LetOctopusDecide"
+    start_trigger       = "StartAfterPrevious"
+
+    action {
+      action_type                        = "Octopus.KubernetesRunScript"
+      name                               = "Get MySQL Host"
+      condition                          = "Success"
+      run_on_server                      = true
+      is_disabled                        = false
+      can_be_used_for_project_versioning = true
+      is_required                        = false
+      worker_pool_id                     = ""
+      properties                         = {
+        "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
+        "Octopus.Action.KubernetesContainers.Namespace" = ""
+        "OctopusUseBundledTooling" = "False"
+        "Octopus.Action.Script.ScriptSource" = "Inline"
+        "Octopus.Action.Script.Syntax" = "Bash"
+      }
+
+      environments          = []
+      excluded_environments = []
+      channels              = []
+      tenant_tags           = []
+      features = []
+    }
+
+    properties   = {}
+    target_roles = ["eks"]
   }
 }

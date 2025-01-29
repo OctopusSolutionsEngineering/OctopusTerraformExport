@@ -45,11 +45,11 @@ data "octopusdeploy_deployment_targets" "offline" {
   take         = 1
 }
 
-data "octopusdeploy_deployment_targets" "azure" {
-  partial_name = "Azure"
-  skip         = 0
-  take         = 1
-}
+# data "octopusdeploy_deployment_targets" "azure" {
+#   partial_name = "Azure"
+#   skip         = 0
+#   take         = 1
+# }
 
 data "octopusdeploy_deployment_targets" "service_facbric" {
   partial_name = "ServiceFabric"
@@ -107,7 +107,7 @@ resource "octopusdeploy_variable" "scoped_var" {
       data.octopusdeploy_deployment_targets.polling.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.listening.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.offline.deployment_targets[0].id,
-      data.octopusdeploy_deployment_targets.azure.deployment_targets[0].id,
+      #data.octopusdeploy_deployment_targets.azure.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.service_facbric.deployment_targets[0].id,
       data.octopusdeploy_deployment_targets.webapp.deployment_targets[0].id,
     ]
