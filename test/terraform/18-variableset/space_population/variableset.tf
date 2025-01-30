@@ -34,9 +34,18 @@ resource "octopusdeploy_variable" "secret" {
   is_editable = true
   owner_id = octopusdeploy_library_variable_set.octopus_library_variable_set.id
   sensitive_value = "True"
+
+  scope {
+    roles = ["test"]
+    environments = [
+      octopusdeploy_environment.production_environment.id,
+      octopusdeploy_environment.test_environment.id,
+      octopusdeploy_environment.development_environment.id]
+    machines = [octopusdeploy_cloud_region_deployment_target.target_region1.id]
+  }
 }
 
-resource "octopusdeploy_variable" "tag_scoped" {
+resource "octopusdeploy_variable" "secret_tag_scoped" {
   depends_on = [octopusdeploy_tag.tag_a]
 
   name         = "Test.TagScopedVariable"
@@ -48,7 +57,12 @@ resource "octopusdeploy_variable" "tag_scoped" {
   value        = "True"
 
   scope {
-    tenant_tags = ["tag1/a"]
+    roles = ["test"]
+    environments = [
+      octopusdeploy_environment.production_environment.id,
+      octopusdeploy_environment.test_environment.id,
+      octopusdeploy_environment.development_environment.id]
+    machines = [octopusdeploy_cloud_region_deployment_target.target_region1.id]
   }
 }
 
