@@ -2129,12 +2129,20 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 						return errors.New("The library variable set variable \"Test.SecretVariable\" must be sensitive")
 					}
 
-					if len(thirdVar[0].Scope.TenantTag) != 1 {
-						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scopes")
+					if len(thirdVar[0].Scope.Role) != 1 {
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have one machine tag scope")
 					}
 
-					if thirdVar[0].Scope.TenantTag[0] != "tag1/a" {
-						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have tenant tag scope of \"tag1/a\"")
+					if len(thirdVar[0].Scope.Role) != 1 || secondVar[0].Scope.Role[0] != "test" {
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have machine tag scope of \"test\" ( was \"" + secondVar[0].Scope.Role[0] + "\")")
+					}
+
+					if len(thirdVar[0].Scope.Machine) != 1 {
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must have one machine scope")
+					}
+
+					if len(thirdVar[0].Scope.Environment) != 3 {
+						return errors.New("The library variable set variable \"Test.TagScopedVariable\" must be scoped to 3 environments")
 					}
 				}
 			}
