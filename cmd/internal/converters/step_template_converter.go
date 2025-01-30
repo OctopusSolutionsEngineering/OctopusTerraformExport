@@ -401,8 +401,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTemplateParameters) []terraform.TerraformStepTemplateParameter {
 	return lo.Map(parameters, func(item octopus.StepTemplateParameters, index int) terraform.TerraformStepTemplateParameter {
 		return terraform.TerraformStepTemplateParameter{
-			Id:           strutil.NilIfEmpty(item.Id),
-			Name:         strutil.NilIfEmpty(item.Name),
+			Id:           item.Id,
+			Name:         item.Name,
 			Label:        strutil.NilIfEmpty(item.Label),
 			HelpText:     strutil.NilIfEmpty(item.HelpText),
 			DefaultValue: strutil.NilIfEmpty(fmt.Sprint(item.DefaultValue)),
@@ -416,11 +416,11 @@ func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTempla
 func (c StepTemplateConverter) convertPackages(packages []octopus.Package) []terraform.TerraformStepTemplatePackage {
 	return lo.Map(packages, func(item octopus.Package, index int) terraform.TerraformStepTemplatePackage {
 		return terraform.TerraformStepTemplatePackage{
-			Name:                    item.Name,
+			Name:                    strutil.EmptyIfNil(item.Name),
 			PackageID:               item.PackageId,
 			AcquisitionLocation:     item.AcquisitionLocation,
 			ExtractDuringDeployment: boolutil.NilIfFalse(item.ExtractDuringDeployment),
-			FeedId:                  item.FeedId,
+			FeedId:                  strutil.EmptyIfNil(item.FeedId),
 			Id:                      item.Id,
 			Properties:              item.Properties,
 		}

@@ -18,8 +18,8 @@ type TerraformStepTemplate struct {
 }
 
 type TerraformStepTemplateParameter struct {
-	Id              *string           `cty:"id"`
-	Name            *string           `cty:"name"`
+	Id              string            `cty:"id"`
+	Name            string            `cty:"name"`
 	Label           *string           `cty:"label"`
 	HelpText        *string           `cty:"help_text"`
 	DefaultValue    *string           `cty:"default_value"`
@@ -27,11 +27,11 @@ type TerraformStepTemplateParameter struct {
 }
 
 type TerraformStepTemplatePackage struct {
-	Name                    *string           `cty:"name"`
+	Name                    string            `cty:"name"`
 	PackageID               *string           `cty:"package_id"`
 	AcquisitionLocation     *string           `cty:"acquisition_location"`
 	ExtractDuringDeployment *bool             `cty:"extract_during_deployment"`
-	FeedId                  *string           `cty:"feed_id"`
+	FeedId                  string            `cty:"feed_id"`
 	Id                      *string           `cty:"id"`
 	Properties              map[string]string `cty:"properties"`
 }
