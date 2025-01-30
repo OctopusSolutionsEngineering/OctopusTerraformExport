@@ -369,7 +369,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			StepPackageId:             template.StepPackageId,
 			CommunityActionTemplateId: template.CommunityActionTemplateId,
 			Packages:                  c.convertPackages(template.Packages),
-			DisplaySettings:           nil,
+			Parameters:                c.convertParameters(template.Parameters),
 			Properties:                template.Properties,
 		}
 
@@ -398,9 +398,24 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	return nil
 }
 
-func (c StepTemplateConverter) convertPackages(packages []octopus.Package) []terraform.TerraformPackage {
-	return lo.Map(packages, func(item octopus.Package, index int) terraform.TerraformPackage {
-		return terraform.TerraformPackage{
+func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTemplateParameters) []terraform.TerraformStepTemplateParameter {
+	return lo.Map(parameters, func(item octopus.StepTemplateParameters, index int) terraform.TerraformStepTemplateParameter {
+		return terraform.TerraformStepTemplateParameter{
+			Id:           strutil.NilIfEmpty(item.Id),
+			Name:         strutil.NilIfEmpty(item.Name),
+			Label:        strutil.NilIfEmpty(item.Label),
+			HelpText:     strutil.NilIfEmpty(item.HelpText),
+			DefaultValue: strutil.NilIfEmpty(fmt.Sprint(item.DefaultValue)),
+			DisplaySettings: map[string]string{
+				"Octopus.ControlType": item.DisplaySettings.OctopusControlType,
+			},
+		}
+	})
+}
+
+func (c StepTemplateConverter) convertPackages(packages []octopus.Package) []terraform.TerraformStepTemplatePackage {
+	return lo.Map(packages, func(item octopus.Package, index int) terraform.TerraformStepTemplatePackage {
+		return terraform.TerraformStepTemplatePackage{
 			Name:                    item.Name,
 			PackageID:               item.PackageId,
 			AcquisitionLocation:     item.AcquisitionLocation,
