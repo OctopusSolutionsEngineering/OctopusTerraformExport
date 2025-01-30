@@ -27,11 +27,17 @@ type TerraformStepTemplateParameter struct {
 }
 
 type TerraformStepTemplatePackage struct {
-	Name                    string            `cty:"name"`
-	PackageID               *string           `cty:"package_id"`
-	AcquisitionLocation     *string           `cty:"acquisition_location"`
-	ExtractDuringDeployment *bool             `cty:"extract_during_deployment"`
-	FeedId                  string            `cty:"feed_id"`
-	Id                      *string           `cty:"id"`
-	Properties              map[string]string `cty:"properties"`
+	Name                    string                                 `cty:"name"`
+	PackageID               *string                                `cty:"package_id"`
+	AcquisitionLocation     *string                                `cty:"acquisition_location"`
+	ExtractDuringDeployment *bool                                  `cty:"extract_during_deployment"`
+	FeedId                  string                                 `cty:"feed_id"`
+	Properties              TerraformStepTemplatePackageProperties `cty:"properties"`
+}
+
+type TerraformStepTemplatePackageProperties struct {
+	SelectionMode        string `cty:"selection_mode"`
+	Extract              string `cty:"selection_mode"`
+	PackageParameterName string `cty:"package_parameter_name"`
+	Purpose              string `cty:"purpose"`
 }

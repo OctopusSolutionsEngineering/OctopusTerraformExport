@@ -432,10 +432,38 @@ func (c StepTemplateConverter) convertPackages(packages []octopus.Package) []ter
 			AcquisitionLocation:     item.AcquisitionLocation,
 			ExtractDuringDeployment: boolutil.NilIfFalse(item.ExtractDuringDeployment),
 			FeedId:                  strutil.EmptyIfNil(item.FeedId),
-			Id:                      item.Id,
-			Properties:              item.Properties,
+			Properties:              c.convertProperties(item.Properties),
 		}
 	})
+}
+
+func (c StepTemplateConverter) convertProperties(properties map[string]string) terraform.TerraformStepTemplatePackageProperties {
+	extract, ok := properties["Extract"]
+	if !ok {
+		extract = ""
+	}
+
+	selectionMode, ok := properties["SelectionMode"]
+	if !ok {
+		selectionMode = ""
+	}
+
+	packageParameterName, ok := properties["PackageParameterName"]
+	if !ok {
+		packageParameterName = ""
+	}
+
+	purpose, ok := properties["Purpose"]
+	if !ok {
+		purpose = ""
+	}
+
+	return terraform.TerraformStepTemplatePackageProperties{
+		SelectionMode:        selectionMode,
+		Extract:              extract,
+		PackageParameterName: packageParameterName,
+		Purpose:              purpose,
+	}
 }
 
 // writeData appends the data blocks for stateless modules
