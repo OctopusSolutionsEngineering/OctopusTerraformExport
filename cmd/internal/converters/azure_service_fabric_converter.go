@@ -386,6 +386,10 @@ func (c AzureServiceFabricTargetConverter) toHcl(target octopus.AzureServiceFabr
 
 		passwordLookup := "${var." + targetName + "}"
 
+		/*
+			Note the endpoint is left null because the TF provider does not validate the value associated with service fabric clusters. This is the error you get if the Endpoint is populated:
+			Error: expected communication_style to be one of ["AzureCloudService" "AzureWebApp" "Ftp" "Kubernetes" "None" "OfflineDrop" "Ssh" "TentacleActive" "TentaclePassive"], got AzureServiceFabricCluster
+		*/
 		terraformResource := terraform.TerraformAzureServiceFabricClusterDeploymentTarget{
 			Type:                            octopusdeployAzureServiceFabricClusterDeploymentResourceType,
 			Name:                            targetName,
@@ -496,19 +500,6 @@ func (c AzureServiceFabricTargetConverter) lookupEnvironments(envs []string, dep
 
 func (c AzureServiceFabricTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
-	if machineLookup == "" {
-		return nil
-	}
-
-	return &machineLookup
-}
-
-func (c AzureServiceFabricTargetConverter) getWorkerPool(pool string, dependencies *data.ResourceDetailsCollection) *string {
-	if len(pool) == 0 {
-		return nil
-	}
-
-	machineLookup := dependencies.GetResource("WorkerPools", pool)
 	if machineLookup == "" {
 		return nil
 	}
