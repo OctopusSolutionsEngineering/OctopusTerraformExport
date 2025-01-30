@@ -254,6 +254,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		LimitResourceCount:              0,
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -1034,6 +1035,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:              0,
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -1350,6 +1352,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:              0,
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 	}
 
 	converters.TerraformProviderGenerator{

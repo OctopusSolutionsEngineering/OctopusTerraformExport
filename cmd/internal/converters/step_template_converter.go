@@ -1,9 +1,8 @@
 package converters
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -13,12 +12,13 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"strconv"
 )
 
-const octopusdeployStepTemplateResourceType = "shell_script"
+const octopusdeployStepTemplateResourceType = "octopusdeploy_step_template"
 const octopusdeployStepTemplateDataType = "external"
 
 // StepTemplateConverter is a placeholder for real step templates. We use the shell_script resource type to run custom
@@ -35,6 +35,7 @@ type StepTemplateConverter struct {
 	LimitResourceCount              int
 	GenerateImportScripts           bool
 	ExperimentalEnableStepTemplates bool
+	IncludeSpaceInPopulation        bool
 }
 
 func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -273,19 +274,6 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 		c.toPowershellImport(stepTemplateName, target.Name, dependencies)
 	}*/
 
-	stepTemplateResource := data.ResourceDetails{}
-	stepTemplateResource.FileName = "space_population/" + stepTemplateName + ".json"
-	stepTemplateResource.Id = template.Id
-	stepTemplateResource.Name = template.Name
-	stepTemplateResource.ResourceType = "ActionTemplatesJson"
-	stepTemplateResource.ToHcl = func() (string, error) {
-		// Remove the version from the template before marshalling
-		template.Version = nil
-		stepTemplateJson, err := json.Marshal(template)
-		return string(stepTemplateJson), err
-	}
-	dependencies.AddResource(stepTemplateResource)
-
 	// Get the external ID, defined as the community step template website
 	externalId := ""
 	if communityStepTemplate != nil {
@@ -318,114 +306,20 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 	thisResource.ToHcl = func() (string, error) {
 
-		// Step templates can reference feeds, which are space specific. We pass in lookup values for the feeds in
-		// environment variables to allow the PowerShell scripts to replace and hard coded feed IDs.
-		// Changes to environment variables trigger the script resource to run an update, so we also track the version
-		// of the upstream step template here as well. The version is not used in the script, but forces updates
-		// when the step template is updated.
-		environmentVars := map[string]string{}
-		environmentVars["VERSION"] = thisResource.VersionCurrent
-		for _, v2 := range dependencies.GetAllResource("Feeds") {
-			environmentVars["FEED_"+v2.Id] = v2.Lookup
+		terraformResource := terraform.TerraformStepTemplate{
+			Type:                      octopusdeployStepTemplateResourceType,
+			Name:                      stepTemplateName,
+			ActionType:                template.ActionType,
+			SpaceId:                   strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", strutil.EmptyIfNil(template.SpaceId))),
+			ResourceName:              template.Name,
+			Description:               template.Description,
+			StepPackageId:             template.StepPackageId,
+			CommunityActionTemplateId: template.CommunityActionTemplateId,
+			Packages:                  c.convertPackages(template.Packages),
+			DisplaySettings:           nil,
+			Properties:                template.Properties,
 		}
 
-		stepTemplateBody := "Get-Content -Raw -Path " + stepTemplateName + ".json"
-
-		if stateless {
-			stepTemplateJson, err := json.Marshal(template)
-			if err != nil {
-				return "", err
-			}
-
-			stepTemplateJsonEncoded := base64.StdEncoding.EncodeToString(stepTemplateJson)
-			stepTemplateBody = "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"" + stepTemplateJsonEncoded + "\"))"
-		}
-
-		terraformResource := terraform.TerraformShellScript{
-			Type: octopusdeployStepTemplateResourceType,
-			Name: stepTemplateName,
-			LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
-				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading step template')
-					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
-					if ([string]::IsNullOrEmpty($state.Id)) {
-						$host.ui.WriteErrorLine('State ID is empty')
-						Write-Host "{}"
-					} else {
-						$host.ui.WriteErrorLine('State ID is ($state.Id)')
-						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method GET -Headers $headers
-						# Strip out the last modified by details
-						$stepTemplateObject = $response.content | ConvertFrom-Json
-						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
-						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
-						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
-					}`)),
-				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create step template')
-					$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-					$body = ` + stepTemplateBody + `
-					$parsedTemplate = $body | ConvertFrom-Json -Depth 100
-	
-					$response = $null
-					if (-not [string]::IsNullOrEmpty($parsedTemplate.CommunityActionTemplateId)) {
-						# Find the step template with the matching external ID
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates?take=10000" -Method GET -Headers $headers
-						$communityTemplate = $response.content | ConvertFrom-Json | Select-Object -Expand Items | ? {$_.Website -eq "` + thisResource.ExternalID + `"} | % {
-							# Then install the step template
-							$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
-						}
-					} else {
-						# Regular step templates are imported from their JSON representation
-
-						# Replace feed IDs with lookup values passed in via env vars
-						gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
-	
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates" -ContentType "application/json" -Method POST -Body $body -Headers $headers
-						$stepTemplate = $response.content | ConvertFrom-Json
-						# Import any new step template twice to ensure the version of a new template is at least 1.
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($stepTemplate.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
-					}
-
-					# Strip out the last modified by details
-					$stepTemplateObject = $response.content | ConvertFrom-Json
-					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
-					$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
-					Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)`),
-				Update: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Updating step template')
-					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
-					if ([string]::IsNullOrEmpty($state.Id)) {
-						$host.ui.WriteErrorLine('State ID is empty')
-						Write-Host "{}"
-					} else {
-						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$body = ` + stepTemplateBody + `
-
-						# Replace feed IDs with lookup values passed in via env vars
-						gci env:* | ? {$_.Name -like "FEED_*"} | % {$body = $body.Replace($_.Name.Replace("FEED_", ""), $_.Value)}
-
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -ContentType "application/json" -Method PUT -Body $body -Headers $headers
-						# Strip out the last modified by details
-						$stepTemplateObject = $response.content | ConvertFrom-Json
-						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedBy')
-						$stepTemplateObject.PSObject.Properties.Remove('LastModifiedOn')
-						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
-					}`)),
-				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Deleting step template')
-					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
-					if ([string]::IsNullOrEmpty($state.Id)) {
-						$host.ui.WriteErrorLine('State ID is empty')
-					} else {
-						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/$($env:SPACEID)/actiontemplates/$($state.Id)" -Method DELETE -Headers $headers
-					}`),
-			},
-			Environment: environmentVars,
-			SensitiveEnvironment: map[string]string{
-				"SERVER":  "${var.octopus_server}",
-				"SPACEID": "${var.octopus_space_id}",
-				"APIKEY":  "${var.octopus_apikey}",
-			},
-			WorkingDirectory: strutil.StrPointer("${path.module}"),
-		}
 		file := hclwrite.NewEmptyFile()
 
 		if stateless {
@@ -451,6 +345,20 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c StepTemplateConverter) convertPackages(packages []octopus.Package) []terraform.TerraformPackage {
+	return lo.Map(packages, func(item octopus.Package, index int) terraform.TerraformPackage {
+		return terraform.TerraformPackage{
+			Name:                    item.Name,
+			PackageID:               item.PackageId,
+			AcquisitionLocation:     item.AcquisitionLocation,
+			ExtractDuringDeployment: boolutil.NilIfFalse(item.ExtractDuringDeployment),
+			FeedId:                  item.FeedId,
+			Id:                      item.Id,
+			Properties:              item.Properties,
+		}
+	})
 }
 
 // writeData appends the data blocks for stateless modules
