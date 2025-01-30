@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/google/uuid"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
@@ -400,8 +401,18 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTemplateParameters) []terraform.TerraformStepTemplateParameter {
 	return lo.Map(parameters, func(item octopus.StepTemplateParameters, index int) terraform.TerraformStepTemplateParameter {
+		/*
+			The TF provider requires a UUID for the ID. However, it is possible that the ID is null or an empty string
+			on the Octopus server. If we get a blank string, just generate an ID.
+		*/
+
+		id := item.Id
+		if id == "" {
+			id = uuid.New().String()
+		}
+
 		return terraform.TerraformStepTemplateParameter{
-			Id:           item.Id,
+			Id:           id,
 			Name:         item.Name,
 			Label:        strutil.NilIfEmpty(item.Label),
 			HelpText:     strutil.NilIfEmpty(item.HelpText),
