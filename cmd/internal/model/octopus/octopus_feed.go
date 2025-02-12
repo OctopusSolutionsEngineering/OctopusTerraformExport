@@ -25,4 +25,8 @@ type Feed struct {
 
 	// Nuget
 	EnhancedMode bool
+
+	// Artifactory
+	Repository  *string
+	LayoutRegex *string
 }
