@@ -23,7 +23,10 @@ const octopusdeployAwsElasticContainerRegistryResourceType = "octopusdeploy_aws_
 const octopusdeployMavenFeedResourceType = "octopusdeploy_maven_feed"
 const octopusdeployGithubRepositoryFeedResourceType = "octopusdeploy_github_repository_feed"
 const octopusdeployHelmFeedResourceType = "octopusdeploy_helm_feed"
-const octopusdeploy_nuget_feed_resource_type = "octopusdeploy_nuget_feed"
+const octopusdeployNugetFeedResourceType = "octopusdeploy_nuget_feed"
+const octopusdeployArtifactoryFeedResourceType = "octopusdeploy_artifactory_generic_feed"
+
+const artifactory_feed_type = "ArtifactoryGeneric"
 
 type FeedConverter struct {
 	Client                    client.OctopusClient
@@ -292,6 +295,7 @@ func (c FeedConverter) toHclResource(stateless bool, dependencies *data.Resource
 		c.exportMaven(stateless, dependencies, resource, thisResource, resourceName) ||
 		c.exportGithub(stateless, dependencies, resource, thisResource, resourceName) ||
 		c.exportHelm(stateless, dependencies, resource, thisResource, resourceName) ||
+		c.exportArtifactory(stateless, dependencies, resource, thisResource, resourceName) ||
 		c.exportNuget(stateless, dependencies, resource, thisResource, resourceName)) {
 		zap.L().Error("Found unexpected feed type \"" + strutil.EmptyIfNil(resource.FeedType) + "\" with name \"" + resource.Name + "\".")
 	}
@@ -390,21 +394,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			targetBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(targetBlock, stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -494,21 +484,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			targetBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[secret_key]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(targetBlock, stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -605,21 +581,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			targetBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(targetBlock, stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -714,21 +676,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			targetBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(targetBlock, stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -822,21 +770,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			targetBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(targetBlock, stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -853,17 +787,17 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 	}
 
 	if c.GenerateImportScripts {
-		c.toBashImport(octopusdeploy_nuget_feed_resource_type, resourceName, resource.Name, dependencies)
-		c.toPowershellImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
+		c.toBashImport(octopusdeployNugetFeedResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployNugetFeedResourceType, resourceName, resource.Name, dependencies)
 	}
 
 	if stateless {
 		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
 			"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
-			": " + octopusdeploy_nuget_feed_resource_type + "." + resourceName + "[0].id}"
-		thisResource.Dependency = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + "}"
+			": " + octopusdeployNugetFeedResourceType + "." + resourceName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployNugetFeedResourceType + "." + resourceName + "}"
 	} else {
-		thisResource.Lookup = "${" + octopusdeploy_nuget_feed_resource_type + "." + resourceName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployNugetFeedResourceType + "." + resourceName + ".id}"
 	}
 
 	passwordName := resourceName + "_password"
@@ -882,7 +816,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 		password := "${var." + passwordName + "}"
 
 		terraformResource := terraform.TerraformNuGetFeed{
-			Type:                              octopusdeploy_nuget_feed_resource_type,
+			Type:                              octopusdeployNugetFeedResourceType,
 			Id:                                strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 			SpaceId:                           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 			Name:                              resourceName,
@@ -929,21 +863,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			targetBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(targetBlock, stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -951,6 +871,114 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 	}
 
 	return true
+}
+
+func (c FeedConverter) exportArtifactory(stateless bool, dependencies *data.ResourceDetailsCollection, resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
+	if strutil.EmptyIfNil(resource.FeedType) != artifactory_feed_type {
+		return false
+	}
+
+	if c.GenerateImportScripts {
+		c.toBashImport(octopusdeployArtifactoryFeedResourceType, resourceName, resource.Name, dependencies)
+		c.toPowershellImport(octopusdeployArtifactoryFeedResourceType, resourceName, resource.Name, dependencies)
+	}
+
+	if stateless {
+		thisResource.Lookup = "${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 " +
+			"? data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds[0].id " +
+			": " + octopusdeployArtifactoryFeedResourceType + "." + resourceName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployArtifactoryFeedResourceType + "." + resourceName + "}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployArtifactoryFeedResourceType + "." + resourceName + ".id}"
+	}
+
+	passwordName := resourceName + "_password"
+
+	thisResource.Parameters = []data.ResourceParameter{
+		{
+			Label:         "Artifactory Feed " + resource.Name + " password",
+			Description:   "The password associated with the feed \"" + resource.Name + "\"",
+			ResourceName:  sanitizer.SanitizeParameterName(dependencies, resource.Name, "Password"),
+			ParameterType: "Password",
+			Sensitive:     true,
+			VariableName:  passwordName,
+		},
+	}
+	thisResource.ToHcl = func() (string, error) {
+		password := "${var." + passwordName + "}"
+
+		terraformResource := terraform.TerraformArtifactoryFeed{
+			Type:         octopusdeployNugetFeedResourceType,
+			Name:         resourceName,
+			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+			FeedUri:      strutil.EmptyIfNil(resource.FeedUri),
+			ResourceName: resource.Name,
+			Password:     nil,
+			Username:     strutil.NilIfEmptyPointer(resource.Username),
+			Repository:   strutil.EmptyIfNil(resource.Repository),
+			LayoutRegex:  resource.LayoutRegex,
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, resource.Name, artifactory_feed_type, resourceName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployFeedsDataType + "." + resourceName + ".feeds) != 0 ? 0 : 1}")
+		}
+
+		if resource.Password != nil && resource.Password.HasValue {
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        passwordName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The password used by the feed " + resource.Name,
+			}
+
+			terraformResource.Password = &password
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: passwordName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
+			}
+
+			block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			hcl.WriteUnquotedAttribute(block, "type", "string")
+			file.Body().AppendBlock(block)
+		}
+
+		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		c.writeLifecycleAttributes(targetBlock, stateless)
+
+		file.Body().AppendBlock(targetBlock)
+
+		return string(file.Bytes()), nil
+	}
+
+	return true
+}
+
+func (c FeedConverter) writeLifecycleAttributes(targetBlock *hclwrite.Block, stateless bool) {
+	// When using dummy values, we expect the secrets will be updated later
+	if c.DummySecretVariableValues || stateless {
+
+		ignoreAll := terraform.EmptyBlock{}
+		lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+		targetBlock.Body().AppendBlock(lifecycleBlock)
+
+		if c.DummySecretVariableValues {
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+		}
+
+		if stateless {
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+		}
+	}
 }
 
 func (c FeedConverter) toHclLookup(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) {

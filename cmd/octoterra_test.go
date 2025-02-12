@@ -9357,3 +9357,78 @@ func TestProjectTenantLinks(t *testing.T) {
 			return nil
 		})
 }
+
+// TestArtifactoryFeedExport verifies that a artifactory feed can be reimported with the correct settings
+func TestArtifactoryFeedExport(t *testing.T) {
+	// The artifactory feeds can not be created.
+	// See https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/865
+	return
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/76-artifactoryfeed/space_creation",
+		"../test/terraform/76-artifactoryfeed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_artifactory_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			feedName := "Artifactory"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
+
+					if strutil.EmptyIfNil(v.FeedType) != "Artifactory" {
+						return errors.New("The feed must have a type of \"Artifactory\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\")")
+					}
+
+					if strutil.EmptyIfNil(v.Username) != "username" {
+						return errors.New("The feed must have a username of \"username\" (was \"" + strutil.EmptyIfNil(v.Username) + "\")")
+					}
+
+					if !v.Password.HasValue {
+						return errors.New("The feed must have a password")
+					}
+
+					if strutil.EmptyIfNil(v.FeedUri) != "https://example.jfrog.io" {
+						return errors.New("The feed must be have a feed uri of \"https://example.jfrog.io\" (was " + strutil.EmptyIfNil(v.FeedUri) + ")")
+					}
+
+					/*
+						These reported the following errors in 0.40.4:
+						An argument named "repository" is not expected here.
+						An argument named "layout_regex" is not expected here.
+						This is a bug, but and the test will be updated when the provider is fixed.
+					*/
+					/*
+						if strutil.EmptyIfNil(v.Repository) != "repo" {
+							return errors.New("The feed must have a repository of \"repo\" (was " + strutil.EmptyIfNil(v.Repository) + ")")
+						}
+
+						if strutil.EmptyIfNil(v.LayoutRegex) != "this is regex" {
+							return errors.New("The feed must have a layout regex of \"this is regex\" (was " + strutil.EmptyIfNil(v.LayoutRegex) + ")")
+						}
+					*/
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
