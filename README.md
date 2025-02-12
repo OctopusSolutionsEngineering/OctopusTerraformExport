@@ -1,5 +1,5 @@
 # Octopus Terraform Exporter
-![Coverage](https://img.shields.io/badge/Coverage-70.4%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-69.7%25-yellow)
 
 [![Github All Releases](https://img.shields.io/github/downloads/OctopusSolutionsEngineering/OctopusTerraformExport/total.svg)]()
 
