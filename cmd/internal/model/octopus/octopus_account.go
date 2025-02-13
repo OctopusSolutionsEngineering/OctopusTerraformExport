@@ -46,6 +46,10 @@ type Account struct {
 	DeploymentSubjectKeys  []string
 	HealthCheckSubjectKeys []string
 	AccountTestSubjectKeys []string
+
+	// azure oidc
+	Audience      *string
+	ApplicationId *string
 }
 
 type Secret struct {

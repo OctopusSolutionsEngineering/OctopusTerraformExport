@@ -137,3 +137,28 @@ type TerraformAwsOidcAccount struct {
 	Tenants                         []string `hcl:"tenants"`
 	TenantedDeploymentParticipation *string  `hcl:"tenanted_deployment_participation"`
 }
+
+type TerraformAzureOidcSubscription struct {
+	Type                            string   `hcl:"type,label"`
+	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
+	Count                           *string  `hcl:"count"`
+	SpaceId                         *string  `hcl:"space_id"`
+	ResourceName                    string   `hcl:"name"`
+	Description                     *string  `hcl:"description"`
+	Environments                    []string `hcl:"environments"`
+	TenantTags                      []string `hcl:"tenant_tags"`
+	Tenants                         []string `hcl:"tenants"`
+	TenantedDeploymentParticipation *string  `hcl:"tenanted_deployment_participation"`
+	SubscriptionId                  *string  `hcl:"subscription_id"`
+	AzureEnvironment                *string  `hcl:"azure_environment"`
+
+	TenantId                string   `hcl:"tenant_id"`
+	ApplicationId           string   `hcl:"application_id"`
+	Audience                *string  `hcl:"audience"`
+	AccountTestSubjectKeys  []string `hcl:"account_test_subject_keys"`
+	ExecutionSubjectKeys    []string `hcl:"execution_subject_keys"`
+	HealthSubjectKeys       []string `hcl:"health_subject_keys"`
+	AuthenticationEndpoint  *string  `hcl:"authentication_endpoint"`
+	ResourceManagerEndpoint *string  `hcl:"resource_manager_endpoint"`
+}

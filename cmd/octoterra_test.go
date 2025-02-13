@@ -9517,3 +9517,95 @@ func TestAwsOidcAccountExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestAzureOidcAccountExport verifies that an Azure OIDC account can be reimported with the correct settings
+func TestAzureOidcAccountExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/78-azureoidcaccount/space_creation",
+		"../test/terraform/78-azureoidcaccount/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			accountName := "Azure OIDC"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == accountName {
+					found = true
+					if v.AccountType != "AzureOidc" {
+						return errors.New("The account must be have a type of \"AzureOidc\" (was " + v.AccountType + ")")
+					}
+
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						return errors.New("The account must be have a description of \"A test account\" (was " + strutil.EmptyIfNil(v.Description) + ")")
+					}
+
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\" (was " + strutil.EmptyIfNil(v.TenantedDeploymentParticipation) + ")")
+					}
+
+					if len(v.TenantTags) != 0 {
+						return errors.New("The account must be have no tenant tags (had " + fmt.Sprint(len(v.TenantTags)) + ")")
+					}
+
+					if len(v.DeploymentSubjectKeys) != 1 {
+						return errors.New("The account must 1 deployment subject key (was " + fmt.Sprint(len(v.DeploymentSubjectKeys)) + ")")
+					}
+
+					if v.DeploymentSubjectKeys[0] != "space" {
+						return errors.New("The account must be have a deployment subject key of \"space\" (was " + v.DeploymentSubjectKeys[0] + ")")
+					}
+
+					if len(v.HealthCheckSubjectKeys) != 1 {
+						return errors.New("The account must 1 health check subject key (was " + fmt.Sprint(len(v.HealthCheckSubjectKeys)) + ")")
+					}
+
+					if v.HealthCheckSubjectKeys[0] != "space" {
+						return errors.New("The account must be have a health check subject key of \"space\" (was " + v.HealthCheckSubjectKeys[0] + ")")
+					}
+
+					if len(v.AccountTestSubjectKeys) != 1 {
+						return errors.New("The account must 1 account test subject key (was " + fmt.Sprint(len(v.AccountTestSubjectKeys)) + ")")
+					}
+
+					if v.AccountTestSubjectKeys[0] != "space" {
+						return errors.New("The account must be have a account test subject key of \"space\" (was " + v.AccountTestSubjectKeys[0] + ")")
+					}
+
+					if strutil.EmptyIfNil(v.Audience) != "api://AzureADTokenExchange" {
+						return errors.New("The account must be have an audience of \"api://AzureADTokenExchange\" (was " + strutil.EmptyIfNil(v.Audience) + ")")
+					}
+
+					if strutil.EmptyIfNil(v.ClientId) != "10000000-0000-0000-0000-000000000000" {
+						return errors.New("The account must be have an application ID of \"10000000-0000-0000-0000-000000000000\" (was " + strutil.EmptyIfNil(v.ApplicationId) + ")")
+					}
+
+					if strutil.EmptyIfNil(v.TenantId) != "30000000-0000-0000-0000-000000000000" {
+						return errors.New("The account must be have an tenant ID of \"30000000-0000-0000-0000-000000000000\" (was " + strutil.EmptyIfNil(v.TenantId) + ")")
+					}
+
+					if strutil.EmptyIfNil(v.SubscriptionNumber) != "20000000-0000-0000-0000-000000000000" {
+						return errors.New("The account must be have an subscription ID of \"20000000-0000-0000-0000-000000000000\" (was " + strutil.EmptyIfNil(v.SubscriptionNumber) + ")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

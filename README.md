@@ -231,14 +231,3 @@ docker run -v $PWD:/tmp/octoexport:z --rm ghcr.io/octopussolutionsengineering/oc
     -lookupProjectDependencies \
     -dest /tmp/octoexport
 ```
-
-## To Do
-
-The following resources have yet to be exported:
-* octopusdeploy_scoped_user_role
-* octopusdeploy_team
-* octopusdeploy_user
-* octopusdeploy_user_role
-
-Features:
-* Exclude triggers

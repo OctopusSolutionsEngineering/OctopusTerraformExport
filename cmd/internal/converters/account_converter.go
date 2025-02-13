@@ -379,6 +379,13 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 			c.toBashImport("octopusdeploy_aws_openid_connect_account", resourceName, account.Name, dependencies)
 			c.toPowershellImport("octopusdeploy_aws_openid_connect_account", resourceName, account.Name, dependencies)
 		}
+	} else if account.AccountType == "AzureOidc" {
+		c.writeAzureOidcAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_azure_openid_connect", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_azure_openid_connect", resourceName, account.Name, dependencies)
+		}
 	}
 
 	dependencies.AddResource(thisResource)
@@ -1037,6 +1044,71 @@ func (c AccountConverter) writeAwsOidcAccount(stateless bool, resource *data.Res
 	}
 
 	return nil
+}
+
+func (c AccountConverter) getAzureOidcLookup(stateless bool, resourceName string) string {
+	if stateless {
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_azure_openid_connect." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_azure_openid_connect." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getAzureOidcDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_azure_openid_connect." + resourceName + "}"
+	}
+
+	return ""
+}
+
+func (c AccountConverter) writeAzureOidcAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
+
+	resource.Lookup = c.getAzureOidcLookup(stateless, resourceName)
+	resource.Dependency = c.getAzureOidcDependency(stateless, resourceName)
+	resource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformAzureOidcSubscription{
+			Type:                            "octopusdeploy_azure_openid_connect",
+			Name:                            resourceName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			Count:                           c.getCount(stateless, resourceName),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+			SubscriptionId:                  account.SubscriptionNumber,
+			AzureEnvironment:                account.AzureEnvironment,
+			Audience:                        account.Audience,
+			AccountTestSubjectKeys:          account.AccountTestSubjectKeys,
+			ExecutionSubjectKeys:            account.DeploymentSubjectKeys,
+			HealthSubjectKeys:               account.HealthCheckSubjectKeys,
+			AuthenticationEndpoint:          strutil.NilIfEmptyPointer(account.ActiveDirectoryEndpointBaseUri),
+			ResourceManagerEndpoint:         strutil.NilIfEmptyPointer(account.ResourceManagementEndpointBaseUri),
+			TenantId:                        strutil.EmptyIfNil(account.TenantId),
+			ApplicationId:                   strutil.EmptyIfNil(account.ClientId),
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+		}
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{})
+
+		file.Body().AppendBlock(accountBlock)
+
+		return string(file.Bytes()), nil
+	}
 }
 
 func (c AccountConverter) writeLifecycleAttributes(accountBlock *hclwrite.Block, stateless bool, dummyVars []string) {
