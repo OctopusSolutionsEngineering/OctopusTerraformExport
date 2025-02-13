@@ -42,17 +42,29 @@ func (c ProjectTriggerConverter) ToHclStatelessByProjectIdAndName(projectId stri
 }
 
 func (c ProjectTriggerConverter) toHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
-	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
-
 	// The API endpoint /api/Spaces-1/projects/Projects-1/triggers does not return ARC triggers
 	// You have to add the triggerActionCategory query param to return ARC triggers
+	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
 	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection, []string{"triggerActionCategory", "Deployment"})
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.ProjectTrigger]: %w", err)
 	}
 
-	for _, resource := range collection.Items {
+	// You have to add the triggerActionCategory query param to return the runbook triggers
+	runbookTriggerCollection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+	err = c.Client.GetAllResources(c.GetGroupResourceType(projectId), &runbookTriggerCollection, []string{"triggerActionCategory", "Runbook"})
+
+	if err != nil {
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.ProjectTrigger]: %w", err)
+	}
+
+	// We want all the triggers
+	triggers := []octopus.ProjectTrigger{}
+	triggers = append(triggers, collection.Items...)
+	triggers = append(triggers, runbookTriggerCollection.Items...)
+
+	for _, resource := range triggers {
 		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
 			return nil
 		}
