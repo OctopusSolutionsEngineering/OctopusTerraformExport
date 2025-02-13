@@ -498,7 +498,8 @@ func (c ProjectTriggerConverter) buildArcTriggerResources(projectTrigger octopus
 	return c.buildArcTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
 }
 
-func (c ProjectTriggerConverter) getTriggerPackage(projectTrigger octopus.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (terraform.TerraformBuiltInTriggerPackage, error) {
+// getTriggerPackage resolves the step name and package name from the IDs returned by the API for use with the ARC trigger
+func (c ProjectTriggerConverter) getTriggerPackage(projectTrigger octopus.ProjectTrigger) (terraform.TerraformBuiltInTriggerPackage, error) {
 	releaseCreationPackage := terraform.TerraformBuiltInTriggerPackage{}
 
 	// There should always be a package, but be defensive here
@@ -574,7 +575,7 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 
 	thisResource.ToHcl = func() (string, error) {
 
-		releaseCreationPackage, err := c.getTriggerPackage(projectTrigger, dependencies)
+		releaseCreationPackage, err := c.getTriggerPackage(projectTrigger)
 
 		if err != nil {
 			return "", err
