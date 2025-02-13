@@ -588,7 +588,7 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 			Id:    strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
 			SpaceId:   strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
-			ChannelId: "",
+			ChannelId: dependencies.GetResource("Channels", strutil.EmptyIfNil(projectTrigger.Action.ChannelId)),
 			ProjectId: dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			// This is defined on the Terraform resource, but doesn't appear in the API
 			ReleaseCreationPackageStepId: nil,
