@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 type AccountConverter struct {
@@ -366,6 +368,17 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 			c.toBashImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
 			c.toPowershellImport("octopusdeploy_ssh_key_account", resourceName, account.Name, dependencies)
 		}
+	} else if account.AccountType == "AmazonWebServicesOidcAccount" {
+		err := c.writeAwsOidcAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
+
+		if err != nil {
+			return err
+		}
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_aws_openid_connect_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_aws_openid_connect_account", resourceName, account.Name, dependencies)
+		}
 	}
 
 	dependencies.AddResource(thisResource)
@@ -511,21 +524,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[secret_key]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"secret_key"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
@@ -601,21 +600,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"password"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
@@ -680,21 +665,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[certificate]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"certificate"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
@@ -764,21 +735,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[json_key]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"json_key"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
@@ -848,21 +805,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[token]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"token"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
@@ -934,21 +877,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"password"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
@@ -1032,27 +961,98 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 			return "", err
 		}
 
-		// When using dummy values, we expect the secrets will be updated later
-		if c.DummySecretVariableValues || stateless {
-
-			ignoreAll := terraform.EmptyBlock{}
-			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
-			accountBlock.Body().AppendBlock(lifecycleBlock)
-
-			if c.DummySecretVariableValues {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[private_key_passphrase, private_key_file]")
-			}
-
-			if stateless {
-				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
-			}
-		}
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{"private_key_passphrase", "private_key_file"})
 
 		file.Body().AppendBlock(accountBlock)
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(secretVariableResource))
 		file.Body().AppendBlock(hcl.EncodeTerraformVariable(certFileVariableResource))
 
 		return string(file.Bytes()), nil
+	}
+}
+
+func (c AccountConverter) getAwsOidcLookup(stateless bool, resourceName string) string {
+	if stateless {
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_aws_openid_connect_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_aws_openid_connect_account." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getAwsOidcDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_aws_openid_connect_account." + resourceName + "}"
+	}
+
+	return ""
+}
+
+func (c AccountConverter) writeAwsOidcAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+
+	duration, err := intutil.ParseIntPointer(account.SessionDuration)
+
+	if err != nil {
+		return err
+	}
+
+	resource.Lookup = c.getAwsOidcLookup(stateless, resourceName)
+	resource.Dependency = c.getAwsOidcDependency(stateless, resourceName)
+	resource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformAwsOidcAccount{
+			Type:                            "octopusdeploy_aws_openid_connect_account",
+			Name:                            resourceName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			Count:                           c.getCount(stateless, resourceName),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
+			ResourceName:                    account.Name,
+			Description:                     account.Description,
+			RoleArn:                         strutil.EmptyIfNil(account.RoleArn),
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			ExecutionSubjectKeys:            account.DeploymentSubjectKeys,
+			AccountTestSubjectKeys:          account.AccountTestSubjectKeys,
+			HealthSubjectKeys:               account.HealthCheckSubjectKeys,
+			SessionDuration:                 duration,
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+		}
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{})
+
+		file.Body().AppendBlock(accountBlock)
+
+		return string(file.Bytes()), nil
+	}
+
+	return nil
+}
+
+func (c AccountConverter) writeLifecycleAttributes(accountBlock *hclwrite.Block, stateless bool, dummyVars []string) {
+	if c.DummySecretVariableValues || stateless {
+
+		ignoreAll := terraform.EmptyBlock{}
+		lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+		accountBlock.Body().AppendBlock(lifecycleBlock)
+
+		if c.DummySecretVariableValues {
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "["+strings.Join(dummyVars, ", ")+"]")
+		}
+
+		if stateless {
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+		}
 	}
 }
 

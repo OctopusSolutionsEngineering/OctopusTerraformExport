@@ -118,3 +118,22 @@ type TerraformUsernamePasswordAccount struct {
 	Username                        *string  `hcl:"username"`
 	Password                        *string  `hcl:"password"`
 }
+
+type TerraformAwsOidcAccount struct {
+	Type                            string   `hcl:"type,label"`
+	Name                            string   `hcl:"name,label"`
+	Id                              *string  `hcl:"id"`
+	Count                           *string  `hcl:"count"`
+	SpaceId                         *string  `hcl:"space_id"`
+	ResourceName                    string   `hcl:"name"`
+	Description                     *string  `hcl:"description"`
+	RoleArn                         string   `hcl:"role_arn"`
+	AccountTestSubjectKeys          []string `hcl:"account_test_subject_keys"`
+	Environments                    []string `hcl:"environments"`
+	ExecutionSubjectKeys            []string `hcl:"execution_subject_keys"`
+	HealthSubjectKeys               []string `hcl:"health_subject_keys"`
+	SessionDuration                 *int     `hcl:"session_duration"`
+	TenantTags                      []string `hcl:"tenant_tags"`
+	Tenants                         []string `hcl:"tenants"`
+	TenantedDeploymentParticipation *string  `hcl:"tenanted_deployment_participation"`
+}
