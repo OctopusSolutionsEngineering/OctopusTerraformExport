@@ -25,6 +25,7 @@ type OctopusClient interface {
 	GetSpaces() ([]octopus.Space, error)
 	EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error)
 	GetResource(resourceType string, resources any) (exists bool, funcErr error)
+	GetResourceById(resourceType string, id string, resources any) (funcErr error)
 	GetSpaceResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
 	GetGlobalResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
 	GetResourceNameById(resourceType string, id string) (name string, funcErr error)
@@ -725,6 +726,67 @@ func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (
 	}
 
 	return nameId.Name, nil
+}
+
+func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resources any) (funcErr error) {
+	cacheHit := o.readCache(resourceType, id)
+	if cacheHit != nil {
+		zap.L().Debug("Cache hit on " + resourceType + " " + id)
+
+		err := o.unmarshal(&resources, cacheHit)
+
+		if err != nil {
+			return fmt.Errorf("error in OctopusApiClient.GetResourceById loading resource type %s with id %s into type %s from %s: %w",
+				resourceType, id, reflect.TypeOf(resources).String(), cacheHit, err)
+		}
+
+		return nil
+	}
+
+	zap.L().Debug("Getting " + resourceType + " " + id)
+
+	req, err := o.getRequest(resourceType, id, false)
+
+	if err != nil {
+		return err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == 404 {
+		return nil
+	}
+
+	if res.StatusCode != 200 {
+		return errors.New("did not find the requested resource: " + resourceType + " " + id)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			funcErr = errors.Join(funcErr, err)
+		}
+	}(res.Body)
+
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return err
+	}
+
+	o.cacheResult(resourceType, id, body)
+
+	err = o.unmarshal(resources, body)
+
+	if err != nil {
+		return fmt.Errorf("error in OctopusApiClient.GetResourceNameById loading resource type %s with id %s into type %s from %s: %w",
+			resourceType, id, reflect.TypeOf(resources).String(), body, err)
+	}
+
+	return nil
 }
 
 func (o *OctopusApiClient) readCache(resourceType string, id string) []byte {

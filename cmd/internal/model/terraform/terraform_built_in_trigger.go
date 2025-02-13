@@ -9,10 +9,10 @@ type TerraformBuiltInTrigger struct {
 	ChannelId                    string                         `hcl:"channel_id"`
 	ProjectId                    string                         `hcl:"project_id"`
 	ReleaseCreationPackageStepId *string                        `hcl:"release_creation_package_step_id"`
-	ReleaseCreationPackage       TerraformBuiltInTriggerPackage `cty:"release_creation_package"`
+	ReleaseCreationPackage       TerraformBuiltInTriggerPackage `hcl:"release_creation_package"`
 }
 
 type TerraformBuiltInTriggerPackage struct {
-	DeploymentAction string `hcl:"deployment_action"`
-	PackageReference string `hcl:"package_reference"`
+	DeploymentAction string `cty:"deployment_action"`
+	PackageReference string `cty:"package_reference"`
 }

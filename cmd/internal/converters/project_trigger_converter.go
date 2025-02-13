@@ -498,6 +498,54 @@ func (c ProjectTriggerConverter) buildArcTriggerResources(projectTrigger octopus
 	return c.buildArcTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
 }
 
+func (c ProjectTriggerConverter) getTriggerPackage(projectTrigger octopus.ProjectTrigger, dependencies *data.ResourceDetailsCollection) (terraform.TerraformBuiltInTriggerPackage, error) {
+	releaseCreationPackage := terraform.TerraformBuiltInTriggerPackage{}
+
+	// There should always be a package, but be defensive here
+	if len(projectTrigger.Filter.Packages) != 0 {
+
+		// we need the project associated with the trigger
+		project := octopus.Project{}
+		err := c.Client.GetResourceById("Projects", projectTrigger.ProjectId, &project)
+
+		if err != nil {
+			return releaseCreationPackage, err
+		}
+
+		// We then need the deployment process associated with the project
+		deploymentProcess := octopus.DeploymentProcess{}
+
+		err = c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
+
+		if err != nil {
+			return releaseCreationPackage, err
+		}
+
+		actions := lo.FlatMap(deploymentProcess.Steps, func(item octopus.Step, index int) []octopus.Action {
+			return lo.Filter(item.Actions, func(item octopus.Action, index int) bool {
+				return item.Id == projectTrigger.Filter.Packages[0].DeploymentAction
+			})
+		})
+
+		if len(actions) != 0 {
+			action := actions[0]
+
+			// We need the package referenced by the trigger
+			pkg, _, exists := lo.FindIndexOf(action.Packages, func(pkg octopus.Package) bool {
+				return strutil.EmptyIfNil(pkg.Id) == projectTrigger.Filter.Packages[0].PackageReference
+			})
+
+			if exists {
+				releaseCreationPackage.PackageReference = strutil.EmptyIfNil(pkg.Name)
+				releaseCreationPackage.DeploymentAction = strutil.EmptyIfNil(action.Name)
+			}
+		}
+
+	}
+
+	return releaseCreationPackage, nil
+}
+
 func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	project := octopus.Project{}
 	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
@@ -526,11 +574,10 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 
 	thisResource.ToHcl = func() (string, error) {
 
-		releaseCreationPackage := terraform.TerraformBuiltInTriggerPackage{}
+		releaseCreationPackage, err := c.getTriggerPackage(projectTrigger, dependencies)
 
-		if len(projectTrigger.Filter.Packages) != 0 {
-			releaseCreationPackage.PackageReference = projectTrigger.Filter.Packages[0].PackageReference
-			releaseCreationPackage.DeploymentAction = projectTrigger.Filter.Packages[0].DeploymentAction
+		if err != nil {
+			return "", err
 		}
 
 		terraformResource := terraform.TerraformBuiltInTrigger{
