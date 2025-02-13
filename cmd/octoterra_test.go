@@ -9660,7 +9660,7 @@ func TestSingleProjectBuiltInFeedTriggerExport(t *testing.T) {
 			}
 
 			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
-			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers&triggerActionCategory=Deployment", &triggers)
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers, []string{"triggerActionCategory", "Deployment"})
 
 			if err != nil {
 				return err
