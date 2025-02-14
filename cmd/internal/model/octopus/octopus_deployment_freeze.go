@@ -24,4 +24,9 @@ type DeploymentFreezeRecurringSchedule struct {
 	EndAfterOccurrences *int
 	StartDate           *string
 	EndDate             *string
+	DateOfMonth         *string
+	DayNumberOfMonth    *string
+	DayOfWeek           *string
+	DaysOfWeek          []string
+	MonthlyScheduleType *string
 }
