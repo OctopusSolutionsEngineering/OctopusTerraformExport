@@ -43,6 +43,7 @@ type SpaceConverter struct {
 	SpacePopulateConverter            Converter
 	StepTemplateConverter             Converter
 	TenantProjectConverter            Converter
+	DeploymentFreezeConverter         Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
@@ -134,6 +135,10 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	// Convert all step dependencies
 	c.StepTemplateConverter.AllToHcl(dependencies)
 
+	// Convert the deployment freezes
+	// Need to wait for https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/867 to be fixed
+	//c.DeploymentFreezeConverter.AllToHcl(dependencies)
+
 	// Include the space if it was requested
 	c.SpacePopulateConverter.AllToHcl(dependencies)
 
@@ -216,6 +221,9 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 
 	// Convert step templates
 	c.StepTemplateConverter.AllToStatelessHcl(dependencies)
+
+	// Convert the Deployment Freezes
+	c.DeploymentFreezeConverter.AllToStatelessHcl(dependencies)
 
 	return c.ErrGroup.Wait()
 }
