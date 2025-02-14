@@ -136,7 +136,8 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	c.StepTemplateConverter.AllToHcl(dependencies)
 
 	// Convert the deployment freezes
-	c.DeploymentFreezeConverter.AllToHcl(dependencies)
+	// Need to wait for https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/867 to be fixed
+	//c.DeploymentFreezeConverter.AllToHcl(dependencies)
 
 	// Include the space if it was requested
 	c.SpacePopulateConverter.AllToHcl(dependencies)
