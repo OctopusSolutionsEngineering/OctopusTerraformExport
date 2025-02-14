@@ -52,7 +52,7 @@ func (c DeploymentFreezeConverter) allToHcl(stateless bool, dependencies *data.R
 	done := make(chan struct{})
 	defer close(done)
 
-	channel := batchClient.GetAllResourcesBatch(done, c.GetResourceType())
+	channel := batchClient.GetAllResourcesArrayBatch(done, c.GetResourceType())
 
 	for resourceWrapper := range channel {
 		if resourceWrapper.Err != nil {

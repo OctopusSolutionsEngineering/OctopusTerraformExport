@@ -9682,3 +9682,48 @@ func TestSingleProjectBuiltInFeedTriggerExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestDeploymentFreezeExport verifies that a deployment freeze can be reimported with the correct settings
+func TestDeploymentFreezeExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/80-deploymentfreeze/space_creation",
+		"../test/terraform/80-deploymentfreeze/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := []octopus.DeploymentFreeze{}
+			err := octopusClient.GetAllGlobalResources("DeploymentFreeze", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			freezeName := "Xmas"
+			found := false
+			for _, v := range collection {
+				if v.Name == freezeName {
+					found = true
+
+					if v.Start != "2024-12-25T00:00:00+10:00" {
+						return errors.New("the feed must have a start of \"2024-12-25T00:00:00+10:00\" (was \"" + v.Start + "\")")
+					}
+
+					if v.End != "2024-12-27T00:00:00+08:00" {
+						return errors.New("the feed must have a start of \"2024-12-27T00:00:00+08:00\" (was \"" + v.End + "\")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("instance must have an deployment freeze called \"" + freezeName + "\"")
+			}
+
+			return nil
+		})
+}
