@@ -82,7 +82,7 @@ resource "octopusdeploy_deployment_process" "test" {
         package_id                = "package1"
         acquisition_location      = "Server"
         extract_during_deployment = false
-        feed_id                   = octopusdeploy_docker_container_registry.feed_docker.id
+        feed_id                   = data.octopusdeploy_feeds.built_in_feed.feeds[0].id
         properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
       }
 
