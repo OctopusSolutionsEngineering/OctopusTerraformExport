@@ -174,6 +174,11 @@ type Arguments struct {
 	ExcludeTargetsWithNoEnvironments bool
 
 	ExcludeAllGitCredentials bool
+
+	ExcludeAllDeploymentFreezes    bool
+	ExcludeDeploymentFreezes       StringSliceArgs
+	ExcludeDeploymentFreezesExcept StringSliceArgs
+	ExcludeDeploymentFreezesRegex  StringSliceArgs
 }
 
 // GetBackend forces the use of a local backend for stateless exports
@@ -364,6 +369,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.ExcludeInvalidChannels, "excludeInvalidChannels", false, "Channels that reference packages that are no longer defined in the deployment process will be excluded. WARNING: Variables and steps that were scoped to channels will become unscoped.")
 
 	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
+
+	flags.BoolVar(&arguments.ExcludeAllDeploymentFreezes, "excludeDeploymentFreezes", false, "Exclude all deployment freezes from being exported.")
+	flags.Var(&arguments.ExcludeDeploymentFreezes, "excludeDeploymentFreezes", "Exclude a deployment freezes from being exported.")
+	flags.Var(&arguments.ExcludeDeploymentFreezesRegex, "excludeDeploymentFreezesRegex", "Exclude a deployment freezes from being exported.")
+	flags.Var(&arguments.ExcludeDeploymentFreezesExcept, "excludeDeploymentFreezesExcept", "All deployment freezes except those defined with excludeProjectsExcept are excluded.")
 
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", true, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")

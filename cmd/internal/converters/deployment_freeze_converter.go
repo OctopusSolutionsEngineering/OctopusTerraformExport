@@ -29,12 +29,15 @@ type DeploymentFreezeConverter struct {
 	Excluder                       ExcludeByName
 	LimitResourceCount             int
 	IncludeIds                     bool
-	IncludeSpaceInPopulation       bool
 	GenerateImportScripts          bool
 }
 
 func (c DeploymentFreezeConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
+}
+
+func (c DeploymentFreezeConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c DeploymentFreezeConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
