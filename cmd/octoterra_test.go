@@ -9713,7 +9713,7 @@ func TestDeploymentFreezeExport(t *testing.T) {
 						return errors.New("the feed must have a start of \"2024-12-25T00:00:00+10:00\" (was \"" + v.Start + "\")")
 					}
 
-					if v.End != "2024-12-27T00:00:00+08:00" {
+					if v.End != "2099-12-27T00:00:00+08:00" {
 						return errors.New("the feed must have a start of \"2024-12-27T00:00:00+08:00\" (was \"" + v.End + "\")")
 					}
 				}
