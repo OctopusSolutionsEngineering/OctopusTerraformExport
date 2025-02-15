@@ -9360,10 +9360,6 @@ func TestProjectTenantLinks(t *testing.T) {
 
 // TestArtifactoryFeedExport verifies that a artifactory feed can be reimported with the correct settings
 func TestArtifactoryFeedExport(t *testing.T) {
-	// The artifactory feeds can not be created.
-	// See https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/865
-	return
-
 	exportSpaceImportAndTest(
 		t,
 		"../test/terraform/76-artifactoryfeed/space_creation",

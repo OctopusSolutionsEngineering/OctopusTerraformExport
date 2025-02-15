@@ -908,7 +908,7 @@ func (c FeedConverter) exportArtifactory(stateless bool, dependencies *data.Reso
 		password := "${var." + passwordName + "}"
 
 		terraformResource := terraform.TerraformArtifactoryFeed{
-			Type:         octopusdeployNugetFeedResourceType,
+			Type:         octopusdeployArtifactoryFeedResourceType,
 			Name:         resourceName,
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 			FeedUri:      strutil.EmptyIfNil(resource.FeedUri),
