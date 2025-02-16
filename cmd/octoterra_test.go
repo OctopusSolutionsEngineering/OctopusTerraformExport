@@ -9387,7 +9387,7 @@ func TestArtifactoryFeedExport(t *testing.T) {
 				if v.Name == feedName {
 					found = true
 
-					if strutil.EmptyIfNil(v.FeedType) != "Artifactory" {
+					if strutil.EmptyIfNil(v.FeedType) != "ArtifactoryGeneric" {
 						return errors.New("The feed must have a type of \"Artifactory\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\")")
 					}
 
