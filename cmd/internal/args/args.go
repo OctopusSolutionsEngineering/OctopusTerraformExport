@@ -370,7 +370,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 
 	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
 
-	flags.BoolVar(&arguments.ExcludeAllDeploymentFreezes, "excludeDeploymentFreezes", false, "Exclude all deployment freezes from being exported.")
+	flags.BoolVar(&arguments.ExcludeAllDeploymentFreezes, "excludeAllDeploymentFreezes", false, "Exclude all deployment freezes from being exported.")
 	flags.Var(&arguments.ExcludeDeploymentFreezes, "excludeDeploymentFreezes", "Exclude a deployment freezes from being exported.")
 	flags.Var(&arguments.ExcludeDeploymentFreezesRegex, "excludeDeploymentFreezesRegex", "Exclude a deployment freezes from being exported.")
 	flags.Var(&arguments.ExcludeDeploymentFreezesExcept, "excludeDeploymentFreezesExcept", "All deployment freezes except those defined with excludeProjectsExcept are excluded.")
