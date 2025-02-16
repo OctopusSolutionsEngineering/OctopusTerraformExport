@@ -9403,21 +9403,13 @@ func TestArtifactoryFeedExport(t *testing.T) {
 						return errors.New("The feed must be have a feed uri of \"https://example.jfrog.io\" (was " + strutil.EmptyIfNil(v.FeedUri) + ")")
 					}
 
-					/*
-						These reported the following errors in 0.40.4:
-						An argument named "repository" is not expected here.
-						An argument named "layout_regex" is not expected here.
-						This is a bug, but and the test will be updated when the provider is fixed.
-					*/
-					/*
-						if strutil.EmptyIfNil(v.Repository) != "repo" {
-							return errors.New("The feed must have a repository of \"repo\" (was " + strutil.EmptyIfNil(v.Repository) + ")")
-						}
+					if strutil.EmptyIfNil(v.Repository) != "repo" {
+						return errors.New("The feed must have a repository of \"repo\" (was " + strutil.EmptyIfNil(v.Repository) + ")")
+					}
 
-						if strutil.EmptyIfNil(v.LayoutRegex) != "this is regex" {
-							return errors.New("The feed must have a layout regex of \"this is regex\" (was " + strutil.EmptyIfNil(v.LayoutRegex) + ")")
-						}
-					*/
+					if strutil.EmptyIfNil(v.LayoutRegex) != "this is regex" {
+						return errors.New("The feed must have a layout regex of \"this is regex\" (was " + strutil.EmptyIfNil(v.LayoutRegex) + ")")
+					}
 				}
 			}
 
