@@ -9391,7 +9391,7 @@ func TestArtifactoryFeedExport(t *testing.T) {
 						return errors.New("The feed must have a type of \"Artifactory\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\")")
 					}
 
-					if strutil.EmptyIfNil(v.Username) != "username" {
+					if strutil.EmptyIfNil(v.Username) != "test-username" {
 						return errors.New("The feed must have a username of \"username\" (was \"" + strutil.EmptyIfNil(v.Username) + "\")")
 					}
 
