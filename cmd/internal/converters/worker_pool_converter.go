@@ -349,8 +349,8 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 			ResourceName: pool.Name,
 			Description:  pool.Description,
 			IsDefault:    pool.IsDefault,
-			SortOrder:    pool.SortOrder,
-			WorkerType:   pool.WorkerType,
+			//SortOrder:    pool.SortOrder,
+			WorkerType: pool.WorkerType,
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -389,8 +389,8 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 			ResourceName: pool.Name,
 			Description:  pool.Description,
 			IsDefault:    pool.IsDefault,
-			SortOrder:    pool.SortOrder,
-			WorkerType:   pool.WorkerType,
+			//SortOrder:    pool.SortOrder,
+			WorkerType: pool.WorkerType,
 		}
 		file := hclwrite.NewEmptyFile()
 
