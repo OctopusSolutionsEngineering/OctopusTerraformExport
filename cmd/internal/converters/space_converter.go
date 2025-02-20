@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"golang.org/x/sync/errgroup"
@@ -251,7 +252,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform2.TerraformSpace{
-			Description:        space.Description,
+			Description:        strutil.TrimPointer(space.Description),
 			IsDefault:          space.IsDefault,
 			IsTaskQueueStopped: space.TaskQueueStopped,
 			Name:               spaceResourceName,

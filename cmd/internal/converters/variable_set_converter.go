@@ -975,7 +975,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 				Value:          normalValue,
 				ResourceName:   v.Name,
 				ResourceType:   v.Type,
-				Description:    v.Description,
+				Description:    strutil.TrimPointer(v.Description),
 				SensitiveValue: nil,
 				IsSensitive:    v.IsSensitive,
 				Prompt:         c.convertPrompt(v.Prompt),
@@ -1153,7 +1153,7 @@ func (c *VariableSetConverter) convertValue(variable octopus.Variable, resourceN
 func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
 	if strutil.EmptyIfNil(prompt.Label) != "" || strutil.EmptyIfNil(prompt.Description) != "" {
 		return &terraform.TerraformProjectVariablePrompt{
-			Description:     prompt.Description,
+			Description:     strutil.TrimPointer(prompt.Description),
 			Label:           prompt.Label,
 			IsRequired:      prompt.Required,
 			DisplaySettings: c.convertDisplaySettings(prompt),

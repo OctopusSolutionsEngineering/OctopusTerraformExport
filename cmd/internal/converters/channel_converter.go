@@ -252,7 +252,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &channel.Id),
 				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", channel.SpaceId)),
 				ResourceName: channel.Name,
-				Description:  channel.Description,
+				Description:  strutil.TrimPointer(channel.Description),
 				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),
 				ProjectId:    dependencies.GetResource("Projects", channel.ProjectId),
 				IsDefault:    channel.IsDefault,

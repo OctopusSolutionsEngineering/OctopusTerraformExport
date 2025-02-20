@@ -359,7 +359,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 				Id:                      strutil.InputPointerIfEnabled(c.IncludeIds, &lifecycle.Id),
 				SpaceId:                 strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", lifecycle.SpaceId)),
 				ResourceName:            lifecycle.Name,
-				Description:             lifecycle.Description,
+				Description:             strutil.TrimPointer(lifecycle.Description),
 				Phase:                   c.convertPhases(lifecycle.Phases, dependencies),
 				ReleaseRetentionPolicy:  c.convertPolicy(lifecycle.ReleaseRetentionPolicy),
 				TentacleRetentionPolicy: c.convertPolicy(lifecycle.TentacleRetentionPolicy),

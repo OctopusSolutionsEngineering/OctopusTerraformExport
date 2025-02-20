@@ -375,7 +375,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus.Pr
 			Id:                        strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			ResourceName:              projectTrigger.Name,
 			ProjectId:                 dependencies.GetResource("Projects", projectTrigger.ProjectId),
-			Description:               projectTrigger.Description,
+			Description:               strutil.TrimPointer(projectTrigger.Description),
 			Timezone:                  projectTrigger.Filter.Timezone,
 			IsDisabled:                projectTrigger.IsDisabled,
 			ChannelId:                 strutil.NilIfEmptyPointer(dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId)),
