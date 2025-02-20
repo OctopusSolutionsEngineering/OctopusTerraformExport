@@ -536,7 +536,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 	for i, v := range actionPackages {
 		collection = append(collection, terraform.TerraformTemplate{
 			Name:            v.Name,
-			Label:           v.Label,
+			Label:           strutil.NilIfEmptyPointer(v.Label),
 			HelpText:        v.HelpText,
 			DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
 			DisplaySettings: v.DisplaySettings,
