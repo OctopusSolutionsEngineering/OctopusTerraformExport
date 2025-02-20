@@ -287,7 +287,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 				ResourceName: tag.Name,
 				TagSetId:     c.getTagsetId(stateless, tagSetName, tagName),
 				Color:        tag.Color,
-				Description:  tag.Description,
+				Description:  strutil.TrimPointer(tag.Description),
 				// The new provider is strict, and fields must not change value.
 				// Sort order is hard to guarantee, so it is not included.
 				//SortOrder:    tag.SortOrder,
