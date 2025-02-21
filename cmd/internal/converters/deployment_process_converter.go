@@ -300,9 +300,16 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 				}
 
 				for _, p := range a.Packages {
+					packageId := strutil.EmptyIfNil(p.PackageId)
+
+					// packages can be project IDs when they are defined in a "Deploy a release" step
+					if regexes.ProjectsRegex.MatchString(packageId) {
+						packageId = dependencies.GetResource("Projects", packageId)
+					}
+
 					variableReference := c.writePackageIdVariable(
 						file,
-						strutil.EmptyIfNil(p.PackageId),
+						packageId,
 						projectName,
 						strutil.EmptyIfNil(a.Name),
 						strutil.EmptyIfNil(p.Name))
