@@ -303,7 +303,7 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 					packageId := strutil.EmptyIfNil(p.PackageId)
 
 					// packages can be project IDs when they are defined in a "Deploy a release" step
-					if regexes.ProjectsRegex.MatchString(packageId) {
+					if regexes.ProjectsRegex.MatchString(packageId) || strutil.EmptyIfNil(a.ActionType) == "Octopus.DeployRelease" {
 						packageId = dependencies.GetResource("Projects", packageId)
 					}
 
