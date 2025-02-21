@@ -356,7 +356,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 			Environments:             dependencies.GetResources("Environments", runbook.Environments...),
 			ForcePackageDownload:     runbook.ForcePackageDownload,
 			DefaultGuidedFailureMode: runbook.DefaultGuidedFailureMode,
-			Description:              runbook.Description,
+			Description:              strutil.TrimPointer(runbook.Description),
 			MultiTenancyMode:         runbook.MultiTenancyMode,
 			RetentionPolicy:          c.convertRetentionPolicy(runbook),
 			ConnectivityPolicy:       c.convertConnectivityPolicy(runbook),

@@ -330,7 +330,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			Name:         gitCredentialsName,
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &gitCredentials.Id),
 			SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", gitCredentials.SpaceId)),
-			Description:  strutil.NilIfEmptyPointer(gitCredentials.Description),
+			Description:  strutil.NilIfEmptyPointer(strutil.TrimPointer(gitCredentials.Description)),
 			ResourceName: gitCredentials.Name,
 			ResourceType: gitCredentials.Details.Type,
 			Username:     gitCredentials.Details.Username,

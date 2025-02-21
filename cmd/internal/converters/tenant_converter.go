@@ -379,7 +379,7 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 				Count:              count,
 				ResourceName:       tenant.Name,
 				ClonedFromTenantId: nil,
-				Description:        strutil.NilIfEmptyPointer(tenant.Description),
+				Description:        strutil.NilIfEmptyPointer(strutil.TrimPointer(tenant.Description)),
 				TenantTags:         c.Excluder.FilteredTenantTags(tenant.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			}
 

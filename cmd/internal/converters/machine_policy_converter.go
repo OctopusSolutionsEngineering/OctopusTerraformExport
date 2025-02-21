@@ -296,7 +296,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, _ boo
 				ResourceName:                 machinePolicy.Name,
 				Id:                           strutil.InputPointerIfEnabled(c.IncludeIds, &machinePolicy.Id),
 				SpaceId:                      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", machinePolicy.SpaceId)),
-				Description:                  machinePolicy.Description,
+				Description:                  strutil.TrimPointer(machinePolicy.Description),
 				ConnectionConnectTimeout:     c.convertDurationToNumber(machinePolicy.ConnectionConnectTimeout),
 				ConnectionRetryCountLimit:    machinePolicy.ConnectionRetryCountLimit,
 				ConnectionRetrySleepInterval: c.convertDurationToNumber(machinePolicy.ConnectionRetrySleepInterval),

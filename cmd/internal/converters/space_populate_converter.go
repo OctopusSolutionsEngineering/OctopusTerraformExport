@@ -59,7 +59,7 @@ func (c SpacePopulateConverter) createSpaceTf(dependencies *data.ResourceDetails
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform2.TerraformSpace{
-			Description:        space.Description,
+			Description:        strutil.TrimPointer(space.Description),
 			Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &space.Id),
 			IsDefault:          space.IsDefault,
 			IsTaskQueueStopped: space.TaskQueueStopped,

@@ -347,10 +347,10 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &pool.Id),
 			SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", pool.SpaceId)),
 			ResourceName: pool.Name,
-			Description:  pool.Description,
+			Description:  strutil.TrimPointer(pool.Description),
 			IsDefault:    pool.IsDefault,
-			SortOrder:    pool.SortOrder,
-			WorkerType:   pool.WorkerType,
+			//SortOrder:    pool.SortOrder,
+			WorkerType: pool.WorkerType,
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -387,10 +387,10 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 			Type:         octopusdeployStaticWorkerPoolResourcePool,
 			Name:         resourceName,
 			ResourceName: pool.Name,
-			Description:  pool.Description,
+			Description:  strutil.TrimPointer(pool.Description),
 			IsDefault:    pool.IsDefault,
-			SortOrder:    pool.SortOrder,
-			WorkerType:   pool.WorkerType,
+			//SortOrder:    pool.SortOrder,
+			WorkerType: pool.WorkerType,
 		}
 		file := hclwrite.NewEmptyFile()
 

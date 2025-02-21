@@ -898,6 +898,19 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IgnoreCacErrors:           args.IgnoreCacErrors,
 	}
 
+	deploymentFreezeConverter := converters.DeploymentFreezeConverter{
+		Client:                         &octopusClient,
+		ErrGroup:                       &group,
+		ExcludeDeploymentFreezes:       args.ExcludeDeploymentFreezes,
+		ExcludeDeploymentFreezesRegex:  args.ExcludeDeploymentFreezesRegex,
+		ExcludeDeploymentFreezesExcept: args.ExcludeDeploymentFreezesExcept,
+		ExcludeAllDeploymentFreezes:    args.ExcludeAllDeploymentFreezes,
+		Excluder:                       converters.DefaultExcluder{},
+		LimitResourceCount:             args.LimitResourceCount,
+		IncludeIds:                     args.IncludeIds,
+		GenerateImportScripts:          args.GenerateImportScripts,
+	}
+
 	spaceConverter := converters.SpaceConverter{
 		Client:                      &octopusClient,
 		ExcludeSpaceCreation:        args.ExcludeSpaceCreation,
@@ -933,6 +946,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ErrGroup:                          &group,
 		StepTemplateConverter:             stepTemplateConverter,
 		TenantProjectConverter:            tenantProjectConverter,
+		DeploymentFreezeConverter:         deploymentFreezeConverter,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{

@@ -236,8 +236,10 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 			Name:         tagSetName,
 			Count:        c.getCount(stateless, tagSetName),
 			ResourceName: tagSet.Name,
-			Description:  strutil.NilIfEmptyPointer(tagSet.Description),
-			SortOrder:    tagSet.SortOrder,
+			Description:  strutil.NilIfEmptyPointer(strutil.TrimPointer(tagSet.Description)),
+			// The new provider is strict, and fields must not change value.
+			// Sort order is hard to guarantee, so it is not included.
+			//SortOrder:    tagSet.SortOrder,
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -285,8 +287,10 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 				ResourceName: tag.Name,
 				TagSetId:     c.getTagsetId(stateless, tagSetName, tagName),
 				Color:        tag.Color,
-				Description:  tag.Description,
-				SortOrder:    tag.SortOrder,
+				Description:  strutil.TrimPointer(tag.Description),
+				// The new provider is strict, and fields must not change value.
+				// Sort order is hard to guarantee, so it is not included.
+				//SortOrder:    tag.SortOrder,
 			}
 
 			file := hclwrite.NewEmptyFile()

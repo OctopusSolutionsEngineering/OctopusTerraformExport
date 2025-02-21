@@ -31,6 +31,7 @@ type OctopusClient interface {
 	GetResourceNameById(resourceType string, id string) (name string, funcErr error)
 	GetResourceNamesByIds(resourceType string, id []string) (name []string, funcErr error)
 	GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error)
+	GetAllGlobalResources(resourceType string, resources any, queryParams ...[]string) (funcErr error)
 }
 
 type OctopusApiClient struct {
@@ -252,6 +253,52 @@ func (o *OctopusApiClient) getRequest(resourceType string, id string, global boo
 
 func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
 	spaceUrl, err := o.GetSpaceBaseUrl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	requestURL, err := url.Parse(spaceUrl + "/" + resourceType)
+
+	if err != nil {
+		panic(err)
+	}
+
+	params := url.Values{}
+	for _, q := range queryParams {
+		if len(q) == 1 {
+			params.Add(q[0], "")
+		}
+
+		if len(q) == 2 {
+			params.Add(q[0], q[1])
+		}
+	}
+
+	// Add default take query param if it was not specified
+	if _, ok := params["take"]; !ok {
+		params.Add("take", "10000")
+	}
+
+	requestURL.RawQuery = params.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, requestURL.String(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if o.ApiKey != "" {
+		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	}
+
+	req.Header.Set("User-Agent", o.buildUserAgent())
+
+	return req, nil
+}
+
+func (o *OctopusApiClient) getGlobalCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
+	spaceUrl, err := o.GetBaseUrl()
 
 	if err != nil {
 		return nil, err
@@ -837,6 +884,26 @@ func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
 }
 
 func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
+	req, err := o.getCollectionRequest(resourceType, queryParams...)
+
+	if err != nil {
+		return err
+	}
+
+	return o.getAllResources(req, resourceType, resources, queryParams...)
+}
+
+func (o *OctopusApiClient) GetAllGlobalResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
+	req, err := o.getGlobalCollectionRequest(resourceType, queryParams...)
+
+	if err != nil {
+		return err
+	}
+
+	return o.getAllResources(req, resourceType, resources, queryParams...)
+}
+
+func (o *OctopusApiClient) getAllResources(req *http.Request, resourceType string, resources any, queryParams ...[]string) (funcErr error) {
 	queryParamsId := strings.Join(lo.Map(queryParams, func(item []string, index int) string {
 		return item[0] + "=" + item[1]
 	}), ",")
@@ -850,7 +917,7 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 		err := json.Unmarshal(cacheHit, resources)
 
 		if err != nil {
-			return fmt.Errorf("error in OctopusApiClient.GetAllResources loading resource type %s into type %s from %s: %w",
+			return fmt.Errorf("error in OctopusApiClient.getAllResources loading resource type %s into type %s from %s: %w",
 				resourceType, reflect.TypeOf(resources).String(), cacheHit, err)
 		}
 
@@ -858,12 +925,6 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 	}
 
 	zap.L().Debug("Getting collection " + resourceType)
-
-	req, err := o.getCollectionRequest(resourceType, queryParams...)
-
-	if err != nil {
-		return err
-	}
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -893,7 +954,7 @@ func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, q
 	err = o.unmarshal(resources, body)
 
 	if err != nil {
-		return fmt.Errorf("error in OctopusApiClient.GetAllResources loading resource type %s into type %s from %s: %w",
+		return fmt.Errorf("error in OctopusApiClient.getAllResources loading resource type %s into type %s from %s: %w",
 			resourceType, reflect.TypeOf(resources).String(), body, err)
 	}
 
