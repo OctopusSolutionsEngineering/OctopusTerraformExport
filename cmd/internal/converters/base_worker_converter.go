@@ -6,7 +6,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type WorkerConverter struct {
+type BaseWorkerConverter struct {
 	Client                   client.OctopusClient
 	Excluder                 ExcludeByName
 	MachinePolicyConverter   ConverterWithStatelessById

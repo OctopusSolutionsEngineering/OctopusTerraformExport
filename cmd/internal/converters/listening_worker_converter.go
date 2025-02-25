@@ -15,27 +15,27 @@ import (
 	"go.uber.org/zap"
 )
 
-const octopusdeployKubernetesAgentWorkerDataType = "octopusdeploy_workers"
-const octopusdeployKubernetesAgentWorkerResourceType = "octopusdeploy_kubernetes_agent_worker"
+const octopusdeployListeningWorkerDataType = "octopusdeploy_workers"
+const octopusdeployListeningWorkerResourceType = "octopusdeploy_listening_tentacle_worker"
 
-type KubernetesAgentWorkerConverter struct {
+type ListeningWorkerConverter struct {
 	BaseWorkerConverter
 }
 
-func (c KubernetesAgentWorkerConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+func (c ListeningWorkerConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c KubernetesAgentWorkerConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+func (c ListeningWorkerConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
-func (c KubernetesAgentWorkerConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllWorkers {
 		return nil
 	}
 
-	batchClient := client.BatchingOctopusApiClient[octopus.KubernetesAgentWorker]{
+	batchClient := client.BatchingOctopusApiClient[octopus.Worker]{
 		Client: c.Client,
 	}
 
@@ -51,7 +51,7 @@ func (c KubernetesAgentWorkerConverter) allToHcl(stateless bool, dependencies *d
 
 		resource := resourceWrapper.Res
 
-		if !c.isKubernetesWorker(resource) {
+		if !c.isListeningWorker(resource) {
 			continue
 		}
 
@@ -66,19 +66,19 @@ func (c KubernetesAgentWorkerConverter) allToHcl(stateless bool, dependencies *d
 	return nil
 }
 
-func (c KubernetesAgentWorkerConverter) isKubernetesWorker(resource octopus.KubernetesAgentWorker) bool {
-	return resource.Endpoint.CommunicationStyle == "KubernetesTentacle"
+func (c ListeningWorkerConverter) isListeningWorker(resource octopus.Worker) bool {
+	return resource.Endpoint.CommunicationStyle == "TentaclePassive"
 }
 
-func (c KubernetesAgentWorkerConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclById(id, true, dependencies)
 }
 
-func (c KubernetesAgentWorkerConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclById(id, false, dependencies)
 }
 
-func (c KubernetesAgentWorkerConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -87,14 +87,14 @@ func (c KubernetesAgentWorkerConverter) toHclById(id string, stateless bool, dep
 		return nil
 	}
 
-	resource := octopus.KubernetesAgentWorker{}
+	resource := octopus.Worker{}
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.KubernetesEndpointResource: %w", err)
 	}
 
-	if !c.isKubernetesWorker(resource) {
+	if !c.isListeningWorker(resource) {
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func (c KubernetesAgentWorkerConverter) toHclById(id string, stateless bool, dep
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 
-func (c KubernetesAgentWorkerConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (c KubernetesAgentWorkerConverter) ToHclLookupById(id string, dependencies 
 		return nil
 	}
 
-	resource := octopus.KubernetesAgentWorker{}
+	resource := octopus.Worker{}
 	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
@@ -123,7 +123,7 @@ func (c KubernetesAgentWorkerConverter) ToHclLookupById(id string, dependencies 
 		return nil
 	}
 
-	if !c.isKubernetesWorker(resource) {
+	if !c.isListeningWorker(resource) {
 		return nil
 	}
 
@@ -135,7 +135,7 @@ func (c KubernetesAgentWorkerConverter) ToHclLookupById(id string, dependencies 
 	thisResource.Id = resource.Id
 	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data." + octopusdeployKubernetesAgentWorkerDataType + "." + resourceName + ".workers[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployListeningWorkerDataType + "." + resourceName + ".workers[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()
@@ -150,9 +150,9 @@ func (c KubernetesAgentWorkerConverter) ToHclLookupById(id string, dependencies 
 	return nil
 }
 
-func (c KubernetesAgentWorkerConverter) buildData(resourceName string, resource octopus.KubernetesAgentWorker) terraform.TerraformWorkersData {
+func (c ListeningWorkerConverter) buildData(resourceName string, resource octopus.Worker) terraform.TerraformWorkersData {
 	return terraform.TerraformWorkersData{
-		Type:        octopusdeployKubernetesAgentWorkerDataType,
+		Type:        octopusdeployListeningWorkerDataType,
 		Name:        resourceName,
 		Ids:         nil,
 		PartialName: &resource.Name,
@@ -162,14 +162,14 @@ func (c KubernetesAgentWorkerConverter) buildData(resourceName string, resource 
 }
 
 // writeData appends the data block for stateless modules
-func (c KubernetesAgentWorkerConverter) writeData(file *hclwrite.File, resource octopus.KubernetesAgentWorker, resourceName string) {
+func (c ListeningWorkerConverter) writeData(file *hclwrite.File, resource octopus.Worker, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
 
 // toBashImport creates a bash script to import the resource
-func (c KubernetesAgentWorkerConverter) toBashImport(resourceName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c ListeningWorkerConverter) toBashImport(resourceName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -224,13 +224,13 @@ fi
 
 echo "Importing target ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusResourceName, octopusdeployKubernetesAgentWorkerResourceType, resourceName), nil
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusResourceName, octopusdeployListeningWorkerResourceType, resourceName), nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c KubernetesAgentWorkerConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c ListeningWorkerConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -276,12 +276,12 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing target $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployKubernetesAgentWorkerResourceType, resourceName), nil
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployListeningWorkerResourceType, resourceName), nil
 		},
 	})
 }
 
-func (c KubernetesAgentWorkerConverter) toHcl(worker octopus.KubernetesAgentWorker, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(worker.Name, c.ExcludeAllWorkers, c.ExcludeWorkers, c.ExcludeWorkersRegex, c.ExcludeWorkersExcept) {
 		return nil
@@ -292,7 +292,7 @@ func (c KubernetesAgentWorkerConverter) toHcl(worker octopus.KubernetesAgentWork
 		return nil
 	}
 
-	if !c.isKubernetesWorker(worker) {
+	if !c.isListeningWorker(worker) {
 		return nil
 	}
 
@@ -325,25 +325,25 @@ func (c KubernetesAgentWorkerConverter) toHcl(worker octopus.KubernetesAgentWork
 
 	thisResource.ToHcl = func() (string, error) {
 
-		terraformResource := terraform.TerraformKubernetesAgentTarget{
-			Type:              octopusdeployKubernetesAgentWorkerResourceType,
-			Name:              workerName,
-			Id:                strutil.InputPointerIfEnabled(c.IncludeIds, &worker.Id),
-			SpaceId:           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", worker.SpaceId)),
-			ResourceName:      worker.Name,
-			Thumbprint:        worker.Thumbprint,
-			Uri:               worker.Endpoint.TentacleEndpointConfiguration.Uri,
-			WorkerPoolIds:     dependencies.GetResources("WorkerPools", worker.WorkerPoolIds...),
-			CommunicationMode: strutil.NilIfEmpty(worker.Endpoint.TentacleEndpointConfiguration.CommunicationMode),
-			IsDisabled:        boolutil.NilIfFalse(worker.IsDisabled),
-			MachinePolicyId:   c.getMachinePolicy(worker.MachinePolicyId, dependencies),
-			UpgradeLocked:     boolutil.NilIfFalse(worker.Endpoint.UpgradeLocked),
+		terraformResource := terraform.TerraformListeningWorker{
+			Type:            octopusdeployListeningWorkerResourceType,
+			Name:            workerName,
+			Count:           nil,
+			Id:              strutil.InputPointerIfEnabled(c.IncludeIds, &worker.Id),
+			SpaceId:         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", worker.SpaceId)),
+			ResourceName:    worker.Name,
+			WorkerPoolIds:   dependencies.GetResources("WorkerPools", worker.WorkerPoolIds...),
+			MachinePolicyId: c.getMachinePolicy(worker.MachinePolicyId, dependencies),
+			Thumbprint:      worker.Thumbprint,
+			Uri:             strutil.EmptyIfNil(worker.Uri),
+			ProxyId:         nil,
+			IsDisabled:      boolutil.NilIfFalse(worker.IsDisabled),
 		}
 		file := hclwrite.NewEmptyFile()
 
 		if stateless {
 			c.writeData(file, worker, workerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployKubernetesAgentWorkerDataType + "." + workerName + ".deployment_targets) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployListeningWorkerDataType + "." + workerName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -362,11 +362,11 @@ func (c KubernetesAgentWorkerConverter) toHcl(worker octopus.KubernetesAgentWork
 	return nil
 }
 
-func (c KubernetesAgentWorkerConverter) GetResourceType() string {
+func (c ListeningWorkerConverter) GetResourceType() string {
 	return "Workers"
 }
 
-func (c KubernetesAgentWorkerConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
+func (c ListeningWorkerConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -375,7 +375,7 @@ func (c KubernetesAgentWorkerConverter) getMachinePolicy(machine string, depende
 	return &machineLookup
 }
 
-func (c KubernetesAgentWorkerConverter) getWorkerPool(pool *string, dependencies *data.ResourceDetailsCollection) *string {
+func (c ListeningWorkerConverter) getWorkerPool(pool *string, dependencies *data.ResourceDetailsCollection) *string {
 	if len(strutil.EmptyIfNil(pool)) == 0 {
 		return nil
 	}
@@ -388,7 +388,7 @@ func (c KubernetesAgentWorkerConverter) getWorkerPool(pool *string, dependencies
 	return &workerPoolLookup
 }
 
-func (c KubernetesAgentWorkerConverter) exportDependencies(target octopus.KubernetesAgentWorker, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) exportDependencies(target octopus.Worker, dependencies *data.ResourceDetailsCollection) error {
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
 
@@ -399,7 +399,7 @@ func (c KubernetesAgentWorkerConverter) exportDependencies(target octopus.Kubern
 	return nil
 }
 
-func (c KubernetesAgentWorkerConverter) exportStatelessDependencies(target octopus.KubernetesAgentWorker, dependencies *data.ResourceDetailsCollection) error {
+func (c ListeningWorkerConverter) exportStatelessDependencies(target octopus.Worker, dependencies *data.ResourceDetailsCollection) error {
 	// The machine policies need to be exported
 	err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies)
 
@@ -410,18 +410,18 @@ func (c KubernetesAgentWorkerConverter) exportStatelessDependencies(target octop
 	return nil
 }
 
-func (c *KubernetesAgentWorkerConverter) getLookup(stateless bool, targetName string) string {
+func (c *ListeningWorkerConverter) getLookup(stateless bool, targetName string) string {
 	if stateless {
-		return "${length(data." + octopusdeployKubernetesAgentWorkerDataType + "." + targetName + ".workers) != 0 " +
-			"? data." + octopusdeployKubernetesAgentWorkerDataType + "." + targetName + ".workers[0].id " +
-			": " + octopusdeployKubernetesAgentWorkerResourceType + "." + targetName + "[0].id}"
+		return "${length(data." + octopusdeployListeningWorkerDataType + "." + targetName + ".workers) != 0 " +
+			"? data." + octopusdeployListeningWorkerDataType + "." + targetName + ".workers[0].id " +
+			": " + octopusdeployListeningWorkerResourceType + "." + targetName + "[0].id}"
 	}
-	return "${" + octopusdeployKubernetesAgentWorkerResourceType + "." + targetName + ".id}"
+	return "${" + octopusdeployListeningWorkerResourceType + "." + targetName + ".id}"
 }
 
-func (c *KubernetesAgentWorkerConverter) getDependency(stateless bool, targetName string) string {
+func (c *ListeningWorkerConverter) getDependency(stateless bool, targetName string) string {
 	if stateless {
-		return "${" + octopusdeployKubernetesAgentWorkerResourceType + "." + targetName + "}"
+		return "${" + octopusdeployListeningWorkerResourceType + "." + targetName + "}"
 	}
 	return ""
 }

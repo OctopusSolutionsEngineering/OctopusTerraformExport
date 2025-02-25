@@ -454,7 +454,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	}
 
 	k8sAgentWorkerConverter := converters.KubernetesAgentWorkerConverter{
-		WorkerConverter: converters.WorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
 			Client:                   &octopusClient,
 			ErrGroup:                 &group,
 			Excluder:                 converters.DefaultExcluder{},
