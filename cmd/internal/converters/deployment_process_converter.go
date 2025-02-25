@@ -300,12 +300,21 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 				}
 
 				for _, p := range a.Packages {
-					variableReference := c.writePackageIdVariable(
-						file,
-						strutil.EmptyIfNil(p.PackageId),
-						projectName,
-						strutil.EmptyIfNil(a.Name),
-						strutil.EmptyIfNil(p.Name))
+					packageId := strutil.EmptyIfNil(p.PackageId)
+
+					var variableReference string
+
+					// packages can be project IDs when they are defined in a "Deploy a release" step
+					if regexes.ProjectsRegex.MatchString(packageId) && strutil.EmptyIfNil(a.ActionType) == "Octopus.DeployRelease" {
+						variableReference = dependencies.GetResource("Projects", packageId)
+					} else {
+						variableReference = c.writePackageIdVariable(
+							file,
+							packageId,
+							projectName,
+							strutil.EmptyIfNil(a.Name),
+							strutil.EmptyIfNil(p.Name))
+					}
 
 					// Don't look up a feed id that is a variable reference
 					feedId := p.FeedId
