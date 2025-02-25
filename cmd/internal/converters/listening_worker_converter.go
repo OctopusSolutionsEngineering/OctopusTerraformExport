@@ -55,7 +55,7 @@ func (c ListeningWorkerConverter) allToHcl(stateless bool, dependencies *data.Re
 			continue
 		}
 
-		zap.L().Info("Kubernetes Worker: " + resource.Id + " " + resource.Name)
+		zap.L().Info("Listening Worker: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {

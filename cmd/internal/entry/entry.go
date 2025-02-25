@@ -453,6 +453,23 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GenerateImportScripts:     args.GenerateImportScripts,
 	}
 
+	listeningWorkerConverter := converters.ListeningWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+	}
+
 	k8sAgentWorkerConverter := converters.KubernetesAgentWorkerConverter{
 		BaseWorkerConverter: converters.BaseWorkerConverter{
 			Client:                   &octopusClient,
@@ -966,6 +983,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		TenantProjectConverter:            tenantProjectConverter,
 		DeploymentFreezeConverter:         deploymentFreezeConverter,
 		KubernetesAgentWorkerConverter:    k8sAgentWorkerConverter,
+		ListeningWorkerConverter:          listeningWorkerConverter,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{

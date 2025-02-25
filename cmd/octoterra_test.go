@@ -9906,3 +9906,52 @@ func TestK8sWorkerExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestListeningWorkerExport verifies that a listening worker can be reimported with the correct settings
+func TestListeningWorkerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/84-listeningworker/space_creation",
+		"../test/terraform/84-listeningworker/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesAgentWorker]{}
+			err := octopusClient.GetAllResources("Workers", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			workerName := "Listening Worker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerName {
+					found = true
+
+					if v.Thumbprint != "96203ED84246201C26A2F4360D7CBC36AC1D232D" {
+						return errors.New("The worker must be have a thumbprint of \"96203ED84246201C26A2F4360D7CBC36AC1D232D\" (was \"" + v.Thumbprint + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.Uri) != "https://tentacle.listening/" {
+						return errors.New("The worker must be have a Uri of \"https://tentacle.listening/\" (was \"" + strutil.EmptyIfNil(v.Uri) + "\"")
+					}
+
+					if !v.IsDisabled {
+						return errors.New("the worker must be disabled")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an worker called \"" + workerName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

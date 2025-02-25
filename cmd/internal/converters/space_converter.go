@@ -46,6 +46,7 @@ type SpaceConverter struct {
 	TenantProjectConverter            Converter
 	DeploymentFreezeConverter         Converter
 	KubernetesAgentWorkerConverter    Converter
+	ListeningWorkerConverter          Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
@@ -143,6 +144,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	// Convert K8s agent workers
 	c.KubernetesAgentWorkerConverter.AllToHcl(dependencies)
 
+	// Convert Listening workers
+	c.ListeningWorkerConverter.AllToHcl(dependencies)
+
 	// Include the space if it was requested
 	c.SpacePopulateConverter.AllToHcl(dependencies)
 
@@ -228,6 +232,10 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 
 	// Convert the Deployment Freezes
 	c.DeploymentFreezeConverter.AllToStatelessHcl(dependencies)
+
+	c.KubernetesAgentWorkerConverter.AllToStatelessHcl(dependencies)
+
+	c.ListeningWorkerConverter.AllToStatelessHcl(dependencies)
 
 	return c.ErrGroup.Wait()
 }
