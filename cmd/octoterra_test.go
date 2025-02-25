@@ -9720,3 +9720,66 @@ func TestDeploymentFreezeExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestGenericOidcAccountExport verifies that an generic OIDC account can be reimported with the correct settings
+func TestGenericOidcAccountExport(t *testing.T) {
+	// this is only supported in 2025.1, which we can't test locally yet
+	return
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/81-genericoidcaccount/space_creation",
+		"../test/terraform/81-genericoidcaccount/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			accountName := "Generic OpenID Connect"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == accountName {
+					found = true
+					if v.AccountType != "GenericOidcAccount" {
+						return errors.New("The account must be have a type of \"GenericOidcAccount\" (was " + v.AccountType + ")")
+					}
+
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						return errors.New("The account must be have a description of \"A test account\" (was " + strutil.EmptyIfNil(v.Description) + ")")
+					}
+
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\" (was " + strutil.EmptyIfNil(v.TenantedDeploymentParticipation) + ")")
+					}
+
+					if len(v.TenantTags) != 0 {
+						return errors.New("The account must be have no tenant tags (had " + fmt.Sprint(len(v.TenantTags)) + ")")
+					}
+
+					if len(v.DeploymentSubjectKeys) != 1 {
+						return errors.New("The account must 1 deployment subject key (was " + fmt.Sprint(len(v.DeploymentSubjectKeys)) + ")")
+					}
+
+					if v.DeploymentSubjectKeys[0] != "space" {
+						return errors.New("The account must be have a deployment subject key of \"space\" (was " + v.DeploymentSubjectKeys[0] + ")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
