@@ -332,12 +332,12 @@ func (c KubernetesAgentWorkerConverter) toHcl(worker octopus.KubernetesAgentWork
 			SpaceId:           strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", worker.SpaceId)),
 			ResourceName:      worker.Name,
 			Thumbprint:        worker.Thumbprint,
-			Uri:               strutil.EmptyIfNil(worker.Uri),
+			Uri:               worker.Endpoint.TentacleEndpointConfiguration.Uri,
 			WorkerPoolIds:     dependencies.GetResources("WorkerPools", worker.WorkerPoolIds...),
 			CommunicationMode: strutil.NilIfEmpty(worker.Endpoint.TentacleEndpointConfiguration.CommunicationMode),
 			IsDisabled:        boolutil.NilIfFalse(worker.IsDisabled),
 			MachinePolicyId:   c.getMachinePolicy(worker.MachinePolicyId, dependencies),
-			UpgradeLocked:     boolutil.NilIfFalse(worker.Endpoint.KubernetesAgentDetails.UpgradeStatus == "NoUpgrades"),
+			UpgradeLocked:     boolutil.NilIfFalse(worker.Endpoint.UpgradeLocked),
 		}
 		file := hclwrite.NewEmptyFile()
 

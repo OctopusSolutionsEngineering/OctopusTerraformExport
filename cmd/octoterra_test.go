@@ -9853,3 +9853,56 @@ func TestSingleProjectGitTriggerExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestK8sWorkerExport verifies that a k8s worker can be reimported with the correct settings
+func TestK8sWorkerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/83-k8sworker/space_creation",
+		"../test/terraform/83-k8sworker/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesAgentWorker]{}
+			err := octopusClient.GetAllResources("Workers", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			workerName := "K8s Worker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerName {
+					found = true
+
+					if v.Thumbprint != "96203ED84246201C26A2F4360D7CBC36AC1D232D" {
+						return errors.New("The worker must be have a thumbprint of \"96203ED84246201C26A2F4360D7CBC36AC1D232D\" (was \"" + v.Thumbprint + "\"")
+					}
+
+					if v.Endpoint.TentacleEndpointConfiguration.Uri != "poll://kcxzcv2fpsxkn6tk9u6d/" {
+						return errors.New("The worker must be have a Uri of \"poll://kcxzcv2fpsxkn6tk9u6d/\" (was \"" + v.Endpoint.TentacleEndpointConfiguration.Uri + "\"")
+					}
+
+					if !v.Endpoint.UpgradeLocked {
+						return errors.New("the worker must be be locked (was " + fmt.Sprint(v.Endpoint.UpgradeLocked) + ")")
+					}
+
+					if !v.IsDisabled {
+						return errors.New("the worker must be disabled")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an worker called \"" + workerName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

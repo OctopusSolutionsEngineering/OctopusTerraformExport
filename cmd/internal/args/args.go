@@ -173,6 +173,11 @@ type Arguments struct {
 	ExcludeTargetsExcept             StringSliceArgs
 	ExcludeTargetsWithNoEnvironments bool
 
+	ExcludeAllWorkers    bool
+	ExcludeWorkers       StringSliceArgs
+	ExcludeWorkersRegex  StringSliceArgs
+	ExcludeWorkersExcept StringSliceArgs
+
 	ExcludeAllGitCredentials bool
 
 	ExcludeAllDeploymentFreezes    bool
@@ -356,6 +361,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeTargets, "excludeTargets", "Exclude targets from being exported. WARNING: Variables that were scoped to targets will become unscoped.")
 	flags.Var(&arguments.ExcludeTargetsRegex, "excludeTargetsRegex", "Exclude targets from being exported based on a regex. WARNING: Variables that were scoped to targets will become unscoped.")
 	flags.Var(&arguments.ExcludeTargetsExcept, "excludeTargetsExcept", "Exclude all targets except for those define in this list. The targets in excludeTargets take precedence, so a tenant define here and in excludeTargets is excluded. WARNING: Variables that were scoped to other targets will become unscoped.")
+
+	flags.BoolVar(&arguments.ExcludeAllWorkers, "excludeAllWorkers", false, "Exclude all workers from being exported.")
+	flags.Var(&arguments.ExcludeWorkers, "excludeWorkers", "Exclude workers from being exported.")
+	flags.Var(&arguments.ExcludeWorkersRegex, "excludeWorkersRegex", "Exclude workers from being exported based on a regex.")
+	flags.Var(&arguments.ExcludeWorkersExcept, "excludeWorkersExcept", "Exclude all workers except for those define in this list. The targets in excludeWorkers take precedence, so a worker define here and in excludeWorkers is excluded.")
 
 	flags.BoolVar(&arguments.ExcludeAllProjects, "excludeAllProjects", false, "Exclude all projects from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
