@@ -341,7 +341,6 @@ func (c SshWorkerConverter) toHcl(worker octopus.Worker, recursive bool, statele
 			Port:            intutil.ZeroIfNil(worker.Endpoint.Port),
 			WorkerPoolIds:   dependencies.GetResources("WorkerPools", worker.WorkerPoolIds...),
 			MachinePolicyId: c.getMachinePolicy(worker.MachinePolicyId, dependencies),
-			Uri:             strutil.EmptyIfNil(worker.Uri),
 			ProxyId:         nil,
 			IsDisabled:      boolutil.NilIfFalse(worker.IsDisabled),
 		}

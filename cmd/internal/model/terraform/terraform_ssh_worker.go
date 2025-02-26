@@ -14,7 +14,6 @@ type TerraformSshWorker struct {
 	Port            int      `hcl:"port"`
 	WorkerPoolIds   []string `hcl:"worker_pool_ids"`
 	MachinePolicyId *string  `hcl:"machine_policy_id"`
-	Uri             string   `hcl:"uri"`
 	ProxyId         *string  `hcl:"proxy_id"`
 	IsDisabled      *bool    `hcl:"is_disabled"`
 }

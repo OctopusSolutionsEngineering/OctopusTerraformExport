@@ -9955,3 +9955,62 @@ func TestListeningWorkerExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestSSHWorkerExport verifies that a listening worker can be reimported with the correct settings
+func TestSSHWorkerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/85-sshworker/space_creation",
+		"../test/terraform/85-sshworker/space_population",
+		[]string{},
+		[]string{
+			"-var=account_gke=secretgoeshere",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Worker]{}
+			err := octopusClient.GetAllResources("Workers", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			workerName := "SSH Worker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Endpoint.Fingerprint) != "SHA256: 12345abc" {
+						return errors.New("The worker must be have a fingerprint of \"SHA256: 12345abc\" (was \"" + strutil.EmptyIfNil(v.Endpoint.Fingerprint) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.Endpoint.Host) != "hostname" {
+						return errors.New("The worker must be have a hostname of \"hostname\" (was \"" + strutil.EmptyIfNil(v.Endpoint.Host) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.Endpoint.DotNetCorePlatform) != "linux-x64" {
+						return errors.New("The worker must be have a DotNet platform of \"linux-x64\" (was \"" + strutil.EmptyIfNil(v.Endpoint.DotNetCorePlatform) + "\"")
+					}
+
+					if intutil.ZeroIfNil(v.Endpoint.Port) != 22 {
+						return errors.New("The worker must be have a port of \"22\" (was \"" + fmt.Sprint(intutil.ZeroIfNil(v.Endpoint.Port)) + "\"")
+					}
+
+					if !v.IsDisabled {
+						return errors.New("the worker must be disabled")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an worker called \"" + workerName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
