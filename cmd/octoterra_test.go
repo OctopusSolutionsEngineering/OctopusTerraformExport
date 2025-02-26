@@ -10014,3 +10014,58 @@ func TestSSHWorkerExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestS3FeedExport verifies that an s3 feed can be reimported with the correct settings
+func TestS3FeedExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/86-s3feed/space_creation",
+		"../test/terraform/86-s3feed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_s3_secretkey=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			feedName := "S3"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
+
+					if strutil.EmptyIfNil(v.FeedType) != "S3" {
+						return errors.New("The feed must have a type of \"S3\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\")")
+					}
+
+					if strutil.EmptyIfNil(v.AccessKey) != "given_access_key" {
+						return errors.New("The feed must have a access key of \"given_access_key\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\")")
+					}
+
+					if !v.SecretKey.HasValue {
+						return errors.New("the feed must have a password")
+					}
+
+					if boolutil.FalseIfNil(v.UseMachineCredentials) {
+						return errors.New("The feed must not be using machine credentials (was " + fmt.Sprint(boolutil.FalseIfNil(v.UseMachineCredentials)) + ")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
