@@ -32,6 +32,12 @@ type WorkerEndpoint struct {
 	LastModifiedOn                *string
 	LastModifiedBy                *string
 	ProxyId                       *string
+	AccountId                     *string
+	Host                          *string
+	Port                          *int
+	Fingerprint                   *string
+	HostKeyAlgorithm              *string
+	DotNetCorePlatform            *string
 }
 
 type WorkerEndpointTentacleVersionDetails struct {

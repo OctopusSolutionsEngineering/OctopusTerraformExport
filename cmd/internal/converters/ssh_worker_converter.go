@@ -6,6 +6,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -15,22 +16,23 @@ import (
 	"go.uber.org/zap"
 )
 
-const octopusdeployListeningWorkerDataType = "octopusdeploy_workers"
-const octopusdeployListeningWorkerResourceType = "octopusdeploy_listening_tentacle_worker"
+const octopusdeploySshWorkerDataType = "octopusdeploy_workers"
+const octopusdeploySshWorkerResourceType = "octopusdeploy_ssh_connection_worker"
 
-type ListeningWorkerConverter struct {
+type SshWorkerConverter struct {
 	BaseWorkerConverter
+	AccountConverter ConverterAndLookupWithStatelessById
 }
 
-func (c ListeningWorkerConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
+func (c SshWorkerConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
-func (c ListeningWorkerConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
+func (c SshWorkerConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
-func (c ListeningWorkerConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) allToHcl(stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllWorkers {
 		return nil
 	}
@@ -51,11 +53,11 @@ func (c ListeningWorkerConverter) allToHcl(stateless bool, dependencies *data.Re
 
 		resource := resourceWrapper.Res
 
-		if !c.isListeningWorker(resource) {
+		if !c.isSshWorker(resource) {
 			continue
 		}
 
-		zap.L().Info("Listening Worker: " + resource.Id + " " + resource.Name)
+		zap.L().Info("SSH Worker: " + resource.Id + " " + resource.Name)
 		err := c.toHcl(resource, false, stateless, dependencies)
 
 		if err != nil {
@@ -66,19 +68,19 @@ func (c ListeningWorkerConverter) allToHcl(stateless bool, dependencies *data.Re
 	return nil
 }
 
-func (c ListeningWorkerConverter) isListeningWorker(resource octopus.Worker) bool {
-	return resource.Endpoint.CommunicationStyle == "TentaclePassive"
+func (c SshWorkerConverter) isSshWorker(resource octopus.Worker) bool {
+	return resource.Endpoint.CommunicationStyle == "Ssh"
 }
 
-func (c ListeningWorkerConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclById(id, true, dependencies)
 }
 
-func (c ListeningWorkerConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
 	return c.toHclById(id, false, dependencies)
 }
 
-func (c ListeningWorkerConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -94,15 +96,15 @@ func (c ListeningWorkerConverter) toHclById(id string, stateless bool, dependenc
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.KubernetesEndpointResource: %w", err)
 	}
 
-	if !c.isListeningWorker(resource) {
+	if !c.isSshWorker(resource) {
 		return nil
 	}
 
-	zap.L().Info("Listening Worker: " + resource.Id + " " + resource.Name)
+	zap.L().Info("SSh Worker: " + resource.Id + " " + resource.Name)
 	return c.toHcl(resource, true, stateless, dependencies)
 }
 
-func (c ListeningWorkerConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -123,7 +125,7 @@ func (c ListeningWorkerConverter) ToHclLookupById(id string, dependencies *data.
 		return nil
 	}
 
-	if !c.isListeningWorker(resource) {
+	if !c.isSshWorker(resource) {
 		return nil
 	}
 
@@ -135,7 +137,7 @@ func (c ListeningWorkerConverter) ToHclLookupById(id string, dependencies *data.
 	thisResource.Id = resource.Id
 	thisResource.Name = resource.Name
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data." + octopusdeployListeningWorkerDataType + "." + resourceName + ".workers[0].id}"
+	thisResource.Lookup = "${data." + octopusdeploySshWorkerDataType + "." + resourceName + ".workers[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, resource)
 		file := hclwrite.NewEmptyFile()
@@ -150,9 +152,9 @@ func (c ListeningWorkerConverter) ToHclLookupById(id string, dependencies *data.
 	return nil
 }
 
-func (c ListeningWorkerConverter) buildData(resourceName string, resource octopus.Worker) terraform.TerraformWorkersData {
+func (c SshWorkerConverter) buildData(resourceName string, resource octopus.Worker) terraform.TerraformWorkersData {
 	return terraform.TerraformWorkersData{
-		Type:        octopusdeployListeningWorkerDataType,
+		Type:        octopusdeploySshWorkerDataType,
 		Name:        resourceName,
 		Ids:         nil,
 		PartialName: &resource.Name,
@@ -162,14 +164,14 @@ func (c ListeningWorkerConverter) buildData(resourceName string, resource octopu
 }
 
 // writeData appends the data block for stateless modules
-func (c ListeningWorkerConverter) writeData(file *hclwrite.File, resource octopus.Worker, resourceName string) {
+func (c SshWorkerConverter) writeData(file *hclwrite.File, resource octopus.Worker, resourceName string) {
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
 
 // toBashImport creates a bash script to import the resource
-func (c ListeningWorkerConverter) toBashImport(resourceName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c SshWorkerConverter) toBashImport(resourceName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -224,13 +226,13 @@ fi
 
 echo "Importing target ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusResourceName, octopusdeployListeningWorkerResourceType, resourceName), nil
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusResourceName, octopusdeploySshWorkerResourceType, resourceName), nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c ListeningWorkerConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c SshWorkerConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -276,12 +278,12 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing target $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployListeningWorkerResourceType, resourceName), nil
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeploySshWorkerResourceType, resourceName), nil
 		},
 	})
 }
 
-func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) toHcl(worker octopus.Worker, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Ignore excluded targets
 	if c.Excluder.IsResourceExcludedWithRegex(worker.Name, c.ExcludeAllWorkers, c.ExcludeWorkers, c.ExcludeWorkersRegex, c.ExcludeWorkersExcept) {
 		return nil
@@ -292,7 +294,7 @@ func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, s
 		return nil
 	}
 
-	if !c.isListeningWorker(worker) {
+	if !c.isSshWorker(worker) {
 		return nil
 	}
 
@@ -325,16 +327,20 @@ func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, s
 
 	thisResource.ToHcl = func() (string, error) {
 
-		terraformResource := terraform.TerraformListeningWorker{
-			Type:            octopusdeployListeningWorkerResourceType,
+		terraformResource := terraform.TerraformSshWorker{
+			Type:            octopusdeploySshWorkerResourceType,
 			Name:            workerName,
 			Count:           nil,
 			Id:              strutil.InputPointerIfEnabled(c.IncludeIds, &worker.Id),
 			SpaceId:         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", worker.SpaceId)),
 			ResourceName:    worker.Name,
+			AccountId:       dependencies.GetResource("Accounts", strutil.EmptyIfNil(worker.Endpoint.AccountId)),
+			DotnetPlatform:  strutil.EmptyIfNil(worker.Endpoint.DotNetCorePlatform),
+			Fingerprint:     strutil.EmptyIfNil(worker.Endpoint.Fingerprint),
+			Host:            strutil.EmptyIfNil(worker.Endpoint.Host),
+			Port:            intutil.ZeroIfNil(worker.Endpoint.Port),
 			WorkerPoolIds:   dependencies.GetResources("WorkerPools", worker.WorkerPoolIds...),
 			MachinePolicyId: c.getMachinePolicy(worker.MachinePolicyId, dependencies),
-			Thumbprint:      worker.Thumbprint,
 			Uri:             strutil.EmptyIfNil(worker.Uri),
 			ProxyId:         nil,
 			IsDisabled:      boolutil.NilIfFalse(worker.IsDisabled),
@@ -343,7 +349,7 @@ func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, s
 
 		if stateless {
 			c.writeData(file, worker, workerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployListeningWorkerDataType + "." + workerName + ".deployment_targets) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeploySshWorkerDataType + "." + workerName + ".deployment_targets) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -362,11 +368,11 @@ func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, s
 	return nil
 }
 
-func (c ListeningWorkerConverter) GetResourceType() string {
+func (c SshWorkerConverter) GetResourceType() string {
 	return "Workers"
 }
 
-func (c ListeningWorkerConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
+func (c SshWorkerConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
 	machineLookup := dependencies.GetResource("MachinePolicies", machine)
 	if machineLookup == "" {
 		return nil
@@ -375,7 +381,7 @@ func (c ListeningWorkerConverter) getMachinePolicy(machine string, dependencies 
 	return &machineLookup
 }
 
-func (c ListeningWorkerConverter) getWorkerPool(pool *string, dependencies *data.ResourceDetailsCollection) *string {
+func (c SshWorkerConverter) getWorkerPool(pool *string, dependencies *data.ResourceDetailsCollection) *string {
 	if len(strutil.EmptyIfNil(pool)) == 0 {
 		return nil
 	}
@@ -388,40 +394,50 @@ func (c ListeningWorkerConverter) getWorkerPool(pool *string, dependencies *data
 	return &workerPoolLookup
 }
 
-func (c ListeningWorkerConverter) exportDependencies(target octopus.Worker, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) exportDependencies(target octopus.Worker, dependencies *data.ResourceDetailsCollection) error {
 	// The machine policies need to be exported
-	err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
+	if err := c.MachinePolicyConverter.ToHclById(target.MachinePolicyId, dependencies); err != nil {
 		return err
+	}
+
+	// Export the accounts
+	if target.Endpoint.AccountId != nil {
+		if err := c.AccountConverter.ToHclById(*target.Endpoint.AccountId, dependencies); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (c ListeningWorkerConverter) exportStatelessDependencies(target octopus.Worker, dependencies *data.ResourceDetailsCollection) error {
+func (c SshWorkerConverter) exportStatelessDependencies(target octopus.Worker, dependencies *data.ResourceDetailsCollection) error {
 	// The machine policies need to be exported
-	err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies)
-
-	if err != nil {
+	if err := c.MachinePolicyConverter.ToHclStatelessById(target.MachinePolicyId, dependencies); err != nil {
 		return err
+	}
+
+	// Export the accounts
+	if target.Endpoint.AccountId != nil {
+		if err := c.AccountConverter.ToHclStatelessById(*target.Endpoint.AccountId, dependencies); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (c *ListeningWorkerConverter) getLookup(stateless bool, targetName string) string {
+func (c *SshWorkerConverter) getLookup(stateless bool, targetName string) string {
 	if stateless {
-		return "${length(data." + octopusdeployListeningWorkerDataType + "." + targetName + ".workers) != 0 " +
-			"? data." + octopusdeployListeningWorkerDataType + "." + targetName + ".workers[0].id " +
-			": " + octopusdeployListeningWorkerResourceType + "." + targetName + "[0].id}"
+		return "${length(data." + octopusdeploySshWorkerDataType + "." + targetName + ".workers) != 0 " +
+			"? data." + octopusdeploySshWorkerDataType + "." + targetName + ".workers[0].id " +
+			": " + octopusdeploySshWorkerResourceType + "." + targetName + "[0].id}"
 	}
-	return "${" + octopusdeployListeningWorkerResourceType + "." + targetName + ".id}"
+	return "${" + octopusdeploySshWorkerResourceType + "." + targetName + ".id}"
 }
 
-func (c *ListeningWorkerConverter) getDependency(stateless bool, targetName string) string {
+func (c *SshWorkerConverter) getDependency(stateless bool, targetName string) string {
 	if stateless {
-		return "${" + octopusdeployListeningWorkerResourceType + "." + targetName + "}"
+		return "${" + octopusdeploySshWorkerResourceType + "." + targetName + "}"
 	}
 	return ""
 }
