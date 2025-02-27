@@ -288,8 +288,8 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 					// an empty string caused problems, so we need to return nil here for an empty string
 					WorkerPoolVariable:   strutil.NilIfEmptyPointer(a.WorkerPoolVariable),
 					Environments:         dependencies.GetResources("Environments", a.Environments...),
-					ExcludedEnvironments: a.ExcludedEnvironments,
-					Channels:             a.Channels,
+					ExcludedEnvironments: dependencies.GetResources("Environments", a.ExcludedEnvironments...),
+					Channels:             dependencies.GetResources("Channels", a.Channels...),
 					TenantTags:           c.Excluder.FilteredTenantTags(a.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 					Package:              []terraform.TerraformPackage{},
 					Condition:            a.Condition,
