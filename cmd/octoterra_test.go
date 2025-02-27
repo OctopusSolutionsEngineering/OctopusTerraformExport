@@ -9720,3 +9720,352 @@ func TestDeploymentFreezeExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestGenericOidcAccountExport verifies that an generic OIDC account can be reimported with the correct settings
+func TestGenericOidcAccountExport(t *testing.T) {
+	// this is only supported in 2025.1, which we can't test locally yet
+	return
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/81-genericoidcaccount/space_creation",
+		"../test/terraform/81-genericoidcaccount/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Account]{}
+			err := octopusClient.GetAllResources("Accounts", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			accountName := "Generic OpenID Connect"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == accountName {
+					found = true
+					if v.AccountType != "GenericOidcAccount" {
+						return errors.New("The account must be have a type of \"GenericOidcAccount\" (was " + v.AccountType + ")")
+					}
+
+					if strutil.EmptyIfNil(v.Description) != "A test account" {
+						return errors.New("The account must be have a description of \"A test account\" (was " + strutil.EmptyIfNil(v.Description) + ")")
+					}
+
+					if strutil.EmptyIfNil(v.TenantedDeploymentParticipation) != "Untenanted" {
+						return errors.New("The account must be have a tenanted deployment participation of \"Untenanted\" (was " + strutil.EmptyIfNil(v.TenantedDeploymentParticipation) + ")")
+					}
+
+					if len(v.TenantTags) != 0 {
+						return errors.New("The account must be have no tenant tags (had " + fmt.Sprint(len(v.TenantTags)) + ")")
+					}
+
+					if len(v.DeploymentSubjectKeys) != 1 {
+						return errors.New("The account must 1 deployment subject key (was " + fmt.Sprint(len(v.DeploymentSubjectKeys)) + ")")
+					}
+
+					if v.DeploymentSubjectKeys[0] != "space" {
+						return errors.New("The account must be have a deployment subject key of \"space\" (was " + v.DeploymentSubjectKeys[0] + ")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+func TestSingleProjectGitTriggerExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/82-projectgittrigger/space_creation",
+		"../test/terraform/82-projectgittrigger/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+			"-var=gitcredential_test=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			environments := octopus.GeneralCollection[octopus.Environment]{}
+			err = octopusClient.GetAllResources("Environments", &environments)
+
+			if err != nil {
+				return err
+			}
+
+			developmentEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+				return item.Name == "Development"
+			})
+
+			if len(developmentEnvironment) != 1 {
+				return errors.New("space must have an environment called \"Development\" in space " + recreatedSpaceId)
+			}
+
+			resourceName := "Test"
+
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
+
+			if len(project) != 1 {
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			err = octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers)
+
+			if err != nil {
+				return err
+			}
+
+			deployNew := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "My Git trigger"
+			})
+
+			if len(deployNew) != 1 {
+				return errors.New("space must have an trigger called \"My Git trigger\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestK8sWorkerExport verifies that a k8s worker can be reimported with the correct settings
+func TestK8sWorkerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/83-k8sworker/space_creation",
+		"../test/terraform/83-k8sworker/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesAgentWorker]{}
+			err := octopusClient.GetAllResources("Workers", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			workerName := "K8s Worker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerName {
+					found = true
+
+					if v.Thumbprint != "96203ED84246201C26A2F4360D7CBC36AC1D232D" {
+						return errors.New("The worker must be have a thumbprint of \"96203ED84246201C26A2F4360D7CBC36AC1D232D\" (was \"" + v.Thumbprint + "\"")
+					}
+
+					if v.Endpoint.TentacleEndpointConfiguration.Uri != "poll://kcxzcv2fpsxkn6tk9u6d/" {
+						return errors.New("The worker must be have a Uri of \"poll://kcxzcv2fpsxkn6tk9u6d/\" (was \"" + v.Endpoint.TentacleEndpointConfiguration.Uri + "\"")
+					}
+
+					if !v.Endpoint.UpgradeLocked {
+						return errors.New("the worker must be be locked (was " + fmt.Sprint(v.Endpoint.UpgradeLocked) + ")")
+					}
+
+					if !v.IsDisabled {
+						return errors.New("the worker must be disabled")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an worker called \"" + workerName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestListeningWorkerExport verifies that a listening worker can be reimported with the correct settings
+func TestListeningWorkerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/84-listeningworker/space_creation",
+		"../test/terraform/84-listeningworker/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.KubernetesAgentWorker]{}
+			err := octopusClient.GetAllResources("Workers", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			workerName := "Listening Worker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerName {
+					found = true
+
+					if v.Thumbprint != "96203ED84246201C26A2F4360D7CBC36AC1D232D" {
+						return errors.New("The worker must be have a thumbprint of \"96203ED84246201C26A2F4360D7CBC36AC1D232D\" (was \"" + v.Thumbprint + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.Uri) != "https://tentacle.listening/" {
+						return errors.New("The worker must be have a Uri of \"https://tentacle.listening/\" (was \"" + strutil.EmptyIfNil(v.Uri) + "\"")
+					}
+
+					if !v.IsDisabled {
+						return errors.New("the worker must be disabled")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an worker called \"" + workerName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestSSHWorkerExport verifies that a listening worker can be reimported with the correct settings
+func TestSSHWorkerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/85-sshworker/space_creation",
+		"../test/terraform/85-sshworker/space_population",
+		[]string{},
+		[]string{
+			"-var=account_gke=secretgoeshere",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Worker]{}
+			err := octopusClient.GetAllResources("Workers", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			workerName := "SSH Worker"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == workerName {
+					found = true
+
+					if strutil.EmptyIfNil(v.Endpoint.Fingerprint) != "SHA256: 12345abc" {
+						return errors.New("The worker must be have a fingerprint of \"SHA256: 12345abc\" (was \"" + strutil.EmptyIfNil(v.Endpoint.Fingerprint) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.Endpoint.Host) != "hostname" {
+						return errors.New("The worker must be have a hostname of \"hostname\" (was \"" + strutil.EmptyIfNil(v.Endpoint.Host) + "\"")
+					}
+
+					if strutil.EmptyIfNil(v.Endpoint.DotNetCorePlatform) != "linux-x64" {
+						return errors.New("The worker must be have a DotNet platform of \"linux-x64\" (was \"" + strutil.EmptyIfNil(v.Endpoint.DotNetCorePlatform) + "\"")
+					}
+
+					if intutil.ZeroIfNil(v.Endpoint.Port) != 22 {
+						return errors.New("The worker must be have a port of \"22\" (was \"" + fmt.Sprint(intutil.ZeroIfNil(v.Endpoint.Port)) + "\"")
+					}
+
+					if !v.IsDisabled {
+						return errors.New("the worker must be disabled")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an worker called \"" + workerName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestS3FeedExport verifies that an s3 feed can be reimported with the correct settings
+func TestS3FeedExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/86-s3feed/space_creation",
+		"../test/terraform/86-s3feed/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_s3_secretkey=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Feed]{}
+			err := octopusClient.GetAllResources("Feeds", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			feedName := "S3"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == feedName {
+					found = true
+
+					if strutil.EmptyIfNil(v.FeedType) != "S3" {
+						return errors.New("The feed must have a type of \"S3\" (was \"" + strutil.EmptyIfNil(v.FeedType) + "\")")
+					}
+
+					if strutil.EmptyIfNil(v.AccessKey) != "given_access_key" {
+						return errors.New("The feed must have a access key of \"given_access_key\" (was \"" + strutil.EmptyIfNil(v.AccessKey) + "\")")
+					}
+
+					if !v.SecretKey.HasValue {
+						return errors.New("the feed must have a password")
+					}
+
+					if boolutil.FalseIfNil(v.UseMachineCredentials) {
+						return errors.New("The feed must not be using machine credentials (was " + fmt.Sprint(boolutil.FalseIfNil(v.UseMachineCredentials)) + ")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an feed called \"" + feedName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

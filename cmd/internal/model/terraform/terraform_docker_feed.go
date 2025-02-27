@@ -86,3 +86,16 @@ type TerraformNuGetFeed struct {
 	DownloadAttempts                  *int     `hcl:"download_attempts"`
 	DownloadRetryBackoffSeconds       *int     `hcl:"download_retry_backoff_seconds"`
 }
+
+type TerraformS3Feed struct {
+	Type                  string  `hcl:"type,label"`
+	Name                  string  `hcl:"name,label"`
+	Id                    *string `hcl:"id"`
+	Count                 *string `hcl:"count"`
+	ResourceName          string  `hcl:"name"`
+	UseMachineCredentials bool    `hcl:"use_machine_credentials"`
+	AccessKey             *string `hcl:"access_key"`
+	Password              *string `hcl:"password"`
+	SecretKey             *string `hcl:"secret_key"`
+	Username              *string `hcl:"username"`
+}

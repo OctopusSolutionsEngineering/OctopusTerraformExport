@@ -40,7 +40,7 @@ type Account struct {
 	// google
 	JsonKey Secret
 
-	// aws oidc
+	// aws oidc (also generic OIDC)
 	RoleArn                *string
 	SessionDuration        *string
 	DeploymentSubjectKeys  []string

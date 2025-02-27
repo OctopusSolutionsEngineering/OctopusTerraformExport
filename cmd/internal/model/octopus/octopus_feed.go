@@ -29,4 +29,7 @@ type Feed struct {
 	// Artifactory
 	Repository  *string
 	LayoutRegex *string
+
+	// S3
+	UseMachineCredentials *bool
 }

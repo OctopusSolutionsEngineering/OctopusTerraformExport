@@ -452,6 +452,59 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
 	}
+
+	sshWorkerConverter := converters.SshWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+		AccountConverter: accountConverter,
+	}
+
+	listeningWorkerConverter := converters.ListeningWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+	}
+
+	k8sAgentWorkerConverter := converters.KubernetesAgentWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+	}
+
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,
 		ErrGroup:                 &group,
@@ -947,6 +1000,9 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		StepTemplateConverter:             stepTemplateConverter,
 		TenantProjectConverter:            tenantProjectConverter,
 		DeploymentFreezeConverter:         deploymentFreezeConverter,
+		KubernetesAgentWorkerConverter:    k8sAgentWorkerConverter,
+		ListeningWorkerConverter:          listeningWorkerConverter,
+		SshWorkerConverter:                sshWorkerConverter,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{

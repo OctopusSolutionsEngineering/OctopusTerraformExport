@@ -45,6 +45,9 @@ type SpaceConverter struct {
 	StepTemplateConverter             Converter
 	TenantProjectConverter            Converter
 	DeploymentFreezeConverter         Converter
+	KubernetesAgentWorkerConverter    Converter
+	ListeningWorkerConverter          Converter
+	SshWorkerConverter                Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
@@ -137,8 +140,16 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	c.StepTemplateConverter.AllToHcl(dependencies)
 
 	// Convert the deployment freezes
-	// Need to wait for https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/867 to be fixed
-	//c.DeploymentFreezeConverter.AllToHcl(dependencies)
+	c.DeploymentFreezeConverter.AllToHcl(dependencies)
+
+	// Convert K8s agent workers
+	c.KubernetesAgentWorkerConverter.AllToHcl(dependencies)
+
+	// Convert Listening workers
+	c.ListeningWorkerConverter.AllToHcl(dependencies)
+
+	// Convert SSH workers
+	c.SshWorkerConverter.AllToHcl(dependencies)
 
 	// Include the space if it was requested
 	c.SpacePopulateConverter.AllToHcl(dependencies)
@@ -225,6 +236,15 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 
 	// Convert the Deployment Freezes
 	c.DeploymentFreezeConverter.AllToStatelessHcl(dependencies)
+
+	// Convert k8s agent workers
+	c.KubernetesAgentWorkerConverter.AllToStatelessHcl(dependencies)
+
+	// Convert Listening workers
+	c.ListeningWorkerConverter.AllToStatelessHcl(dependencies)
+
+	// convert SSH workers
+	c.SshWorkerConverter.AllToStatelessHcl(dependencies)
 
 	return c.ErrGroup.Wait()
 }

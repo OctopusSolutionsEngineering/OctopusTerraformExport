@@ -386,6 +386,13 @@ func (c AccountConverter) toHcl(account octopus.Account, recursive bool, statele
 			c.toBashImport("octopusdeploy_azure_openid_connect", resourceName, account.Name, dependencies)
 			c.toPowershellImport("octopusdeploy_azure_openid_connect", resourceName, account.Name, dependencies)
 		}
+	} else if account.AccountType == "GenericOidcAccount" {
+		c.writeGenericOidcAccount(stateless, &thisResource, resourceName, account, recursive, dependencies)
+
+		if c.GenerateImportScripts {
+			c.toBashImport("octopusdeploy_generic_oidc_account", resourceName, account.Name, dependencies)
+			c.toPowershellImport("octopusdeploy_generic_oidc_account", resourceName, account.Name, dependencies)
+		}
 	}
 
 	dependencies.AddResource(thisResource)
@@ -1125,6 +1132,62 @@ func (c AccountConverter) writeLifecycleAttributes(accountBlock *hclwrite.Block,
 		if stateless {
 			hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
 		}
+	}
+}
+
+func (c AccountConverter) getGenericOidcLookup(stateless bool, resourceName string) string {
+	if stateless {
+		return "${length(data.octopusdeploy_accounts." + resourceName + ".accounts) != 0 ? data.octopusdeploy_accounts." + resourceName + ".accounts[0].id : octopusdeploy_generic_oidc_account." + resourceName + "[0].id}"
+	}
+	return "${octopusdeploy_generic_oidc_account." + resourceName + ".id}"
+}
+
+func (c AccountConverter) getGenericOidcDependency(stateless bool, resourceName string) string {
+	if stateless {
+		return "${octopusdeploy_generic_oidc_account." + resourceName + "}"
+	}
+
+	return ""
+}
+
+func (c AccountConverter) writeGenericOidcAccount(stateless bool, resource *data.ResourceDetails, resourceName string, account octopus.Account, recursive bool, dependencies *data.ResourceDetailsCollection) {
+
+	resource.Lookup = c.getAwsOidcLookup(stateless, resourceName)
+	resource.Dependency = c.getAwsOidcDependency(stateless, resourceName)
+	resource.ToHcl = func() (string, error) {
+		terraformResource := terraform.TerraformGenericOicdAccount{
+			Type:                            "octopusdeploy_aws_openid_connect_account",
+			Name:                            resourceName,
+			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
+			Count:                           c.getCount(stateless, resourceName),
+			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
+			ResourceName:                    account.Name,
+			Description:                     strutil.TrimPointer(account.Description),
+			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			ExecutionSubjectKeys:            account.DeploymentSubjectKeys,
+			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
+			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			c.writeData(file, account, resourceName)
+		}
+
+		accountBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, terraformResource.TenantTags, c.TagSetConverter, accountBlock, dependencies, recursive)
+		if err != nil {
+			return "", err
+		}
+
+		c.writeLifecycleAttributes(accountBlock, stateless, []string{})
+
+		file.Body().AppendBlock(accountBlock)
+
+		return string(file.Bytes()), nil
 	}
 }
 
