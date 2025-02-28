@@ -14,6 +14,15 @@ func ZeroIfNil(input *int) int {
 	return *input
 }
 
+// NilIfZero converts a int  to an int pointer, retuning nil if the input is 0
+func NilIfZero(input int) *int {
+	if input == 0 {
+		return nil
+	}
+
+	return &input
+}
+
 func ParseIntPointer(input *string) (*int, error) {
 	if input == nil {
 		return nil, nil
