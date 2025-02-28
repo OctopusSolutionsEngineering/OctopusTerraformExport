@@ -17,6 +17,8 @@ import (
 )
 
 const octopusdeployDeploymentFreezeDataType = "octopusdeploy_deployment_freezes"
+const octopusdeployDeploymentFreezeProjectResourceType = "octopusdeploy_deployment_freeze_project"
+const octopusdeployDeploymentFreezeTenantResourceType = "octopusdeploy_deployment_freeze_tenant"
 const octopusdeployDeploymentFreezeResourceType = "octopusdeploy_deployment_freeze"
 
 type DeploymentFreezeConverter struct {
@@ -162,7 +164,96 @@ func (c DeploymentFreezeConverter) toHcl(deploymentFreeze octopus.DeploymentFree
 	}
 
 	dependencies.AddResource(thisResource)
+
+	if !stateless {
+		dependencies.AddResource(c.toHclTenantScope(deploymentFreeze, thisResource.Lookup, dependencies)...)
+		dependencies.AddResource(c.toHclProjectScope(deploymentFreeze, thisResource.Lookup, dependencies)...)
+	}
+
 	return nil
+}
+
+func (c DeploymentFreezeConverter) toHclTenantScope(deploymentFreeze octopus.DeploymentFreeze, parentReference string, dependencies *data.ResourceDetailsCollection) []data.ResourceDetails {
+	resources := []data.ResourceDetails{}
+
+	for _, tenant := range deploymentFreeze.TenantProjectEnvironmentScope {
+		freezeName := "deploymentfreezetenant_" + sanitizer.SanitizeName(deploymentFreeze.Name)
+
+		thisResource := data.ResourceDetails{}
+		thisResource.Name = deploymentFreeze.Name
+		thisResource.FileName = "space_population/" + freezeName + ".tf"
+		thisResource.Id = deploymentFreeze.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${" + octopusdeployDeploymentFreezeTenantResourceType + "." + freezeName + ".id}"
+
+		thisResource.ToHcl = func() (string, error) {
+
+			terraformResource := terraform.TerraformDeploymentFreezeTenant{
+				Type:               octopusdeployDeploymentFreezeTenantResourceType,
+				Name:               freezeName,
+				Count:              nil,
+				Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &deploymentFreeze.Id),
+				DeploymentFreezeId: parentReference,
+				EnvironmentId:      dependencies.GetResource("Environments", tenant.EnvironmentId),
+				ProjectId:          dependencies.GetResource("Projects", tenant.ProjectId),
+				TenantId:           dependencies.GetResource("Tenants", tenant.TenantId),
+			}
+
+			file := hclwrite.NewEmptyFile()
+
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		resources = append(resources, thisResource)
+	}
+
+	return resources
+}
+
+func (c DeploymentFreezeConverter) toHclProjectScope(deploymentFreeze octopus.DeploymentFreeze, parentReference string, dependencies *data.ResourceDetailsCollection) []data.ResourceDetails {
+
+	resources := []data.ResourceDetails{}
+
+	for projectId, projectEnvironment := range deploymentFreeze.ProjectEnvironmentScope {
+
+		freezeName := "deploymentfreezeproject_" + sanitizer.SanitizeName(deploymentFreeze.Name)
+
+		thisResource := data.ResourceDetails{}
+		thisResource.Name = deploymentFreeze.Name
+		thisResource.FileName = "space_population/" + freezeName + ".tf"
+		thisResource.Id = deploymentFreeze.Id
+		thisResource.ResourceType = c.GetResourceType()
+		thisResource.Lookup = "${" + octopusdeployDeploymentFreezeProjectResourceType + "." + freezeName + ".id}"
+
+		thisResource.ToHcl = func() (string, error) {
+
+			terraformResource := terraform.TerraformDeploymentFreezeProject{
+				Type:               octopusdeployDeploymentFreezeProjectResourceType,
+				Name:               freezeName,
+				Count:              nil,
+				Id:                 strutil.InputPointerIfEnabled(c.IncludeIds, &deploymentFreeze.Id),
+				DeploymentFreezeId: parentReference,
+				ProjectId:          dependencies.GetResource("Projects", projectId),
+				EnvironmentIds:     dependencies.GetResources("Environments", projectEnvironment...),
+			}
+
+			file := hclwrite.NewEmptyFile()
+
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
+
+		resources = append(resources, thisResource)
+	}
+
+	return resources
 }
 
 // writeData appends the data block for stateless modules

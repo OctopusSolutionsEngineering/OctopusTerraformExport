@@ -22,7 +22,7 @@ resource "octopusdeploy_variable" "string_variable" {
 
 resource "octopusdeploy_project" "deploy_frontend_project" {
   auto_create_release                  = false
-  default_guided_failure_mode          = "EnvironmentDefault"
+  default_guided_failure_mode          = "Off"
   default_to_skip_if_already_installed = false
   description                          = "Test project"
   discrete_channel_release             = false
@@ -109,14 +109,12 @@ resource "octopusdeploy_runbook" "runbook" {
   }
   environment_scope           = "Specified"
   environments                = [octopusdeploy_environment.development_environment.id]
-  default_guided_failure_mode = "EnvironmentDefault"
+  default_guided_failure_mode = "Off"
   force_package_download      = false
 }
 
 resource "octopusdeploy_runbook_process" "runbook" {
   runbook_id = octopusdeploy_runbook.runbook.id
-
-
 
   step {
     condition           = "Success"
