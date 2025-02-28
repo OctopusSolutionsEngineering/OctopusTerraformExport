@@ -48,6 +48,7 @@ type SpaceConverter struct {
 	KubernetesAgentWorkerConverter    Converter
 	ListeningWorkerConverter          Converter
 	SshWorkerConverter                Converter
+	MachineProxyConverter             Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 }
@@ -154,6 +155,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	// Include the space if it was requested
 	c.SpacePopulateConverter.AllToHcl(dependencies)
 
+	// Convert the machine proxies
+	c.MachineProxyConverter.AllToHcl(dependencies)
+
 	return c.ErrGroup.Wait()
 }
 
@@ -245,6 +249,9 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 
 	// convert SSH workers
 	c.SshWorkerConverter.AllToStatelessHcl(dependencies)
+
+	// Convert the machine proxies
+	c.MachineProxyConverter.AllToStatelessHcl(dependencies)
 
 	return c.ErrGroup.Wait()
 }

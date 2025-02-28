@@ -374,7 +374,7 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 			file.Body().AppendBlock(block)
 
 			secretVariableResource := terraform.TerraformVariable{
-				Name:        machineProxyName,
+				Name:        machineProxyName + "_password",
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,

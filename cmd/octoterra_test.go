@@ -10069,3 +10069,46 @@ func TestS3FeedExport(t *testing.T) {
 			return nil
 		})
 }
+
+// TestMachineProxies verifies that a machine proxy can be reimported with the correct settings
+func TestMachineProxies(t *testing.T) {
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/87-machineproxy/space_creation",
+		"../test/terraform/87-machineproxy/space_population",
+		[]string{},
+		[]string{
+			"-var=machine_proxy_test_password=whatever",
+		},
+		args2.Arguments{
+			ExcludeProjectGroupsExcept: []string{"Test"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.MachineProxy]{}
+			err := octopusClient.GetAllResources("Proxies", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == "Test" {
+					found = true
+					if v.Host != "localhost" {
+						return errors.New("the machine proxy must be have a host of \"localhost\"")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("space must have a machine proxy called \"Test\"")
+			}
+
+			return nil
+		})
+}
