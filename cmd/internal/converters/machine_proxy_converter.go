@@ -321,70 +321,85 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 		},
 	}
 
-	if stateless {
-		thisResource.Lookup = "${length(data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies) != 0 " +
-			"? data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies[0].id " +
-			": " + octopusdeployMachineProxyResourceType + "." + machineProxyName + "[0].id}"
-		thisResource.Dependency = "${" + octopusdeployMachineProxyResourceType + "." + machineProxyName + "}"
+	if lookup {
+		thisResource.Lookup = "${data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies[0].id}"
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := c.buildData("${var."+machineProxyName+"_name}", machineProxyName)
+			file := hclwrite.NewEmptyFile()
+			c.writeMachineProxyNameVariable(file, machineProxyName, resource.Name)
+			block := gohcl.EncodeAsBlock(terraformResource, "data")
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a machine proxy called ${var."+machineProxyName+"_name}. This resource must exist in the space before this Terraform configuration is applied.", "length(self.machine_proxies) != 0")
+			file.Body().AppendBlock(block)
+
+			return string(file.Bytes()), nil
+		}
 	} else {
-		thisResource.Lookup = "${" + octopusdeployMachineProxyResourceType + "." + machineProxyName + ".id}"
-	}
-
-	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformMachineProxy{
-			Type:         octopusdeployMachineProxyResourceType,
-			Name:         machineProxyName,
-			Count:        nil,
-			ResourceName: "${var." + machineProxyName + "_name}",
-			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
-			SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
-			Host:         resource.Host,
-			Password:     "",
-			Username:     resource.Username,
-			Port:         intutil.NilIfZero(resource.Port),
-		}
-		file := hclwrite.NewEmptyFile()
-
 		if stateless {
-			c.writeData(file, machineProxyName, "${var."+machineProxyName+"_name}")
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies) != 0 ? 0 : 1}")
+			thisResource.Lookup = "${length(data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies) != 0 " +
+				"? data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies[0].id " +
+				": " + octopusdeployMachineProxyResourceType + "." + machineProxyName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployMachineProxyResourceType + "." + machineProxyName + "}"
+		} else {
+			thisResource.Lookup = "${" + octopusdeployMachineProxyResourceType + "." + machineProxyName + ".id}"
 		}
 
-		c.writeMachineProxyNameVariable(file, machineProxyName, resource.Name)
+		thisResource.ToHcl = func() (string, error) {
+			terraformResource := terraform.TerraformMachineProxy{
+				Type:         octopusdeployMachineProxyResourceType,
+				Name:         machineProxyName,
+				Count:        nil,
+				ResourceName: "${var." + machineProxyName + "_name}",
+				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
+				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
+				Host:         resource.Host,
+				Password:     "",
+				Username:     resource.Username,
+				Port:         intutil.NilIfZero(resource.Port),
+			}
+			file := hclwrite.NewEmptyFile()
 
-		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+			if stateless {
+				c.writeData(file, machineProxyName, "${var."+machineProxyName+"_name}")
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployMachineProxyDataType + "." + machineProxyName + ".machine_proxies) != 0 ? 0 : 1}")
+			}
 
-		if stateless {
-			hcl.WriteLifecyclePreventDestroyAttribute(block)
+			c.writeMachineProxyNameVariable(file, machineProxyName, resource.Name)
+
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			if stateless {
+				hcl.WriteLifecyclePreventDestroyAttribute(block)
+			}
+
+			file.Body().AppendBlock(block)
+
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        machineProxyName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The secret variable value associated with the machine proxy \"" + resource.Name + "\"",
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: machineProxyName,
+					ResourceName: resource.Name,
+					ResourceType: c.GetResourceType(),
+				})
+			}
+
+			variableBlock := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			hcl.WriteUnquotedAttribute(variableBlock, "type", "string")
+			file.Body().AppendBlock(variableBlock)
+
+			return string(file.Bytes()), nil
 		}
-
-		file.Body().AppendBlock(block)
-
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        machineProxyName,
-			Type:        "string",
-			Nullable:    false,
-			Sensitive:   true,
-			Description: "The secret variable value associated with the machine proxy \"" + resource.Name + "\"",
-		}
-
-		if c.DummySecretVariableValues {
-			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
-			dependencies.AddDummy(data.DummyVariableReference{
-				VariableName: machineProxyName,
-				ResourceName: resource.Name,
-				ResourceType: c.GetResourceType(),
-			})
-		}
-
-		variableBlock := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(variableBlock, "type", "string")
-		file.Body().AppendBlock(variableBlock)
-
-		return string(file.Bytes()), nil
 	}
 
 	dependencies.AddResource(thisResource)
+
 	return nil
 }
 
