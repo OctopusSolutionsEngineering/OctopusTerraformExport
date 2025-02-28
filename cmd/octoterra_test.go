@@ -10102,6 +10102,14 @@ func TestMachineProxies(t *testing.T) {
 					if v.Host != "localhost" {
 						return errors.New("the machine proxy must be have a host of \"localhost\"")
 					}
+
+					if v.Username != "admin" {
+						return errors.New("the machine proxy must be have a username of \"admin\"")
+					}
+
+					if v.Port != 100 {
+						return errors.New("the machine proxy must be have a port of 100")
+					}
 				}
 			}
 
