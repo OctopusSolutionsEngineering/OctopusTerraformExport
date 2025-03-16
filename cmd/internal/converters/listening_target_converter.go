@@ -416,7 +416,7 @@ func (c ListeningTargetConverter) toHcl(target octopus.ListeningEndpointResource
 			IsInProcess:                     &target.IsInProcess,
 			MachinePolicyId:                 c.getMachinePolicy(target.MachinePolicyId, dependencies),
 			OperatingSystem:                 nil,
-			ProxyId:                         nil,
+			ProxyId:                         strutil.NilIfEmpty(dependencies.GetResource("Proxies", target.Endpoint.ProxyId)),
 			ShellName:                       &target.ShellName,
 			ShellVersion:                    &target.ShellVersion,
 			Status:                          nil,
