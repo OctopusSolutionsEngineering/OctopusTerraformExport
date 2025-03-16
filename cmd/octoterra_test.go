@@ -9675,9 +9675,6 @@ func TestSingleProjectBuiltInFeedTriggerExport(t *testing.T) {
 
 // TestDeploymentFreezeExport verifies that a deployment freeze can be reimported with the correct settings
 func TestDeploymentFreezeExport(t *testing.T) {
-	// This won't work due to https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/867
-	return
-
 	exportSpaceImportAndTest(
 		t,
 		"../test/terraform/80-deploymentfreeze/space_creation",
@@ -9690,8 +9687,8 @@ func TestDeploymentFreezeExport(t *testing.T) {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)
 
-			collection := []octopus.DeploymentFreeze{}
-			err := octopusClient.GetAllGlobalResources("DeploymentFreeze", &collection)
+			collection := octopus.DeploymentFreezes{}
+			err := octopusClient.GetAllGlobalResources("DeploymentFreezes", &collection, []string{"skip", "0"}, []string{"take", "100"})
 
 			if err != nil {
 				return err
@@ -9699,16 +9696,16 @@ func TestDeploymentFreezeExport(t *testing.T) {
 
 			freezeName := "Xmas"
 			found := false
-			for _, v := range collection {
+			for _, v := range collection.DeploymentFreezes {
 				if v.Name == freezeName {
 					found = true
 
-					if v.Start != "2024-12-25T00:00:00+10:00" {
-						return errors.New("the feed must have a start of \"2024-12-25T00:00:00+10:00\" (was \"" + v.Start + "\")")
+					if v.Start != "2024-12-24T14:00:00.000+00:00" {
+						return errors.New("the feed must have a start of \"2024-12-24T14:00:00.000+00:00\" (was \"" + v.Start + "\")")
 					}
 
-					if v.End != "2099-12-27T00:00:00+08:00" {
-						return errors.New("the feed must have a start of \"2024-12-27T00:00:00+08:00\" (was \"" + v.End + "\")")
+					if v.End != "2099-12-26T16:00:00.000+00:00" {
+						return errors.New("the feed must have an end of \"2099-12-26T16:00:00.000+00:00\" (was \"" + v.End + "\")")
 					}
 				}
 			}

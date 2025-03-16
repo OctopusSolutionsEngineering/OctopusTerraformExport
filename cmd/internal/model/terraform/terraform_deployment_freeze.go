@@ -1,14 +1,14 @@
 package terraform
 
 type TerraformDeploymentFreeze struct {
-	Type              string                                     `hcl:"type,label"`
-	Name              string                                     `hcl:"name,label"`
-	Count             *string                                    `hcl:"count"`
-	Id                *string                                    `hcl:"id"`
-	ResourceName      string                                     `hcl:"name"`
-	Start             string                                     `hcl:"start"`
-	End               string                                     `hcl:"end"`
-	RecurringSchedule TerraformDeploymentFreezeRecurringSchedule `cty:"recurring_schedule"`
+	Type              string                                      `hcl:"type,label"`
+	Name              string                                      `hcl:"name,label"`
+	Count             *string                                     `hcl:"count"`
+	Id                *string                                     `hcl:"id"`
+	ResourceName      string                                      `hcl:"name"`
+	Start             string                                      `hcl:"start"`
+	End               string                                      `hcl:"end"`
+	RecurringSchedule *TerraformDeploymentFreezeRecurringSchedule `cty:"recurring_schedule"`
 }
 
 type TerraformDeploymentFreezeRecurringSchedule struct {

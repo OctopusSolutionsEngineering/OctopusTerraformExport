@@ -102,7 +102,7 @@ func (c *BatchingOctopusApiClient[T]) GetAllResourcesArrayBatch(done <-chan stru
 	return chnl
 }
 
-// GetAllGlobalResourcesBatch retrieves all the lobal (i.e. not space specific) resources of a given type but in small batches.
+// GetAllGlobalResourcesBatch retrieves all the global (i.e. not space specific) resources of a given type but in small batches.
 // This allows the resources to be exported in smaller chunks, which is useful for large spaces.
 func (c *BatchingOctopusApiClient[T]) GetAllGlobalResourcesBatch(done <-chan struct{}, resourceType string) <-chan ResultError[T] {
 
@@ -119,7 +119,7 @@ func (c *BatchingOctopusApiClient[T]) GetAllGlobalResourcesBatch(done <-chan str
 
 		for ok := true; ok; ok = items == pageSize {
 			collection := new(octopus.GeneralCollection[T])
-			err := c.Client.GetAllResources(resourceType, collection, []string{"take", fmt.Sprint(pageSize)}, []string{"skip", fmt.Sprint(skip)})
+			err := c.Client.GetAllGlobalResources(resourceType, collection, []string{"take", fmt.Sprint(pageSize)}, []string{"skip", fmt.Sprint(skip)})
 
 			if err != nil {
 				chnl <- ResultError[T]{Res: *new(T), Err: err}

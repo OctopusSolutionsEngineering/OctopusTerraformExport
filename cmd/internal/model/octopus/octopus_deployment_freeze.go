@@ -1,5 +1,10 @@
 package octopus
 
+type DeploymentFreezes struct {
+	DeploymentFreezes []DeploymentFreeze
+	Count             int
+}
+
 type DeploymentFreeze struct {
 	Id                            string
 	Name                          string

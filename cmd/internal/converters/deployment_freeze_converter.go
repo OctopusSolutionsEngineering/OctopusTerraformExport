@@ -47,21 +47,16 @@ func (c DeploymentFreezeConverter) allToHcl(stateless bool, dependencies *data.R
 		return nil
 	}
 
-	batchClient := client.BatchingOctopusApiClient[octopus.DeploymentFreeze]{
-		Client: c.Client,
-	}
-
 	done := make(chan struct{})
 	defer close(done)
 
-	channel := batchClient.GetAllResourcesArrayBatch(done, c.GetResourceType())
+	freezes := octopus.DeploymentFreezes{}
+	if err := c.Client.GetAllGlobalResources("DeploymentFreezes", &freezes, []string{"skip", "0"}, []string{"take", "10000"}); err != nil {
+		return err
+	}
 
-	for resourceWrapper := range channel {
-		if resourceWrapper.Err != nil {
-			return resourceWrapper.Err
-		}
+	for _, resource := range freezes.DeploymentFreezes {
 
-		resource := resourceWrapper.Res
 		if c.Excluder.IsResourceExcludedWithRegex(resource.Name,
 			c.ExcludeAllDeploymentFreezes,
 			c.ExcludeDeploymentFreezes,
@@ -125,24 +120,13 @@ func (c DeploymentFreezeConverter) toHcl(deploymentFreeze octopus.DeploymentFree
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformDeploymentFreeze{
-			Type:         octopusdeployDeploymentFreezeResourceType,
-			Name:         freezeName,
-			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &deploymentFreeze.Id),
-			ResourceName: deploymentFreeze.Name,
-			Start:        deploymentFreeze.Start,
-			End:          deploymentFreeze.End,
-			RecurringSchedule: terraform.TerraformDeploymentFreezeRecurringSchedule{
-				EndType:             deploymentFreeze.RecurringSchedule.EndType,
-				Type:                deploymentFreeze.RecurringSchedule.Type,
-				Unit:                deploymentFreeze.RecurringSchedule.Unit,
-				DateOfMonth:         deploymentFreeze.RecurringSchedule.DateOfMonth,
-				DayNumberOfMonth:    deploymentFreeze.RecurringSchedule.DayNumberOfMonth,
-				DayOfWeek:           deploymentFreeze.RecurringSchedule.DayOfWeek,
-				DaysOfWeek:          deploymentFreeze.RecurringSchedule.DaysOfWeek,
-				EndAfterOccurrences: deploymentFreeze.RecurringSchedule.EndAfterOccurrences,
-				EndOnDate:           deploymentFreeze.RecurringSchedule.EndOnDate,
-				MonthlyScheduleType: deploymentFreeze.RecurringSchedule.MonthlyScheduleType,
-			},
+			Type:              octopusdeployDeploymentFreezeResourceType,
+			Name:              freezeName,
+			Id:                strutil.InputPointerIfEnabled(c.IncludeIds, &deploymentFreeze.Id),
+			ResourceName:      deploymentFreeze.Name,
+			Start:             deploymentFreeze.Start,
+			End:               deploymentFreeze.End,
+			RecurringSchedule: c.getRecurringSchedule(deploymentFreeze),
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -171,6 +155,25 @@ func (c DeploymentFreezeConverter) toHcl(deploymentFreeze octopus.DeploymentFree
 	}
 
 	return nil
+}
+
+func (c DeploymentFreezeConverter) getRecurringSchedule(deploymentFreeze octopus.DeploymentFreeze) *terraform.TerraformDeploymentFreezeRecurringSchedule {
+	if deploymentFreeze.RecurringSchedule == nil {
+		return nil
+	}
+
+	return &terraform.TerraformDeploymentFreezeRecurringSchedule{
+		EndType:             deploymentFreeze.RecurringSchedule.EndType,
+		Type:                deploymentFreeze.RecurringSchedule.Type,
+		Unit:                deploymentFreeze.RecurringSchedule.Unit,
+		DateOfMonth:         deploymentFreeze.RecurringSchedule.DateOfMonth,
+		DayNumberOfMonth:    deploymentFreeze.RecurringSchedule.DayNumberOfMonth,
+		DayOfWeek:           deploymentFreeze.RecurringSchedule.DayOfWeek,
+		DaysOfWeek:          deploymentFreeze.RecurringSchedule.DaysOfWeek,
+		EndAfterOccurrences: deploymentFreeze.RecurringSchedule.EndAfterOccurrences,
+		EndOnDate:           deploymentFreeze.RecurringSchedule.EndOnDate,
+		MonthlyScheduleType: deploymentFreeze.RecurringSchedule.MonthlyScheduleType,
+	}
 }
 
 func (c DeploymentFreezeConverter) toHclTenantScope(deploymentFreeze octopus.DeploymentFreeze, parentReference string, dependencies *data.ResourceDetailsCollection) []data.ResourceDetails {
