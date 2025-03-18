@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
@@ -959,8 +960,8 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			value = c.getCertificates(value, dependencies)
 			value = c.getWorkerPools(value, dependencies)
 
-			normalValue := c.writeTerraformVariablesForString(file, v, resourceName, value)
-			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, resourceName, dependencies)
+			normalValue := c.writeTerraformVariablesForString(file, v, value)
+			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, dependencies)
 			scope, err := c.convertScope(v, resource, dependencies)
 
 			if err != nil {
@@ -1039,7 +1040,7 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 	return nil
 }
 
-func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.File, variable octopus.Variable, resourceName string, dependencies *data.ResourceDetailsCollection) *string {
+func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.File, variable octopus.Variable, dependencies *data.ResourceDetailsCollection) *string {
 	if variable.IsSensitive {
 		// We don't know the value of secrets, so the value is just nil
 		if c.ExcludeTerraformVariables {
@@ -1048,19 +1049,21 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 
 		var defaultValue *string = nil
 
-		// Dummy values are used if we are not also replacing the variable with a octostache template
+		variableName := naming.VariableSecretName(variable)
+
+		// Dummy values are used if we are not also replacing the variable with an octostache template
 		// with the DefaultSecretVariableValues option.
 		if c.DummySecretVariableValues && !c.DefaultSecretVariableValues {
 			defaultValue = c.DummySecretGenerator.GetDummySecret()
 			dependencies.AddDummy(data.DummyVariableReference{
-				VariableName: resourceName,
+				VariableName: variableName,
 				ResourceName: variable.Name,
 				ResourceType: c.GetResourceType(),
 			})
 		}
 
 		secretVariableResource := terraform.TerraformVariable{
-			Name:        resourceName,
+			Name:        variableName,
 			Type:        "string",
 			Nullable:    true,
 			Sensitive:   true,
@@ -1081,16 +1084,18 @@ func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.F
 
 		file.Body().AppendBlock(block)
 
-		return c.convertSecretValue(variable, resourceName)
+		return c.convertSecretValue(variable, variableName)
 	}
 
 	return nil
 }
 
-func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.File, variable octopus.Variable, resourceName string, value *string) *string {
+func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.File, variable octopus.Variable, value *string) *string {
 	if c.ExcludeTerraformVariables {
 		return value
 	}
+
+	variableName := naming.VariableValueName(variable)
 
 	if variable.Type == "String" && !hcl.IsInterpolation(strutil.EmptyIfNil(value)) {
 		// Use a second terraform variable to allow the octopus variable to be defined at apply time.
@@ -1099,7 +1104,7 @@ func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.F
 		// variable values.
 
 		regularVariable := terraform.TerraformVariable{
-			Name:        resourceName,
+			Name:        variableName,
 			Type:        "string",
 			Nullable:    true,
 			Sensitive:   false,
@@ -1111,7 +1116,7 @@ func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.F
 		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
 
-		return c.convertValue(variable, resourceName)
+		return c.convertValue(variable, variableName)
 	}
 
 	return value
