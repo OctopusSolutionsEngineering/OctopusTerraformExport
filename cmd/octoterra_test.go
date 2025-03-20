@@ -1889,12 +1889,11 @@ func TestVariableSetExport(t *testing.T) {
 		"../test/terraform/18-variableset/space_creation",
 		"../test/terraform/18-variableset/space_population",
 		[]string{},
-		[]string{
-			"-var=variables_test_test_secretvariable_1=blah",
-		},
+		[]string{},
 		args2.Arguments{
 			ExcludeLibraryVariableSets:      []string{"Test2"},
 			ExcludeLibraryVariableSetsRegex: []string{"^Test3$"},
+			DummySecretVariableValues:       true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
@@ -2035,11 +2034,10 @@ func TestVariableSetExcludeExceptExport(t *testing.T) {
 		"../test/terraform/18-variableset/space_creation",
 		"../test/terraform/18-variableset/space_population",
 		[]string{},
-		[]string{
-			"-var=variables_test_test_secretvariable_1=blah",
-		},
+		[]string{},
 		args2.Arguments{
 			ExcludeLibraryVariableSetsExcept: []string{"Test"},
+			DummySecretVariableValues:        true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
