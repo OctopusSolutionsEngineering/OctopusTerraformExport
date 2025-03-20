@@ -10,9 +10,9 @@ import (
 // a deterministic way to ensure that the same name is used when the export is run multiple times
 // and also when the values are populated by external tools.
 func VariableSecretName(variable octopus.Variable) string {
-	return hash.Sha256Hash(variable.Id) + "_sensitive_value"
+	return "variable_" + hash.Sha256Hash(variable.Id) + "_sensitive_value"
 }
 
 func VariableValueName(variable octopus.Variable) string {
-	return hash.Sha256Hash(variable.Id) + "_value"
+	return "variable_" + hash.Sha256Hash(variable.Id) + "_value"
 }
