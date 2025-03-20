@@ -55,6 +55,8 @@ type Arguments struct {
 	GenerateImportScripts           bool
 	IgnoreCacErrors                 bool
 
+	OctopusManagedTerraformVars string
+
 	IgnoreProjectChanges         bool
 	IgnoreProjectVariableChanges bool
 	IgnoreProjectGroupChanges    bool
@@ -273,6 +275,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.DummySecretVariableValues, "dummySecretVariableValues", false, "Pass this to set the default value of secret variables, account secrets, feed credentials to a dummy value. This allows resources with secret values to be created without knowing the secrets, while still allowing the secret values to be specified if they are known. This option takes precedence over the defaultSecretVariableValues option.")
 	flags.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flags.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
+	flags.StringVar(&arguments.OctopusManagedTerraformVars, "octopusManagedTerraformVars", "", "Specifies the name of an Octopus variable to be used as a template string in the body of the terraform.tfvars file. This allows Octopus to inject all the variables used by Terraform from a variable containing the contents of a terraform.tfvars file.")
 	flags.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
 	flags.BoolVar(&arguments.IncludeDefaultChannel, "includeDefaultChannel", false, "Internal use only. Includes the \"Default\" channel as a standard channel resource rather than a data block.")
 

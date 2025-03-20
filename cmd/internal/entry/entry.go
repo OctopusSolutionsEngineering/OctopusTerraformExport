@@ -257,10 +257,11 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.GetBackend(),
-		ProviderVersion:          args.ProviderVersion,
-		ExcludeProvider:          args.ExcludeProvider,
-		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+		TerraformBackend:            args.GetBackend(),
+		ProviderVersion:             args.ProviderVersion,
+		ExcludeProvider:             args.ExcludeProvider,
+		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
 	}.ToHcl("space_population", true, &dependencies)
 
 	if !args.Stateless {
@@ -1124,10 +1125,11 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.BackendBlock,
-		ProviderVersion:          args.ProviderVersion,
-		ExcludeProvider:          args.ExcludeProvider,
-		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+		TerraformBackend:            args.BackendBlock,
+		ProviderVersion:             args.ProviderVersion,
+		ExcludeProvider:             args.ExcludeProvider,
+		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
 	}.ToHcl("space_population", true, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
@@ -1440,10 +1442,11 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.BackendBlock,
-		ProviderVersion:          args.ProviderVersion,
-		ExcludeProvider:          args.ExcludeProvider,
-		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+		TerraformBackend:            args.BackendBlock,
+		ProviderVersion:             args.ProviderVersion,
+		ExcludeProvider:             args.ExcludeProvider,
+		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
 	}.ToHcl("space_population", true, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{

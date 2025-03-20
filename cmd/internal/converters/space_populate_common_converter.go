@@ -6,23 +6,39 @@ import (
 	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"strings"
 )
 
 // TerraformProviderGenerator creates the common terraform files required to populate a space
 // including the provider, terraform config, and common vars
 type TerraformProviderGenerator struct {
-	TerraformBackend         string
-	ProviderVersion          string
-	ExcludeProvider          bool
-	IncludeOctopusOutputVars bool
+	TerraformBackend            string
+	ProviderVersion             string
+	ExcludeProvider             bool
+	IncludeOctopusOutputVars    bool
+	OctopusManagedTerraformVars string
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, dependencies *data.ResourceDetailsCollection) {
 	c.createProvider(directory, includeSpaceId, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, includeSpaceId, dependencies)
+
 	if c.IncludeOctopusOutputVars {
 		c.createOctopusOutputVars(directory, includeSpaceId, dependencies)
+	}
+
+	// create a "terraform.tfvars" file with a single octostache template that is replaced by the variable name
+	if strings.TrimSpace(c.OctopusManagedTerraformVars) != "" {
+		thisResource := data.ResourceDetails{}
+		thisResource.FileName = directory + "/terraform.tfvars"
+		thisResource.Id = ""
+		thisResource.ResourceType = ""
+		thisResource.Lookup = ""
+		thisResource.ToHcl = func() (string, error) {
+			return "#{" + strings.TrimSpace(c.OctopusManagedTerraformVars) + "}", nil
+		}
+		dependencies.AddResource(thisResource)
 	}
 }
 
