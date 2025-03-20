@@ -16,3 +16,11 @@ func VariableSecretName(variable octopus.Variable) string {
 func VariableValueName(variable octopus.Variable) string {
 	return "variable_" + hash.Sha256Hash(variable.Id) + "_value"
 }
+
+func TenantVariableValueName(tenantVariable octopus.TenantVariable) string {
+	return "tenantvariable_" + hash.Sha256Hash(tenantVariable.Id) + "_value"
+}
+
+func TenantVariableSecretName(tenantVariable octopus.TenantVariable) string {
+	return "tenantvariable_" + hash.Sha256Hash(tenantVariable.Id) + "_sensitive_value"
+}

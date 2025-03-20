@@ -8,6 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -58,7 +59,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 		file := hclwrite.NewEmptyFile()
 
 		tenantProjectVariableValue := terraform.TerraformVariable{
-			Name:        variableName + "_value",
+			Name:        naming.TenantVariableValueName(tenantVariable),
 			Type:        "string",
 			Nullable:    false,
 			Sensitive:   false,
@@ -68,11 +69,13 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 
 		// Define a secret value with an optional dummy default
 		if _, ok := value.(map[string]any); ok {
+			tenantProjectVariableValue.Name = naming.TenantVariableValueName(tenantVariable)
+
 			if c.DummySecretVariableValues {
 				tenantProjectVariableValue.Default = c.DummySecretGenerator.GetDummySecret()
 			}
 			dependencies.AddDummy(data.DummyVariableReference{
-				VariableName: variableName + "_value",
+				VariableName: tenantProjectVariableValue.Name,
 				ResourceName: tenantVariable.TenantName,
 				ResourceType: c.GetResourceType(),
 			})

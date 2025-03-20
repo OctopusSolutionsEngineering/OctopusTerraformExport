@@ -1,6 +1,7 @@
 package octopus
 
 type TenantVariable struct {
+	Id               string
 	TenantId         string
 	SpaceId          string
 	TenantName       string
