@@ -99,7 +99,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 			ProjectId:     dependencies.GetResource("Projects", projectVariable.ProjectId),
 			TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
 			TenantId:      dependencies.GetResource("Tenants", tenantVariable.TenantId),
-			Value:         strutil.StrPointer("${var." + variableName + "_value}"),
+			Value:         strutil.StrPointer("${var." + tenantProjectVariableValue.Name + "}"),
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
