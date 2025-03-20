@@ -313,6 +313,8 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		thisResource.Lookup = "${" + octopusdeployGitCredentialResourceType + "." + gitCredentialsName + ".id}"
 	}
 
+	gitCredentialSecretName := gitCredentialsName + "_sensitive_value"
+
 	thisResource.Parameters = []data.ResourceParameter{
 		{
 			Label:         "Git Credentials " + gitCredentials.Name + " password",
@@ -320,7 +322,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			ResourceName:  sanitizer.SanitizeParameterName(dependencies, gitCredentials.Name, "Password"),
 			ParameterType: "Password",
 			Sensitive:     true,
-			VariableName:  gitCredentialsName,
+			VariableName:  gitCredentialSecretName,
 		},
 	}
 	thisResource.ToHcl = func() (string, error) {
@@ -334,7 +336,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			ResourceName: gitCredentials.Name,
 			ResourceType: gitCredentials.Details.Type,
 			Username:     gitCredentials.Details.Username,
-			Password:     "${var." + gitCredentialsName + "}",
+			Password:     "${var." + gitCredentialSecretName + "}",
 		}
 		file := hclwrite.NewEmptyFile()
 
@@ -364,7 +366,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		file.Body().AppendBlock(gitCertBlock)
 
 		secretVariableResource := terraform.TerraformVariable{
-			Name:        gitCredentialsName,
+			Name:        gitCredentialSecretName,
 			Type:        "string",
 			Nullable:    false,
 			Sensitive:   true,
@@ -374,7 +376,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		if c.DummySecretVariableValues {
 			secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 			dependencies.AddDummy(data.DummyVariableReference{
-				VariableName: gitCredentialsName,
+				VariableName: gitCredentialSecretName,
 				ResourceName: gitCredentials.Name,
 				ResourceType: c.GetResourceType(),
 			})
