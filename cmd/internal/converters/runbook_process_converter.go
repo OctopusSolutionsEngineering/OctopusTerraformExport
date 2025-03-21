@@ -80,7 +80,7 @@ func (c *RunbookProcessConverter) toHclByIdAndName(id string, runbookName string
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, runbook.ProjectId, recursive, false, stateless, runbookName, dependencies)
+	return c.toHcl(resource, runbook.ProjectId, recursive, false, stateless, runbook, dependencies)
 }
 
 func (c *RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName string, dependencies *data.ResourceDetailsCollection) error {
@@ -113,11 +113,11 @@ func (c *RunbookProcessConverter) ToHclLookupByIdAndName(id string, runbookName 
 	}
 
 	zap.L().Info("Runbook Process: " + resource.Id)
-	return c.toHcl(resource, runbook.ProjectId, false, true, false, runbookName, dependencies)
+	return c.toHcl(resource, runbook.ProjectId, false, true, false, runbook, dependencies)
 }
 
-func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectId string, recursive bool, lookup bool, stateless bool, runbookName string, dependencies *data.ResourceDetailsCollection) error {
-	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbookName)
+func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, projectId string, recursive bool, lookup bool, stateless bool, runbook octopus.Runbook, dependencies *data.ResourceDetailsCollection) error {
+	resourceName := "runbook_process_" + sanitizer2.SanitizeName(runbook.Name)
 
 	thisResource := data.ResourceDetails{}
 
@@ -271,7 +271,7 @@ func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project
 				sanitizedProperties, variables := sanitizer2.MapSanitizer{
 					DummySecretGenerator:      c.DummySecretGenerator,
 					DummySecretVariableValues: c.DummySecretVariableValues,
-				}.SanitizeMap(runbookName, strutil.EmptyIfNil(a.Name), properties, dependencies)
+				}.SanitizeMap(runbook, a, properties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)

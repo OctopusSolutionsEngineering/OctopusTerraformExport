@@ -371,7 +371,7 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 				sanitizedProperties, variables := sanitizer.MapSanitizer{
 					DummySecretGenerator:      c.DummySecretGenerator,
 					DummySecretVariableValues: c.DummySecretVariableValues,
-				}.SanitizeMap(projectName, strutil.EmptyIfNil(a.Name), properties, dependencies)
+				}.SanitizeMap(project, a, properties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
