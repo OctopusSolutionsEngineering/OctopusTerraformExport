@@ -2,6 +2,7 @@ package octopus
 
 type NamedResource interface {
 	GetName() string
+	GetId() string
 }
 
 type NameId struct {
@@ -12,4 +13,8 @@ type NameId struct {
 
 func (n NameId) GetName() string {
 	return n.Name
+}
+
+func (n NameId) GetId() string {
+	return n.Id
 }

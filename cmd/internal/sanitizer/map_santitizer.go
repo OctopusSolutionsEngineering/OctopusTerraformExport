@@ -6,7 +6,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 )
 
 type MapSanitizer struct {
@@ -22,7 +22,7 @@ func (c MapSanitizer) SanitizeMap(parent octopus.NamedResource, action octopus.A
 		if _, ok := v.(string); ok {
 			fixedMap[k] = fmt.Sprintf("%v", v)
 		} else {
-			variableName := SanitizeName(parent.GetName() + "_" + strutil.EmptyIfNil(action.Name) + "_" + k)
+			variableName := naming.DeploymentProcessPropertySecretName(parent, action, k)
 
 			fixedMap[k] = "${var." + variableName + "}"
 
