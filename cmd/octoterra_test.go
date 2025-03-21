@@ -2676,7 +2676,7 @@ func TestGitCredentialsExport(t *testing.T) {
 		"../test/terraform/22-gitcredentialtest/space_population",
 		[]string{},
 		[]string{
-			"-var=gitcredential_test=whatever",
+			"-var=gitcredential_test_sensitive_value=whatever",
 		},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
@@ -9146,7 +9146,7 @@ func TestGitDependenciesExport(t *testing.T) {
 		"../test/terraform/74-gitdependencies/space_population",
 		[]string{},
 		[]string{
-			"-var=gitcredential_test=whatever",
+			"-var=gitcredential_test_sensitive_value=whatever",
 		},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
@@ -9218,7 +9218,7 @@ func TestGitDependenciesSingleProjectExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_test=whatever",
+			"-var=gitcredential_test_sensitive_value=whatever",
 		},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
@@ -9799,7 +9799,7 @@ func TestSingleProjectGitTriggerExport(t *testing.T) {
 		[]string{},
 		[]string{
 			"-var=feed_docker_password=whatever",
-			"-var=gitcredential_test=whatever",
+			"-var=gitcredential_test_sensitive_value=whatever",
 		},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
