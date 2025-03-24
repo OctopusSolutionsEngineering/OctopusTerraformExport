@@ -1,4 +1,4 @@
-package sanitizer
+package steps
 
 import (
 	"fmt"

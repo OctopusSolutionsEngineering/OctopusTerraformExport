@@ -11,6 +11,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/steps"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
@@ -368,7 +369,7 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 		for _, s := range validSteps {
 			for _, a := range s.Actions {
 				properties := a.Properties
-				sanitizedProperties, variables := sanitizer.MapSanitizer{
+				sanitizedProperties, variables := steps.MapSanitizer{
 					DummySecretGenerator:      c.DummySecretGenerator,
 					DummySecretVariableValues: c.DummySecretVariableValues,
 				}.SanitizeMap(project, a, properties, dependencies)

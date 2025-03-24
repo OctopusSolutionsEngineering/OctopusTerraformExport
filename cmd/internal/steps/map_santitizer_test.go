@@ -1,4 +1,4 @@
-package sanitizer
+package steps
 
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
