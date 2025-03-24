@@ -54,7 +54,7 @@ func FeedSecretName(resource octopus.Feed) string {
 }
 
 func FeedSecretKeyName(resource octopus.Feed) string {
-	return "feed_feed_" + sanitizer.SanitizeName(resource.Name) + "_secretkey"
+	return "feed_" + sanitizer.SanitizeName(resource.Name) + "_secretkey"
 }
 
 func StepTemplateParameterSecretName(template octopus.StepTemplate, parameter octopus.StepTemplateParameters) string {
