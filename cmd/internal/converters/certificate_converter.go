@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -324,7 +325,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 			ResourceName:  sanitizer.SanitizeParameterName(dependencies, certificate.Name, "Password"),
 			ParameterType: "Password",
 			Sensitive:     true,
-			VariableName:  certificateName + "_password",
+			VariableName:  naming.CertificatePasswordName(certificate),
 		},
 		{
 			Label:         "Certificate " + certificate.Name + " contents",
@@ -332,7 +333,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 			ResourceName:  sanitizer.SanitizeParameterName(dependencies, certificate.Name, "Data"),
 			ParameterType: "Data",
 			Sensitive:     true,
-			VariableName:  certificateName + "_data",
+			VariableName:  naming.CertificateDataName(certificate),
 		},
 	}
 
@@ -372,7 +373,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 
 	defaultPassword := ""
 	certificatePassword := terraform.TerraformVariable{
-		Name:        certificateName + "_password",
+		Name:        naming.CertificatePasswordName(certificate),
 		Type:        "string",
 		Nullable:    true,
 		Sensitive:   true,
@@ -383,7 +384,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	if c.DummySecretVariableValues {
 		certificatePassword.Default = c.DummySecretGenerator.GetDummyCertificatePassword()
 		dependencies.AddDummy(data.DummyVariableReference{
-			VariableName: certificateName + "_password",
+			VariableName: naming.CertificatePasswordName(certificate),
 			ResourceName: certificate.Name,
 			ResourceType: c.GetResourceType(),
 		})
@@ -394,7 +395,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	file.Body().AppendBlock(block)
 
 	certificateData := terraform.TerraformVariable{
-		Name:        certificateName + "_data",
+		Name:        naming.CertificateDataName(certificate),
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   true,
@@ -404,7 +405,7 @@ func (c CertificateConverter) writeVariables(file *hclwrite.File, certificateNam
 	if c.DummySecretVariableValues {
 		certificateData.Default = c.DummySecretGenerator.GetDummyCertificate()
 		dependencies.AddDummy(data.DummyVariableReference{
-			VariableName: certificateName + "_data",
+			VariableName: naming.CertificateDataName(certificate),
 			ResourceName: certificate.Name,
 			ResourceType: c.GetResourceType(),
 		})
@@ -424,8 +425,8 @@ func (c CertificateConverter) writeMainResource(file *hclwrite.File, certificate
 		Name:            certificateName,
 		SpaceId:         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", certificate.SpaceId)),
 		ResourceName:    certificate.Name,
-		Password:        "${var." + certificateName + "_password}",
-		CertificateData: "${var." + certificateName + "_data}",
+		Password:        "${var." + naming.CertificatePasswordName(certificate) + "}",
+		CertificateData: "${var." + naming.CertificateDataName(certificate) + "}",
 		Archived:        &certificate.Archived,
 		//CertificateDataFormat:           certificate.CertificateDataFormat,
 		Environments: c.lookupEnvironments(certificate.EnvironmentIds, dependencies),

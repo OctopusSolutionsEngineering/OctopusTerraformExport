@@ -3,6 +3,7 @@ package naming
 import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hash"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 )
 
 // VariableSecretName returns a unique name for the Terraform variable used to populate the
@@ -27,4 +28,28 @@ func TenantVariableSecretName(tenantVariable octopus.TenantVariable) string {
 
 func DeploymentProcessPropertySecretName(named octopus.NamedResource, action octopus.Action, property string) string {
 	return "action_" + hash.Sha256Hash(named.GetId()+"_"+action.Id+"_"+property) + "_sensitive_value"
+}
+
+func GitCredentialSecretName(gitCredentials octopus.GitCredentials) string {
+	return "gitcredential_" + hash.Sha256Hash(gitCredentials.Id) + "_sensitive_value"
+}
+
+func CertificateDataName(certificate octopus.Certificate) string {
+	return "certificate_" + sanitizer.SanitizeName(certificate.Name) + "_data"
+}
+
+func CertificatePasswordName(certificate octopus.Certificate) string {
+	return "certificate_" + sanitizer.SanitizeName(certificate.Name) + "_password"
+}
+
+func FeedSecretName(resource octopus.Feed) string {
+	return "feed_" + sanitizer.SanitizeName(resource.Name) + "_password"
+}
+
+func FeedSecretKeyName(resource octopus.Feed) string {
+	return "feed_feed_" + sanitizer.SanitizeName(resource.Name) + "_secretkey"
+}
+
+func StepTemplateParameterSecretName(template octopus.StepTemplate, parameter octopus.StepTemplateParameters) string {
+	return "steptemplate_" + hash.Sha256Hash(template.Id+"_"+parameter.Id) + "_sensitive_value"
 }

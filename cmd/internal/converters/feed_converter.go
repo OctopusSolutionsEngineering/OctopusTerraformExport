@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -332,7 +333,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 		thisResource.Lookup = "${" + octopusdeployDockerContainerRegistryResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretName(resource)
 
 	parameters := []data.ResourceParameter{}
 	if resource.Password != nil && resource.Password.HasValue {
@@ -427,7 +428,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 		thisResource.Lookup = "${" + octopusdeployAwsElasticContainerRegistryResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretKeyName(resource)
 
 	thisResource.Parameters = []data.ResourceParameter{
 		{
@@ -519,7 +520,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 		thisResource.Lookup = "${" + octopusdeployMavenFeedResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretName(resource)
 
 	parameters := []data.ResourceParameter{}
 
@@ -614,7 +615,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 		thisResource.Lookup = "${" + octopusdeployGithubRepositoryFeedResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretName(resource)
 
 	parameters := []data.ResourceParameter{}
 	if resource.Password != nil && resource.Password.HasValue {
@@ -709,7 +710,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 		thisResource.Lookup = "${" + octopusdeployHelmFeedResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretName(resource)
 
 	parameters := []data.ResourceParameter{}
 	if resource.Password != nil && resource.Password.HasValue {
@@ -803,7 +804,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 		thisResource.Lookup = "${" + octopusdeployNugetFeedResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretName(resource)
 
 	thisResource.Parameters = []data.ResourceParameter{
 		{
@@ -895,7 +896,7 @@ func (c FeedConverter) exportArtifactory(stateless bool, dependencies *data.Reso
 		thisResource.Lookup = "${" + octopusdeployArtifactoryFeedResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
+	passwordName := naming.FeedSecretName(resource)
 
 	thisResource.Parameters = []data.ResourceParameter{
 		{
@@ -985,8 +986,8 @@ func (c FeedConverter) exportS3(stateless bool, dependencies *data.ResourceDetai
 		thisResource.Lookup = "${" + octopusdeployS3FeedResourceType + "." + resourceName + ".id}"
 	}
 
-	passwordName := resourceName + "_password"
-	secretKeyName := resourceName + "_secretkey"
+	passwordName := naming.FeedSecretName(resource)
+	secretKeyName := naming.FeedSecretKeyName(resource)
 
 	thisResource.Parameters = []data.ResourceParameter{
 		{

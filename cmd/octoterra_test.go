@@ -1453,7 +1453,7 @@ func TestEcrFeedExport(t *testing.T) {
 			"-var=feed_ecr_secret_key=" + os.Getenv("ECR_SECRET_KEY"),
 		},
 		[]string{
-			"-var=feed_ecr_password=" + os.Getenv("ECR_SECRET_KEY"),
+			"-var=feed_ecr_secretkey=" + os.Getenv("ECR_SECRET_KEY"),
 		},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
