@@ -54,8 +54,8 @@ func TestDeploymentProcessPropertySecretName(t *testing.T) {
 }
 
 func TestGitCredentialSecretName(t *testing.T) {
-	gitCredentials := octopus.GitCredentials{Id: "test-id"}
-	expected := "gitcredential_6cc41d5ec590ab78cccecf81ef167d418c309a4598e8e45fef78039f7d9aa9fe_sensitive_value"
+	gitCredentials := octopus.GitCredentials{Name: "test-name"}
+	expected := "gitcredential_test_name_sensitive_value"
 	result := GitCredentialSecretName(gitCredentials)
 	if result != expected {
 		t.Errorf("expected %s, got %s", expected, result)

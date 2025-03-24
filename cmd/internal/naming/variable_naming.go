@@ -38,7 +38,7 @@ func DeploymentProcessPropertySecretName(named octopus.NamedResource, action oct
 }
 
 func GitCredentialSecretName(gitCredentials octopus.GitCredentials) string {
-	return "gitcredential_" + hash.Sha256Hash(gitCredentials.Id) + "_sensitive_value"
+	return "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name) + "_sensitive_value"
 }
 
 func CertificateDataName(certificate octopus.Certificate) string {
