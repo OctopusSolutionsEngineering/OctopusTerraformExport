@@ -69,7 +69,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 
 		// Define a secret value with an optional dummy default
 		if _, ok := value.(map[string]any); ok {
-			tenantProjectVariableValue.Name = naming.TenantVariableValueName(tenantVariable)
+			tenantProjectVariableValue.Name = naming.TenantVariableSecretName(tenantVariable)
 
 			if c.DummySecretVariableValues {
 				tenantProjectVariableValue.Default = c.DummySecretGenerator.GetDummySecret()
