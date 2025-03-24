@@ -5754,9 +5754,6 @@ func TestSingleProjectGroupExport(t *testing.T) {
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been referenced via data source lookups,
 // and that unrelated or excluded resources were not exported.
 func TestSingleProjectLookupExport(t *testing.T) {
-	// This test is broken due to https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/868
-	return
-
 	if os.Getenv("GIT_CREDENTIAL") == "" {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
@@ -5772,7 +5769,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
 		},
 		[]string{
 			"-var=project_test_git_base_path=.octopus/integrationtestimport" + uuid.New().String(),
@@ -6189,9 +6186,6 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 // TestSingleProjectLookupExportWithWorkerPool verifies that a single project can be reimported with the correct worker pool.
 func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
-	// This test is broken due to https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues/868
-	return
-
 	if os.Getenv("GIT_CREDENTIAL") == "" {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
