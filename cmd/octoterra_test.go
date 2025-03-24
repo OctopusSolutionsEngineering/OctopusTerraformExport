@@ -5240,7 +5240,7 @@ func TestSingleProjectGroupExport(t *testing.T) {
 		"../test/terraform/38-multipleprojects/space_population",
 		"../test/terraform/z-createspace",
 		[]string{
-			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
 		},
 		[]string{},
 		[]string{
