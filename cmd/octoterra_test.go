@@ -5230,7 +5230,7 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been exported,
 // and that unrelated resources were not exported.
 func TestSingleProjectGroupExport(t *testing.T) {
-0	if os.Getenv("GIT_CREDENTIAL") == "" {
+	if os.Getenv("GIT_CREDENTIAL") == "" {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
 
