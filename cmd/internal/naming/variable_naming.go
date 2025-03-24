@@ -60,3 +60,7 @@ func FeedSecretKeyName(resource octopus.Feed) string {
 func StepTemplateParameterSecretName(template octopus.StepTemplate, parameter octopus.StepTemplateParameters) string {
 	return "steptemplate_" + hash.Sha256Hash(template.Id+"_"+parameter.Id) + "_sensitive_value"
 }
+
+func MachineProxyPassword(machine octopus.MachineProxy) string {
+	return "machine_proxy_" + sanitizer.SanitizeName(machine.Name) + "_password"
+}

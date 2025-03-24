@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -344,6 +345,8 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 		}
 
 		thisResource.ToHcl = func() (string, error) {
+			passwordName := naming.MachineProxyPassword(resource)
+
 			terraformResource := terraform.TerraformMachineProxy{
 				Type:         octopusdeployMachineProxyResourceType,
 				Name:         machineProxyName,
@@ -352,7 +355,7 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &resource.Id),
 				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", resource.SpaceId)),
 				Host:         resource.Host,
-				Password:     "",
+				Password:     "${var." + passwordName + "}",
 				Username:     resource.Username,
 				Port:         intutil.NilIfZero(resource.Port),
 			}
@@ -374,7 +377,7 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 			file.Body().AppendBlock(block)
 
 			secretVariableResource := terraform.TerraformVariable{
-				Name:        machineProxyName + "_password",
+				Name:        passwordName,
 				Type:        "string",
 				Nullable:    false,
 				Sensitive:   true,
@@ -384,7 +387,7 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 			if c.DummySecretVariableValues {
 				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
 				dependencies.AddDummy(data.DummyVariableReference{
-					VariableName: machineProxyName,
+					VariableName: passwordName,
 					ResourceName: resource.Name,
 					ResourceType: c.GetResourceType(),
 				})
