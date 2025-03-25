@@ -6204,7 +6204,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
 		},
 		[]string{},
 		args2.Arguments{
