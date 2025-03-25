@@ -5769,7 +5769,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt=" + os.Getenv("GIT_CREDENTIAL"),
 		},
 		[]string{
 			"-var=project_test_git_base_path=.octopus/integrationtestimport" + uuid.New().String(),
