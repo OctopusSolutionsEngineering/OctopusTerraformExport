@@ -37,7 +37,7 @@ func main() {
 		errorExit("You must specify the URL with the -url argument")
 	}
 
-	if parseArgs.ApiKey == "" {
+	if parseArgs.ApiKey == "" && parseArgs.AccessToken == "" {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
