@@ -414,7 +414,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 		arguments.Url = os.Getenv("OCTOPUS_CLI_SERVER")
 	}
 
-	if arguments.ApiKey == "" {
+	if arguments.ApiKey == "" && arguments.AccessToken == "" {
 		arguments.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
 	}
 
@@ -436,7 +436,7 @@ func (arguments *Arguments) ConfigureGlobalSettings() error {
 	return nil
 }
 
-// ValidateExcludeExceptArgs removes any resource named in a Exclude<ResourceType>Except argument that does not
+// ValidateExcludeExceptArgs removes any resource named in an Exclude<ResourceType>Except argument that does not
 // exist in the Octopus instance. This is mostly used when external systems attempt to filter the results but
 // may place incorrect values into the Exclude<ResourceType>Except arguments.
 func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
