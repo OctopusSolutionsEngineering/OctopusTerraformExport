@@ -35,10 +35,11 @@ type OctopusClient interface {
 }
 
 type OctopusApiClient struct {
-	Url     string
-	ApiKey  string
-	Space   string
-	Version string
+	Url         string
+	ApiKey      string
+	AccessToken string
+	Space       string
+	Version     string
 	// spaceId is what Space resolves to after a lookup. We cache the result to save on future lookups.
 	spaceId string
 	// mu is the mutex to lock the update of the SpaceId parameter
@@ -73,6 +74,8 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -101,6 +104,8 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -214,6 +219,8 @@ func (o *OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -244,6 +251,8 @@ func (o *OctopusApiClient) getRequest(resourceType string, id string, global boo
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -290,6 +299,8 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -336,6 +347,8 @@ func (o *OctopusApiClient) getGlobalCollectionRequest(resourceType string, query
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -380,6 +393,8 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
@@ -424,6 +439,8 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 
 		if o.ApiKey != "" {
 			getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+		} else if o.AccessToken != "" {
+			getReq.Header.Set("Authorization", "Bearer "+o.AccessToken)
 		}
 
 		getReq.Header.Set("User-Agent", o.buildUserAgent())
@@ -486,6 +503,8 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 
 		if o.ApiKey != "" {
 			putReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+		} else if o.AccessToken != "" {
+			putReq.Header.Set("Authorization", "Bearer "+o.AccessToken)
 		}
 
 		putReq.Header.Set("User-Agent", o.buildUserAgent())
@@ -525,6 +544,8 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 
 		if o.ApiKey != "" {
 			req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+		} else if o.AccessToken != "" {
+			req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 		}
 
 		req.Header.Set("User-Agent", o.buildUserAgent())
@@ -581,6 +602,8 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 
 	if o.ApiKey != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
 	res, err := http.DefaultClient.Do(req)

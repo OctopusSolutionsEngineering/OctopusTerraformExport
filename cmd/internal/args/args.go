@@ -27,6 +27,7 @@ type Arguments struct {
 	IgnoreInvalidExcludeExcept      bool
 	Url                             string
 	ApiKey                          string
+	AccessToken                     string
 	Space                           string
 	Destination                     string
 	Console                         bool
@@ -256,6 +257,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
 	flags.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
+	flags.StringVar(&arguments.AccessToken, "accessToken", "", "The Octopus access token")
 	flags.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
 	flags.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
 	flags.BoolVar(&arguments.Stateless, "stepTemplate", false, "Create an Octopus step template")
@@ -443,9 +445,10 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 	}
 
 	octopusClient := client.OctopusApiClient{
-		Url:    arguments.Url,
-		Space:  arguments.Space,
-		ApiKey: arguments.ApiKey,
+		Url:         arguments.Url,
+		Space:       arguments.Space,
+		ApiKey:      arguments.ApiKey,
+		AccessToken: arguments.AccessToken,
 	}
 
 	filteredProjects, err := filterNamedResource[octopus.Project](octopusClient, "Projects", arguments.ExcludeProjectsExcept)
