@@ -234,7 +234,7 @@ func exportProjectImportAndTest(
 		[]string{},
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName, "")
+			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, "", projectName, "")
 
 			if err != nil {
 				return err
@@ -380,14 +380,14 @@ func exportProjectLookupImportAndTest(
 		prepopulateSpaceVars,
 		importSpaceVars,
 		func(url string, space string, apiKey string, dest string) error {
-			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, projectName, "")
+			projectId, err := entry.ConvertProjectNameToId(url, space, test.ApiKey, "", projectName, "")
 			if err != nil {
 				return err
 			}
 
 			runbookId := ""
 			if argumnets.RunbookName != "" {
-				runbookId, err = entry.ConvertRunbookNameToId(url, space, test.ApiKey, projectId, argumnets.RunbookName, "")
+				runbookId, err = entry.ConvertRunbookNameToId(url, space, test.ApiKey, "", projectId, argumnets.RunbookName, "")
 
 				if err != nil {
 					return err
