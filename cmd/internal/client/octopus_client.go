@@ -580,8 +580,12 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 		err = json.Unmarshal(body, &errorResponse)
 
 		if err == nil {
-			// treat a missing variables.ocl file as a missing resource
+
 			if strings.Index(errorResponse.ErrorMessage, "does not exist in the Git repository") != -1 && strings.Index(errorResponse.ErrorMessage, "variables.ocl") != -1 {
+				// treat a missing variables.ocl file as a missing resource
+				return false, nil
+			} else if strings.Index(errorResponse.ErrorMessage, "Invalid username or password") != -1 {
+				// Treat invalid git credentials as a missing resource
 				return false, nil
 			}
 		}
