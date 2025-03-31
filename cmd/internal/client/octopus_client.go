@@ -72,13 +72,7 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 		return false, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	res, err := http.DefaultClient.Do(req)
 
