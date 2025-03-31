@@ -587,6 +587,10 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 			} else if strings.Index(errorResponse.ErrorMessage, "Invalid username or password") != -1 {
 				// Treat invalid git credentials as a missing resource
 				return false, nil
+			} else if strings.Index(errorResponse.ErrorMessage, "Support for password authentication was removed") != -1 {
+				// Ignore this error message:
+				// Support for password authentication was removed on August 13, 2021.\nPlease see https://docs.github.com/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls for information on currently recommended modes of authentication.
+				return false, nil
 			}
 		}
 
