@@ -89,6 +89,16 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	return res.StatusCode != 404, nil
 }
 
+func (o *OctopusApiClient) setHeaders(req *http.Request) {
+	if o.ApiKey != "" {
+		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
+	} else if o.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
+	}
+
+	req.Header.Set("User-Agent", o.buildUserAgent())
+}
+
 func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("space can not be empty")
@@ -102,13 +112,7 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		return "", err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -217,13 +221,7 @@ func (o *OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 		return nil, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	return req, nil
 }
@@ -249,13 +247,7 @@ func (o *OctopusApiClient) getRequest(resourceType string, id string, global boo
 		return nil, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	return req, nil
 }
@@ -297,13 +289,7 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		return nil, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	return req, nil
 }
@@ -345,13 +331,7 @@ func (o *OctopusApiClient) getGlobalCollectionRequest(resourceType string, query
 		return nil, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	return req, nil
 }
@@ -391,13 +371,7 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
 		return nil, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
-
-	req.Header.Set("User-Agent", o.buildUserAgent())
+	o.setHeaders(req)
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -437,13 +411,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return nil, err
 		}
 
-		if o.ApiKey != "" {
-			getReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-		} else if o.AccessToken != "" {
-			getReq.Header.Set("Authorization", "Bearer "+o.AccessToken)
-		}
-
-		getReq.Header.Set("User-Agent", o.buildUserAgent())
+		o.setHeaders(getReq)
 
 		getRes, err := http.DefaultClient.Do(getReq)
 
@@ -501,13 +469,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return err
 		}
 
-		if o.ApiKey != "" {
-			putReq.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-		} else if o.AccessToken != "" {
-			putReq.Header.Set("Authorization", "Bearer "+o.AccessToken)
-		}
-
-		putReq.Header.Set("User-Agent", o.buildUserAgent())
+		o.setHeaders(putReq)
 
 		putRes, err := http.DefaultClient.Do(putReq)
 
@@ -542,13 +504,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return err
 		}
 
-		if o.ApiKey != "" {
-			req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-		} else if o.AccessToken != "" {
-			req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-		}
-
-		req.Header.Set("User-Agent", o.buildUserAgent())
+		o.setHeaders(req)
 
 		res, err := http.DefaultClient.Do(req)
 
@@ -600,11 +556,7 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 		return false, err
 	}
 
-	if o.ApiKey != "" {
-		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
-	}
+	o.setHeaders(req)
 
 	res, err := http.DefaultClient.Do(req)
 
