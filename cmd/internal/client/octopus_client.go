@@ -84,9 +84,9 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 }
 
 func (o *OctopusApiClient) setHeaders(req *http.Request) {
-	if o.ApiKey != "" {
+	if strings.TrimSpace(o.ApiKey) != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
-	} else if o.AccessToken != "" {
+	} else if strings.TrimSpace(o.AccessToken) != "" {
 		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
