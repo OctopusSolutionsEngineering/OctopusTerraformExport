@@ -105,7 +105,9 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 		return false, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return false, err
+	}
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -116,7 +118,7 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	return res.StatusCode != 404, nil
 }
 
-func (o *OctopusApiClient) setHeaders(req *http.Request) {
+func (o *OctopusApiClient) setHeaders(req *http.Request) error {
 	if strings.TrimSpace(o.ApiKey) != "" {
 		req.Header.Set("X-Octopus-ApiKey", o.ApiKey)
 	} else if strings.TrimSpace(o.AccessToken) != "" {
@@ -125,13 +127,22 @@ func (o *OctopusApiClient) setHeaders(req *http.Request) {
 
 	// See https://github.com/OctopusSolutionsEngineering/AzureFunctionRouter
 	if o.UseRedirector {
-		req.Header.Set("X_REDIRECTION_UPSTREAM_HOST", o.Url)
+
+		parsedUrl, err := url.Parse(o.Url)
+
+		if err != nil {
+			return err
+		}
+
+		req.Header.Set("X_REDIRECTION_UPSTREAM_HOST", parsedUrl.Hostname())
 		req.Header.Set("X_REDIRECTION_REDIRECTIONS", o.RedirectorRedirections)
 		req.Header.Set("X_REDIRECTION_API_KEY", o.RedirecrtorApiKey)
 		req.Header.Set("X_REDIRECTION_SERVICE_API_KEY", o.RedirectorServiceApiKey)
 	}
 
 	req.Header.Set("User-Agent", o.buildUserAgent())
+
+	return nil
 }
 
 func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) {
@@ -153,7 +164,9 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		return "", err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return "", err
+	}
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -280,7 +293,9 @@ func (o *OctopusApiClient) getSpaceRequest() (*http.Request, error) {
 		return nil, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -306,7 +321,9 @@ func (o *OctopusApiClient) getRequest(resourceType string, id string, global boo
 		return nil, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -348,7 +365,9 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		return nil, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -390,7 +409,9 @@ func (o *OctopusApiClient) getGlobalCollectionRequest(resourceType string, query
 		return nil, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -436,7 +457,9 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
 		return nil, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return nil, err
+	}
 
 	res, err := http.DefaultClient.Do(req)
 
@@ -482,7 +505,9 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return nil, err
 		}
 
-		o.setHeaders(getReq)
+		if err := o.setHeaders(getReq); err != nil {
+			return nil, err
+		}
 
 		getRes, err := http.DefaultClient.Do(getReq)
 
@@ -540,7 +565,9 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return err
 		}
 
-		o.setHeaders(putReq)
+		if err := o.setHeaders(putReq); err != nil {
+			return err
+		}
 
 		putRes, err := http.DefaultClient.Do(putReq)
 
@@ -575,7 +602,9 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return err
 		}
 
-		o.setHeaders(req)
+		if err := o.setHeaders(req); err != nil {
+			return err
+		}
 
 		res, err := http.DefaultClient.Do(req)
 
@@ -627,7 +656,9 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 		return false, err
 	}
 
-	o.setHeaders(req)
+	if err := o.setHeaders(req); err != nil {
+		return false, err
+	}
 
 	res, err := http.DefaultClient.Do(req)
 
