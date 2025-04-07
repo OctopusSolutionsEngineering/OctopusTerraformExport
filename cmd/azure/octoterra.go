@@ -60,7 +60,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		disableRedirectorParsed = false
 	}
 
-	useRedirector := !disableRedirectorParsed && !hostIsCloudOrLocal(parsedUrl.Host) && redirectorServiceApiKey != "" && redirectorHost != ""
+	useRedirector := !disableRedirectorParsed && !hostIsCloudOrLocal(parsedUrl.Hostname()) && redirectorServiceApiKey != "" && redirectorHost != ""
 
 	respBytes, err := io.ReadAll(r.Body)
 
