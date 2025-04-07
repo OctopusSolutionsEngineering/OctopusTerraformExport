@@ -13,6 +13,7 @@ func TestHostIsCloudOrLocal(t *testing.T) {
 		{"127.0.0.1", true},
 		{"example.com", false},
 		{"192.168.1.1", false},
+		{"octopus.ngrok.app", false},
 	}
 
 	for _, test := range tests {
