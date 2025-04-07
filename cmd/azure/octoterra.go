@@ -162,6 +162,11 @@ func sanitizeConfig(rawConfig []byte) ([]byte, error) {
 	delete(config, "apiKey")
 	delete(config, "accessToken")
 	delete(config, "url")
+	delete(config, "redirectorServiceApiKey")
+	delete(config, "redirecrtorApiKey")
+	delete(config, "redirectorHost")
+	delete(config, "useRedirector")
+	delete(config, "redirectorRedirections")
 	return json.Marshal(config)
 }
 
