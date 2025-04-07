@@ -119,7 +119,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if octopusUrl != "" {
-		commandLineArgs = append(commandLineArgs, "-octopusUrl", octopusUrl)
+		commandLineArgs = append(commandLineArgs, "-url", octopusUrl)
 	}
 
 	if useRedirector {
