@@ -124,7 +124,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 
 	if useRedirector {
 		zap.L().Info("Using redirector for host " + octopusUrl)
-		commandLineArgs = append(commandLineArgs, "-useRedirector", "true")
+		commandLineArgs = append(commandLineArgs, "-useRedirector")
 		commandLineArgs = append(commandLineArgs, "-redirectorHost", redirectorHost)
 		commandLineArgs = append(commandLineArgs, "-redirectorServiceApiKey", redirectorServiceApiKey)
 		commandLineArgs = append(commandLineArgs, "-redirecrtorApiKey", redirectorApiKey)
