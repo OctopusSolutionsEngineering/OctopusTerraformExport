@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -44,6 +45,7 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	redirectorApiKey := r.Header.Get("X_REDIRECTION_API_KEY")
 	redirectorServiceApiKey, _ := os.LookupEnv("REDIRECTION_SERVICE_API_KEY")
 	redirectorHost, _ := os.LookupEnv("REDIRECTION_HOST")
+	disableRedirector, _ := os.LookupEnv("DISABLE_REDIRECTION")
 
 	parsedUrl, err := url.Parse(octopusUrl)
 
@@ -52,7 +54,13 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	useRedirector := !hostIsCloudOrLocal(parsedUrl.Host) && redirectorServiceApiKey != "" && redirectorHost != ""
+	disableRedirectorParsed, err := strconv.ParseBool(disableRedirector)
+
+	if err != nil {
+		disableRedirectorParsed = false
+	}
+
+	useRedirector := !disableRedirectorParsed && !hostIsCloudOrLocal(parsedUrl.Host) && redirectorServiceApiKey != "" && redirectorHost != ""
 
 	respBytes, err := io.ReadAll(r.Body)
 
