@@ -40,6 +40,17 @@ type OctopusApiClient struct {
 	AccessToken string
 	Space       string
 	Version     string
+	// a flag to indicate if the client must use the redirector
+	// https://github.com/OctopusSolutionsEngineering/AzureFunctionRouter
+	UseRedirector bool
+	// RedirectorHost is the hostname of the redirector to use
+	RedirectorHost string
+	// This key must be known by the service that is using the redirector
+	RedirectorServiceApiKey string
+	// This key is passed by the caller
+	RedirecrtorApiKey string
+	// These rules are passed by the called
+	RedirectorRedirections string
 	// spaceId is what Space resolves to after a lookup. We cache the result to save on future lookups.
 	spaceId string
 	// mu is the mutex to lock the update of the SpaceId parameter
@@ -60,12 +71,34 @@ func (o *OctopusApiClient) buildUserAgent() string {
 	return "octoterra/" + o.Version + " (" + runtime.GOOS + " " + runtime.GOARCH + ")"
 }
 
+func (o *OctopusApiClient) buildUrl() (string, error) {
+	if o.UseRedirector {
+		if o.RedirectorHost == "" {
+			return "", errors.New("RedirectorHost must be set when UseRedirector is true")
+		}
+
+		if o.RedirectorServiceApiKey == "" {
+			return "", errors.New("RedirectorServiceApiKey must be set when UseRedirector is true")
+		}
+
+		return "https://" + o.RedirectorHost, nil
+	}
+
+	return o.Url, nil
+}
+
 func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return false, errors.New("space can not be empty")
 	}
 
-	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space)
+	baseUrl, err := o.buildUrl()
+
+	if err != nil {
+		return false, err
+	}
+
+	requestURL := fmt.Sprintf("%s/api/Spaces/%s", baseUrl, o.Space)
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
 	if err != nil {
@@ -90,6 +123,14 @@ func (o *OctopusApiClient) setHeaders(req *http.Request) {
 		req.Header.Set("Authorization", "Bearer "+o.AccessToken)
 	}
 
+	// See https://github.com/OctopusSolutionsEngineering/AzureFunctionRouter
+	if o.UseRedirector {
+		req.Header.Set("X_REDIRECTION_UPSTREAM_HOST", o.Url)
+		req.Header.Set("X_REDIRECTION_REDIRECTIONS", o.RedirectorRedirections)
+		req.Header.Set("X_REDIRECTION_API_KEY", o.RedirecrtorApiKey)
+		req.Header.Set("X_REDIRECTION_SERVICE_API_KEY", o.RedirectorServiceApiKey)
+	}
+
 	req.Header.Set("User-Agent", o.buildUserAgent())
 }
 
@@ -98,7 +139,13 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		return "", errors.New("space can not be empty")
 	}
 
-	requestURL := fmt.Sprintf("%s/api/Spaces?take=1000&partialName=%s", o.Url, url.QueryEscape(o.Space))
+	baseUrl, err := o.buildUrl()
+
+	if err != nil {
+		return "", err
+	}
+
+	requestURL := fmt.Sprintf("%s/api/Spaces?take=1000&partialName=%s", baseUrl, url.QueryEscape(o.Space))
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
@@ -149,27 +196,39 @@ func (o *OctopusApiClient) getSpaceUrl() (string, error) {
 		return "", errors.New("getSpaceUrl - space can not be empty")
 	}
 
+	baseUrl, err := o.buildUrl()
+
+	if err != nil {
+		return "", err
+	}
+
 	if o.spaceId != "" {
-		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.spaceId), nil
+		return fmt.Sprintf("%s/api/Spaces/%s", baseUrl, o.spaceId), nil
 	}
 
 	spaceId, err := o.lookupSpaceAsName()
 	if err == nil {
 		o.spaceId = spaceId
-		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId), nil
+		return fmt.Sprintf("%s/api/Spaces/%s", baseUrl, spaceId), nil
 	}
 
 	spaceIdValid, err := o.lookupSpaceAsId()
 	if spaceIdValid && err == nil {
 		o.spaceId = o.Space
-		return fmt.Sprintf("%s/api/Spaces/%s", o.Url, o.Space), nil
+		return fmt.Sprintf("%s/api/Spaces/%s", baseUrl, o.Space), nil
 	}
 
 	return "", errors.New("getSpaceUrl did not find space with name or id '" + o.Space + "'")
 }
 
 func (o *OctopusApiClient) GetBaseUrl() (string, error) {
-	return fmt.Sprintf("%s/api", o.Url), nil
+	baseUrl, err := o.buildUrl()
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/api", baseUrl), nil
 }
 
 func (o *OctopusApiClient) GetSpaceBaseUrl() (string, error) {
@@ -182,20 +241,26 @@ func (o *OctopusApiClient) GetSpaceBaseUrl() (string, error) {
 		o.mu.Lock()
 		defer o.mu.Unlock()
 
+		baseUrl, err := o.buildUrl()
+
+		if err != nil {
+			return "", err
+		}
+
 		if o.spaceId != "" {
-			return fmt.Sprintf("%s/api/%s", o.Url, o.spaceId), nil
+			return fmt.Sprintf("%s/api/%s", baseUrl, o.spaceId), nil
 		}
 
 		spaceId, err := o.lookupSpaceAsName()
 		if err == nil {
 			o.spaceId = spaceId
-			return fmt.Sprintf("%s/api/%s", o.Url, spaceId), nil
+			return fmt.Sprintf("%s/api/%s", baseUrl, spaceId), nil
 		}
 
 		spaceIdValid, err := o.lookupSpaceAsId()
 		if spaceIdValid && err == nil {
 			o.spaceId = o.Space
-			return fmt.Sprintf("%s/api/%s", o.Url, o.Space), nil
+			return fmt.Sprintf("%s/api/%s", baseUrl, o.Space), nil
 		}
 
 		return "", errors.New("GetSpaceBaseUrl did not find space with name or id '" + o.Space + "'")
@@ -357,7 +422,13 @@ func (o *OctopusApiClient) GetSpace(resources *octopus.Space) (funcErr error) {
 }
 
 func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
-	requestURL := fmt.Sprintf("%s/api/Spaces", o.Url)
+	baseUrl, err := o.buildUrl()
+
+	if err != nil {
+		return nil, err
+	}
+
+	requestURL := fmt.Sprintf("%s/api/Spaces", baseUrl)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
@@ -395,7 +466,13 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
 }
 
 func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error) {
-	requestURL := fmt.Sprintf("%s/api/Spaces/%s", o.Url, spaceId)
+	baseUrl, err := o.buildUrl()
+
+	if err != nil {
+		return false, err
+	}
+
+	requestURL := fmt.Sprintf("%s/api/Spaces/%s", baseUrl, spaceId)
 
 	// Get the details of the space
 	space, err := func() (*octopus.Space, error) {

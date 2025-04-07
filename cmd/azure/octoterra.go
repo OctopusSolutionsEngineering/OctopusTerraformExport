@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,11 +28,31 @@ type AzureFunctionRequest struct {
 	Data AzureFunctionRequestData `json:"Data"`
 }
 
+func hostIsCloudOrLocal(host string) bool {
+	return strings.HasSuffix(host, ".octopus.app") ||
+		strings.HasSuffix(host, ".testoctopus.com") ||
+		host == "localhost" ||
+		host == "127.0.0.1"
+}
+
 func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow the more sensitive values to be passed as headers
 	apiKey := r.Header.Get("X-Octopus-ApiKey")
 	accessToken := r.Header.Get("X-Octopus-AccessToken")
-	url := r.Header.Get("X-Octopus-Url")
+	octopusUrl := r.Header.Get("X-Octopus-Url")
+	redirectorRedirections := r.Header.Get("X_REDIRECTION_REDIRECTIONS")
+	redirectorApiKey := r.Header.Get("X_REDIRECTION_API_KEY")
+	redirectorServiceApiKey, _ := os.LookupEnv("REDIRECTION_SERVICE_API_KEY")
+	redirectorHost, _ := os.LookupEnv("REDIRECTION_HOST")
+
+	parsedUrl, err := url.Parse(octopusUrl)
+
+	if err != nil {
+		handleError(err, w)
+		return
+	}
+
+	useRedirector := !hostIsCloudOrLocal(parsedUrl.Host) && redirectorServiceApiKey != "" && redirectorHost != ""
 
 	respBytes, err := io.ReadAll(r.Body)
 
@@ -89,8 +110,16 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		commandLineArgs = append(commandLineArgs, "-accessToken", accessToken)
 	}
 
-	if url != "" {
-		commandLineArgs = append(commandLineArgs, "-url", url)
+	if octopusUrl != "" {
+		commandLineArgs = append(commandLineArgs, "-octopusUrl", octopusUrl)
+	}
+
+	if useRedirector {
+		commandLineArgs = append(commandLineArgs, "-useRedirector", "true")
+		commandLineArgs = append(commandLineArgs, "-redirectorHost", redirectorHost)
+		commandLineArgs = append(commandLineArgs, "-redirectorServiceApiKey", redirectorServiceApiKey)
+		commandLineArgs = append(commandLineArgs, "-redirecrtorApiKey", redirectorApiKey)
+		commandLineArgs = append(commandLineArgs, "-redirectorRedirections", redirectorRedirections)
 	}
 
 	webArgs, _, err := args.ParseArgs(commandLineArgs)

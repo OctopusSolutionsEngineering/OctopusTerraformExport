@@ -28,6 +28,11 @@ type Arguments struct {
 	Url                             string
 	ApiKey                          string
 	AccessToken                     string
+	UseRedirector                   bool
+	RedirectorHost                  string
+	RedirectorServiceApiKey         string
+	RedirecrtorApiKey               string
+	RedirectorRedirections          string
 	Space                           string
 	Destination                     string
 	Console                         bool
@@ -260,6 +265,13 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.AccessToken, "accessToken", "", "The Octopus access token")
 	flags.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
 	flags.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
+
+	flags.BoolVar(&arguments.UseRedirector, "useRedirector", false, "Set to true to access the Octopus instance via the redirector")
+	flags.StringVar(&arguments.RedirectorHost, "redirectorHost", "", "The hostname of the redirector service")
+	flags.StringVar(&arguments.RedirectorServiceApiKey, "redirectorServiceApiKey", "", "The service api key of the redirector service")
+	flags.StringVar(&arguments.RedirecrtorApiKey, "redirecrtorApiKey", "", "The user api key of the redirector service")
+	flags.StringVar(&arguments.RedirectorRedirections, "redirectorRedirections", "", "The redirection rules for the redirector service")
+
 	flags.BoolVar(&arguments.Stateless, "stepTemplate", false, "Create an Octopus step template")
 	flags.Var(&arguments.StatelessAdditionalParams, "stepTemplateAdditionalParameters", "Indicates that a non-secret variable should be exposed as a parameter. The format of this option is \"ProjectName:VariableName\". This option is only used with the -stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateName, "stepTemplateName", "", "Step template name. Only used with the stepTemplate option.")
@@ -445,10 +457,16 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 	}
 
 	octopusClient := client.OctopusApiClient{
-		Url:         arguments.Url,
-		Space:       arguments.Space,
-		ApiKey:      arguments.ApiKey,
-		AccessToken: arguments.AccessToken,
+		Url:                     arguments.Url,
+		ApiKey:                  arguments.ApiKey,
+		AccessToken:             arguments.AccessToken,
+		Space:                   arguments.Space,
+		Version:                 "",
+		UseRedirector:           arguments.UseRedirector,
+		RedirectorHost:          arguments.RedirectorHost,
+		RedirectorServiceApiKey: arguments.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       arguments.RedirecrtorApiKey,
+		RedirectorRedirections:  arguments.RedirectorRedirections,
 	}
 
 	filteredProjects, err := filterNamedResource[octopus.Project](octopusClient, "Projects", arguments.ExcludeProjectsExcept)

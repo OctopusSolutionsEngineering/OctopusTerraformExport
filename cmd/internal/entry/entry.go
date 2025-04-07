@@ -39,7 +39,18 @@ func Entry(parseArgs args.Arguments, version string) (map[string]string, error) 
 		projectIds := []string{}
 
 		for _, project := range parseArgs.ProjectName {
-			projectId, err := ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.AccessToken, project, version)
+			projectId, err := ConvertProjectNameToId(
+				parseArgs.Url,
+				parseArgs.Space,
+				parseArgs.ApiKey,
+				parseArgs.AccessToken,
+				project,
+				version,
+				parseArgs.UseRedirector,
+				parseArgs.RedirectorHost,
+				parseArgs.RedirectorServiceApiKey,
+				parseArgs.RedirecrtorApiKey,
+				parseArgs.RedirectorRedirections)
 
 			if err != nil {
 				return nil, err
@@ -52,7 +63,19 @@ func Entry(parseArgs args.Arguments, version string) (map[string]string, error) 
 	}
 
 	if parseArgs.RunbookName != "" {
-		runbookId, err := ConvertRunbookNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.AccessToken, parseArgs.ProjectId[0], parseArgs.RunbookName, version)
+		runbookId, err := ConvertRunbookNameToId(
+			parseArgs.Url,
+			parseArgs.Space,
+			parseArgs.ApiKey,
+			parseArgs.AccessToken,
+			parseArgs.ProjectId[0],
+			parseArgs.RunbookName,
+			version,
+			parseArgs.UseRedirector,
+			parseArgs.RedirectorHost,
+			parseArgs.RedirectorServiceApiKey,
+			parseArgs.RedirecrtorApiKey,
+			parseArgs.RedirectorRedirections)
 
 		if err != nil {
 			return nil, err
@@ -132,13 +155,30 @@ func getDependencies(parseArgs args.Arguments, version string) (*data.ResourceDe
 	}
 }
 
-func ConvertProjectNameToId(url string, space string, apiKey string, accessToken string, name string, version string) (string, error) {
+func ConvertProjectNameToId(
+	url string,
+	space string,
+	apiKey string,
+	accessToken string,
+	name string,
+	version string,
+	useRedirector bool,
+	redirectorHost string,
+	redirectorServiceApiKey string,
+	redirecrtorApiKey string,
+	redirectorRedirections string,
+) (string, error) {
 	octopusClient := client.OctopusApiClient{
-		Url:         url,
-		Space:       space,
-		ApiKey:      apiKey,
-		AccessToken: accessToken,
-		Version:     version,
+		Url:                     url,
+		ApiKey:                  apiKey,
+		AccessToken:             accessToken,
+		Space:                   space,
+		Version:                 version,
+		UseRedirector:           useRedirector,
+		RedirectorHost:          redirectorHost,
+		RedirectorServiceApiKey: redirectorServiceApiKey,
+		RedirecrtorApiKey:       redirecrtorApiKey,
+		RedirectorRedirections:  redirectorRedirections,
 	}
 
 	collection := octopus.GeneralCollection[octopus.Project]{}
@@ -162,13 +202,30 @@ func ConvertProjectNameToId(url string, space string, apiKey string, accessToken
 	return "", errors.New("did not find project with name " + name + " in space " + space)
 }
 
-func ConvertRunbookNameToId(url string, space string, apiKey string, accessToken string, projectId string, runbookName string, version string) (string, error) {
+func ConvertRunbookNameToId(url string,
+	space string,
+	apiKey string,
+	accessToken string,
+	projectId string,
+	runbookName string,
+	version string,
+	useRedirector bool,
+	redirectorHost string,
+	redirectorServiceApiKey string,
+	redirecrtorApiKey string,
+	redirectorRedirections string,
+) (string, error) {
 	octopusClient := client.OctopusApiClient{
-		Url:         url,
-		Space:       space,
-		ApiKey:      apiKey,
-		AccessToken: accessToken,
-		Version:     version,
+		Url:                     url,
+		ApiKey:                  apiKey,
+		AccessToken:             accessToken,
+		Space:                   space,
+		Version:                 version,
+		UseRedirector:           useRedirector,
+		RedirectorHost:          redirectorHost,
+		RedirectorServiceApiKey: redirectorServiceApiKey,
+		RedirecrtorApiKey:       redirecrtorApiKey,
+		RedirectorRedirections:  redirectorRedirections,
 	}
 
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
@@ -197,11 +254,16 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	group.SetLimit(10)
 
 	octopusClient := client.OctopusApiClient{
-		Url:         args.Url,
-		Space:       args.Space,
-		ApiKey:      args.ApiKey,
-		AccessToken: args.AccessToken,
-		Version:     version,
+		Url:                     args.Url,
+		ApiKey:                  args.ApiKey,
+		AccessToken:             args.AccessToken,
+		Space:                   args.Space,
+		Version:                 version,
+		UseRedirector:           args.UseRedirector,
+		RedirectorHost:          args.RedirectorHost,
+		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       args.RedirecrtorApiKey,
+		RedirectorRedirections:  args.RedirectorRedirections,
 	}
 
 	dependencies := data.ResourceDetailsCollection{}
@@ -1066,11 +1128,16 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
-		Url:         args.Url,
-		Space:       args.Space,
-		ApiKey:      args.ApiKey,
-		AccessToken: args.AccessToken,
-		Version:     version,
+		Url:                     args.Url,
+		ApiKey:                  args.ApiKey,
+		AccessToken:             args.AccessToken,
+		Space:                   args.Space,
+		Version:                 version,
+		UseRedirector:           args.UseRedirector,
+		RedirectorHost:          args.RedirectorHost,
+		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       args.RedirecrtorApiKey,
+		RedirectorRedirections:  args.RedirectorRedirections,
 	}
 
 	dummySecretGenerator := dummy.DummySecret{}
@@ -1384,11 +1451,16 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 func ConvertProjectToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
-		Url:         args.Url,
-		Space:       args.Space,
-		ApiKey:      args.ApiKey,
-		AccessToken: args.AccessToken,
-		Version:     version,
+		Url:                     args.Url,
+		ApiKey:                  args.ApiKey,
+		AccessToken:             args.AccessToken,
+		Space:                   args.Space,
+		Version:                 version,
+		UseRedirector:           args.UseRedirector,
+		RedirectorHost:          args.RedirectorHost,
+		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       args.RedirecrtorApiKey,
+		RedirectorRedirections:  args.RedirectorRedirections,
 	}
 
 	dummySecretGenerator := dummy.DummySecret{}
