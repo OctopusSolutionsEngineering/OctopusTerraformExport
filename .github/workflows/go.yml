@@ -271,7 +271,7 @@ jobs:
           GOARCH: amd64
           CGO_ENABLED: 0
       - run: |
-          zip -r octoterra_macos_arm64_azure.zip . -x local.settings.json -x octoterra_linux_amd64_azure -x octoterra_linux_amd64_azure.zip -x octoterra_macos_amd64_azure -x octoterra_macos_amd64_azure.zip
+          zip -r octoterra_macos_arm64_azure.zip . -x local.settings.json -x octoterra_linux_amd64_azure -x octoterra_linux_amd64_azure.zip -x octoterra_macos_amd64_azure -x octoterra_macos_amd64_azure.zip -x octoterra_windows_amd64_azure.exe
         working-directory: functions  
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
