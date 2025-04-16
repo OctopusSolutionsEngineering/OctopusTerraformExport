@@ -14,7 +14,7 @@ require (
 	github.com/samber/lo v1.38.1
 	github.com/spf13/viper v1.18.2
 	github.com/zeebo/xxh3 v1.0.2
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/sync v0.10.0
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
