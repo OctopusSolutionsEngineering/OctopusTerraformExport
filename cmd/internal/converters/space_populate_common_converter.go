@@ -26,7 +26,7 @@ func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool,
 	c.createVariables(directory, includeSpaceId, includeServerDetails, dependencies)
 
 	if c.IncludeOctopusOutputVars {
-		c.createOctopusOutputVars(directory, includeSpaceId, dependencies)
+		c.createOctopusOutputVars(directory, includeSpaceId, includeServerDetails, dependencies)
 	}
 
 	// create a "terraform.tfvars" file with a single octostache template that is replaced by the variable name
@@ -170,7 +170,7 @@ func (c TerraformProviderGenerator) createVariables(directory string, includeSpa
 
 // createOctopusOutputVars captures the details of the octopus server as output variables. This is
 // useful when finding the created resources from the Terraform state.
-func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, includeSpaceId bool, dependencies *data.ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
@@ -181,15 +181,17 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, in
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		octopusServer := terraform2.TerraformOutput{
-			Name:  "octopus_server",
-			Value: "${var.octopus_server}",
-		}
-
 		file := hclwrite.NewEmptyFile()
 
-		octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "output")
-		file.Body().AppendBlock(octopusServerBlock)
+		if includeServerDetails {
+			octopusServer := terraform2.TerraformOutput{
+				Name:  "octopus_server",
+				Value: "${var.octopus_server}",
+			}
+
+			octopusServerBlock := gohcl.EncodeAsBlock(octopusServer, "output")
+			file.Body().AppendBlock(octopusServerBlock)
+		}
 
 		if includeSpaceId {
 			octopusSpaceId := terraform2.TerraformOutput{
