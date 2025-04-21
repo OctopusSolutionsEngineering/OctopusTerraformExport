@@ -161,6 +161,7 @@ func exportSpaceImportAndTest(
 				ExcludeAllEnvironments:           arguments.ExcludeAllEnvironments,
 				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
 				IncludeSpaceInPopulation:         true,
+				IncludeProviderServerDetails:     true,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
@@ -305,6 +306,7 @@ func exportProjectImportAndTest(
 				ExcludeLibraryVariableSetsExcept: arguments.ExcludeLibraryVariableSetsExcept,
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 				IncludeSpaceInPopulation:         true,
+				IncludeProviderServerDetails:     true,
 			}
 
 			dependencies, err := entry.ConvertProjectToTerraform(args, "")
@@ -467,6 +469,7 @@ func exportProjectLookupImportAndTest(
 				RunbookName:                      "",
 				LookupProjectLinkTenants:         argumnets.LookupProjectLinkTenants,
 				IncludeSpaceInPopulation:         true,
+				IncludeProviderServerDetails:     true,
 			}
 
 			var dependencies *data.ResourceDetailsCollection = nil
