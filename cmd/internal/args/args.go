@@ -158,6 +158,11 @@ type Arguments struct {
 	ExcludeMachinePoliciesExcept StringSliceArgs
 	ExcludeAllMachinePolicies    bool
 
+	ExcludeMachineProxies       StringSliceArgs
+	ExcludeMachineProxiesRegex  StringSliceArgs
+	ExcludeMachineProxiesExcept StringSliceArgs
+	ExcludeAllMachineProxies    bool
+
 	ExcludeTenantTags StringSliceArgs
 
 	ExcludeTenantTagSets       StringSliceArgs
@@ -348,6 +353,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeMachinePolicies, "excludeMachinePolicies", "A machine policy to be excluded when exporting a single project. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeMachinePoliciesRegex, "excludeMachinePoliciesRegex", "A machine policy to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeMachinePoliciesExcept, "excludeMachinePoliciesExcept", "All machine policies except those defined with excludeMachinePoliciesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
+
+	flags.BoolVar(&arguments.ExcludeAllMachineProxies, "excludeAllMachineProxies", false, "Exclude all machine proxies.")
+	flags.Var(&arguments.ExcludeMachineProxies, "excludeMachineProxies", "A machine proxy to be excluded when exporting a single project.")
+	flags.Var(&arguments.ExcludeMachineProxiesRegex, "excludeMachineProxiesRegex", "A machine proxy to be excluded when exporting a single project based on regex match.")
+	flags.Var(&arguments.ExcludeMachineProxiesExcept, "excludeMachineProxiesExcept", "All machine proxies except those defined with excludeMachineProxiesExcept are excluded.")
 
 	flags.BoolVar(&arguments.ExcludeAllTenantVariables, "excludeAllTenantVariables", false, "Exclude all tenant variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeTenantVariables, "excludeTenantVariables", "Exclude a tenant variable from being exported. WARNING: steps that used this variable may no longer function correctly.")
