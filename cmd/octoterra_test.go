@@ -160,7 +160,7 @@ func exportSpaceImportAndTest(
 				ExcludeProjectGroupsExcept:       arguments.ExcludeProjectGroupsExcept,
 				ExcludeAllEnvironments:           arguments.ExcludeAllEnvironments,
 				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
-				IncludeSpaceInPopulation:         true,
+				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
 			}
 
@@ -305,7 +305,7 @@ func exportProjectImportAndTest(
 				ExcludeAllLibraryVariableSets:    arguments.ExcludeAllLibraryVariableSets,
 				ExcludeLibraryVariableSetsExcept: arguments.ExcludeLibraryVariableSetsExcept,
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
-				IncludeSpaceInPopulation:         true,
+				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
 			}
 
@@ -468,7 +468,7 @@ func exportProjectLookupImportAndTest(
 				RunbookId:                        runbookId,
 				RunbookName:                      "",
 				LookupProjectLinkTenants:         argumnets.LookupProjectLinkTenants,
-				IncludeSpaceInPopulation:         true,
+				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
 			}
 
