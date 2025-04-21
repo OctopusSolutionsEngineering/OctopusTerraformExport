@@ -327,7 +327,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ExcludeProvider:             args.ExcludeProvider,
 		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
 		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
-	}.ToHcl("space_population", true, &dependencies)
+	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	if !args.Stateless {
 		converters.TerraformProviderGenerator{
@@ -335,7 +335,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			ProviderVersion:          args.ProviderVersion,
 			ExcludeProvider:          args.ExcludeProvider,
 			IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-		}.ToHcl("space_creation", false, &dependencies)
+		}.ToHcl("space_creation", false, args.IncludeProviderServerDetails, &dependencies)
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{
@@ -1201,7 +1201,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeProvider:             args.ExcludeProvider,
 		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
 		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
-	}.ToHcl("space_population", true, &dependencies)
+	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
 		Client:                    &octopusClient,
@@ -1524,7 +1524,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeProvider:             args.ExcludeProvider,
 		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
 		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
-	}.ToHcl("space_population", true, &dependencies)
+	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
 		Client:                    &octopusClient,

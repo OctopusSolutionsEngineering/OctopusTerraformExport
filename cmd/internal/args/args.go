@@ -55,6 +55,7 @@ type Arguments struct {
 	DummySecretVariableValues       bool
 	ProviderVersion                 string
 	ExcludeProvider                 bool
+	IncludeProviderServerDetails    bool
 	IncludeOctopusOutputVars        bool
 	LimitAttributeLength            int
 	LimitResourceCount              int
@@ -403,6 +404,8 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeDeploymentFreezesExcept, "excludeDeploymentFreezesExcept", "All deployment freezes except those defined with excludeProjectsExcept are excluded.")
 
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
+	flags.BoolVar(&arguments.IncludeProviderServerDetails, "includeProviderServerDetails", true, "Define the server UL and API keys as variables passed to the provider. Set this to false to use the OCTOPUS_ACCESS_TOKEN, OCTOPUS_URL, and OCTOPUS_APIKEY environment variables to configure the provider.")
+
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", true, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
 	flags.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
 	flags.BoolVar(&arguments.IgnoreProjectVariableChanges, "ignoreProjectVariableChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project's variables when exporting a single project. This differs from the ignoreProjectChanges option by only ignoring changes to variables while reapplying changes to all other project settings.")
