@@ -26,6 +26,7 @@ type OctopusClient interface {
 	EnsureSpaceDeleted(spaceId string) (deleted bool, funcErr error)
 	GetResource(resourceType string, resources any) (exists bool, funcErr error)
 	GetResourceById(resourceType string, id string, resources any) (funcErr error)
+	GetResourceByName(resourceType string, name string, resources any) (exists bool, funcErr error)
 	GetSpaceResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
 	GetGlobalResourceById(resourceType string, id string, resources any) (exists bool, funcErr error)
 	GetResourceNameById(resourceType string, id string) (name string, funcErr error)
@@ -718,6 +719,23 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 
 func (o *OctopusApiClient) GetSpaceResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {
 	return o.getResourceById(resourceType, false, id, resources)
+}
+
+func (o *OctopusApiClient) GetResourceByName(resourceType string, name string, resource any) (exists bool, funcErr error) {
+	collection := octopus.GeneralCollection[octopus.NameId]{}
+	if err := o.GetAllResources(resourceType, &collection, []string{"partialName", name}, []string{"take", "10000"}); err != nil {
+		return false, err
+	}
+
+	item := lo.Filter(collection.Items, func(item octopus.NameId, index int) bool {
+		return item.Name == name
+	})
+
+	if len(item) == 1 {
+		return true, o.GetResourceById(resourceType, item[0].Id, resource)
+	}
+
+	return false, nil
 }
 
 func (o *OctopusApiClient) GetGlobalResourceById(resourceType string, id string, resources any) (exists bool, funcErr error) {

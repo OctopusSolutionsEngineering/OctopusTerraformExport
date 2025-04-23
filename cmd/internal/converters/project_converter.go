@@ -1271,40 +1271,40 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 func (c *ProjectConverter) exportDependencies(project octopus.Project, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Export the project group
 	if stateless {
-		err := c.ProjectGroupConverter.ToHclStatelessById(project.ProjectGroupId, dependencies)
-
-		if err != nil {
+		if err := c.ProjectGroupConverter.ToHclStatelessById(project.ProjectGroupId, dependencies); err != nil {
 			return err
 		}
 
 		// Export the library sets
 		for _, v := range project.IncludedLibraryVariableSetIds {
-			err := c.LibraryVariableSetConverter.ToHclStatelessById(v, dependencies)
-
-			if err != nil {
+			if err := c.LibraryVariableSetConverter.ToHclStatelessById(v, dependencies); err != nil {
 				return err
 			}
 		}
 
 		// Export the lifecycles
-		err = c.LifecycleConverter.ToHclStatelessById(project.LifecycleId, dependencies)
-
-		if err != nil {
+		if err := c.LifecycleConverter.ToHclStatelessById(project.LifecycleId, dependencies); err != nil {
 			return err
 		}
 
-		// Export the tenants
-		err = c.TenantConverter.ToHclStatelessByProjectId(project.Id, dependencies)
+		// Also export the default lifecycle. This is useful for LLM training as it is expected to always exist.
+		defaultLifecycle := octopus.Lifecycle{}
+		if found, err := c.Client.GetResourceByName("Lifecycles", "Default Lifecycle", &defaultLifecycle); err != nil {
+			return err
+		} else if found {
+			if err := c.LifecycleConverter.ToHclStatelessById(defaultLifecycle.Id, dependencies); err != nil {
+				return err
+			}
+		}
 
-		if err != nil {
+		// Export the tenants
+		if err := c.TenantConverter.ToHclStatelessByProjectId(project.Id, dependencies); err != nil {
 			return err
 		}
 
 		// Export the git credentials
 		if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
-			err = c.GitCredentialsConverter.ToHclStatelessById(project.PersistenceSettings.Credentials.Id, dependencies)
-
-			if err != nil {
+			if err := c.GitCredentialsConverter.ToHclStatelessById(project.PersistenceSettings.Credentials.Id, dependencies); err != nil {
 				return err
 			}
 		}
