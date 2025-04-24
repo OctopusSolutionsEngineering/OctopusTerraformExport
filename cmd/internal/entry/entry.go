@@ -1099,6 +1099,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		ProjectExporter:                 projectConverter,
+		Client:                          &octopusClient,
 	}
 
 	// Projects and runbooks have circular references to other projects. For example, a project can have
@@ -1435,6 +1436,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		ProjectExporter:                 projectConverter,
+		Client:                          &octopusClient,
 	}
 
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
@@ -2202,6 +2204,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		ProjectExporter:                 &projectConverter,
+		Client:                          &octopusClient,
 	}
 
 	// Projects and runbooks have circular references to other projects. For example, a project can have

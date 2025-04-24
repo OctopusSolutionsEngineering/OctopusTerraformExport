@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
@@ -25,9 +26,22 @@ type OctopusActionProcessor struct {
 	ExperimentalEnableStepTemplates bool
 	WorkerPoolProcessor             OctopusWorkerPoolProcessor
 	StepTemplateConverter           ConverterAndLookupById
+	Client                          client.OctopusClient
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+
+	if stateless {
+		// Also export the built-in feed. This is useful for LLM training as it is expected to always exist.
+		builtInFeed := octopus.Feed{}
+		if found, err := c.Client.GetResourceByName("Feeds", "Octopus Server (built-in)", &builtInFeed); err != nil {
+			return err
+		} else if found {
+			if err := c.FeedConverter.ToHclStatelessById(builtInFeed.Id, dependencies); err != nil {
+				return err
+			}
+		}
+	}
 
 	for _, step := range steps {
 		for _, action := range step.Actions {
