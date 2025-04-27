@@ -51,6 +51,7 @@ type SpaceConverter struct {
 	MachineProxyConverter             Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
+	ExcludeOutputVariables            bool
 }
 
 // AllToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
@@ -278,6 +279,8 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 	thisResource.Lookup = "${octopusdeploy_space." + spaceResourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
+		file := hclwrite.NewEmptyFile()
+
 		terraformResource := terraform2.TerraformSpace{
 			Description:        strutil.TrimPointer(space.Description),
 			IsDefault:          space.IsDefault,
@@ -291,6 +294,8 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 			Type:               "octopusdeploy_space",
 		}
 
+		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+
 		defaultSpaceManagers := "teams-administrators"
 		spaceManagerTeams := terraform2.TerraformVariable{
 			Name:        "octopus_space_managers",
@@ -299,16 +304,6 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 			Sensitive:   false,
 			Description: "The space manager teams for the new space",
 			Default:     &defaultSpaceManagers,
-		}
-
-		spaceOutput := terraform2.TerraformOutput{
-			Name:  "octopus_space_id",
-			Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
-		}
-
-		octopusSpaceName := terraform2.TerraformOutput{
-			Name:  "octopus_space_name",
-			Value: "${var.octopus_space_name}",
 		}
 
 		spaceNameVar := terraform2.TerraformVariable{
@@ -320,12 +315,6 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 			Default:     &space.Name,
 		}
 
-		file := hclwrite.NewEmptyFile()
-
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusSpaceName, "output"))
-
 		block := gohcl.EncodeAsBlock(spaceNameVar, "variable")
 		hcl.WriteUnquotedAttribute(block, "type", "string")
 		file.Body().AppendBlock(block)
@@ -333,6 +322,21 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 		spaceManagerTeamsBlock := gohcl.EncodeAsBlock(spaceManagerTeams, "variable")
 		hcl.WriteUnquotedAttribute(spaceManagerTeamsBlock, "type", "string")
 		file.Body().AppendBlock(spaceManagerTeamsBlock)
+
+		if !c.ExcludeOutputVariables {
+			spaceOutput := terraform2.TerraformOutput{
+				Name:  "octopus_space_id",
+				Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
+			}
+
+			octopusSpaceName := terraform2.TerraformOutput{
+				Name:  "octopus_space_name",
+				Value: "${var.octopus_space_name}",
+			}
+
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(spaceOutput, "output"))
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(octopusSpaceName, "output"))
+		}
 
 		return string(file.Bytes()), nil
 	}
