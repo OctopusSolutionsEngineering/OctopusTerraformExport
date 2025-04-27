@@ -51,7 +51,7 @@ type SpaceConverter struct {
 	MachineProxyConverter             Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
-	ExcludeOutputVariables            bool
+	IncludeOctopusOutputVars          bool
 }
 
 // AllToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
@@ -323,7 +323,7 @@ func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollecti
 		hcl.WriteUnquotedAttribute(spaceManagerTeamsBlock, "type", "string")
 		file.Body().AppendBlock(spaceManagerTeamsBlock)
 
-		if !c.ExcludeOutputVariables {
+		if c.IncludeOctopusOutputVars {
 			spaceOutput := terraform2.TerraformOutput{
 				Name:  "octopus_space_id",
 				Value: "${octopusdeploy_space." + spaceResourceName + ".id}",
