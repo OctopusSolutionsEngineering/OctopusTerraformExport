@@ -261,6 +261,7 @@ func (c SpaceConverter) getResourceType() string {
 	return "Spaces"
 }
 
+// createSpaceTf builds the module used to create a new space.
 func (c SpaceConverter) createSpaceTf(dependencies *data.ResourceDetailsCollection) error {
 	space := octopus.Space{}
 	err := c.Client.GetSpace(&space)
