@@ -22,7 +22,7 @@ type TerraformProviderGenerator struct {
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
-	c.createProvider(directory, includeSpaceId, includeServerDetails, dependencies)
+	c.createProvider(directory, includeSpaceId, includeServerDetails, c.ExperimentalEnableStepTemplates, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, includeSpaceId, includeServerDetails, dependencies)
 
@@ -44,7 +44,7 @@ func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool,
 	}
 }
 
-func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, includeServerDetails bool, experimentalStepTemplateEnabled bool, dependencies *data.ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
@@ -71,17 +71,19 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
 
-		shellScriptProvider := terraform2.TerraformShellProvider{
-			Type:              "shell",
-			Interpreter:       []string{"pwsh", "-Command"},
-			EnableParallelism: false,
-		}
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(shellScriptProvider, "provider"))
+		if experimentalStepTemplateEnabled {
+			shellScriptProvider := terraform2.TerraformShellProvider{
+				Type:              "shell",
+				Interpreter:       []string{"pwsh", "-Command"},
+				EnableParallelism: false,
+			}
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(shellScriptProvider, "provider"))
 
-		externalProvider := terraform2.TerraformEmptyProvider{
-			Type: "external",
+			externalProvider := terraform2.TerraformEmptyProvider{
+				Type: "external",
+			}
+			file.Body().AppendBlock(gohcl.EncodeAsBlock(externalProvider, "provider"))
 		}
-		file.Body().AppendBlock(gohcl.EncodeAsBlock(externalProvider, "provider"))
 
 		return string(file.Bytes()), nil
 	}
