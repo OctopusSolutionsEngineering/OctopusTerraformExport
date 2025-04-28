@@ -286,7 +286,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		forceLookup := lookup || pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu"
 
 		if forceLookup {
-			c.createDynamicWorkerPoolLookupResource(resourceName, &thisResource, pool)
+			c.createDynamicWorkerPoolLookupResource(resourceName, "Default Worker Pool", &thisResource, pool, stateless)
 		} else {
 			if c.GenerateImportScripts {
 				c.toBashImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
@@ -298,7 +298,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
 
 		if forceLookup {
-			c.createStaticWorkerPoolLookupResource(resourceName, &thisResource, pool)
+			c.createStaticWorkerPoolLookupResource(resourceName, "Hosted Ubuntu", &thisResource, pool, stateless)
 		} else {
 			if c.GenerateImportScripts {
 				c.toBashImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
@@ -314,20 +314,6 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 
 func (c WorkerPoolConverter) GetResourceType() string {
 	return "WorkerPools"
-}
-
-func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool) {
-	thisResource.Lookup = "${data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
-
-	thisResource.ToHcl = func() (string, error) {
-		data := c.buildData(resourceName, pool)
-		file := hclwrite.NewEmptyFile()
-		block := gohcl.EncodeAsBlock(data, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
-		file.Body().AppendBlock(block)
-
-		return string(file.Bytes()), nil
-	}
 }
 
 func (c WorkerPoolConverter) createDynamicWorkerPoolResource(resourceName string, thisResource *data.ResourceDetails, dependencies *data.ResourceDetailsCollection, pool octopus.WorkerPool, stateless bool) {
@@ -411,14 +397,52 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 	}
 }
 
-func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool) {
-	thisResource.Lookup = "${data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
+func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName string, fallbackResourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
+	if stateless {
+		// Stateless modules try to use the static worker pool first, and if that fails, use the dynamic worker pool.
+		// This allows modules created from an on-premise instance to be used in a cloud instance.
+		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}" +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + fallbackResourceName + ".worker_pools[0].id}"
+	} else {
+		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
+	}
 
 	thisResource.ToHcl = func() (string, error) {
 		data := c.buildData(resourceName, pool)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(data, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
+		if !stateless {
+			// Stateless modules may be used on cloud or on-premise deployments
+			// We don't want to force the user to have a worker pool in the space
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
+		}
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+}
+
+func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, fallbackResourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
+	if stateless {
+		// Stateless modules try to use the dynamic worker pool first, and if that fails, use the static worker pool
+		// This allows a module created on a cloud instance to be used in an on-premise instance.
+		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}" +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + fallbackResourceName + ".worker_pools[0].id}"
+	} else {
+		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+		data := c.buildData(resourceName, pool)
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(data, "data")
+		if !stateless {
+			// Stateless modules may be used on cloud or on-premise deployments
+			// We don't want to force the user to have a worker pool in the space
+			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a worker pool called \""+pool.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.worker_pools) != 0")
+		}
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
