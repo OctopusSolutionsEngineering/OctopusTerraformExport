@@ -402,7 +402,7 @@ func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName s
 		// Stateless modules try to use the static worker pool first, and if that fails, use the dynamic worker pool.
 		// This allows modules created from an on-premise instance to be used in a cloud instance.
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
-			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}" +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id" +
 			": data." + octopusdeployWorkerPoolsDataType + "." + fallbackResourceName + ".worker_pools[0].id}"
 	} else {
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
@@ -428,7 +428,7 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName 
 		// Stateless modules try to use the dynamic worker pool first, and if that fails, use the static worker pool
 		// This allows a module created on a cloud instance to be used in an on-premise instance.
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
-			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}" +
+			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id" +
 			": data." + octopusdeployWorkerPoolsDataType + "." + fallbackResourceName + ".worker_pools[0].id}"
 	} else {
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
