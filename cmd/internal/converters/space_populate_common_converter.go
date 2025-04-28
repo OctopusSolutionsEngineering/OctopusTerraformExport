@@ -13,11 +13,12 @@ import (
 // TerraformProviderGenerator creates the common terraform files required to populate a space
 // including the provider, terraform config, and common vars
 type TerraformProviderGenerator struct {
-	TerraformBackend            string
-	ProviderVersion             string
-	ExcludeProvider             bool
-	IncludeOctopusOutputVars    bool
-	OctopusManagedTerraformVars string
+	TerraformBackend                string
+	ProviderVersion                 string
+	ExperimentalEnableStepTemplates bool
+	ExcludeProvider                 bool
+	IncludeOctopusOutputVars        bool
+	OctopusManagedTerraformVars     string
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
@@ -102,7 +103,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion)
+		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion, c.ExperimentalEnableStepTemplates)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 		return string(file.Bytes()), nil

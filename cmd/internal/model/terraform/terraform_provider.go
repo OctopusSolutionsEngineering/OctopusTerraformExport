@@ -13,9 +13,9 @@ type Backend struct {
 }
 
 type RequiredProviders struct {
-	OctopusProvider  ProviderDefinition `hcl:"octopusdeploy"`
-	ShellProvider    ProviderDefinition `hcl:"shell"`
-	ExternalProvider ProviderDefinition `hcl:"external"`
+	OctopusProvider  ProviderDefinition  `hcl:"octopusdeploy"`
+	ShellProvider    *ProviderDefinition `hcl:"shell"`
+	ExternalProvider *ProviderDefinition `hcl:"external"`
 }
 
 type ProviderDefinition struct {
@@ -40,23 +40,26 @@ type TerraformEmptyProvider struct {
 	Type string `hcl:"type,label"`
 }
 
-func (c TerraformConfig) CreateTerraformConfig(backend string, version string) TerraformConfig {
+func (c TerraformConfig) CreateTerraformConfig(backend string, version string, experimentalStepTemplateEnabled bool) TerraformConfig {
 	config := TerraformConfig{
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: ProviderDefinition{
 				Source:  "OctopusDeployLabs/octopusdeploy",
 				Version: strutil.DefaultIfEmpty(version, "0.43.0"),
 			},
-			ShellProvider: ProviderDefinition{
-				Source:  "scottwinkler/shell",
-				Version: "1.7.10",
-			},
-			ExternalProvider: ProviderDefinition{
-				Source:  "hashicorp/external",
-				Version: "2.3.4",
-			},
 		},
 		RequiredVersion: strutil.StrPointer(">= 1.6.0"),
+	}
+
+	if experimentalStepTemplateEnabled {
+		config.RequiredProviders.ShellProvider = &ProviderDefinition{
+			Source:  "scottwinkler/shell",
+			Version: "1.7.10",
+		}
+		config.RequiredProviders.ExternalProvider = &ProviderDefinition{
+			Source:  "hashicorp/external",
+			Version: "2.3.4",
+		}
 	}
 
 	if backend != "" {

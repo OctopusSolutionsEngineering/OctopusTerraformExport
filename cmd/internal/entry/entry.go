@@ -322,19 +322,21 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:            args.GetBackend(),
-		ProviderVersion:             args.ProviderVersion,
-		ExcludeProvider:             args.ExcludeProvider,
-		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
-		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
+		TerraformBackend:                args.GetBackend(),
+		ProviderVersion:                 args.ProviderVersion,
+		ExcludeProvider:                 args.ExcludeProvider,
+		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	if !args.Stateless {
 		converters.TerraformProviderGenerator{
-			TerraformBackend:         args.GetBackend(),
-			ProviderVersion:          args.ProviderVersion,
-			ExcludeProvider:          args.ExcludeProvider,
-			IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
+			TerraformBackend:                args.GetBackend(),
+			ProviderVersion:                 args.ProviderVersion,
+			ExcludeProvider:                 args.ExcludeProvider,
+			IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		}.ToHcl("space_creation", false, args.IncludeProviderServerDetails, &dependencies)
 	}
 
@@ -1198,11 +1200,12 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:            args.BackendBlock,
-		ProviderVersion:             args.ProviderVersion,
-		ExcludeProvider:             args.ExcludeProvider,
-		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
-		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
+		TerraformBackend:                args.BackendBlock,
+		ProviderVersion:                 args.ProviderVersion,
+		ExcludeProvider:                 args.ExcludeProvider,
+		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
@@ -1522,11 +1525,12 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:            args.BackendBlock,
-		ProviderVersion:             args.ProviderVersion,
-		ExcludeProvider:             args.ExcludeProvider,
-		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
-		OctopusManagedTerraformVars: args.OctopusManagedTerraformVars,
+		TerraformBackend:                args.BackendBlock,
+		ProviderVersion:                 args.ProviderVersion,
+		ExcludeProvider:                 args.ExcludeProvider,
+		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
