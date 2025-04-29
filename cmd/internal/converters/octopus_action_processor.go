@@ -137,18 +137,6 @@ func (c OctopusActionProcessor) ExportAccounts(recursive bool, lookup bool, stat
 }
 
 func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
-	if stateless {
-		// Also export the default worker pool. This is useful for LLM training as it is expected to always exist.
-		defaultWorkerPool := octopus.WorkerPool{}
-		if found, err := c.Client.GetResourceByName("WorkerPools", "Default Worker Pool", &defaultWorkerPool); err != nil {
-			return err
-		} else if found {
-			if err := c.WorkerPoolConverter.ToHclStatelessById(defaultWorkerPool.Id, dependencies); err != nil {
-				return err
-			}
-		}
-	}
-
 	for _, step := range steps {
 		for _, action := range step.Actions {
 			workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)

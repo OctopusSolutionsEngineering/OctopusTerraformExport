@@ -132,13 +132,13 @@ func (c WorkerPoolConverter) ToHclLookupById(id string, dependencies *data.Resou
 	return c.toHcl(pool, false, true, false, dependencies)
 }
 
-func (c WorkerPoolConverter) buildData(resourceName string, resource octopus.WorkerPool) terraform.TerraformWorkerPoolData {
+func (c WorkerPoolConverter) buildData(resourceName string, resourceDisplayName string) terraform.TerraformWorkerPoolData {
 	return terraform.TerraformWorkerPoolData{
 		Type:         octopusdeployWorkerPoolsDataType,
 		Name:         resourceName,
 		ResourceName: nil,
 		Ids:          nil,
-		PartialName:  &resource.Name,
+		PartialName:  strutil.StrPointer(resourceDisplayName),
 		Skip:         0,
 		Take:         1,
 	}
@@ -146,7 +146,7 @@ func (c WorkerPoolConverter) buildData(resourceName string, resource octopus.Wor
 
 // writeData appends the data block for stateless modules
 func (c WorkerPoolConverter) writeData(file *hclwrite.File, resource octopus.WorkerPool, resourceName string) {
-	terraformResource := c.buildData(resourceName, resource)
+	terraformResource := c.buildData(resourceName, resource.Name)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
@@ -284,9 +284,19 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 
 	if pool.WorkerPoolType == "DynamicWorkerPool" {
 		forceLookup := lookup || pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu"
+		fallback := "Default Worker Pool"
 
 		if forceLookup {
-			c.createDynamicWorkerPoolLookupResource(resourceName, "Default Worker Pool", &thisResource, pool, stateless)
+			c.createDynamicWorkerPoolLookupResource(resourceName,
+				"workerpool_"+sanitizer.SanitizeName(fallback),
+				&thisResource,
+				pool,
+				stateless)
+
+			dependencies.AddResource(*c.createStandAloneLookupResource(
+				"workerpool_"+sanitizer.SanitizeName(fallback),
+				fallback))
+
 		} else {
 			if c.GenerateImportScripts {
 				c.toBashImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
@@ -296,9 +306,19 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		}
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
+		fallback := "Hosted Ubuntu"
 
 		if forceLookup {
-			c.createStaticWorkerPoolLookupResource(resourceName, "Hosted Ubuntu", &thisResource, pool, stateless)
+			c.createStaticWorkerPoolLookupResource(resourceName,
+				"workerpool_"+sanitizer.SanitizeName(fallback),
+				&thisResource,
+				pool,
+				stateless)
+
+			dependencies.AddResource(*c.createStandAloneLookupResource(
+				"workerpool_"+sanitizer.SanitizeName(fallback),
+				fallback))
+
 		} else {
 			if c.GenerateImportScripts {
 				c.toBashImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
@@ -397,6 +417,26 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 	}
 }
 
+// createStandAloneLookupResource creates a data resource for the equivalent worker pool in an on-premise or cloud instance.
+// This resource is only used by stateless modules. It allows a stateless module to be created on a cloud instance and applied
+// to an on-premise instance, or vice versa.
+func (c WorkerPoolConverter) createStandAloneLookupResource(resourceName string, resourceDisplayName string) *data.ResourceDetails {
+
+	thisResource := data.ResourceDetails{}
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Name = resourceDisplayName
+
+	thisResource.ToHcl = func() (string, error) {
+		data := c.buildData(resourceName, resourceDisplayName)
+		file := hclwrite.NewEmptyFile()
+		block := gohcl.EncodeAsBlock(data, "data")
+		file.Body().AppendBlock(block)
+		return string(file.Bytes()), nil
+	}
+
+	return &thisResource
+}
+
 func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName string, fallbackResourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
 	if stateless {
 		// Stateless modules try to use the static worker pool first, and if that fails, use the dynamic worker pool.
@@ -409,7 +449,7 @@ func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName s
 	}
 
 	thisResource.ToHcl = func() (string, error) {
-		data := c.buildData(resourceName, pool)
+		data := c.buildData(resourceName, pool.Name)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(data, "data")
 		if !stateless {
@@ -435,7 +475,7 @@ func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName 
 	}
 
 	thisResource.ToHcl = func() (string, error) {
-		data := c.buildData(resourceName, pool)
+		data := c.buildData(resourceName, pool.Name)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(data, "data")
 		if !stateless {
