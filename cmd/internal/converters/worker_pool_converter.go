@@ -307,6 +307,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 	} else if pool.WorkerPoolType == "StaticWorkerPool" {
 		forceLookup := lookup || pool.Name == "Default Worker Pool"
 		fallback := "Hosted Ubuntu"
+		fallback2 := "Hosted Windows"
 
 		if forceLookup {
 			c.createStaticWorkerPoolLookupResource(resourceName,
@@ -318,6 +319,10 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 			dependencies.AddResource(*c.createStandAloneLookupResource(
 				"workerpool_"+sanitizer.SanitizeName(fallback),
 				fallback))
+
+			dependencies.AddResource(*c.createStandAloneLookupResource(
+				"workerpool_"+sanitizer.SanitizeName(fallback2),
+				fallback2))
 
 		} else {
 			if c.GenerateImportScripts {
