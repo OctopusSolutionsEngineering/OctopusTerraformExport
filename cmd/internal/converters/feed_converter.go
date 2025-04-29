@@ -399,7 +399,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "password", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -489,7 +489,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "secret_key", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -586,7 +586,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "password", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -680,7 +680,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "password", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -774,7 +774,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "password", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -867,7 +867,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "password", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -957,7 +957,7 @@ func (c FeedConverter) exportArtifactory(stateless bool, dependencies *data.Reso
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "password", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -1075,7 +1075,7 @@ func (c FeedConverter) exportS3(stateless bool, dependencies *data.ResourceDetai
 
 		targetBlock := gohcl.EncodeAsBlock(terraformResource, "resource")
 
-		c.writeLifecycleAttributes(targetBlock, stateless)
+		c.writeLifecycleAttributes(targetBlock, "secret_key", stateless)
 
 		file.Body().AppendBlock(targetBlock)
 
@@ -1085,7 +1085,7 @@ func (c FeedConverter) exportS3(stateless bool, dependencies *data.ResourceDetai
 	return true
 }
 
-func (c FeedConverter) writeLifecycleAttributes(targetBlock *hclwrite.Block, stateless bool) {
+func (c FeedConverter) writeLifecycleAttributes(targetBlock *hclwrite.Block, secretProperty string, stateless bool) {
 	// When using dummy values, we expect the secrets will be updated later
 	if c.DummySecretVariableValues || stateless {
 
@@ -1094,7 +1094,7 @@ func (c FeedConverter) writeLifecycleAttributes(targetBlock *hclwrite.Block, sta
 		targetBlock.Body().AppendBlock(lifecycleBlock)
 
 		if c.DummySecretVariableValues {
-			hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[password]")
+			hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "["+secretProperty+"]")
 		}
 
 		if stateless {
