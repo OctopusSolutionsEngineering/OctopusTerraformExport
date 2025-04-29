@@ -430,6 +430,10 @@ func (c WorkerPoolConverter) createStandAloneLookupResource(resourceName string,
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Name = resourceDisplayName
+	// There is no id for this resource, so we use the name
+	thisResource.Id = resourceName
+	// This is not a real resource, so we use a mock resource type
+	thisResource.ResourceType = "FallbackWorkerPool"
 
 	thisResource.ToHcl = func() (string, error) {
 		data := c.buildData(resourceName, resourceDisplayName)
