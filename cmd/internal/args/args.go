@@ -53,6 +53,7 @@ type Arguments struct {
 	DetachProjectTemplates          bool
 	DefaultSecretVariableValues     bool
 	DummySecretVariableValues       bool
+	InlineVariableValues            bool
 	ProviderVersion                 string
 	ExcludeProvider                 bool
 	IncludeProviderServerDetails    bool
@@ -293,6 +294,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.ExcludeCaCProjectSettings, "excludeCaCProjectSettings", false, "Pass this to exclude any Config-As-Code settings in the exported projects. Typically you set -ignoreCacManagedValues=false -excludeCaCProjectSettings=true to essentially \"convert\" a CaC project to a regular project. Values from the \"main\" or \"master\" branches will be used first, or just fall back to the first configured branch.")
 	flags.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
 	flags.BoolVar(&arguments.DummySecretVariableValues, "dummySecretVariableValues", false, "Pass this to set the default value of secret variables, account secrets, feed credentials to a dummy value. This allows resources with secret values to be created without knowing the secrets, while still allowing the secret values to be specified if they are known. This option takes precedence over the defaultSecretVariableValues option.")
+	flags.BoolVar(&arguments.InlineVariableValues, "inlineVariableValues", false, "Inline the project and library variable set variable values rather than exposing their value as a Terraform variable. Secret variables will be inlined as dummy values. This option takes precedence over DummySecretVariableValues and DefaultSecretVariableValues.")
 	flags.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flags.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
 	flags.StringVar(&arguments.OctopusManagedTerraformVars, "octopusManagedTerraformVars", "", "Specifies the name of an Octopus variable to be used as a template string in the body of the terraform.tfvars file. This allows Octopus to inject all the variables used by Terraform from a variable containing the contents of a terraform.tfvars file.")

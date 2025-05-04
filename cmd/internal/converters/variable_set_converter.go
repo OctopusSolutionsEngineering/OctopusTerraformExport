@@ -69,6 +69,7 @@ type VariableSetConverter struct {
 	GenerateImportScripts     bool
 	EnvironmentFilter         EnvironmentFilter
 	IgnoreCacErrors           bool
+	InlineVariableValues      bool
 }
 
 func (c *VariableSetConverter) ToHclByProjectIdBranchAndName(projectId string, branch string, parentName string, parentLookup string, parentCount *string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -960,8 +961,18 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			value = c.getCertificates(value, dependencies)
 			value = c.getWorkerPools(value, dependencies)
 
-			normalValue := c.writeTerraformVariablesForString(file, v, value)
-			sensitiveValue := c.writeTerraformVariablesForSecret(file, v, dependencies)
+			normalValue := value
+			if !c.InlineVariableValues {
+				normalValue = c.writeTerraformVariablesForString(file, v, value)
+			}
+
+			var sensitiveValue *string = nil
+			if !c.InlineVariableValues {
+				sensitiveValue = c.writeTerraformVariablesForSecret(file, v, dependencies)
+			} else if v.IsSensitive {
+				sensitiveValue = strutil.StrPointer("\"" + *c.DummySecretGenerator.GetDummySecret() + "\"")
+			}
+
 			scope, err := c.convertScope(v, resource, dependencies)
 
 			if err != nil {

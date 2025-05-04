@@ -903,7 +903,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors: args.IgnoreCacErrors,
+		IgnoreCacErrors:      args.IgnoreCacErrors,
+		InlineVariableValues: args.InlineVariableValues,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -2024,7 +2025,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors: args.IgnoreCacErrors,
+		IgnoreCacErrors:      args.IgnoreCacErrors,
+		InlineVariableValues: args.InlineVariableValues,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
