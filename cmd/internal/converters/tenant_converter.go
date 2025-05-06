@@ -303,7 +303,7 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 
 	if recursive {
 		// Export the tenant variables
-		err := c.TenantVariableConverter.ToHclByTenantId(tenant.Id, dependencies)
+		err := c.TenantVariableConverter.ToHclByTenantId(tenant.Id, stateless, dependencies)
 
 		if err != nil {
 			return err

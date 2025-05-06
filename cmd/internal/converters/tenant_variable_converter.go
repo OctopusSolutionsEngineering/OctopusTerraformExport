@@ -63,7 +63,7 @@ func (c TenantVariableConverter) allToHcl(stateless bool, dependencies *data.Res
 	return nil
 }
 
-func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *data.ResourceDetailsCollection) error {
+func (c TenantVariableConverter) ToHclByTenantId(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	resource := octopus.TenantVariable{}
 	err := c.Client.GetAllResources("Tenants/"+id+"/Variables", &resource)
 
@@ -71,7 +71,7 @@ func (c TenantVariableConverter) ToHclByTenantId(id string, dependencies *data.R
 		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.TenantVariable: %w", err)
 	}
 
-	return c.toHcl(resource, true, false, dependencies)
+	return c.toHcl(resource, true, stateless, dependencies)
 }
 
 // ToHclByTenantIdAndProject is used by projects to export tenant variables relating to the project and any

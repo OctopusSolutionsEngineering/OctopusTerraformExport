@@ -228,7 +228,7 @@ type ConverterAndLookupByProjectIdWithTerraDependencies interface {
 
 // ConverterByTenantId converts objects based on the relationship to a tenant
 type ConverterByTenantId interface {
-	ToHclByTenantId(projectId string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByTenantId(projectId string, stateless bool, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConvertToHclByResource converts objects directly
