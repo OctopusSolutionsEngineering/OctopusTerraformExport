@@ -356,6 +356,12 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 				return []string{}
 			})
 		})
+
+		if stateless {
+			// only create the deployment process if the project was created
+			terraformResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+		}
+
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, allTenantTags, c.TagSetConverter, block, dependencies, recursive)
 		if err != nil {
@@ -389,11 +395,6 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 					file.Body().AppendBlock(propertyVariablesBlock)
 				}
 			}
-		}
-
-		if stateless {
-			// only create the deployment process if the project was created
-			terraformResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 		}
 
 		file.Body().AppendBlock(block)
