@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/maputil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -820,7 +821,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 				// Is this a bug? This may need to have a field for sensitive values, but the provider does
 				// not expose that today.
 				DefaultValue:    strutil.StrPointer("${var." + variableName + "}"),
-				DisplaySettings: v.DisplaySettings,
+				DisplaySettings: maputil.NilIfEmptyMap(v.DisplaySettings),
 			})
 		} else {
 			collection = append(collection, terraform.TerraformTemplate{
@@ -830,8 +831,11 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 				// The Octopus API treats an empty string as a null value, so we need to handle that here. This fixes
 				// the error:
 				// "produced an unexpected new value: .template[0].default_value: was cty.StringVal(""), but now null
-				DefaultValue:    strutil.NilIfEmptyPointer(strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString())),
-				DisplaySettings: v.DisplaySettings,
+				DefaultValue: strutil.NilIfEmptyPointer(strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString())),
+				// The Octopus API treats an empty map as nul. This fixes the error:
+				// produced an unexpected new value: .template[1].display_settings: was
+				// cty.MapValEmpty(cty.String), but now null.
+				DisplaySettings: maputil.NilIfEmptyMap(v.DisplaySettings),
 			})
 		}
 

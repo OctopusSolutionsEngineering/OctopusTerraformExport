@@ -34,12 +34,12 @@ func (t TerraformProject) HasCacConfigured() bool {
 }
 
 type TerraformTemplate struct {
-	Id              *string           `hcl:"id"`
-	Name            *string           `hcl:"name"`
-	Label           *string           `hcl:"label"`
-	HelpText        *string           `hcl:"help_text"`
-	DefaultValue    *string           `hcl:"default_value"`
-	DisplaySettings map[string]string `hcl:"display_settings"`
+	Id              *string            `hcl:"id"`
+	Name            *string            `hcl:"name"`
+	Label           *string            `hcl:"label"`
+	HelpText        *string            `hcl:"help_text"`
+	DefaultValue    *string            `hcl:"default_value"`
+	DisplaySettings *map[string]string `hcl:"display_settings"`
 }
 
 type TerraformConnectivityPolicy struct {
