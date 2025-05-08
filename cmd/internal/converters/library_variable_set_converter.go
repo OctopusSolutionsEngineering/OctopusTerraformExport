@@ -539,7 +539,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 			Label:           strutil.NilIfEmptyPointer(v.Label),
 			HelpText:        v.HelpText,
 			DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
-			DisplaySettings: v.DisplaySettings,
+			DisplaySettings: &v.DisplaySettings,
 		})
 
 		templateMap = append(templateMap, data.ResourceDetails{
