@@ -325,7 +325,7 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 		}
 	}
 
-	tagSetDependencies, err := c.addTagSetDependencies(tenant, recursive, dependencies)
+	tagSetDependencies, err := c.addTagSetDependencies(tenant, recursive, stateless, dependencies)
 
 	if err != nil {
 		return err
@@ -481,7 +481,7 @@ func (c *TenantConverter) lookupEnvironments(envs []string, dependencies *data.R
 
 // addTagSetDependencies finds the tag sets that contains the tags associated with a tenant. These dependencies are
 // captured, as Terraform has no other way to map the dependency between a tagset and a tenant.
-func (c *TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive bool, dependencies *data.ResourceDetailsCollection) (map[string][]string, error) {
+func (c *TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) (map[string][]string, error) {
 	collection := octopus.GeneralCollection[octopus.TagSet]{}
 	err := c.Client.GetAllResources("TagSets", &collection)
 
@@ -514,10 +514,14 @@ func (c *TenantConverter) addTagSetDependencies(tenant octopus.Tenant, recursive
 					}
 
 					if recursive {
-						err = c.TagSetConverter.ToHclByResource(tagSet, dependencies)
-
-						if err != nil {
-							return nil, err
+						if stateless {
+							if err := c.TagSetConverter.ToHclByResourceStateless(tagSet, dependencies); err != nil {
+								return nil, err
+							}
+						} else {
+							if err := c.TagSetConverter.ToHclByResource(tagSet, dependencies); err != nil {
+								return nil, err
+							}
 						}
 					}
 				}

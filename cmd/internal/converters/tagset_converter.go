@@ -80,6 +80,10 @@ func (c *TagSetConverter) ToHclByResource(tagSet octopus.TagSet, dependencies *d
 	return c.toHcl(tagSet, false, dependencies)
 }
 
+func (c *TagSetConverter) ToHclByResourceStateless(tagSet octopus.TagSet, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHcl(tagSet, true, dependencies)
+}
+
 func (c *TagSetConverter) GetResourceType() string {
 	return "TagSets"
 }

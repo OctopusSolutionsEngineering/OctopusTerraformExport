@@ -234,6 +234,7 @@ type ConverterByTenantId interface {
 // ConvertToHclByResource converts objects directly
 type ConvertToHclByResource[C any] interface {
 	ToHclByResource(resource C, dependencies *data.ResourceDetailsCollection) error
+	ToHclByResourceStateless(resource C, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConvertToHclLookupByResource creates a data lookup from the objects
