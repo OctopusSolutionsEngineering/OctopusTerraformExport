@@ -39,3 +39,5 @@ octoterra-azure
 .idea/copilot
 
 bom.json
+
+**/.vscode/
