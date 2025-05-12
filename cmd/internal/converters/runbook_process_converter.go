@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -211,6 +212,7 @@ func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project
 					RunOnServer:          c.OctopusActionProcessor.GetRunOnServer(a.Properties),
 					Properties:           nil,
 					Features:             c.OctopusActionProcessor.GetFeatures(a.Properties),
+					GitDependencies:      c.OctopusActionProcessor.ConvertGitDependencies(a.GitDependencies, dependencies),
 				}
 
 				for _, p := range a.Packages {
