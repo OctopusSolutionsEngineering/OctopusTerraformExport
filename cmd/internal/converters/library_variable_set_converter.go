@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/maputil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -539,7 +540,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 			Label:           strutil.NilIfEmptyPointer(v.Label),
 			HelpText:        v.HelpText,
 			DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
-			DisplaySettings: &v.DisplaySettings,
+			DisplaySettings: maputil.NilIfEmptyMap(v.DisplaySettings),
 		})
 
 		templateMap = append(templateMap, data.ResourceDetails{
