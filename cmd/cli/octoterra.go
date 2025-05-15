@@ -28,8 +28,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Always print the version
+	zap.L().Info("Version: " + Version)
+
+	// Exit if the version argument was provided
 	if parseArgs.Version {
-		zap.L().Info("Version: " + Version)
 		os.Exit(0)
 	}
 
