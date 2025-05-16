@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/environment"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
@@ -190,10 +191,7 @@ func handleError(err error, w http.ResponseWriter) {
 func main() {
 	logger.BuildLogger()
 
-	listenAddr := ":8080"
-	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
-		listenAddr = ":" + val
-	}
+	listenAddr := ":" + environment.GetPort()
 	http.HandleFunc("/api/octoterra", func(writer http.ResponseWriter, request *http.Request) {
 		switch request.Method {
 		case http.MethodPost:
