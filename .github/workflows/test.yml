@@ -27,7 +27,7 @@ jobs:
         run: go get ./...
         shell: bash
       - name: Clone the Terraform provider source
-        run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
+        run: git clone https://github.com/OctopusDeploy/terraform-provider-octopusdeploy.git
         shell: bash
       - name: Check out the 0.22.0 release branch
         run: git checkout release/0.22.0
@@ -41,7 +41,7 @@ jobs:
           cat <<EOT >> ~/.terraformrc
           provider_installation {
               dev_overrides {
-              "octopusdeploylabs/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
+              "octopusdeploy/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
             }
             direct {}
           }

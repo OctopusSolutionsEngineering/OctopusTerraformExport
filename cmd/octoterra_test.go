@@ -8158,7 +8158,7 @@ func TestTenantSensitiveVariablesExport(t *testing.T) {
 				}
 
 				// Test as a string. This is probably a bug, but the template schema
-				// https://registry.terraform.io/providers/OctopusDeployLabs/octopusdeploy/latest/docs/resources/project#nestedblock--template
+				// https://registry.terraform.io/providers/OctopusDeploy/octopusdeploy/latest/docs/resources/project#nestedblock--template
 				// has no other way to store a value than default_value, which sets the value as a plain string.
 				defaultValue, ok := item.DefaultValue.(string)
 				if ok {

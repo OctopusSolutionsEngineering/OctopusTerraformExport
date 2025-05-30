@@ -9,7 +9,7 @@ body:
         
         While the solutions engineering team will make a reasonable effort to respond to this issue, `octoterra` has no Support Level Agreement (SLA).
         
-        `octoterra` is subject to the limitations and issues found in the [Octopus Terraform provider](https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy). If the issue is related to the provider, you may be requested to create an issue [here](https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues) instead.
+        `octoterra` is subject to the limitations and issues found in the [Octopus Terraform provider](https://github.com/OctopusDeploy/terraform-provider-octopusdeploy). If the issue is related to the provider, you may be requested to create an issue [here](https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy/issues) instead.
 
   - type: input
     id: octopus-version
