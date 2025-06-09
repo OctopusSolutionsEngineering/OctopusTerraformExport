@@ -13,6 +13,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/regexes"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/steps"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
@@ -20,6 +21,14 @@ import (
 	"go.uber.org/zap"
 	"net/url"
 )
+
+// terraformProcessStepBlock maps a Terraform process step to a block in HCL.
+type terraformProcessStepBlock struct {
+	Step          *terraform.TerraformProcessStep
+	OctopusStep   *octopus.Step
+	OctopusAction *octopus.Action
+	Block         *hclwrite.Block
+}
 
 // DeploymentProcessConverterV2 converts deployment processes for v1 of the Octopus Terraform provider.
 type DeploymentProcessConverterV2 struct {
@@ -238,7 +247,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			RunbookId: nil,
 		}
 
-		terraformProcessSteps := []terraform.TerraformProcessStep{}
+		terraformProcessSteps := []terraformProcessStepBlock{}
 
 		file := hclwrite.NewEmptyFile()
 
@@ -272,14 +281,19 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 				PackageRequirement:   s.PackageRequirement,
 			}
 
-			// Add the step to the list of steps
-			terraformProcessSteps = append(terraformProcessSteps, terraformProcessStep)
-
 			// We build the output differently for a step with a single action (represented as a typical step in the UI)
 			// and a step with multiple actions (represented as a parent step with child steps in the UI).
 
 			if len(s.Actions) == 1 {
 				action := s.Actions[0]
+
+				// Add the step to the list of steps
+				terraformProcessSteps = append(terraformProcessSteps, terraformProcessStepBlock{
+					Step:          &terraformProcessStep,
+					OctopusStep:   &s,
+					OctopusAction: &action,
+					Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
+				})
 
 				// The step type is the type of the first action.
 				terraformProcessStep.ResourceType = strutil.EmptyIfNil(action.ActionType)
@@ -305,8 +319,8 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			Name:      resourceName,
 			Id:        nil,
 			ProcessId: "${octopusdeploy_process." + terraformProcessResource.Name + ".id}",
-			Steps: lo.Map(terraformProcessSteps, func(item terraform.TerraformProcessStep, index int) string {
-				return "${octopusdeploy_process_step." + item.Name + ".id}"
+			Steps: lo.Map(terraformProcessSteps, func(item terraformProcessStepBlock, index int) string {
+				return "${octopusdeploy_process_step." + item.Step.Name + ".id}"
 			}),
 		}
 
@@ -314,12 +328,12 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			// only create the deployment process, step order, and steps if the project was created
 			terraformProcessResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 			terraformProcessStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
-			lo.ForEach(terraformProcessSteps, func(item terraform.TerraformProcessStep, index int) {
-				item.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+			lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
+				item.Step.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 			})
 		}
 
-		block := gohcl.EncodeAsBlock(terraformProcessResource, "resource")
+		terraformProcessResourceBlock := gohcl.EncodeAsBlock(terraformProcessResource, "resource")
 
 		allTenantTags := lo.FlatMap(resource.Steps, func(item octopus.Step, index int) []string {
 			return lo.FlatMap(item.Actions, func(item octopus.Action, index int) []string {
@@ -330,52 +344,26 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			})
 		})
 
-		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, allTenantTags, c.TagSetConverter, block, dependencies, recursive)
+		err := TenantTagDependencyGenerator{}.AddAndWriteTagSetDependencies(c.Client, allTenantTags, c.TagSetConverter, terraformProcessResourceBlock, dependencies, recursive)
 
 		if err != nil {
 			return "", err
 		}
 
 		if c.IgnoreProjectChanges {
-			hcl.WriteLifecycleAllAttribute(block)
+			hcl.WriteLifecycleAllAttribute(terraformProcessResourceBlock)
 		}
 
-		/*		for _, s := range validSteps {
-					for _, a := range s.Actions {
-						properties := a.Properties
-						sanitizedProperties, variables := steps.MapSanitizer{
-							DummySecretGenerator:      c.DummySecretGenerator,
-							DummySecretVariableValues: c.DummySecretVariableValues,
-						}.SanitizeMap(project, a, properties, dependencies)
-						sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
-						sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
-						sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
-						sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
-						sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
-						sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
-						sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
-
-						hcl.WriteActionProperties(block, *s.Name, *a.Name, sanitizedProperties)
-
-						for _, propertyVariables := range variables {
-							propertyVariablesBlock := gohcl.EncodeAsBlock(propertyVariables, "variable")
-							hcl.WriteUnquotedAttribute(propertyVariablesBlock, "type", "string")
-							file.Body().AppendBlock(propertyVariablesBlock)
-						}
-					}
-				}
-		*/
-
-		file.Body().AppendBlock(block)
+		file.Body().AppendBlock(terraformProcessResourceBlock)
 
 		// Write the steps order
 		terraformProcessStepsOrderBlock := gohcl.EncodeAsBlock(terraformProcessStepsOrder, "resource")
 		file.Body().AppendBlock(terraformProcessStepsOrderBlock)
 
 		// Write the steps
-		lo.ForEach(terraformProcessSteps, func(item terraform.TerraformProcessStep, index int) {
-			terraformProcessStepBlock := gohcl.EncodeAsBlock(item, "resource")
-			file.Body().AppendBlock(terraformProcessStepBlock)
+		lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
+			c.assignProperties(item.Block, project, item.OctopusStep, item.OctopusAction, file, dependencies)
+			file.Body().AppendBlock(item.Block)
 		})
 
 		return string(file.Bytes()), nil
@@ -383,6 +371,33 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 
 	dependencies.AddResource(thisResource)
 	return nil
+}
+
+func (c *DeploymentProcessConverterV2) assignProperties(block *hclwrite.Block, project octopus.Project, step *octopus.Step, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+	if action == nil {
+		return
+	}
+
+	properties := action.Properties
+	sanitizedProperties, variables := steps.MapSanitizer{
+		DummySecretGenerator:      c.DummySecretGenerator,
+		DummySecretVariableValues: c.DummySecretVariableValues,
+	}.SanitizeMap(project, action, properties, dependencies)
+	sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
+	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
+
+	hcl.WriteActionProperties(block, *step.Name, *action.Name, sanitizedProperties)
+
+	for _, propertyVariables := range variables {
+		propertyVariablesBlock := gohcl.EncodeAsBlock(propertyVariables, "variable")
+		hcl.WriteUnquotedAttribute(propertyVariablesBlock, "type", "string")
+		file.Body().AppendBlock(propertyVariablesBlock)
+	}
 }
 
 func (c *DeploymentProcessConverterV2) assignPrimaryPackage(projectName string, terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
