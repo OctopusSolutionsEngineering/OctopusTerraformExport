@@ -191,6 +191,25 @@ func (c OctopusActionProcessor) ConvertGitDependencies(gitDependencies []octopus
 	return result
 }
 
+func (c OctopusActionProcessor) ConvertGitDependenciesV2(gitDependencies []octopus.GitDependency, dependencies *data.ResourceDetailsCollection) *map[string]terraform.TerraformProcessStepGitDependencies {
+	result := map[string]terraform.TerraformProcessStepGitDependencies{}
+	for _, gitDependency := range gitDependencies {
+		result[strutil.EmptyIfNil(gitDependency.Name)] = terraform.TerraformProcessStepGitDependencies{
+			DefaultBranch:     strutil.EmptyIfNil(gitDependency.DefaultBranch),
+			GitCredentialType: strutil.EmptyIfNil(gitDependency.GitCredentialType),
+			RepositoryUri:     strutil.EmptyIfNil(gitDependency.RepositoryUri),
+			FilePathFilters:   nil,
+			GitCredentialId:   dependencies.GetResourcePointer("Git-Credentials", gitDependency.GitCredentialId),
+		}
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return &result
+}
+
 func (c OctopusActionProcessor) ReplaceIds(experimentalEnableStepTemplates bool, properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	properties = c.replaceAccountIds(properties, dependencies)
 	properties = c.replaceFeedIds(properties, dependencies)
