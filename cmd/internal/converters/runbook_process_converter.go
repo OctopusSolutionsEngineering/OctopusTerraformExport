@@ -274,7 +274,7 @@ func (c *RunbookProcessConverter) toHcl(resource octopus.RunbookProcess, project
 				sanitizedProperties, variables := steps.MapSanitizer{
 					DummySecretGenerator:      c.DummySecretGenerator,
 					DummySecretVariableValues: c.DummySecretVariableValues,
-				}.SanitizeMap(runbook, a, properties, dependencies)
+				}.SanitizeMap(runbook, &a, properties, dependencies)
 				sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 				sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
