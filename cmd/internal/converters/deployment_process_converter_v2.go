@@ -362,7 +362,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 
 		// Write the steps
 		lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
-			c.assignProperties(item.Block, project, item.OctopusStep, item.OctopusAction, file, dependencies)
+			c.assignProperties(item.Block, project, item.OctopusAction, file, dependencies)
 			file.Body().AppendBlock(item.Block)
 		})
 
@@ -373,7 +373,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 	return nil
 }
 
-func (c *DeploymentProcessConverterV2) assignProperties(block *hclwrite.Block, project octopus.Project, step *octopus.Step, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) assignProperties(block *hclwrite.Block, project octopus.Project, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
@@ -391,7 +391,7 @@ func (c *DeploymentProcessConverterV2) assignProperties(block *hclwrite.Block, p
 	sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
 
-	hcl.WriteActionProperties(block, *step.Name, *action.Name, sanitizedProperties)
+	hcl.WriteStepProperties(block, sanitizedProperties)
 
 	for _, propertyVariables := range variables {
 		propertyVariablesBlock := gohcl.EncodeAsBlock(propertyVariables, "variable")
