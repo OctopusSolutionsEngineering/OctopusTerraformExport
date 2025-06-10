@@ -6228,9 +6228,6 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 // TestSingleProjectLookupExportWithWorkerPool verifies that a single project can be reimported with the correct worker pool.
 func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
-	// This test needs to be fixed to work with CaC runbooks
-	return
-
 	if os.Getenv("GIT_CREDENTIAL") == "" {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}

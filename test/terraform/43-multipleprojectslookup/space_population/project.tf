@@ -65,6 +65,21 @@ data "octopusdeploy_worker_pools" "worker_pool_docker" {
   take         = 1
 }
 
+data "octopusdeploy_feeds" "feed_octopus_server_releases__built_in_" {
+  feed_type    = "OctopusProject"
+  ids          = null
+  partial_name = ""
+  skip         = 0
+  take         = 1
+  space_id = var.octopus_space_id
+  lifecycle {
+    postcondition {
+      error_message = "Failed to resolve a feed called \"Octopus Server Releases (built-in)\". This resource must exist in the space before this Terraform configuration is applied."
+      condition     = length(self.feeds) != 0
+    }
+  }
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -73,7 +88,7 @@ resource "octopusdeploy_project" "project_1" {
   discrete_channel_release             = false
   is_disabled                          = false
   is_discrete_channel_release          = false
-  is_version_controlled                = true
+  is_version_controlled                = false
   lifecycle_id                         = data.octopusdeploy_lifecycles.lifecycle_default_lifecycle.lifecycles[0].id
   name                                 = "Test"
   project_group_id                     = data.octopusdeploy_project_groups.project_group.project_groups[0].id
@@ -92,14 +107,6 @@ resource "octopusdeploy_project" "project_1" {
     exclude_unhealthy_targets       = false
     skip_machine_behavior           = "SkipUnavailableMachines"
   }
-
-  git_library_persistence_settings {
-    git_credential_id  = data.octopusdeploy_git_credentials.git.git_credentials[0].id
-    url                = "https://github.com/mcasperson/octogittest.git"
-    base_path          = ".octopus/integrationtest-${timestamp()}"
-    default_branch     = "main"
-    protected_branches = []
-  }
 }
 
 resource "octopusdeploy_process" "deployment_process_project_one" {
@@ -108,14 +115,14 @@ resource "octopusdeploy_process" "deployment_process_project_one" {
 }
 
 resource "octopusdeploy_process_steps_order" "process_step_order_project_one" {
-  process_id = "${octopusdeploy_process.process_deploy_a_release_test.id}"
-  steps      = ["${octopusdeploy_process_step.process_step_deploy_a_release_test_deploy_a_release.id}"]
+  process_id = "${octopusdeploy_process.deployment_process_project_one.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_project_one.id}"]
 }
 
 resource "octopusdeploy_process_step" "process_step_project_one" {
   name                  = "Deploy a Release"
   type                  = "Octopus.DeployRelease"
-  process_id            = "${octopusdeploy_process.process_deploy_a_release_test.id}"
+  process_id            = "${octopusdeploy_process.deployment_process_project_one.id}"
   channels              = null
   condition             = "Success"
   environments          = null
@@ -123,7 +130,7 @@ resource "octopusdeploy_process_step" "process_step_project_one" {
   package_requirement   = "LetOctopusDecide"
   primary_package       = {
     acquisition_location = "NotAcquired",
-    feed_id = data.octopusdeploy_projects.other.projects[0].id,
+    feed_id = data.octopusdeploy_feeds.feed_octopus_server_releases__built_in_.feeds[0].id,
     id = null,
     package_id = data.octopusdeploy_projects.other.projects[0].id,
     properties = null }
