@@ -3,6 +3,7 @@ package converters
 import (
 	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
@@ -23,6 +24,9 @@ import (
 )
 
 // terraformProcessStepBlock maps a Terraform process step to a block in HCL.
+// A nil OctopusStep indicates a child step
+// A nil OctopusAction indicates a parent step with child steps in the UI.
+// If both OctopusStep and OctopusAction are not nil, this is a step with a single action,
 type terraformProcessStepBlock struct {
 	Step          *terraform.TerraformProcessStep
 	OctopusStep   *octopus.Step
@@ -248,6 +252,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 		}
 
 		terraformProcessSteps := []terraformProcessStepBlock{}
+		terraformProcessStepsChildren := []terraformProcessStepBlock{}
 
 		file := hclwrite.NewEmptyFile()
 
@@ -277,7 +282,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 				WorkerPoolId:         nil,
 				WorkerPoolVariable:   nil,
 				StartTrigger:         s.StartTrigger,
-				Properties:           maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, s.Properties, dependencies)),
+				Properties:           nil,
 				PackageRequirement:   s.PackageRequirement,
 			}
 
@@ -310,6 +315,57 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 					OctopusAction: &action,
 					Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
 				})
+			} else {
+				// This is the parent step
+				terraformProcessSteps = append(terraformProcessSteps, terraformProcessStepBlock{
+					Step:          &terraformProcessStep,
+					OctopusStep:   &s,
+					OctopusAction: nil, // This indicates that this is a parent step
+					Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
+				})
+
+				for _, action := range s.Actions {
+					terraformProcessStepChild := terraform.TerraformProcessStep{
+						Type:                 "octopusdeploy_process_step",
+						Name:                 "process_step_child_" + sanitizer.SanitizeNamePointer(s.Name),
+						Id:                   nil,
+						ResourceName:         strutil.EmptyIfNil(s.Name),
+						ResourceType:         "",
+						ProcessId:            "${octopusdeploy_process." + terraformProcessResource.Name + ".id}",
+						Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
+						Condition:            s.Condition,
+						Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
+						Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
+						ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
+						ExecutionProperties:  nil,
+						GitDependencies:      c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies),
+						IsDisabled:           boolutil.NilIfFalse(action.IsDisabled),
+						IsRequired:           boolutil.NilIfFalse(action.IsRequired),
+						Notes:                action.Notes,
+						Packages:             nil,
+						PrimaryPackage:       nil,
+						Slug:                 action.Slug,
+						SpaceId:              nil,
+						TenantTags:           sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
+						WorkerPoolId:         nil,
+						WorkerPoolVariable:   strutil.NilIfEmptyPointer(action.WorkerPoolVariable),
+						StartTrigger:         s.StartTrigger,
+						Properties:           nil,
+						PackageRequirement:   s.PackageRequirement,
+					}
+
+					if err := c.assignWorkerPool(&terraformProcessStepChild, &action, file, dependencies); err != nil {
+						return "", err
+					}
+
+					// This is the child step
+					terraformProcessStepsChildren = append(terraformProcessStepsChildren, terraformProcessStepBlock{
+						Step:          &terraformProcessStepChild,
+						OctopusStep:   nil, // This indicates that this is a child step
+						OctopusAction: &action,
+						Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
+					})
+				}
 			}
 		}
 
@@ -362,8 +418,16 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 
 		// Write the steps
 		lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
-			c.assignProperties("execution_properties", item.Block, project, item.OctopusAction.Properties, item.OctopusAction, file, dependencies)
-			c.assignProperties("properties", item.Block, project, maputil.ToStringAnyMap(item.OctopusStep.Properties), item.OctopusStep, file, dependencies)
+			// execution properties are those that define how a single step or child step runs.
+			// These properties are not used for the parent of a child step.
+			if item.OctopusAction != nil {
+				c.assignProperties("execution_properties", item.Block, project, item.OctopusAction.Properties, item.OctopusAction, file, dependencies)
+			}
+			// properties are used by a single step or a parent step.
+			// These properties are not used for child steps.
+			if item.OctopusStep != nil {
+				c.assignProperties("properties", item.Block, project, maputil.ToStringAnyMap(item.OctopusStep.Properties), item.OctopusStep, file, dependencies)
+			}
 			file.Body().AppendBlock(item.Block)
 		})
 

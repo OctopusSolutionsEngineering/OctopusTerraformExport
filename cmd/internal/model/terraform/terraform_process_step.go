@@ -33,8 +33,6 @@ type TerraformProcessStep struct {
 }
 
 type TerraformProcessStepContainer struct {
-	Type   string  `hcl:"type,label"`
-	Name   string  `hcl:"name,label"`
 	FeedId *string `hcl:"feed_id"`
 	Image  *string `hcl:"image"`
 }

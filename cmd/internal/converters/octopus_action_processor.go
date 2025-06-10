@@ -178,6 +178,17 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 	return nil
 }
 
+func (c OctopusActionProcessor) ConvertContainerV2(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProcessStepContainer {
+	if container.Image != nil || container.FeedId != nil {
+		return &terraform.TerraformProcessStepContainer{
+			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
+			Image:  container.Image,
+		}
+	}
+
+	return nil
+}
+
 func (c OctopusActionProcessor) ConvertGitDependencies(gitDependencies []octopus.GitDependency, dependencies *data.ResourceDetailsCollection) []terraform.TerraformGitDependency {
 	result := make([]terraform.TerraformGitDependency, len(gitDependencies))
 	for i, gitDependency := range gitDependencies {
