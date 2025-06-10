@@ -313,9 +313,11 @@ func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, re
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.ParentId = project.Id
 	thisResource.Id = project.Id + "/" + resource.Id + "/" + strutil.EmptyIfNil(step.Id)
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
 	thisResource.Lookup = "${octopusdeploy_process_steps_order." + resourceName + ".id}"
+	thisResource.Dependency = "${octopusdeploy_process_steps_order." + resourceName + "}"
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
@@ -355,9 +357,11 @@ func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resourc
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.ParentId = project.Id
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
 	thisResource.Lookup = "${octopusdeploy_process_steps_order." + resourceName + ".id}"
+	thisResource.Dependency = "${octopusdeploy_process_steps_order." + resourceName + "}"
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
@@ -396,9 +400,11 @@ func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resour
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.ParentId = project.Id
 	thisResource.Id = project.Id + "/" + resource.Id + "/" + action.Id
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
 	thisResource.Lookup = "${octopusdeploy_process_child_step." + resourceName + ".id}"
+	thisResource.Dependency = "${octopusdeploy_process_child_step." + resourceName + "}"
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
@@ -463,9 +469,11 @@ func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource *o
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.ParentId = project.Id
 	thisResource.Id = project.Id + "/" + resource.Id + "/" + strutil.EmptyIfNil(step.Id)
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
 	thisResource.Lookup = "${octopusdeploy_process_step." + resourceName + ".id}"
+	thisResource.Dependency = "${octopusdeploy_process_step." + resourceName + "}"
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
