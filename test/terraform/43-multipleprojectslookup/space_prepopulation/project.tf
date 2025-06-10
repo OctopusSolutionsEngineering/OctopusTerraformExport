@@ -23,52 +23,50 @@ resource "octopusdeploy_project" "project_1" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "test" {
-  project_id = octopusdeploy_project.project_1.id
-
-  step {
-    condition           = "Success"
-    name                = "Test"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.AwsRunCloudFormation"
-      name                               = "Test"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = false
-      worker_pool_id                     = ""
-      properties                         = {
-        "Octopus.Action.Aws.AssumeRole"                          = "False",
-        "Octopus.Action.Aws.CloudFormation.Tags"                 = "[{\"key\":\"Environment\",\"value\":\"#{Octopus.Environment.Name | Replace \\\" .*\\\" \\\"\\\"}\"},{\"key\":\"DeploymentProject\",\"value\":\"API_Gateway\"}]",
-        "Octopus.Action.Aws.CloudFormationStackName"             = "OctopusBuilder-APIGateway-mcasperson-#{Octopus.Environment.Name | Replace \" .*\" \"\" | ToLower}",
-        "Octopus.Action.Aws.CloudFormationTemplate"              = "Resources:\n  RestApi:\n    Type: 'AWS::ApiGateway::RestApi'\n    Properties:\n      Description: My API Gateway\n      Name: Octopus Workflow Builder\n      BinaryMediaTypes:\n        - '*/*'\n      EndpointConfiguration:\n        Types:\n          - REGIONAL\n  Health:\n    Type: 'AWS::ApiGateway::Resource'\n    Properties:\n      RestApiId:\n        Ref: RestApi\n      ParentId:\n        'Fn::GetAtt':\n          - RestApi\n          - RootResourceId\n      PathPart: health\n  Api:\n    Type: 'AWS::ApiGateway::Resource'\n    Properties:\n      RestApiId:\n        Ref: RestApi\n      ParentId:\n        'Fn::GetAtt':\n          - RestApi\n          - RootResourceId\n      PathPart: api\n  Web:\n    Type: 'AWS::ApiGateway::Resource'\n    Properties:\n      RestApiId: !Ref RestApi\n      ParentId: !GetAtt\n        - RestApi\n        - RootResourceId\n      PathPart: '{proxy+}'\nOutputs:\n  RestApi:\n    Description: The REST API\n    Value: !Ref RestApi\n  RootResourceId:\n    Description: ID of the resource exposing the root resource id\n    Value:\n      'Fn::GetAtt':\n        - RestApi\n        - RootResourceId\n  Health:\n    Description: ID of the resource exposing the health endpoints\n    Value: !Ref Health\n  Api:\n    Description: ID of the resource exposing the api endpoint\n    Value: !Ref Api\n  Web:\n    Description: ID of the resource exposing the web app frontend\n    Value: !Ref Web\n",
-        "Octopus.Action.Aws.CloudFormationTemplateParameters"    = "[]",
-        "Octopus.Action.Aws.CloudFormationTemplateParametersRaw" = "[]",
-        "Octopus.Action.Aws.Region"                              = "ap-southeast-2",
-        "Octopus.Action.Aws.TemplateSource"                      = "Inline",
-        "Octopus.Action.Aws.WaitForCompletion"                   = "True",
-        "Octopus.Action.AwsAccount.UseInstanceRole"              = "False",
-        "Octopus.Action.AwsAccount.Variable"                     = "AWS Account"
-      }
-      environments          = []
-      excluded_environments = []
-      channels              = []
-      tenant_tags           = []
-      features              = []
-      package {
-        name                      = "test"
-        package_id                = "test"
-        feed_id                   = "#{HelmFeed}"
-        acquisition_location      = "Server"
-        extract_during_deployment = true
+resource "octopusdeploy_process" "process_cloudformation_step" {
+  project_id = "${octopusdeploy_project.project_1.id}"
+  depends_on = []
+}
+resource "octopusdeploy_process_steps_order" "process_cloudformation_step" {
+  process_id = "${octopusdeploy_process.process_cloudformation_step.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_test.id}"]
+}
+resource "octopusdeploy_process_step" "process_step_test" {
+  name                  = "Test"
+  type                  = "Octopus.AwsRunCloudFormation"
+  process_id            = "${octopusdeploy_process.process_cloudformation_step.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  primary_package       = { }
+  packages              = {
+    test = {
+      acquisition_location      = "Server"
+      feed_id                   = "#{HelmFeed}"
+      id                        = null
+      package_id                = "test"
+      properties                = {
+        SelectionMode = "immediate"
       }
     }
-
-    properties   = {}
-    target_roles = []
+  }
+  slug                  = "test"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  execution_properties  = {
+    "Octopus.Action.Aws.Region" = "us-east-1"
+    "Octopus.Action.Package.JsonConfigurationVariablesTargets" = "a.yml"
+    "Octopus.Action.Aws.AssumeRole" = "False"
+    "Octopus.Action.AwsAccount.Variable" = "AWS Account"
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.Aws.CloudFormationStackName" = "test"
+    "Octopus.Action.Aws.WaitForCompletion" = "True"
+    "Octopus.Action.AwsAccount.UseInstanceRole" = "False"
+    "Octopus.Action.Aws.CloudFormationTemplate" = "a.yml"
+    "Octopus.Action.Aws.TemplateSource" = "Package"
+  }
+  properties            = {
   }
 }

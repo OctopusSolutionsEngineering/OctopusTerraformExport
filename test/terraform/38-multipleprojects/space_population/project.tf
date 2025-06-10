@@ -148,39 +148,35 @@ resource "octopusdeploy_project" "project_2" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "deployment_process_hello_world" {
+resource "octopusdeploy_process" "test" {
   project_id = "${octopusdeploy_project.project_2.id}"
-
-  step {
-    condition           = "Success"
-    name                = "Hello world (using Bash)"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.Script"
-      name                               = "Hello world (using Bash)"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = true
-      worker_pool_id                     = octopusdeploy_static_worker_pool.workerpool_docker.id
-      properties                         = {
-        "Octopus.Action.Script.ScriptSource" = "Inline"
-        "Octopus.Action.Script.ScriptBody" = "echo 'Hello world, using Bash'\n\n#TODO: Experiment with steps of your own :)\n\necho '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
-        "Octopus.Action.Script.Syntax" = "Bash"
-        "Octopus.Action.RunOnServer" = "true"
-      }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-      features                           = []
-    }
-
-    properties   = {}
-    target_roles = []
-  }
   depends_on = []
+}
+resource "octopusdeploy_process_steps_order" "test" {
+  process_id = "${octopusdeploy_process.test.id}"
+  steps      = ["${octopusdeploy_process_step.hello_world.id}"]
+}
+
+resource "octopusdeploy_process_step" "hello_world" {
+  name                  = "Hello world (using Bash)"
+  type                  = "Octopus.Script"
+  process_id            = "${octopusdeploy_process.test.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  packages              = { package1 = { acquisition_location = "ExecutionTarget", feed_id = "${octopusdeploy_docker_container_registry.feed_docker.id}", id = null, package_id = "package1", properties = { Extract = "False", Purpose = "", SelectionMode = "immediate" } } }
+  slug                  = "hello-world"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  execution_properties  = {
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+    "Octopus.Action.Script.ScriptBody" = "echo 'Hello world, using Bash'\n\n#TODO: Experiment with steps of your own :)\n\necho '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
+    "Octopus.Action.Script.Syntax" = "Bash"
+    "Octopus.Action.RunOnServer" = "true"
+  }
+  properties            = {
+
+  }
 }
