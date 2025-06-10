@@ -333,7 +333,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 					terraformProcessStepChild := terraform.TerraformProcessStep{
 						Type:                 "octopusdeploy_process_step",
 						Name:                 "process_step_child_" + sanitizer.SanitizeNamePointer(s.Name),
-						Id:                   nil,
+						Id:                   nil, // Read only
 						ResourceName:         strutil.EmptyIfNil(s.Name),
 						ResourceType:         strutil.EmptyIfNil(action.ActionType),
 						ProcessId:            "${octopusdeploy_process." + terraformProcessResource.Name + ".id}",
@@ -342,23 +342,25 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 						Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
 						Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
 						ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
-						ExecutionProperties:  nil,
+						ExecutionProperties:  nil, // This is assigned by assignProperties()
 						GitDependencies:      c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies),
 						IsDisabled:           boolutil.NilIfFalse(action.IsDisabled),
 						IsRequired:           boolutil.NilIfFalse(action.IsRequired),
 						Notes:                action.Notes,
-						Packages:             nil,
-						PrimaryPackage:       nil,
+						Packages:             nil, // This is assigned by assignPrimaryPackage()
+						PrimaryPackage:       nil, // This is assigned by assignPrimaryPackage()
 						Slug:                 action.Slug,
 						SpaceId:              nil,
 						TenantTags:           sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
-						WorkerPoolId:         nil,
+						WorkerPoolId:         nil, // This is assigned by assignWorkerPool()
 						WorkerPoolVariable:   strutil.NilIfEmptyPointer(action.WorkerPoolVariable),
 						StartTrigger:         s.StartTrigger,
-						Properties:           nil,
+						Properties:           nil, // These properties are not used for child steps
 						PackageRequirement:   s.PackageRequirement,
 					}
 
+					c.assignPrimaryPackage(projectName, &terraformProcessStepChild, &action, file, dependencies)
+					c.assignReferencePackage(projectName, &terraformProcessStepChild, &action, file, dependencies)
 					if err := c.assignWorkerPool(&terraformProcessStepChild, &action, file, dependencies); err != nil {
 						return "", err
 					}
