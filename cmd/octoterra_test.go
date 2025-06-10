@@ -6434,7 +6434,7 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 			}
 
 			if !found {
-				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
