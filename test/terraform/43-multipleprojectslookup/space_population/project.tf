@@ -102,49 +102,42 @@ resource "octopusdeploy_project" "project_1" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "deployment_process_project_one" {
+resource "octopusdeploy_process" "deployment_process_project_one" {
   project_id = "${octopusdeploy_project.project_1.id}"
-
-  step {
-    condition           = "Success"
-    name                = "Deploy a Release"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.DeployRelease"
-      name                               = "Deploy a Release"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = true
-      is_required                        = false
-      worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
-        "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
-      }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-
-      primary_package {
-        package_id           = data.octopusdeploy_projects.other.projects[0].id
-        acquisition_location = "NotAcquired"
-        feed_id              = data.octopusdeploy_feeds.project_feed.feeds[0].id
-        properties           = {}
-      }
-
-      features = []
-    }
-
-    properties   = {}
-    target_roles = []
-  }
-
   depends_on = []
+}
+
+resource "octopusdeploy_process_steps_order" "process_step_order_project_one" {
+  process_id = "${octopusdeploy_process.process_deploy_a_release_test.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_deploy_a_release_test_deploy_a_release.id}"]
+}
+
+resource "octopusdeploy_process_step" "process_step_project_one" {
+  name                  = "Deploy a Release"
+  type                  = "Octopus.DeployRelease"
+  process_id            = "${octopusdeploy_process.process_deploy_a_release_test.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  primary_package       = {
+    acquisition_location = "NotAcquired",
+    feed_id = data.octopusdeploy_projects.other.projects[0].id,
+    id = null,
+    package_id = data.octopusdeploy_projects.other.projects[0].id,
+    properties = null }
+  slug                  = "deploy-a-release"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  worker_pool_id        = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
+  properties            = {
+  }
+  execution_properties  = {
+    "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
+    "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
+    "Octopus.Action.RunOnServer" = "true"
+  }
 }
 
 resource "octopusdeploy_variable" "excluded_variable" {
@@ -232,41 +225,36 @@ resource "octopusdeploy_project" "project_2" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "deployment_process_hello_world" {
+resource "octopusdeploy_process" "test" {
   project_id = "${octopusdeploy_project.project_2.id}"
-
-  step {
-    condition           = "Success"
-    name                = "Hello world (using Bash)"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.Script"
-      name                               = "Hello world (using Bash)"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = true
-      worker_pool_id                     = "${data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id}"
-      properties                         = {
-        "Octopus.Action.Script.ScriptSource" = "Inline"
-        "Octopus.Action.Script.ScriptBody" = "echo 'Hello world, using Bash'\n\n#TODO: Experiment with steps of your own :)\n\necho '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
-        "Octopus.Action.Script.Syntax" = "Bash"
-        "Octopus.Action.RunOnServer" = "true"
-      }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-      features                           = []
-    }
-
-    properties   = {}
-    target_roles = []
-  }
   depends_on = []
+}
+resource "octopusdeploy_process_steps_order" "test" {
+  process_id = "${octopusdeploy_process.test.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_get_mysql_host.id}"]
+}
+
+resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
+  name                  = "Get MySQL Host"
+  type                  = "Octopus.KubernetesRunScript"
+  process_id            = "${octopusdeploy_process.test.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  slug                  = "get-mysql-host"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  execution_properties  = {
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+  }
+  properties            = {
+    "Octopus.Action.TargetRoles" = "eks"
+  }
 }
 
 resource "octopusdeploy_runbook" "runbook" {
