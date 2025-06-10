@@ -40,6 +40,7 @@ resource "octopusdeploy_process_step" "process_step_test" {
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
+  worker_pool_id        = octopusdeploy_static_worker_pool.workerpool_docker.id
   primary_package              = {
       acquisition_location      = "Server"
       feed_id                   = "#{HelmFeed}"

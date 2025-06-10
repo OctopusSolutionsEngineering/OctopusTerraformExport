@@ -522,6 +522,7 @@ func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource *o
 			if err := c.assignWorkerPool(&terraformProcessStep, &action, file, dependencies); err != nil {
 				return "", err
 			}
+
 			terraformProcessStep.WorkerPoolVariable = strutil.NilIfEmptyPointer(action.WorkerPoolVariable)
 			terraformProcessStep.Environments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...))
 			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))

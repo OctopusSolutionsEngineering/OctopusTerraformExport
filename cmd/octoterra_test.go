@@ -6228,10 +6228,6 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 // TestSingleProjectLookupExportWithWorkerPool verifies that a single project can be reimported with the correct worker pool.
 func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
-	if os.Getenv("GIT_CREDENTIAL") == "" {
-		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
-	}
-
 	exportProjectLookupImportAndTest(
 		t,
 		"Test 2",
@@ -6243,7 +6239,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=whatever",
 		},
 		[]string{},
 		args2.Arguments{

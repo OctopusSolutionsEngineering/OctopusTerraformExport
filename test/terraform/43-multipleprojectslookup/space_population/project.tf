@@ -128,13 +128,13 @@ resource "octopusdeploy_process_step" "process_step_project_one" {
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
-  worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
   primary_package       = {
     acquisition_location = "NotAcquired",
     feed_id = data.octopusdeploy_feeds.feed_octopus_server_releases__built_in_.feeds[0].id,
     id = null,
     package_id = data.octopusdeploy_projects.other.projects[0].id,
-    properties = null }
+    properties = null
+  }
   slug                  = "deploy-a-release"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
@@ -254,6 +254,7 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   slug                  = "get-mysql-host"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
+  worker_pool_id        = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
   execution_properties  = {
     "Octopus.Action.Script.Syntax" = "PowerShell"
     "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
