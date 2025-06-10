@@ -311,6 +311,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 				terraformProcessStep.IsRequired = boolutil.NilIfFalse(action.IsRequired)
 				terraformProcessStep.Notes = action.Notes
 				terraformProcessStep.Slug = action.Slug
+				terraformProcessStep.ResourceType = strutil.EmptyIfNil(action.ActionType)
 
 				// Add the step to the list of steps
 				terraformProcessSteps = append(terraformProcessSteps, terraformProcessStepBlock{
@@ -334,7 +335,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 						Name:                 "process_step_child_" + sanitizer.SanitizeNamePointer(s.Name),
 						Id:                   nil,
 						ResourceName:         strutil.EmptyIfNil(s.Name),
-						ResourceType:         "",
+						ResourceType:         strutil.EmptyIfNil(action.ActionType),
 						ProcessId:            "${octopusdeploy_process." + terraformProcessResource.Name + ".id}",
 						Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 						Condition:            s.Condition,
