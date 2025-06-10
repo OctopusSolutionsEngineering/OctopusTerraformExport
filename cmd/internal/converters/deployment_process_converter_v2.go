@@ -458,7 +458,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			file.Body().AppendBlock(terraformProcessChildStepsOrderBlock)
 		})
 
-		// Write the steps
+		// Write the parent and standalone steps
 		lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
 			// execution properties are those that define how a single step or child step runs.
 			// These properties are not used for the parent of a child step.
@@ -473,7 +473,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			file.Body().AppendBlock(item.Block)
 		})
 
-		// Write the steps
+		// Write the child steps
 		lo.ForEach(terraformProcessStepsChildren, func(item terraformProcessStepBlock, index int) {
 			// execution properties are those that define how a single step or child step runs.
 			// These properties are not used for the parent of a child step.

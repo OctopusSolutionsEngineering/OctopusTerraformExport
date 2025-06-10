@@ -33,22 +33,22 @@ type TerraformProcessStep struct {
 }
 
 type TerraformProcessStepContainer struct {
-	FeedId *string `hcl:"feed_id"`
-	Image  *string `hcl:"image"`
+	FeedId *string `cty:"feed_id"`
+	Image  *string `cty:"image"`
 }
 
 type TerraformProcessStepGitDependencies struct {
-	DefaultBranch     string    `hcl:"default_branch"`
-	GitCredentialType string    `hcl:"git_credential_type"`
-	RepositoryUri     string    `hcl:"repository_uri"`
-	FilePathFilters   *[]string `hcl:"file_path_filters"`
-	GitCredentialId   *string   `hcl:"git_credential_id"`
+	DefaultBranch     string    `cty:"default_branch"`
+	GitCredentialType string    `cty:"git_credential_type"`
+	RepositoryUri     string    `cty:"repository_uri"`
+	FilePathFilters   *[]string `cty:"file_path_filters"`
+	GitCredentialId   *string   `cty:"git_credential_id"`
 }
 
 type TerraformProcessStepPackage struct {
-	Id                  *string            `hcl:"id"`
-	PackageId           string             `hcl:"package_id"`
-	AcquisitionLocation *string            `hcl:"acquisition_location"`
-	FeedId              *string            `hcl:"feed_id"`
-	Properties          *map[string]string `hcl:"properties"`
+	Id                  *string            `cty:"id"`
+	PackageId           string             `cty:"package_id"`
+	AcquisitionLocation *string            `cty:"acquisition_location"`
+	FeedId              *string            `cty:"feed_id"`
+	Properties          *map[string]string `cty:"properties"`
 }
