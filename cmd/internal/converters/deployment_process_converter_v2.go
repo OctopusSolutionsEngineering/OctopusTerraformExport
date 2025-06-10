@@ -307,6 +307,10 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 				terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
 				terraformProcessStep.Condition = action.Condition
 				terraformProcessStep.GitDependencies = c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies)
+				terraformProcessStep.IsDisabled = boolutil.NilIfFalse(action.IsDisabled)
+				terraformProcessStep.IsRequired = boolutil.NilIfFalse(action.IsRequired)
+				terraformProcessStep.Notes = action.Notes
+				terraformProcessStep.Slug = action.Slug
 
 				// Add the step to the list of steps
 				terraformProcessSteps = append(terraformProcessSteps, terraformProcessStepBlock{
@@ -359,7 +363,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 					}
 
 					// This is the child step
-					terraformProcessStepsChildren = append(terraformProcessStepsChildren, terraformProcessStepBlock{
+					terraformProcessStepsChildren = append(terraformProcessSteps, terraformProcessStepBlock{
 						Step:          &terraformProcessStepChild,
 						OctopusStep:   nil, // This indicates that this is a child step
 						OctopusAction: &action,
@@ -385,6 +389,9 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			terraformProcessResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 			terraformProcessStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 			lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
+				item.Step.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+			})
+			lo.ForEach(terraformProcessStepsChildren, func(item terraformProcessStepBlock, index int) {
 				item.Step.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
 			})
 		}
