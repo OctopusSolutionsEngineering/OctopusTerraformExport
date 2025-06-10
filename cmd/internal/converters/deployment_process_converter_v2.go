@@ -287,14 +287,6 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			if len(s.Actions) == 1 {
 				action := s.Actions[0]
 
-				// Add the step to the list of steps
-				terraformProcessSteps = append(terraformProcessSteps, terraformProcessStepBlock{
-					Step:          &terraformProcessStep,
-					OctopusStep:   &s,
-					OctopusAction: &action,
-					Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
-				})
-
 				// The step type is the type of the first action.
 				terraformProcessStep.ResourceType = strutil.EmptyIfNil(action.ActionType)
 
@@ -310,6 +302,14 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 				terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
 				terraformProcessStep.Condition = action.Condition
 				terraformProcessStep.GitDependencies = c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies)
+
+				// Add the step to the list of steps
+				terraformProcessSteps = append(terraformProcessSteps, terraformProcessStepBlock{
+					Step:          &terraformProcessStep,
+					OctopusStep:   &s,
+					OctopusAction: &action,
+					Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
+				})
 			}
 		}
 
@@ -362,7 +362,8 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 
 		// Write the steps
 		lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
-			c.assignProperties(item.Block, project, item.OctopusAction, file, dependencies)
+			c.assignProperties("execution_properties", item.Block, project, item.OctopusAction.Properties, item.OctopusAction, file, dependencies)
+			c.assignProperties("properties", item.Block, project, maputil.ToStringAnyMap(item.OctopusStep.Properties), item.OctopusStep, file, dependencies)
 			file.Body().AppendBlock(item.Block)
 		})
 
@@ -373,12 +374,11 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 	return nil
 }
 
-func (c *DeploymentProcessConverterV2) assignProperties(block *hclwrite.Block, project octopus.Project, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, block *hclwrite.Block, project octopus.Project, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
 
-	properties := action.Properties
 	sanitizedProperties, variables := steps.MapSanitizer{
 		DummySecretGenerator:      c.DummySecretGenerator,
 		DummySecretVariableValues: c.DummySecretVariableValues,
@@ -391,7 +391,7 @@ func (c *DeploymentProcessConverterV2) assignProperties(block *hclwrite.Block, p
 	sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
 
-	hcl.WriteStepProperties(block, sanitizedProperties)
+	hcl.WriteStepProperties(propertyName, block, sanitizedProperties)
 
 	for _, propertyVariables := range variables {
 		propertyVariablesBlock := gohcl.EncodeAsBlock(propertyVariables, "variable")

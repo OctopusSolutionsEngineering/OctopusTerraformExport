@@ -15,7 +15,7 @@ type MapSanitizer struct {
 }
 
 // SanitizeMap takes a map returned by the Octopus API, and replaces any sensitive value references with a placeholder
-func (c MapSanitizer) SanitizeMap(parent octopus.NamedResource, action *octopus.Action, input map[string]any, dependencies *data.ResourceDetailsCollection) (map[string]string, []terraform.TerraformVariable) {
+func (c MapSanitizer) SanitizeMap(parent octopus.NamedResource, action octopus.NamedResource, input map[string]any, dependencies *data.ResourceDetailsCollection) (map[string]string, []terraform.TerraformVariable) {
 	variables := []terraform.TerraformVariable{}
 	fixedMap := map[string]string{}
 	for k, v := range input {

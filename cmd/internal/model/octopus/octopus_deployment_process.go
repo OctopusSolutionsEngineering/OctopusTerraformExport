@@ -18,6 +18,14 @@ type Step struct {
 	Actions            []Action
 }
 
+func (a *Step) GetId() string {
+	return strutil.EmptyIfNil(a.Id)
+}
+
+func (a *Step) GetName() string {
+	return strutil.EmptyIfNil(a.Name)
+}
+
 // GenerateDeploymentProcessId generates a unique identifier for the deployment process. This solves an issue
 // where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
 func (a *Step) GenerateDeploymentProcessId(deploymentProcess *DeploymentProcess) string {
@@ -51,6 +59,14 @@ type Action struct {
 	Properties                    map[string]any
 	Inputs                        map[string]any
 	GitDependencies               []GitDependency
+}
+
+func (a *Action) GetId() string {
+	return a.Id
+}
+
+func (a *Action) GetName() string {
+	return strutil.EmptyIfNil(a.Name)
 }
 
 // GenerateDeploymentProcessId generates a unique identifier for the deployment process. This solves an issue

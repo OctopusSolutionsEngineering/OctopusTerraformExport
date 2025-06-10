@@ -96,8 +96,8 @@ func WriteActionProperties(block *hclwrite.Block, stepName string, actionName st
 
 // WriteStepProperties is used to pretty print the properties of a v1 step, writing a multiline map for the properties,
 // and extracting JSON blobs as maps for easy reading.
-func WriteStepProperties(block *hclwrite.Block, properties map[string]string) {
-	block.Body().SetAttributeTraversal("properties", hcl.Traversal{
+func WriteStepProperties(propertyName string, block *hclwrite.Block, properties map[string]string) {
+	block.Body().SetAttributeTraversal(propertyName, hcl.Traversal{
 		hcl.TraverseRoot{Name: extractJsonAsMap(properties)},
 	})
 }
