@@ -79,7 +79,6 @@ resource "octopusdeploy_process_step" "process_step_test" {
     "Octopus.Action.AwsAccount.UseInstanceRole" = "False"
     "Octopus.Action.Aws.CloudFormationTemplate" = "a.yml"
     "Octopus.Action.Aws.TemplateSource" = "Package"
-    "Octopus.Action.Package.DownloadOnTentacle" = "False"
   }
   properties            = {
   }

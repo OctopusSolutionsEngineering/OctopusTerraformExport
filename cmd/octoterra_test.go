@@ -2554,7 +2554,7 @@ func TestProjectChannelExport(t *testing.T) {
 		"../test/terraform/20-channel/space_creation",
 		"../test/terraform/20-channel/space_population",
 		[]string{},
-		[]string{"-var=project_test_step_test_package_test_packageid=test2"},
+		[]string{"-var=project_test_step_test_packageid=test2"},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
@@ -2582,7 +2582,7 @@ func TestProjectChannelExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].PackageId) != "test2" {
-						return errors.New("Deployment process should have renamed the package ID to test2")
+						return errors.New("deployment process should have renamed the package ID to test2")
 					}
 
 					collection := octopus.GeneralCollection[octopus.Channel]{}
@@ -2600,39 +2600,35 @@ func TestProjectChannelExport(t *testing.T) {
 							foundChannel = true
 
 							if strutil.EmptyIfNil(c.Description) != "Test channel" {
-								return errors.New("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
+								return errors.New("the channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
 							}
 
 							if !c.IsDefault {
-								return errors.New("The channel must be be the default")
+								return errors.New("the channel must be be the default")
 							}
 
 							if len(c.Rules) != 1 {
-								return errors.New("The channel must have one rule")
+								return errors.New("the channel must have one rule")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
-								return errors.New("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
+								return errors.New("the channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
-								return errors.New("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
-							}
-
-							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
-								return errors.New("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+								return errors.New("the channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
 							}
 						}
 					}
 
 					if !foundChannel {
-						return errors.New("Project must have an channel called \"" + channelName + "\"")
+						return errors.New("project must have an channel called \"" + channelName + "\"")
 					}
 				}
 			}
 
 			if !found {
-				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil

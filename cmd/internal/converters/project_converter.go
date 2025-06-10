@@ -1027,19 +1027,21 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) (*
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
 func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	var err error
+
+	// A channel needs to express a manual dependency on the step order resources associated with the project.
+	// The step order resources, in turn, have dependencies on the steps.
+	// So depending on the step order resources will ensure that the steps are created before the channel.
+	terraformDependencies := map[string]string{
+		"DeploymentProcesses/StepOrder": project.Id,
+	}
+
 	if lookup {
-		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
-			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-		}, dependencies)
+		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, terraformDependencies, dependencies)
 	} else {
 		if stateless {
-			err = c.ChannelConverter.ToHclStatelessByProjectIdWithTerraDependencies(project.Id, map[string]string{
-				"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-			}, dependencies)
+			err = c.ChannelConverter.ToHclStatelessByProjectIdWithTerraDependencies(project.Id, terraformDependencies, dependencies)
 		} else {
-			err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
-				"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-			}, dependencies)
+			err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, terraformDependencies, dependencies)
 		}
 	}
 
