@@ -42,10 +42,12 @@ type ResourceDetails struct {
 	ExternalID string
 	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
-	// Lookup is the ID of the resource created or looked up by Terraform
+	// Lookup is the ID of the resource created or looked up by Terraform. For example,
+	// "${octopusdeploy_project.my_project.id}".
+	// Lookup is the ID of the resource, while Dependency is the name of the resource in the Terraform.
 	Lookup string
-	// Dependency provides a way for one resource to depend on this resource. Usually the same of the Lookup, but can be
-	// a reference to a group of resources in stateless mode.
+	// Dependency provides a way for one resource to depend on this resource. It is a reference to the terraform
+	// resource, for example, "${octopusdeploy_project.my_project}".
 	Dependency string
 	// Count stores the HCL assigned to the count attribute. This is useful when child resources need to have the same
 	// count value as a parent.

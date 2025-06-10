@@ -217,9 +217,7 @@ func (c *DeploymentProcessConverterV2) ToHclLookupByIdAndName(id string, _ strin
 }
 
 func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess, project octopus.Project, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
-	resourceName := "process_" + sanitizer.SanitizeName(projectName)
-
-	thisResource := data.ResourceDetails{}
+	resourceName := c.generateProcessName(&project)
 
 	err := c.exportDependencies(recursive, lookup, stateless, resource, dependencies)
 
@@ -227,6 +225,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 		return err
 	}
 
+	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.Id
 	thisResource.ResourceType = c.GetResourceType()
@@ -260,7 +259,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 		for _, s := range validSteps {
 			terraformProcessStep := terraform.TerraformProcessStep{
 				Type:                 "octopusdeploy_process_step",
-				Name:                 "process_step_" + sanitizer.SanitizeNamePointer(s.Name),
+				Name:                 c.generateStepName(&project, &s),
 				Id:                   nil,
 				ResourceName:         strutil.EmptyIfNil(s.Name),
 				ResourceType:         "",
@@ -336,7 +335,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 				for _, action := range s.Actions {
 					terraformProcessStepChild := terraform.TerraformProcessStep{
 						Type:                 "octopusdeploy_process_child_step",
-						Name:                 "process_step_child_" + sanitizer.SanitizeNamePointer(action.Name),
+						Name:                 c.generateChildStepName(&project, &action),
 						Id:                   nil, // Read only
 						ResourceName:         strutil.EmptyIfNil(s.Name),
 						ResourceType:         strutil.EmptyIfNil(action.ActionType),
@@ -463,12 +462,12 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			// execution properties are those that define how a single step or child step runs.
 			// These properties are not used for the parent of a child step.
 			if item.OctopusAction != nil {
-				c.assignProperties("execution_properties", item.Block, project, item.OctopusAction.Properties, item.OctopusAction, file, dependencies)
+				c.assignProperties("execution_properties", item.Block, &project, item.OctopusAction.Properties, item.OctopusAction, file, dependencies)
 			}
 			// properties are used by a single step or a parent step.
 			// These properties are not used for child steps.
 			if item.OctopusStep != nil {
-				c.assignProperties("properties", item.Block, project, maputil.ToStringAnyMap(item.OctopusStep.Properties), item.OctopusStep, file, dependencies)
+				c.assignProperties("properties", item.Block, &project, maputil.ToStringAnyMap(item.OctopusStep.Properties), item.OctopusStep, file, dependencies)
 			}
 			file.Body().AppendBlock(item.Block)
 		})
@@ -487,10 +486,204 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 	}
 
 	dependencies.AddResource(thisResource)
+
 	return nil
 }
 
-func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, block *hclwrite.Block, project octopus.Project, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resource *octopus.DeploymentProcess, project *octopus.Project, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+	resourceName := "process_steps_" + sanitizer.SanitizeName(project.Name)
+
+	thisResource := data.ResourceDetails{}
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = "DeploymentProcesses/Steps"
+	thisResource.Lookup = "${octopusdeploy_process." + resourceName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+		terraformProcessStep := terraform.TerraformProcessStep{
+			Type:                 "octopusdeploy_process_step",
+			Name:                 c.generateStepName(&project, &s),
+			Id:                   nil,
+			ResourceName:         strutil.EmptyIfNil(s.Name),
+			ResourceType:         "",
+			ProcessId:            "${octopusdeploy_process." + terraformProcessResource.Name + ".id}",
+			Channels:             nil,
+			Condition:            s.Condition,
+			Container:            nil,
+			Environments:         nil,
+			ExcludedEnvironments: nil,
+			ExecutionProperties:  nil,
+			GitDependencies:      nil,
+			IsDisabled:           nil,
+			IsRequired:           nil,
+			Notes:                nil,
+			Packages:             nil,
+			PrimaryPackage:       nil,
+			Slug:                 nil,
+			SpaceId:              nil,
+			TenantTags:           nil,
+			WorkerPoolId:         nil,
+			WorkerPoolVariable:   nil,
+			StartTrigger:         step.StartTrigger,
+			Properties:           nil,
+			PackageRequirement:   step.PackageRequirement,
+		}
+
+		// We build the output differently for a step with a single action (represented as a typical step in the UI)
+		// and a step with multiple actions (represented as a parent step with child steps in the UI).
+
+		standaloneStep := len(step.Actions) == 1
+
+		if !standaloneStep {
+			for _, action := range step.Actions {
+				terraformProcessStepChild := terraform.TerraformProcessStep{
+					Type:                 "octopusdeploy_process_child_step",
+					Name:                 c.generateChildStepName(project, &action),
+					Id:                   nil, // Read only
+					ResourceName:         strutil.EmptyIfNil(action.Name),
+					ResourceType:         strutil.EmptyIfNil(action.ActionType),
+					ProcessId:            "${octopusdeploy_process." + c.generateProcessName(project) + ".id}",
+					Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
+					Condition:            action.Condition,
+					Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
+					Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
+					ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
+					ExecutionProperties:  nil, // This is assigned by assignProperties()
+					GitDependencies:      c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies),
+					IsDisabled:           boolutil.NilIfFalse(action.IsDisabled),
+					IsRequired:           boolutil.NilIfFalse(action.IsRequired),
+					Notes:                action.Notes,
+					Packages:             nil, // This is assigned by assignPrimaryPackage()
+					PrimaryPackage:       nil, // This is assigned by assignPrimaryPackage()
+					Slug:                 action.Slug,
+					SpaceId:              nil,
+					TenantTags:           sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
+					WorkerPoolId:         nil, // This is assigned by assignWorkerPool()
+					WorkerPoolVariable:   strutil.NilIfEmptyPointer(action.WorkerPoolVariable),
+					StartTrigger:         nil, // This is not defined on a child step
+					Properties:           nil, // These properties are not used for child steps
+					PackageRequirement:   nil, // This is not defined on a child step
+				}
+
+				c.assignPrimaryPackage(project.Name, &terraformProcessStepChild, &action, file, dependencies)
+				c.assignReferencePackage(project.Name, &terraformProcessStepChild, &action, file, dependencies)
+				if err := c.assignWorkerPool(&terraformProcessStepChild, &action, file, dependencies); err != nil {
+					return "", err
+				}
+			}
+		}
+	}
+
+	dependencies.AddResource(thisResource)
+}
+
+func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource *octopus.DeploymentProcess, project *octopus.Project, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+	resourceName := "process_steps_" + sanitizer.SanitizeName(project.Name)
+
+	thisResource := data.ResourceDetails{}
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.Id = resource.Id
+	thisResource.ResourceType = "DeploymentProcesses/Steps"
+	thisResource.Lookup = "${octopusdeploy_process." + resourceName + ".id}"
+	thisResource.ToHcl = func() (string, error) {
+
+		file := hclwrite.NewEmptyFile()
+
+		terraformProcessStep := terraform.TerraformProcessStep{
+			Type:                 "octopusdeploy_process_step",
+			Name:                 c.generateStepName(project, step),
+			Id:                   nil,
+			ResourceName:         strutil.EmptyIfNil(step.Name),
+			ResourceType:         "",
+			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(project) + ".id}",
+			Channels:             nil,
+			Condition:            step.Condition,
+			Container:            nil,
+			Environments:         nil,
+			ExcludedEnvironments: nil,
+			ExecutionProperties:  nil,
+			GitDependencies:      nil,
+			IsDisabled:           nil,
+			IsRequired:           nil,
+			Notes:                nil,
+			Packages:             nil,
+			PrimaryPackage:       nil,
+			Slug:                 nil,
+			SpaceId:              nil,
+			TenantTags:           nil,
+			WorkerPoolId:         nil,
+			WorkerPoolVariable:   nil,
+			StartTrigger:         step.StartTrigger,
+			Properties:           nil,
+			PackageRequirement:   step.PackageRequirement,
+		}
+
+		standaloneStep := len(step.Actions) == 1
+
+		// We build the output differently for a step with a single action (represented as a typical step in the UI)
+		// and a step with multiple actions (represented as a parent step with child steps in the UI).
+		if standaloneStep {
+			action := step.Actions[0]
+
+			// The step type is the type of the first action.
+			terraformProcessStep.ResourceType = strutil.EmptyIfNil(action.ActionType)
+
+			c.assignPrimaryPackage(project.Name, &terraformProcessStep, &action, file, dependencies)
+			c.assignReferencePackage(project.Name, &terraformProcessStep, &action, file, dependencies)
+			if err := c.assignWorkerPool(&terraformProcessStep, &action, file, dependencies); err != nil {
+				return "", err
+			}
+			terraformProcessStep.WorkerPoolVariable = strutil.NilIfEmptyPointer(action.WorkerPoolVariable)
+			terraformProcessStep.Environments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...))
+			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))
+			terraformProcessStep.Channels = sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...))
+			terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
+			terraformProcessStep.Condition = action.Condition
+			terraformProcessStep.GitDependencies = c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies)
+			terraformProcessStep.IsDisabled = boolutil.NilIfFalse(action.IsDisabled)
+			terraformProcessStep.IsRequired = boolutil.NilIfFalse(action.IsRequired)
+			terraformProcessStep.Notes = action.Notes
+			terraformProcessStep.Slug = action.Slug
+			terraformProcessStep.ResourceType = strutil.EmptyIfNil(action.ActionType)
+		}
+
+		if stateless {
+			// only create the deployment process, step order, and steps if the project was created
+			terraformProcessStep.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+		}
+
+		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
+
+		if c.IgnoreProjectChanges {
+			hcl.WriteLifecycleAllAttribute(block)
+		}
+
+		c.assignProperties("properties", block, project, maputil.ToStringAnyMap(step.Properties), step, file, dependencies)
+
+		if standaloneStep {
+			c.assignProperties("execution_properties", block, project, step.Actions[0].Properties, &step.Actions[0], file, dependencies)
+		}
+
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+}
+
+func (c *DeploymentProcessConverterV2) generateProcessName(project *octopus.Project) string {
+	return "process_" + sanitizer.SanitizeName(project.Name)
+}
+
+func (c *DeploymentProcessConverterV2) generateStepName(project *octopus.Project, named octopus.NamedResource) string {
+	return "process_step_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeName(named.GetName())
+}
+
+func (c *DeploymentProcessConverterV2) generateChildStepName(project *octopus.Project, named octopus.NamedResource) string {
+	return "process_child_step_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeName(named.GetName())
+}
+
+func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, block *hclwrite.Block, project *octopus.Project, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
