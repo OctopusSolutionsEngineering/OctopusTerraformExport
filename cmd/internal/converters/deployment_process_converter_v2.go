@@ -253,6 +253,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 
 		terraformProcessSteps := []terraformProcessStepBlock{}
 		terraformProcessStepsChildren := []terraformProcessStepBlock{}
+		terraformProcessChildStepsOrders := []terraform.TerraformProcessChildStepsOrder{}
 
 		file := hclwrite.NewEmptyFile()
 
@@ -329,10 +330,13 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 					Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
 				})
 
+				// Keep a track of all the child steps, as we'll need to bundle them in a child step order resources
+				terraformProcessStepsChildrenLocal := []*terraform.TerraformProcessStep{}
+
 				for _, action := range s.Actions {
 					terraformProcessStepChild := terraform.TerraformProcessStep{
-						Type:                 "octopusdeploy_process_step",
-						Name:                 "process_step_child_" + sanitizer.SanitizeNamePointer(s.Name),
+						Type:                 "octopusdeploy_process_child_step",
+						Name:                 "process_step_child_" + sanitizer.SanitizeNamePointer(action.Name),
 						Id:                   nil, // Read only
 						ResourceName:         strutil.EmptyIfNil(s.Name),
 						ResourceType:         strutil.EmptyIfNil(action.ActionType),
@@ -366,12 +370,30 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 					}
 
 					// This is the child step
-					terraformProcessStepsChildren = append(terraformProcessSteps, terraformProcessStepBlock{
+					terraformProcessStepsChildren = append(terraformProcessStepsChildren, terraformProcessStepBlock{
 						Step:          &terraformProcessStepChild,
 						OctopusStep:   nil, // This indicates that this is a child step
 						OctopusAction: &action,
-						Block:         gohcl.EncodeAsBlock(terraformProcessStep, "resource"),
+						Block:         gohcl.EncodeAsBlock(terraformProcessStepChild, "resource"),
 					})
+
+					terraformProcessStepsChildrenLocal = append(terraformProcessStepsChildrenLocal, &terraformProcessStepChild)
+				}
+
+				if len(terraformProcessStepsChildrenLocal) != 0 {
+					// The child steps are captured in the TerraformProcessChildStepsOrder resource.
+					terraformProcessChildStepsOrder := terraform.TerraformProcessChildStepsOrder{
+						Type:      "octopusdeploy_process_child_steps_order",
+						Name:      "process_child_step_order_" + sanitizer.SanitizeNamePointer(s.Name),
+						Id:        nil,
+						ProcessId: "${octopusdeploy_process." + terraformProcessResource.Name + ".id}",
+						ParentId:  "${octopusdeploy_process_step." + terraformProcessStep.Name + ".id}",
+						Steps: lo.Map(terraformProcessStepsChildren, func(item terraformProcessStepBlock, index int) string {
+							return "${octopusdeploy_process_child_step." + item.Step.Name + ".id}"
+						}),
+					}
+
+					terraformProcessChildStepsOrders = append(terraformProcessChildStepsOrders, terraformProcessChildStepsOrder)
 				}
 			}
 		}
@@ -389,13 +411,17 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
-			terraformProcessStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+			resourceCount := strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+			terraformProcessResource.Count = resourceCount
+			terraformProcessStepsOrder.Count = resourceCount
 			lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
-				item.Step.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+				item.Step.Count = resourceCount
 			})
 			lo.ForEach(terraformProcessStepsChildren, func(item terraformProcessStepBlock, index int) {
-				item.Step.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", project.Id))
+				item.Step.Count = resourceCount
+			})
+			lo.ForEach(terraformProcessChildStepsOrders, func(item terraform.TerraformProcessChildStepsOrder, index int) {
+				item.Count = resourceCount
 			})
 		}
 
@@ -426,6 +452,12 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 		terraformProcessStepsOrderBlock := gohcl.EncodeAsBlock(terraformProcessStepsOrder, "resource")
 		file.Body().AppendBlock(terraformProcessStepsOrderBlock)
 
+		// Write the child steps orders
+		lo.ForEach(terraformProcessChildStepsOrders, func(item terraform.TerraformProcessChildStepsOrder, index int) {
+			terraformProcessChildStepsOrderBlock := gohcl.EncodeAsBlock(item, "resource")
+			file.Body().AppendBlock(terraformProcessChildStepsOrderBlock)
+		})
+
 		// Write the steps
 		lo.ForEach(terraformProcessSteps, func(item terraformProcessStepBlock, index int) {
 			// execution properties are those that define how a single step or child step runs.
@@ -437,6 +469,16 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.DeploymentProcess,
 			// These properties are not used for child steps.
 			if item.OctopusStep != nil {
 				c.assignProperties("properties", item.Block, project, maputil.ToStringAnyMap(item.OctopusStep.Properties), item.OctopusStep, file, dependencies)
+			}
+			file.Body().AppendBlock(item.Block)
+		})
+
+		// Write the steps
+		lo.ForEach(terraformProcessStepsChildren, func(item terraformProcessStepBlock, index int) {
+			// execution properties are those that define how a single step or child step runs.
+			// These properties are not used for the parent of a child step.
+			if item.OctopusAction != nil {
+				c.assignProperties("execution_properties", item.Block, project, item.OctopusAction.Properties, item.OctopusAction, file, dependencies)
 			}
 			file.Body().AppendBlock(item.Block)
 		})
