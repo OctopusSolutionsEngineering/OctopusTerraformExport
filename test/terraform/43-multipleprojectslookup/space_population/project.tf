@@ -68,7 +68,7 @@ data "octopusdeploy_worker_pools" "worker_pool_docker" {
 data "octopusdeploy_feeds" "feed_octopus_server_releases__built_in_" {
   feed_type    = "OctopusProject"
   ids          = null
-  partial_name = ""
+  partial_name = "Octopus Server Releases"
   skip         = 0
   take         = 1
   space_id = var.octopus_space_id
@@ -128,6 +128,7 @@ resource "octopusdeploy_process_step" "process_step_project_one" {
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
+  worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
   primary_package       = {
     acquisition_location = "NotAcquired",
     feed_id = data.octopusdeploy_feeds.feed_octopus_server_releases__built_in_.feeds[0].id,
