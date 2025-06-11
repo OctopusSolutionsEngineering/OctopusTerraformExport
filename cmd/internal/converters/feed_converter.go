@@ -1123,7 +1123,7 @@ func (c FeedConverter) toHclLookup(resource octopus.Feed, thisResource *data.Res
 func (c FeedConverter) lookupOctopusProject(resource octopus.Feed, thisResource *data.ResourceDetails, resourceName string) bool {
 	if strutil.EmptyIfNil(resource.FeedType) == "OctopusProject" {
 		thisResource.ToHcl = func() (string, error) {
-			terraformResource := c.buildData(resourceName, "", "OctopusProject")
+			terraformResource := c.buildData(resourceName, "Octopus Server Releases", "OctopusProject")
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(terraformResource, "data")
 			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a feed called \""+resource.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.feeds) != 0")

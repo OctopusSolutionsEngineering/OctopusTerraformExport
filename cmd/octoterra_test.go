@@ -5793,13 +5793,6 @@ func TestSingleProjectGroupExport(t *testing.T) {
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been referenced via data source lookups,
 // and that unrelated or excluded resources were not exported.
 func TestSingleProjectLookupExport(t *testing.T) {
-	// Need to fix this up with CaC runbooks
-	return
-
-	if os.Getenv("GIT_CREDENTIAL") == "" {
-		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
-	}
-
 	exportProjectLookupImportAndTest(
 		t,
 		"Test",
@@ -5811,11 +5804,9 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=whatever",
 		},
-		[]string{
-			"-var=project_test_git_base_path=.octopus/integrationtestimport" + uuid.New().String(),
-		},
+		[]string{},
 		args2.Arguments{
 			ExcludeTenants:                  []string{"Team A"},
 			ExcludeTenantsRegex:             []string{"^Team C$"},
@@ -5969,7 +5960,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				// Ensure the "deploy a release" step has updated the target project
 				deploymentProcess := octopus.DeploymentProcess{}
-				found, err := octopusClient.GetResource("Projects/"+testProject[0].Id+"/main/deploymentprocesses", &deploymentProcess)
+				found, err := octopusClient.GetResource("Projects/"+testProject[0].Id+"/deploymentprocesses", &deploymentProcess)
 
 				if err != nil {
 					return err
