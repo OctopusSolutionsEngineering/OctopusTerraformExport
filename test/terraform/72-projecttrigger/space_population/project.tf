@@ -67,7 +67,7 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   packages              = {
     package1 = {
       acquisition_location = "ExecutionTarget",
-      feed_id = "${data.octopusdeploy_feeds.built_in_feed.feeds[0].id}",
+      feed_id = "${octopusdeploy_docker_container_registry.feed_docker.id}",
       id = null,
       package_id = "package1",
       properties = {

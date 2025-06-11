@@ -8876,7 +8876,7 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 
 // TestSingleProjectScheduledTriggerExport verifies that a single project can be reimported with scheduled triggers.
 // We defer to the TestProjectScheduledTriggerExport test to verify that triggers are created with the correct values.
-// This test is focused on ensuring environments are recursivly exported.
+// This test is focused on ensuring environments are recursively exported.
 func TestSingleProjectScheduledTriggerExport(t *testing.T) {
 	exportProjectImportAndTest(
 		t,

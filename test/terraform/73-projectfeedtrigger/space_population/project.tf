@@ -56,7 +56,7 @@ resource "octopusdeploy_process_steps_order" "test" {
 }
 
 resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
-  name                  = "Get MySQL Host"
+  name                  = "step1"
   type                  = "Octopus.KubernetesRunScript"
   process_id            = "${octopusdeploy_process.test.id}"
   channels              = null
@@ -64,8 +64,19 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
-  packages              = { package1 = { acquisition_location = "ExecutionTarget", feed_id = "${octopusdeploy_docker_container_registry.feed_docker.id}", id = null, package_id = "package1", properties = { Extract = "False", Purpose = "", SelectionMode = "immediate" } } }
-  slug                  = "get-mysql-host"
+  packages              = {
+    package1 = {
+      acquisition_location = "ExecutionTarget",
+      feed_id = "${octopusdeploy_docker_container_registry.feed_docker.id}",
+      id = null,
+      package_id = "package1",
+      properties = {
+        Extract = "False",
+        Purpose = "",
+        SelectionMode = "immediate" }
+    }
+  }
+  slug                  = "step1"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
   execution_properties  = {
