@@ -26,6 +26,14 @@ func (r *Runbook) GetParentId() *string {
 	return strutil.NilIfEmpty(r.ProjectId)
 }
 
+func (r *Runbook) GetUltimateParent() string {
+	if r == nil {
+		return ""
+	}
+
+	return r.ProjectId
+}
+
 type RunRetentionPolicy struct {
 	QuantityToKeep    int
 	ShouldKeepForever bool

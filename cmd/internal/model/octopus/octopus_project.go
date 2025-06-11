@@ -65,6 +65,10 @@ func (t Project) GetParentId() *string {
 	return nil
 }
 
+func (r Project) GetUltimateParent() string {
+	return r.Id
+}
+
 func (t Project) HasCacConfigured() bool {
 	return t.PersistenceSettings.Credentials.Type == "Reference" ||
 		t.PersistenceSettings.Credentials.Type == "Anonymous" ||

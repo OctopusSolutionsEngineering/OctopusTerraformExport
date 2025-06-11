@@ -205,7 +205,7 @@ func (c *DeploymentProcessConverterV2) ToHclLookupByIdAndName(id string, _ strin
 	return c.toHcl(&resource, project, false, true, false, dependencies)
 }
 
-func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, owner octopus.NameIdParent, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, owner octopus.NameIdParentResource, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := c.generateProcessName(owner)
 
 	err := c.exportDependencies(recursive, lookup, stateless, resource, dependencies)
@@ -233,7 +233,7 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, ow
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetId()))
+			terraformProcessResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
 		}
 
 		terraformProcessResourceBlock := gohcl.EncodeAsBlock(terraformProcessResource, "resource")
@@ -297,12 +297,12 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, ow
 	return nil
 }
 
-func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParent, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateChildStepOrderName(owner, step)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
-	thisResource.ParentId = owner.GetId()
+	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + strutil.EmptyIfNil(step.Id)
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
 	thisResource.Lookup = "${octopusdeploy_process_steps_order." + resourceName + ".id}"
@@ -324,7 +324,7 @@ func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, re
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessChildStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetId()))
+			terraformProcessChildStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessChildStepsOrder, "resource")
@@ -341,12 +341,12 @@ func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, re
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParent, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateStepOrderName(owner)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
-	thisResource.ParentId = owner.GetId()
+	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = resource.GetId()
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
 	thisResource.Lookup = "${octopusdeploy_process_steps_order." + resourceName + ".id}"
@@ -367,7 +367,7 @@ func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resourc
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetId()))
+			terraformProcessStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessStepsOrder, "resource")
@@ -384,12 +384,12 @@ func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resourc
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParent, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateChildStepName(owner, action)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
-	thisResource.ParentId = owner.GetId()
+	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + action.Id
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
 	thisResource.Lookup = "${octopusdeploy_process_child_step." + resourceName + ".id}"
@@ -428,7 +428,7 @@ func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resour
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStepChild.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetId()))
+			terraformProcessStepChild.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
 		}
 
 		c.assignPrimaryPackage(owner.GetName(), &terraformProcessStepChild, action, file, dependencies)
@@ -453,12 +453,12 @@ func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resour
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParent, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateStepName(owner, step)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
-	thisResource.ParentId = owner.GetId()
+	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + strutil.EmptyIfNil(step.Id)
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
 	thisResource.Lookup = "${octopusdeploy_process_step." + resourceName + ".id}"
@@ -528,7 +528,7 @@ func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource oc
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStep.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetId()))
+			terraformProcessStep.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
@@ -551,27 +551,27 @@ func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource oc
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateProcessName(owner octopus.NameIdParent) string {
+func (c *DeploymentProcessConverterV2) generateProcessName(owner octopus.NameIdParentResource) string {
 	return "process_" + sanitizer.SanitizeName(owner.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateStepOrderName(owner octopus.NameIdParent) string {
+func (c *DeploymentProcessConverterV2) generateStepOrderName(owner octopus.NameIdParentResource) string {
 	return "process_step_order_" + sanitizer.SanitizeName(owner.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateChildStepOrderName(owner octopus.NameIdParent, named octopus.NamedResource) string {
+func (c *DeploymentProcessConverterV2) generateChildStepOrderName(owner octopus.NameIdParentResource, named octopus.NamedResource) string {
 	return "process_child_step_order_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateStepName(owner octopus.NameIdParent, named octopus.NamedResource) string {
+func (c *DeploymentProcessConverterV2) generateStepName(owner octopus.NameIdParentResource, named octopus.NamedResource) string {
 	return "process_step_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateChildStepName(owner octopus.NameIdParent, named octopus.NamedResource) string {
+func (c *DeploymentProcessConverterV2) generateChildStepName(owner octopus.NameIdParentResource, named octopus.NamedResource) string {
 	return "process_child_step_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParent, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
