@@ -88,7 +88,7 @@ func (c *DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch 
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
-	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
+	return c.toHcl(&resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
 }
 
 func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -125,7 +125,7 @@ func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, b
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
-	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
+	return c.toHcl(&resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
 func (c *DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -166,7 +166,7 @@ func (c *DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recur
 	}
 
 	zap.L().Info("Deployment Process: " + resource.Id)
-	return c.toHcl(resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
+	return c.toHcl(&resource, project, project.HasCacConfigured(), recursive, false, stateless, project.Name, dependencies)
 }
 
 func (c *DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
@@ -198,10 +198,10 @@ func (c *DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string,
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
-	return c.toHcl(resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
+	return c.toHcl(&resource, project, project.HasCacConfigured(), false, true, false, project.Name, dependencies)
 }
 
-func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, project octopus.Project, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) toHcl(resource octopus.OctopusProcess, project octopus.Project, cac bool, recursive bool, lookup bool, stateless bool, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := "deployment_process_" + sanitizer.SanitizeName(projectName)
 
 	thisResource := data.ResourceDetails{}
@@ -213,13 +213,13 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 	}
 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
-	thisResource.Id = resource.Id
+	thisResource.Id = resource.GetId()
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".id}"
 	thisResource.ToHcl = func() (string, error) {
 
 		validSteps := FilterSteps(
-			resource.Steps,
+			resource.GetSteps(),
 			c.IgnoreInvalidExcludeExcept,
 			c.Excluder,
 			c.ExcludeAllSteps,
@@ -230,7 +230,7 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 		terraformResource := terraform.TerraformDeploymentProcess{
 			Type:      "octopusdeploy_deployment_process",
 			Name:      resourceName,
-			ProjectId: dependencies.GetResource("Projects", resource.ProjectId),
+			ProjectId: dependencies.GetResource("Projects", resource.GetParentId()),
 			Step:      make([]terraform.TerraformStep, len(validSteps)),
 		}
 
@@ -250,13 +250,13 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 
 			for j, a := range s.Actions {
 				// Don't import duplicates
-				if dependencies.HasResource(a.GenerateDeploymentProcessId(&resource), "Actions") {
+				if dependencies.HasResource(a.GenerateDeploymentProcessId(resource), "Actions") {
 					continue
 				}
 
 				actionResource := data.ResourceDetails{}
 				actionResource.FileName = ""
-				actionResource.Id = a.GenerateDeploymentProcessId(&resource)
+				actionResource.Id = a.GenerateDeploymentProcessId(resource)
 				actionResource.ResourceType = "Actions"
 				actionResource.Lookup = "${octopusdeploy_deployment_process." + resourceName + ".step[" + fmt.Sprint(i) + "].action[" + fmt.Sprint(j) + "].id}"
 				dependencies.AddResource(actionResource)
@@ -348,7 +348,7 @@ func (c *DeploymentProcessConverter) toHcl(resource octopus.DeploymentProcess, p
 			}
 		}
 
-		allTenantTags := lo.FlatMap(resource.Steps, func(item octopus.Step, index int) []string {
+		allTenantTags := lo.FlatMap(resource.GetSteps(), func(item octopus.Step, index int) []string {
 			return lo.FlatMap(item.Actions, func(item octopus.Action, index int) []string {
 				if item.TenantTags != nil {
 					return item.TenantTags
@@ -409,45 +409,45 @@ func (c *DeploymentProcessConverter) GetResourceType() string {
 	return "DeploymentProcesses"
 }
 
-func (c *DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.OctopusProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
-	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.Steps, dependencies)
+	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked feeds
-	err = c.OctopusActionProcessor.ExportFeeds(recursive, lookup, stateless, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportFeeds(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked worker pools
-	err = c.OctopusActionProcessor.ExportWorkerPools(recursive, lookup, stateless, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportWorkerPools(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export linked environments
-	err = c.OctopusActionProcessor.ExportEnvironments(recursive, lookup, stateless, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportEnvironments(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export step templates
-	err = c.OctopusActionProcessor.ExportStepTemplates(recursive, lookup, stateless, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportStepTemplates(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export git credentials
-	err = c.OctopusActionProcessor.ExportGitCredentials(recursive, lookup, stateless, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportGitCredentials(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}
 
 	// Export projects, typically referenced in a "Deploy a release" step
-	err = c.OctopusActionProcessor.ExportProjects(recursive, lookup, stateless, resource.Steps, dependencies)
+	err = c.OctopusActionProcessor.ExportProjects(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
 		return err
 	}

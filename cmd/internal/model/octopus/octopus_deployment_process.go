@@ -8,6 +8,18 @@ type DeploymentProcess struct {
 	Steps     []Step
 }
 
+func (a *DeploymentProcess) GetId() string {
+	return a.Id
+}
+
+func (a *DeploymentProcess) GetParentId() string {
+	return a.ProjectId
+}
+
+func (a *DeploymentProcess) GetSteps() []Step {
+	return a.Steps
+}
+
 type Step struct {
 	Id                 *string
 	Name               *string
@@ -71,14 +83,14 @@ func (a *Action) GetName() string {
 
 // GenerateDeploymentProcessId generates a unique identifier for the deployment process. This solves an issue
 // where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
-func (a *Action) GenerateDeploymentProcessId(deploymentProcess *DeploymentProcess) string {
-	return deploymentProcess.Id + "-" + a.Id
+func (a *Action) GenerateDeploymentProcessId(deploymentProcess OctopusProcess) string {
+	return deploymentProcess.GetId() + "-" + a.Id
 }
 
 // GenerateRunbookProcessId generates a unique identifier for the deployment process. This solves an issue
 // where a deployment process has been copied and pasted in Git or cloned via the UI, reusing step and action IDs.
-func (a *Action) GenerateRunbookProcessId(runbookProcess *RunbookProcess) string {
-	return runbookProcess.Id + "-" + a.Id
+func (a *Action) GenerateRunbookProcessId(runbookProcess OctopusProcess) string {
+	return runbookProcess.GetId() + "-" + a.Id
 }
 
 type GitDependency struct {
