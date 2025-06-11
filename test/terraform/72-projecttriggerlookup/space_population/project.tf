@@ -79,7 +79,15 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
-  packages              = { package1 = { acquisition_location = "ExecutionTarget", feed_id = "${octopusdeploy_docker_container_registry.feed_docker.id}", id = null, package_id = "package1", properties = { Extract = "False", Purpose = "", SelectionMode = "immediate" } } }
+  packages              = {
+    package1 = {
+      acquisition_location = "ExecutionTarget",
+      feed_id = "${data.octopusdeploy_feeds.docker_feed.feeds[0].id}",
+      id = null,
+      package_id = "package1",
+      properties = { Extract = "False", Purpose = "", SelectionMode = "immediate" }
+    }
+  }
   slug                  = "get-mysql-host"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null

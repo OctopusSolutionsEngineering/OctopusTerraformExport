@@ -68,6 +68,7 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   slug                  = "get-mysql-host"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
+  worker_pool_variable  = "#{WorkerPool}"
   execution_properties  = {
     "Octopus.Action.Script.Syntax" = "PowerShell"
     "Octopus.Action.Script.ScriptBody" = "echo \"hi\""

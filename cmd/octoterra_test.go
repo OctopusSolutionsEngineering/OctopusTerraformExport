@@ -9702,6 +9702,9 @@ func TestSingleProjectBuiltInFeedTriggerExport(t *testing.T) {
 
 // TestDeploymentFreezeExport verifies that a deployment freeze can be reimported with the correct settings
 func TestDeploymentFreezeExport(t *testing.T) {
+	// This requires 2025.1 or later
+	return
+
 	exportSpaceImportAndTest(
 		t,
 		"../test/terraform/80-deploymentfreeze/space_creation",

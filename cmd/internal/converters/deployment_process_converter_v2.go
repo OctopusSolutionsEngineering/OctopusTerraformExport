@@ -638,7 +638,7 @@ func (c *DeploymentProcessConverterV2) assignWorkerPool(terraformProcessStep *te
 		workerPool = dependencies.GetResource("WorkerPools", workerPoolId)
 	}
 
-	terraformProcessStep.WorkerPoolId = &workerPool
+	terraformProcessStep.WorkerPoolId = strutil.NilIfEmpty(workerPool)
 
 	return nil
 }
