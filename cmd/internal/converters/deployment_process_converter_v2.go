@@ -627,6 +627,11 @@ func (c *DeploymentProcessConverterV2) assignReferencePackage(projectName string
 }
 
 func (c *DeploymentProcessConverterV2) assignWorkerPool(terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) error {
+	// Worker pool variable takes precedence over worker pool ID
+	if action.WorkerPoolVariable != nil {
+		return nil
+	}
+
 	workerPoolId, err := c.WorkerPoolProcessor.ResolveWorkerPoolId(action.WorkerPoolId)
 
 	if err != nil {
