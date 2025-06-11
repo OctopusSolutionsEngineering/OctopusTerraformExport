@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/strings/slices"
+	"net/url"
 	"regexp"
 )
 
@@ -95,11 +96,17 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.Runbook]{}
-	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+	project := octopus.Project{}
+	err := c.Client.GetResourceById("Projects", projectId, &project)
 
 	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
+		return fmt.Errorf("error in OctopusClient.GetResourceById loading type octopus.Project: %w", err)
+	}
+
+	collection, err := c.GetRunbookCollection(&project)
+
+	if err != nil {
+		return err
 	}
 
 	for _, resource := range collection.Items {
@@ -108,14 +115,6 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 		}
 
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
-
-		project := octopus.Project{}
-		err := c.Client.GetResourceById("Projects", resource.ProjectId, &project)
-
-		if err != nil {
-			return fmt.Errorf("error in OctopusClient.GetResourceById loading type octopus.Project: %w", err)
-		}
-
 		err = c.toHcl(&resource, &project, recursive, false, stateless, dependencies)
 
 		if err != nil {
@@ -131,27 +130,22 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 		return nil
 	}
 
-	collection := octopus.GeneralCollection[octopus.Runbook]{}
-	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+	project := octopus.Project{}
+	if err := c.Client.GetResourceById("Projects", projectId, &project); err != nil {
+		return fmt.Errorf("error in OctopusClient.GetResourceById loading type octopus.Project: %w", err)
+	}
+
+	collection, err := c.GetRunbookCollection(&project)
 
 	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
+		return err
 	}
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
 
-		project := octopus.Project{}
-		err := c.Client.GetResourceById("Projects", resource.ProjectId, &project)
-
-		if err != nil {
-			return fmt.Errorf("error in OctopusClient.GetResourceById loading type octopus.Project: %w", err)
-		}
-
-		err = c.toHcl(&resource, &project, false, true, false, dependencies)
-
-		if err != nil {
-			return err
+		if err := c.toHcl(&resource, &project, false, true, false, dependencies); err != nil {
+			return nil
 		}
 	}
 
@@ -408,8 +402,27 @@ func (c *RunbookConverter) GetResourceType() string {
 	return "Runbooks"
 }
 
+func (c *RunbookConverter) GetRunbookCollection(project *octopus.Project) (octopus.GeneralCollection[octopus.Runbook], error) {
+	collection := octopus.GeneralCollection[octopus.Runbook]{}
+	if project.HasCacConfigured() {
+		if err := c.Client.GetAllResources(c.GetCaCGroupResourceType(project.Id, project.PersistenceSettings.DefaultBranch), &collection); err != nil {
+			return collection, fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
+		}
+	} else {
+		if err := c.Client.GetAllResources(c.GetGroupResourceType(project.Id), &collection); err != nil {
+			return collection, fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
+		}
+	}
+
+	return collection, nil
+}
+
 func (c *RunbookConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/runbooks"
+}
+
+func (c *RunbookConverter) GetCaCGroupResourceType(projectId string, branch string) string {
+	return "Projects/" + projectId + "/" + url.QueryEscape(branch) + "/runbooks"
 }
 
 func (c *RunbookConverter) writeProjectNameVariable(file *hclwrite.File, projectName string, projectResourceName string) {
@@ -462,7 +475,7 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 	}
 
 	// Export the deployment process
-	if runbook.RunbookProcessId != nil && !(c.IgnoreCacManagedValues && project.HasCacConfigured()) {
+	if runbook.RunbookProcessId != nil && !project.HasCacConfigured() {
 		var err error
 		if lookup {
 			err = c.RunbookProcessConverter.ToHclLookupById(*runbook.RunbookProcessId, dependencies)
@@ -480,7 +493,7 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 	}
 
 	// The deployment process for a CaC enabled project is found under the name of a Git branch
-	if !c.IgnoreCacManagedValues && project.HasCacConfigured() {
+	if project.HasCacConfigured() {
 		var err error
 		if lookup {
 			err = c.RunbookProcessConverter.ToHclLookupByIdBranchAndProject(project.Id, strutil.EmptyIfNil(runbook.RunbookProcessId), project.PersistenceSettings.DefaultBranch, dependencies)

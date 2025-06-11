@@ -49,17 +49,25 @@ func (c *RunbookProcessConverter) toHclByIdBranchAndProject(parentId string, run
 	}
 
 	runbook := octopus.Runbook{}
-	_, err = c.Client.GetSpaceResourceById("Runbooks", resource.RunbookId, &runbook)
+	found, err = c.Client.GetSpaceResourceById("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/Runbooks", resource.RunbookId, &runbook)
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Runbook: %w", err)
 	}
 
+	if !found {
+		return fmt.Errorf("runbook with ID %s not found in project %s", resource.RunbookId, parentId+"/"+branch)
+	}
+
 	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById("Projects", runbook.ProjectId, &project)
+	found, err = c.Client.GetSpaceResourceById("Projects", parentId, &project)
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
+	}
+
+	if !found {
+		return fmt.Errorf("project with ID %s not found", parentId)
 	}
 
 	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
