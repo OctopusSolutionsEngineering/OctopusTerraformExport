@@ -1,5 +1,7 @@
 package octopus
 
+import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+
 type Runbook struct {
 	NameId
 	Slug                       *string
@@ -14,6 +16,14 @@ type Runbook struct {
 	DefaultGuidedFailureMode   *string
 	RunRetentionPolicy         RunRetentionPolicy
 	ForcePackageDownload       bool
+}
+
+func (r *Runbook) GetParentId() *string {
+	if r == nil {
+		return nil
+	}
+
+	return strutil.NilIfEmpty(r.ProjectId)
 }
 
 type RunRetentionPolicy struct {

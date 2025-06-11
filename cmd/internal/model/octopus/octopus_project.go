@@ -61,6 +61,10 @@ type Project struct {
 	// Todo: add service now and jira settings
 }
 
+func (t Project) GetParentId() *string {
+	return nil
+}
+
 func (t Project) HasCacConfigured() bool {
 	return t.PersistenceSettings.Credentials.Type == "Reference" ||
 		t.PersistenceSettings.Credentials.Type == "Anonymous" ||
