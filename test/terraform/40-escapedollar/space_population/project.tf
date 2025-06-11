@@ -64,7 +64,13 @@ resource "octopusdeploy_process_step" "process_step_test" {
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
-  primary_package       = { acquisition_location = "Server", feed_id = "${data.octopusdeploy_feeds.built_in_feed.feeds[0].id}", id = null, package_id = "test", properties = { SelectionMode = "immediate" } }
+  primary_package       = {
+    acquisition_location = "Server",
+    feed_id = "${data.octopusdeploy_feeds.built_in_feed.feeds[0].id}",
+    id = null,
+    package_id = "test",
+    properties = { SelectionMode = "immediate" }
+  }
   slug                  = "test"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
