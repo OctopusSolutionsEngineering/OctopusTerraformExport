@@ -59,7 +59,7 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   package_requirement   = "LetOctopusDecide"
   slug                  = "get-mysql-host"
   start_trigger         = "StartAfterPrevious"
-  tenant_tags           = null
+  tenant_tags           = ["type with space/a with space"]
   execution_properties  = {
     "Octopus.Action.Script.Syntax" = "PowerShell"
     "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
@@ -69,4 +69,5 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
   properties            = {
     "Octopus.Action.TargetRoles" = "eks"
   }
+  depends_on = [octopusdeploy_tag.tag_a]
 }
