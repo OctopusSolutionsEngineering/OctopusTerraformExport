@@ -6314,7 +6314,12 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 			"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
 			"-var=project_test_git_base_path=.octopus/projectgitusername" + uuid.New().String(),
 		},
-		args2.Arguments{},
+		args2.Arguments{
+			// Don't export anything managed by CAC as the git repo is already populated.
+			// We just want to create a new project pointing to an existing git repo.
+			// This assumes the git repo is already populated with the correct files.
+			IgnoreCacManagedValues: true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
