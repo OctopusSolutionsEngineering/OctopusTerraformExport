@@ -61,19 +61,19 @@ type Project struct {
 	// Todo: add service now and jira settings
 }
 
-func (t Project) GetParentId() *string {
+func (p *Project) GetParentId() *string {
 	return nil
 }
 
-func (r Project) GetUltimateParent() string {
-	return r.Id
+func (p *Project) GetUltimateParent() string {
+	return p.Id
 }
 
-func (t Project) HasCacConfigured() bool {
-	return t.PersistenceSettings.Credentials.Type == "Reference" ||
-		t.PersistenceSettings.Credentials.Type == "Anonymous" ||
-		t.PersistenceSettings.Credentials.Type == "UsernamePassword" ||
-		t.PersistenceSettings.Credentials.Type == "GitHub"
+func (p *Project) HasCacConfigured() bool {
+	return p.PersistenceSettings.Credentials.Type == "Reference" ||
+		p.PersistenceSettings.Credentials.Type == "Anonymous" ||
+		p.PersistenceSettings.Credentials.Type == "UsernamePassword" ||
+		p.PersistenceSettings.Credentials.Type == "GitHub"
 }
 
 type PersistenceSettings struct {

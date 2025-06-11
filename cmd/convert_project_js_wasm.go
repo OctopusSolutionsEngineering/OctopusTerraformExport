@@ -567,7 +567,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		GitCredentialsConverter:     gitCredentialsConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
-		DeploymentProcessConverter: converters.DeploymentProcessConverterV2{
+		DeploymentProcessConverter: converters.DeploymentProcessConverter{
 			Client: &client,
 			OctopusActionProcessor: converters.OctopusActionProcessor{
 				FeedConverter:          feedConverter,

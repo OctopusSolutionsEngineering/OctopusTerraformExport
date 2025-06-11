@@ -1,7 +1,6 @@
 package converters
 
 import (
-	"fmt"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -19,12 +18,10 @@ import (
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
-	"go.uber.org/zap"
-	"net/url"
 )
 
-// DeploymentProcessConverterV2 converts deployment processes for v1 of the Octopus Terraform provider.
-type DeploymentProcessConverterV2 struct {
+type DeploymentProcessConverterBase struct {
+	ResourceType                    string
 	Client                          client.OctopusClient
 	OctopusActionProcessor          *OctopusActionProcessor
 	IgnoreProjectChanges            bool
@@ -46,167 +43,12 @@ type DeploymentProcessConverterV2 struct {
 	IgnoreCacErrors                 bool
 }
 
-func (c *DeploymentProcessConverterV2) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
+func (c *DeploymentProcessConverterBase) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
 	c.OctopusActionProcessor = actionProcessor
 }
 
-func (c *DeploymentProcessConverterV2) ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndBranch(parentId, branch, recursive, false, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndBranch(parentId, branch, true, true, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) toHclByIdAndBranch(parentId string, branch string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
-	if parentId == "" || branch == "" {
-		return nil
-	}
-
-	if dependencies.HasResource(parentId+"/"+branch, c.GetResourceType()) {
-		return nil
-	}
-
-	// Get the deployment process associated with the git branch
-	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/deploymentprocesses", &resource)
-
-	if err != nil {
-		if !c.IgnoreCacErrors {
-			return err
-		} else {
-			found = false
-		}
-	}
-
-	// Projects with no deployment process will not have a deployment process resources.
-	// This is expected, so just return.
-	if !found {
-		return nil
-	}
-
-	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
-
-	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
-	}
-
-	return c.toHcl(&resource, project, recursive, false, stateless, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
-	if parentId == "" || branch == "" {
-		return nil
-	}
-
-	if dependencies.HasResource(parentId+"/"+branch, c.GetResourceType()) {
-		return nil
-	}
-
-	// Get the deployment process associated with the git branch
-	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/deploymentprocesses", &resource)
-
-	if err != nil {
-		if !c.IgnoreCacErrors {
-			return err
-		} else {
-			found = false
-		}
-	}
-
-	// Projects with no deployment process will not have a deployment process resources.
-	// This is expected, so just return.
-	if !found {
-		return nil
-	}
-
-	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
-
-	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
-	}
-
-	return c.toHcl(&resource, project, false, true, false, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", recursive, false, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", true, true, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) toHclByIdAndName(id string, _ string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
-	if id == "" {
-		return nil
-	}
-
-	if dependencies.HasResource(id, c.GetResourceType()) {
-		return nil
-	}
-
-	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
-
-	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.DeploymentProcess: %w", err)
-	}
-
-	// Projects with no deployment process will not have a deployment process resources.
-	// This is expected, so just return.
-	if !found {
-		return nil
-	}
-
-	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
-
-	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
-	}
-
-	zap.L().Info("Deployment Process: " + resource.Id)
-	return c.toHcl(&resource, project, recursive, false, stateless, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
-	if id == "" {
-		return nil
-	}
-
-	if dependencies.HasResource(id, c.GetResourceType()) {
-		return nil
-	}
-
-	resource := octopus.DeploymentProcess{}
-	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
-
-	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.DeploymentProcess: %w", err)
-	}
-
-	// Projects with no deployment process will not have a deployment process resources.
-	// This is expected, so just return.
-	if !found {
-		return nil
-	}
-
-	project := octopus.Project{}
-	_, err = c.Client.GetSpaceResourceById("Projects", resource.ProjectId, &project)
-
-	if err != nil {
-		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
-	}
-
-	return c.toHcl(&resource, project, false, true, false, dependencies)
-}
-
-func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, owner octopus.NameIdParentResource, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
-	resourceName := c.generateProcessName(owner)
+func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	resourceName := c.generateProcessName(parent, owner)
 
 	err := c.exportDependencies(recursive, lookup, stateless, resource, dependencies)
 
@@ -227,8 +69,13 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, ow
 			Name:      resourceName,
 			Id:        nil,
 			SpaceId:   nil,
-			ProjectId: strutil.StrPointer(dependencies.GetResource("Projects", resource.GetParentId())),
+			ProjectId: strutil.StrPointer(dependencies.GetResource("Projects", owner.GetUltimateParent())),
 			RunbookId: nil,
+		}
+
+		// If there is a parent resource, we are working with a runbook process.
+		if parent != nil {
+			terraformProcessResource.RunbookId = strutil.NilIfEmpty(dependencies.GetResource("Runbooks", owner.GetId()))
 		}
 
 		if stateless {
@@ -278,27 +125,27 @@ func (c *DeploymentProcessConverterV2) toHcl(resource octopus.OctopusProcess, ow
 		parentStep := len(step.Actions) > 1
 
 		// Every step is either standalone or a parent step with child steps.
-		c.generateSteps(stateless, resource, owner, &step, dependencies)
+		c.generateSteps(stateless, resource, parent, owner, &step, dependencies)
 
 		if parentStep {
 			// Steps that have children create a new child step from all the actions.
 			for _, action := range step.Actions {
-				c.generateChildSteps(stateless, resource, owner, &action, dependencies)
+				c.generateChildSteps(stateless, resource, parent, owner, &action, dependencies)
 			}
 
 			// The child steps are captured in the TerraformProcessChildStepsOrder resource.
-			c.generateChildStepOrder(stateless, resource, owner, &step, dependencies)
+			c.generateChildStepOrder(stateless, resource, parent, owner, &step, dependencies)
 		}
 	}
 
 	// The steps are captured in the TerraformProcessStepsOrder resource.
-	c.generateStepOrder(stateless, resource, owner, validSteps, dependencies)
+	c.generateStepOrder(stateless, resource, parent, owner, validSteps, dependencies)
 
 	return nil
 }
 
-func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
-	resourceName := c.generateChildStepOrderName(owner, step)
+func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+	resourceName := c.generateChildStepOrderName(parent, owner, step)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -315,10 +162,10 @@ func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, re
 			Type:      "octopusdeploy_process_child_steps_order",
 			Name:      resourceName,
 			Id:        nil,
-			ProcessId: "${octopusdeploy_process." + c.generateProcessName(owner) + ".id}",
-			ParentId:  "${octopusdeploy_process_step." + c.generateStepName(owner, step) + ".id}",
+			ProcessId: "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
+			ParentId:  "${octopusdeploy_process_step." + c.generateStepName(parent, owner, step) + ".id}",
 			Steps: lo.Map(step.Actions, func(item octopus.Action, index int) string {
-				return "${octopusdeploy_process_child_step." + c.generateChildStepName(owner, &item) + ".id}"
+				return "${octopusdeploy_process_child_step." + c.generateChildStepName(parent, owner, &item) + ".id}"
 			}),
 		}
 
@@ -341,8 +188,8 @@ func (c *DeploymentProcessConverterV2) generateChildStepOrder(stateless bool, re
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) {
-	resourceName := c.generateStepOrderName(owner)
+func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) {
+	resourceName := c.generateStepOrderName(parent, owner)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -359,9 +206,9 @@ func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resourc
 			Type:      "octopusdeploy_process_steps_order",
 			Name:      resourceName,
 			Id:        nil,
-			ProcessId: "${octopusdeploy_process." + c.generateProcessName(owner) + ".id}",
+			ProcessId: "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
 			Steps: lo.Map(steps, func(item octopus.Step, index int) string {
-				return "${octopusdeploy_process_step." + c.generateStepName(owner, &item) + ".id}"
+				return "${octopusdeploy_process_step." + c.generateStepName(parent, owner, &item) + ".id}"
 			}),
 		}
 
@@ -384,8 +231,8 @@ func (c *DeploymentProcessConverterV2) generateStepOrder(stateless bool, resourc
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
-	resourceName := c.generateChildStepName(owner, action)
+func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+	resourceName := c.generateChildStepName(parent, owner, action)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -403,7 +250,7 @@ func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resour
 			Id:                   nil, // Read only
 			ResourceName:         strutil.EmptyIfNil(action.Name),
 			ResourceType:         strutil.EmptyIfNil(action.ActionType),
-			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(owner) + ".id}",
+			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
 			Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
@@ -453,8 +300,8 @@ func (c *DeploymentProcessConverterV2) generateChildSteps(stateless bool, resour
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource octopus.OctopusProcess, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
-	resourceName := c.generateStepName(owner, step)
+func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+	resourceName := c.generateStepName(parent, owner, step)
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
@@ -473,7 +320,7 @@ func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource oc
 			Id:                   nil,
 			ResourceName:         strutil.EmptyIfNil(step.Name),
 			ResourceType:         "",
-			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(owner) + ".id}",
+			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
 			Channels:             nil,
 			Condition:            step.Condition,
 			Container:            nil,
@@ -551,27 +398,43 @@ func (c *DeploymentProcessConverterV2) generateSteps(stateless bool, resource oc
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterV2) generateProcessName(owner octopus.NameIdParentResource) string {
+func (c *DeploymentProcessConverterBase) generateProcessName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource) string {
+	if parent != nil {
+		return "process_" + sanitizer.SanitizeName(parent.GetName()) + "_" + sanitizer.SanitizeName(owner.GetName())
+	}
 	return "process_" + sanitizer.SanitizeName(owner.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateStepOrderName(owner octopus.NameIdParentResource) string {
+func (c *DeploymentProcessConverterBase) generateStepOrderName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource) string {
+	if parent != nil {
+		return "process_step_order_" + sanitizer.SanitizeName(parent.GetName()) + "_" + sanitizer.SanitizeName(owner.GetName())
+	}
 	return "process_step_order_" + sanitizer.SanitizeName(owner.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateChildStepOrderName(owner octopus.NameIdParentResource, named octopus.NamedResource) string {
+func (c *DeploymentProcessConverterBase) generateChildStepOrderName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, named octopus.NamedResource) string {
+	if parent != nil {
+		return "process_child_step_order_" + sanitizer.SanitizeName(parent.GetName()) + "_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
+	}
 	return "process_child_step_order_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateStepName(owner octopus.NameIdParentResource, named octopus.NamedResource) string {
+func (c *DeploymentProcessConverterBase) generateStepName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, named octopus.NamedResource) string {
+	if parent != nil {
+		return "process_step_" + sanitizer.SanitizeName(parent.GetName()) + "_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
+	}
 	return "process_step_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) generateChildStepName(owner octopus.NameIdParentResource, named octopus.NamedResource) string {
+func (c *DeploymentProcessConverterBase) generateChildStepName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, named octopus.NamedResource) string {
+	if parent != nil {
+		return "process_child_step_" + sanitizer.SanitizeName(parent.GetName()) + "_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
+	}
+
 	return "process_child_step_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
@@ -597,7 +460,7 @@ func (c *DeploymentProcessConverterV2) assignProperties(propertyName string, blo
 	}
 }
 
-func (c *DeploymentProcessConverterV2) assignPrimaryPackage(projectName string, terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) assignPrimaryPackage(projectName string, terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	primaryPackage, packageIdVariable := c.getPrimaryPackage(projectName, action, dependencies)
 
 	if primaryPackage != nil {
@@ -606,7 +469,7 @@ func (c *DeploymentProcessConverterV2) assignPrimaryPackage(projectName string, 
 	}
 }
 
-func (c *DeploymentProcessConverterV2) assignReferencePackage(projectName string, terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) assignReferencePackage(projectName string, terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	referencePackages, referencePackageIdVariables := c.getPackages(projectName, action, dependencies)
 	terraformProcessStep.Packages = referencePackages
 
@@ -615,7 +478,7 @@ func (c *DeploymentProcessConverterV2) assignReferencePackage(projectName string
 	}
 }
 
-func (c *DeploymentProcessConverterV2) assignWorkerPool(terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverterBase) assignWorkerPool(terraformProcessStep *terraform.TerraformProcessStep, action *octopus.Action, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) error {
 	// Worker pool variable takes precedence over worker pool ID
 	if action.WorkerPoolVariable != nil {
 		return nil
@@ -638,7 +501,7 @@ func (c *DeploymentProcessConverterV2) assignWorkerPool(terraformProcessStep *te
 }
 
 // getPrimaryPackage returns the details of the primary package and an optional variable used to reference the package ID.
-func (c *DeploymentProcessConverterV2) getPrimaryPackage(projectName string, action *octopus.Action, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProcessStepPackage, *terraform.TerraformVariable) {
+func (c *DeploymentProcessConverterBase) getPrimaryPackage(projectName string, action *octopus.Action, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProcessStepPackage, *terraform.TerraformVariable) {
 	var packageIdVariable *terraform.TerraformVariable = nil
 
 	for _, p := range action.Packages {
@@ -675,7 +538,7 @@ func (c *DeploymentProcessConverterV2) getPrimaryPackage(projectName string, act
 }
 
 // getPackages returns the details of the reference packages and an optional variables used to reference the package ID.
-func (c *DeploymentProcessConverterV2) getPackages(projectName string, action *octopus.Action, dependencies *data.ResourceDetailsCollection) (*map[string]terraform.TerraformProcessStepPackage, []*terraform.TerraformVariable) {
+func (c *DeploymentProcessConverterBase) getPackages(projectName string, action *octopus.Action, dependencies *data.ResourceDetailsCollection) (*map[string]terraform.TerraformProcessStepPackage, []*terraform.TerraformVariable) {
 	packages := map[string]terraform.TerraformProcessStepPackage{}
 	packageIdVariables := []*terraform.TerraformVariable{}
 
@@ -717,11 +580,11 @@ func (c *DeploymentProcessConverterV2) getPackages(projectName string, action *o
 	return &packages, packageIdVariables
 }
 
-func (c *DeploymentProcessConverterV2) GetResourceType() string {
-	return "DeploymentProcesses"
+func (c *DeploymentProcessConverterBase) GetResourceType() string {
+	return c.ResourceType
 }
 
-func (c *DeploymentProcessConverterV2) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.OctopusProcess, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverterBase) exportDependencies(recursive bool, lookup bool, stateless bool, resource octopus.OctopusProcess, dependencies *data.ResourceDetailsCollection) error {
 	// Export linked accounts
 	err := c.OctopusActionProcessor.ExportAccounts(recursive, lookup, stateless, resource.GetSteps(), dependencies)
 	if err != nil {
@@ -767,7 +630,7 @@ func (c *DeploymentProcessConverterV2) exportDependencies(recursive bool, lookup
 	return nil
 }
 
-func (c *DeploymentProcessConverterV2) getPackageIdVariable(defaultValue string, projectName string, stepName string, packageName string) *terraform.TerraformVariable {
+func (c *DeploymentProcessConverterBase) getPackageIdVariable(defaultValue string, projectName string, stepName string, packageName string) *terraform.TerraformVariable {
 	sanitizedProjectName := sanitizer.SanitizeName(projectName)
 	sanitizedPackageName := sanitizer.SanitizeName(packageName)
 	sanitizedStepName := sanitizer.SanitizeName(stepName)
@@ -790,7 +653,7 @@ func (c *DeploymentProcessConverterV2) getPackageIdVariable(defaultValue string,
 	}
 }
 
-func (c *DeploymentProcessConverterV2) writeVariableToFile(file *hclwrite.File, variable *terraform.TerraformVariable) {
+func (c *DeploymentProcessConverterBase) writeVariableToFile(file *hclwrite.File, variable *terraform.TerraformVariable) {
 	if variable == nil {
 		return
 	}
