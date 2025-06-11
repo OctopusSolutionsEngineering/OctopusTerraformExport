@@ -109,15 +109,15 @@ func (c *RunbookProcessConverter) ToHclLookupByIdAndBranch(parentId string, runb
 	return c.toHcl(&resource, &project, &runbook, false, true, false, dependencies)
 }
 
-func (c *RunbookProcessConverter) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", recursive, false, dependencies)
+func (c *RunbookProcessConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, false, dependencies)
 }
 
-func (c *RunbookProcessConverter) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", true, true, dependencies)
+func (c *RunbookProcessConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, true, dependencies)
 }
 
-func (c *RunbookProcessConverter) toHclByIdAndName(id string, _ string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) toHclById(id string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -157,7 +157,7 @@ func (c *RunbookProcessConverter) toHclByIdAndName(id string, _ string, recursiv
 	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
 }
 
-func (c *RunbookProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}

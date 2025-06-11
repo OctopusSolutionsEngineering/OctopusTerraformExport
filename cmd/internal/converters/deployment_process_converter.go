@@ -95,15 +95,15 @@ func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, b
 	return c.toHcl(&resource, nil, &project, false, true, false, dependencies)
 }
 
-func (c *DeploymentProcessConverter) ToHclByIdAndName(id string, _ string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", recursive, false, dependencies)
+func (c *DeploymentProcessConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, false, dependencies)
 }
 
-func (c *DeploymentProcessConverter) ToHclStatelessByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(id, "", true, true, dependencies)
+func (c *DeploymentProcessConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, true, dependencies)
 }
 
-func (c *DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) toHclById(id string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}
@@ -136,7 +136,7 @@ func (c *DeploymentProcessConverter) toHclByIdAndName(id string, _ string, recur
 	return c.toHcl(&resource, nil, &project, recursive, false, stateless, dependencies)
 }
 
-func (c *DeploymentProcessConverter) ToHclLookupByIdAndName(id string, _ string, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
 	if id == "" {
 		return nil
 	}

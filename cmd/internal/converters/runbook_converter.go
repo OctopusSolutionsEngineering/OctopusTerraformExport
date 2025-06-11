@@ -448,12 +448,12 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 	if runbook.RunbookProcessId != nil {
 		var err error
 		if lookup {
-			err = c.RunbookProcessConverter.ToHclLookupByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+			err = c.RunbookProcessConverter.ToHclLookupById(*runbook.RunbookProcessId, dependencies)
 		} else {
 			if stateless {
-				err = c.RunbookProcessConverter.ToHclStatelessByIdAndName(*runbook.RunbookProcessId, runbookName, dependencies)
+				err = c.RunbookProcessConverter.ToHclStatelessById(*runbook.RunbookProcessId, dependencies)
 			} else {
-				err = c.RunbookProcessConverter.ToHclByIdAndName(*runbook.RunbookProcessId, runbookName, recursive, dependencies)
+				err = c.RunbookProcessConverter.ToHclById(*runbook.RunbookProcessId, dependencies)
 			}
 		}
 

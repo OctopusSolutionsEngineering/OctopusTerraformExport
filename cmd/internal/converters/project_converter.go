@@ -1054,12 +1054,12 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 
 		var err error
 		if lookup {
-			err = c.DeploymentProcessConverter.ToHclLookupByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+			err = c.DeploymentProcessConverter.ToHclLookupById(*project.DeploymentProcessId, dependencies)
 		} else {
 			if stateless {
-				err = c.DeploymentProcessConverter.ToHclStatelessByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+				err = c.DeploymentProcessConverter.ToHclStatelessById(*project.DeploymentProcessId, dependencies)
 			} else {
-				err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, recursive, dependencies)
+				err = c.DeploymentProcessConverter.ToHclById(*project.DeploymentProcessId, dependencies)
 			}
 		}
 

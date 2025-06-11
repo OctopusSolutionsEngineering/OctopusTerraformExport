@@ -105,16 +105,18 @@ type ConverterAndLookupByIdAndNameOrBranch interface {
 // ConverterAndLookupByIdAndNameWithProjects converts an individual resource by ID to HCL and to a data lookup
 // with references to projects
 type ConverterAndLookupByIdAndNameWithProjects interface {
-	ConverterByIdWithName
-	ConverterLookupByIdWithName
+	ConverterById
+	ConverterLookupById
+	ConverterToStatelessById
 	ActionProcessor
 }
 
 // ConverterAndLookupByIdAndNameOrBranchWithProjects converts an individual resource by ID or git branch to HCL and to a data lookup
 // with references to projects
 type ConverterAndLookupByIdAndNameOrBranchWithProjects interface {
-	ConverterByIdWithName
-	ConverterLookupByIdWithName
+	ConverterById
+	ConverterLookupById
+	ConverterToStatelessById
 	ConverterLookupByIdWithBranch
 	ActionProcessor
 }
