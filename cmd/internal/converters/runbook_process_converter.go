@@ -13,15 +13,15 @@ type RunbookProcessConverter struct {
 	DeploymentProcessConverterBase
 }
 
-func (c *RunbookProcessConverter) ToHclByIdAndBranch(parentId string, runbookId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndBranch(parentId, runbookId, branch, recursive, false, dependencies)
+func (c *RunbookProcessConverter) ToHclByIdBranchAndProject(parentId string, runbookProcessId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdBranchAndProject(parentId, runbookProcessId, branch, recursive, false, dependencies)
 }
 
-func (c *RunbookProcessConverter) ToHclStatelessByIdAndBranch(parentId string, runbookId string, branch string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndBranch(parentId, runbookId, branch, true, true, dependencies)
+func (c *RunbookProcessConverter) ToHclStatelessByIdBranchAndProject(parentId string, runbookProcessId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdBranchAndProject(parentId, runbookProcessId, branch, true, true, dependencies)
 }
 
-func (c *RunbookProcessConverter) toHclByIdAndBranch(parentId string, runbookId string, branch string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) toHclByIdBranchAndProject(parentId string, runbookProcessId string, branch string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (c *RunbookProcessConverter) toHclByIdAndBranch(parentId string, runbookId 
 
 	// Get the deployment process associated with the git branch
 	resource := octopus.RunbookProcess{}
-	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/runbookProcesses/"+runbookId, &resource)
+	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/runbookProcesses/"+runbookProcessId, &resource)
 
 	if err != nil {
 		if !c.IgnoreCacErrors {
@@ -65,7 +65,7 @@ func (c *RunbookProcessConverter) toHclByIdAndBranch(parentId string, runbookId 
 	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
 }
 
-func (c *RunbookProcessConverter) ToHclLookupByIdAndBranch(parentId string, runbookId string, branch string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) ToHclLookupByIdBranchAndProject(parentId string, runbookProcessId string, branch string, dependencies *data.ResourceDetailsCollection) error {
 	if parentId == "" || branch == "" {
 		return nil
 	}
@@ -76,7 +76,7 @@ func (c *RunbookProcessConverter) ToHclLookupByIdAndBranch(parentId string, runb
 
 	// Get the deployment process associated with the git branch
 	resource := octopus.RunbookProcess{}
-	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/runbookProcesses/"+runbookId, &resource)
+	found, err := c.Client.GetResource("Projects/"+parentId+"/"+url.QueryEscape(branch)+"/runbookProcesses/"+runbookProcessId, &resource)
 
 	if err != nil {
 		if !c.IgnoreCacErrors {

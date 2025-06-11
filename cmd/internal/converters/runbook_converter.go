@@ -25,7 +25,7 @@ const octopusdeployRunbookResourceType = "octopusdeploy_runbook"
 
 type RunbookConverter struct {
 	Client                       client.OctopusClient
-	RunbookProcessConverter      ConverterAndLookupByIdAndNameWithProjects
+	RunbookProcessConverter      ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcesses
 	EnvironmentConverter         ConverterAndLookupWithStatelessById
 	ProjectConverter             ConverterAndLookupWithStatelessById
 	ExcludedRunbooks             args.StringSliceArgs
@@ -40,6 +40,7 @@ type RunbookConverter struct {
 	IncludeSpaceInPopulation     bool
 	IncludeIds                   bool
 	GenerateImportScripts        bool
+	IgnoreCacManagedValues       bool
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -78,7 +79,7 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	}
 
 	zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
-	return c.toHcl(resource, parentResource.Name, false, true, false, dependencies)
+	return c.toHcl(&resource, &parentResource, false, true, false, dependencies)
 }
 
 func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
@@ -107,7 +108,15 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 		}
 
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
-		err = c.toHcl(resource, projectName, recursive, false, stateless, dependencies)
+
+		project := octopus.Project{}
+		err := c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+
+		if err != nil {
+			return fmt.Errorf("error in OctopusClient.GetResourceById loading type octopus.Project: %w", err)
+		}
+
+		err = c.toHcl(&resource, &project, recursive, false, stateless, dependencies)
 
 		if err != nil {
 			return err
@@ -131,7 +140,15 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 
 	for _, resource := range collection.Items {
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
-		err = c.toHcl(resource, projectName, false, true, false, dependencies)
+
+		project := octopus.Project{}
+		err := c.Client.GetResourceById("Projects", resource.ProjectId, &project)
+
+		if err != nil {
+			return fmt.Errorf("error in OctopusClient.GetResourceById loading type octopus.Project: %w", err)
+		}
+
+		err = c.toHcl(&resource, &project, false, true, false, dependencies)
 
 		if err != nil {
 			return err
@@ -294,7 +311,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 	})
 }
 
-func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	// Ignore excluded runbooks
@@ -313,15 +330,15 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 	thisResource := data.ResourceDetails{}
 
-	resourceNameSuffix := sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(runbook.Name)
+	resourceNameSuffix := sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeName(runbook.Name)
 	runbookName := "runbook_" + resourceNameSuffix
 
 	if c.GenerateImportScripts {
-		c.toBashImport(runbookName, projectName, runbook.Name, dependencies)
-		c.toPowershellImport(runbookName, projectName, runbook.Name, dependencies)
+		c.toBashImport(runbookName, project.Name, runbook.Name, dependencies)
+		c.toPowershellImport(runbookName, project.Name, runbook.Name, dependencies)
 	}
 
-	err := c.exportChildDependencies(recursive, lookups, stateless, runbook, resourceNameSuffix, dependencies)
+	err := c.exportChildDependencies(recursive, lookups, stateless, project, runbook, dependencies)
 
 	if err != nil {
 		return err
@@ -366,7 +383,7 @@ func (c *RunbookConverter) toHcl(runbook octopus.Runbook, projectName string, re
 
 		if stateless {
 			// when importing a stateless project, the channel is only created if the project does not exist
-			c.writeData(file, projectName, runbookName)
+			c.writeData(file, project.Name, runbookName)
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + runbookName + ".projects) != 0 ? 0 : 1}")
 		}
 
@@ -410,7 +427,7 @@ func (c *RunbookConverter) writeProjectNameVariable(file *hclwrite.File, project
 	file.Body().AppendBlock(block)
 }
 
-func (c *RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *terraform.TerraformConnectivityPolicy {
+func (c *RunbookConverter) convertConnectivityPolicy(runbook *octopus.Runbook) *terraform.TerraformConnectivityPolicy {
 	return &terraform.TerraformConnectivityPolicy{
 		AllowDeploymentsToNoTargets: runbook.ConnectivityPolicy.AllowDeploymentsToNoTargets,
 		ExcludeUnhealthyTargets:     runbook.ConnectivityPolicy.ExcludeUnhealthyTargets,
@@ -418,14 +435,14 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook octopus.Runbook) *t
 	}
 }
 
-func (c *RunbookConverter) convertRetentionPolicy(runbook octopus.Runbook) *terraform.RetentionPolicy {
+func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *terraform.RetentionPolicy {
 	return &terraform.RetentionPolicy{
 		QuantityToKeep:    runbook.RunRetentionPolicy.QuantityToKeep,
 		ShouldKeepForever: boolutil.NilIfFalse(runbook.RunRetentionPolicy.ShouldKeepForever),
 	}
 }
 
-func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, runbook octopus.Runbook, runbookName string, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project *octopus.Project, runbook *octopus.Runbook, dependencies *data.ResourceDetailsCollection) error {
 	// It is not valid to have lookup be false and recursive be true, as the only supported export of a runbook is
 	// with lookup being true.
 	if lookup && recursive {
@@ -445,7 +462,7 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 	}
 
 	// Export the deployment process
-	if runbook.RunbookProcessId != nil {
+	if runbook.RunbookProcessId != nil && !(c.IgnoreCacManagedValues && project.HasCacConfigured()) {
 		var err error
 		if lookup {
 			err = c.RunbookProcessConverter.ToHclLookupById(*runbook.RunbookProcessId, dependencies)
@@ -455,6 +472,25 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 			} else {
 				err = c.RunbookProcessConverter.ToHclById(*runbook.RunbookProcessId, dependencies)
 			}
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// The deployment process for a CaC enabled project is found under the name of a Git branch
+	if !c.IgnoreCacManagedValues && project.HasCacConfigured() {
+		var err error
+		if lookup {
+			err = c.RunbookProcessConverter.ToHclLookupByIdBranchAndProject(project.Id, strutil.EmptyIfNil(runbook.RunbookProcessId), project.PersistenceSettings.DefaultBranch, dependencies)
+		} else {
+			if stateless {
+				err = c.RunbookProcessConverter.ToHclStatelessByIdBranchAndProject(project.Id, strutil.EmptyIfNil(runbook.RunbookProcessId), project.PersistenceSettings.DefaultBranch, dependencies)
+			} else {
+				err = c.RunbookProcessConverter.ToHclByIdBranchAndProject(project.Id, strutil.EmptyIfNil(runbook.RunbookProcessId), project.PersistenceSettings.DefaultBranch, recursive, dependencies)
+			}
+
 		}
 
 		if err != nil {
@@ -493,7 +529,7 @@ func (c *RunbookConverter) compileRegexes() {
 	}
 }
 
-func (c *RunbookConverter) runbookIsExcluded(runbook octopus.Runbook) bool {
+func (c *RunbookConverter) runbookIsExcluded(runbook *octopus.Runbook) bool {
 	if c.ExcludedRunbooks != nil && slices.Index(c.ExcludedRunbooks, runbook.Name) != -1 {
 		return true
 	}
