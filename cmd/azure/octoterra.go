@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/environment"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -27,10 +30,38 @@ type AzureFunctionRequest struct {
 	Data AzureFunctionRequestData `json:"Data"`
 }
 
+func hostIsCloudOrLocal(host string) bool {
+	return strings.HasSuffix(host, ".octopus.app") ||
+		strings.HasSuffix(host, ".testoctopus.com") ||
+		host == "localhost" ||
+		host == "127.0.0.1"
+}
+
 func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow the more sensitive values to be passed as headers
 	apiKey := r.Header.Get("X-Octopus-ApiKey")
-	url := r.Header.Get("X-Octopus-Url")
+	accessToken := r.Header.Get("X-Octopus-AccessToken")
+	octopusUrl := r.Header.Get("X-Octopus-Url")
+	redirectorRedirections := r.Header.Get("X_REDIRECTION_REDIRECTIONS")
+	redirectorApiKey := r.Header.Get("X_REDIRECTION_API_KEY")
+	redirectorServiceApiKey, _ := os.LookupEnv("REDIRECTION_SERVICE_API_KEY")
+	redirectorHost, _ := os.LookupEnv("REDIRECTION_HOST")
+	disableRedirector, _ := os.LookupEnv("DISABLE_REDIRECTION")
+
+	parsedUrl, err := url.Parse(octopusUrl)
+
+	if err != nil {
+		handleError(err, w)
+		return
+	}
+
+	disableRedirectorParsed, err := strconv.ParseBool(disableRedirector)
+
+	if err != nil {
+		disableRedirectorParsed = false
+	}
+
+	useRedirector := !disableRedirectorParsed && !hostIsCloudOrLocal(parsedUrl.Hostname()) && redirectorServiceApiKey != "" && redirectorHost != ""
 
 	respBytes, err := io.ReadAll(r.Body)
 
@@ -84,8 +115,21 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		commandLineArgs = append(commandLineArgs, "-apiKey", apiKey)
 	}
 
-	if url != "" {
-		commandLineArgs = append(commandLineArgs, "-url", url)
+	if accessToken != "" {
+		commandLineArgs = append(commandLineArgs, "-accessToken", accessToken)
+	}
+
+	if octopusUrl != "" {
+		commandLineArgs = append(commandLineArgs, "-url", octopusUrl)
+	}
+
+	if useRedirector {
+		zap.L().Info("Using redirector for host " + octopusUrl)
+		commandLineArgs = append(commandLineArgs, "-useRedirector")
+		commandLineArgs = append(commandLineArgs, "-redirectorHost", redirectorHost)
+		commandLineArgs = append(commandLineArgs, "-redirectorServiceApiKey", redirectorServiceApiKey)
+		commandLineArgs = append(commandLineArgs, "-redirecrtorApiKey", redirectorApiKey)
+		commandLineArgs = append(commandLineArgs, "-redirectorRedirections", redirectorRedirections)
 	}
 
 	webArgs, _, err := args.ParseArgs(commandLineArgs)
@@ -126,7 +170,13 @@ func sanitizeConfig(rawConfig []byte) ([]byte, error) {
 		return nil, err
 	}
 	delete(config, "apiKey")
+	delete(config, "accessToken")
 	delete(config, "url")
+	delete(config, "redirectorServiceApiKey")
+	delete(config, "redirecrtorApiKey")
+	delete(config, "redirectorHost")
+	delete(config, "useRedirector")
+	delete(config, "redirectorRedirections")
 	return json.Marshal(config)
 }
 
@@ -141,10 +191,7 @@ func handleError(err error, w http.ResponseWriter) {
 func main() {
 	logger.BuildLogger()
 
-	listenAddr := ":8080"
-	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
-		listenAddr = ":" + val
-	}
+	listenAddr := ":" + environment.GetPort()
 	http.HandleFunc("/api/octoterra", func(writer http.ResponseWriter, request *http.Request) {
 		switch request.Method {
 		case http.MethodPost:

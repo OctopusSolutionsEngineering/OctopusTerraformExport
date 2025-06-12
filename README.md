@@ -1,10 +1,10 @@
 # Octopus Terraform Exporter
-![Coverage](https://img.shields.io/badge/Coverage-70.4%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-69.7%25-yellow)
 
 [![Github All Releases](https://img.shields.io/github/downloads/OctopusSolutionsEngineering/OctopusTerraformExport/total.svg)]()
 
 This app exports an Octopus space to the associated Terraform resources for use with the 
-[Octopus Terraform Provider](https://registry.terraform.io/providers/OctopusDeployLabs/octopusdeploy).
+[Octopus Terraform Provider](https://registry.terraform.io/providers/OctopusDeploy/octopusdeploy/latest).
 
 ## Downloads
 
@@ -231,14 +231,3 @@ docker run -v $PWD:/tmp/octoexport:z --rm ghcr.io/octopussolutionsengineering/oc
     -lookupProjectDependencies \
     -dest /tmp/octoexport
 ```
-
-## To Do
-
-The following resources have yet to be exported:
-* octopusdeploy_scoped_user_role
-* octopusdeploy_team
-* octopusdeploy_user
-* octopusdeploy_user_role
-
-Features:
-* Exclude triggers

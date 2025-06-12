@@ -9,6 +9,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/maputil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -31,7 +32,7 @@ type ProjectConverter struct {
 	GitCredentialsConverter     ConverterAndLookupWithStatelessById
 	LibraryVariableSetConverter ConverterAndLookupWithStatelessById
 	ProjectGroupConverter       ConverterAndLookupWithStatelessById
-	DeploymentProcessConverter  ConverterAndLookupByIdAndNameOrBranchWithProjects
+	DeploymentProcessConverter  ConverterAndLookupByIdAndNameOrBranchWithDeploymentProcesses
 	TenantConverter             ConverterAndLookupByProjectId
 	ProjectTriggerConverter     ConverterByProjectIdWithName
 	VariableSetConverter        ConverterAndLookupByProjectIdAndName
@@ -820,7 +821,7 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 				// Is this a bug? This may need to have a field for sensitive values, but the provider does
 				// not expose that today.
 				DefaultValue:    strutil.StrPointer("${var." + variableName + "}"),
-				DisplaySettings: v.DisplaySettings,
+				DisplaySettings: maputil.NilIfEmptyMap(v.DisplaySettings),
 			})
 		} else {
 			collection = append(collection, terraform.TerraformTemplate{
@@ -830,8 +831,11 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 				// The Octopus API treats an empty string as a null value, so we need to handle that here. This fixes
 				// the error:
 				// "produced an unexpected new value: .template[0].default_value: was cty.StringVal(""), but now null
-				DefaultValue:    strutil.NilIfEmptyPointer(strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString())),
-				DisplaySettings: v.DisplaySettings,
+				DefaultValue: strutil.NilIfEmptyPointer(strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString())),
+				// The Octopus API treats an empty map as nul. This fixes the error:
+				// produced an unexpected new value: .template[1].display_settings: was
+				// cty.MapValEmpty(cty.String), but now null.
+				DisplaySettings: maputil.NilIfEmptyMap(v.DisplaySettings),
 			})
 		}
 
@@ -1023,19 +1027,21 @@ func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) (*
 // from the parent's name (i.e. a deployment process resource name will be "deployment_process_<projectname>").
 func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	var err error
+
+	// A channel needs to express a manual dependency on the step order resources associated with the project.
+	// The step order resources, in turn, have dependencies on the steps.
+	// So depending on the step order resources will ensure that the steps are created before the channel.
+	terraformDependencies := map[string]string{
+		"DeploymentProcesses/StepOrder": project.Id,
+	}
+
 	if lookup {
-		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, map[string]string{
-			"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-		}, dependencies)
+		err = c.ChannelConverter.ToHclLookupByProjectIdWithTerraDependencies(project.Id, terraformDependencies, dependencies)
 	} else {
 		if stateless {
-			err = c.ChannelConverter.ToHclStatelessByProjectIdWithTerraDependencies(project.Id, map[string]string{
-				"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-			}, dependencies)
+			err = c.ChannelConverter.ToHclStatelessByProjectIdWithTerraDependencies(project.Id, terraformDependencies, dependencies)
 		} else {
-			err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, map[string]string{
-				"DeploymentProcesses": strutil.EmptyIfNil(project.DeploymentProcessId),
-			}, dependencies)
+			err = c.ChannelConverter.ToHclByProjectIdWithTerraDependencies(project.Id, terraformDependencies, dependencies)
 		}
 	}
 
@@ -1048,12 +1054,12 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 
 		var err error
 		if lookup {
-			err = c.DeploymentProcessConverter.ToHclLookupByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+			err = c.DeploymentProcessConverter.ToHclLookupById(*project.DeploymentProcessId, dependencies)
 		} else {
 			if stateless {
-				err = c.DeploymentProcessConverter.ToHclStatelessByIdAndName(*project.DeploymentProcessId, projectName, dependencies)
+				err = c.DeploymentProcessConverter.ToHclStatelessById(*project.DeploymentProcessId, dependencies)
 			} else {
-				err = c.DeploymentProcessConverter.ToHclByIdAndName(*project.DeploymentProcessId, projectName, recursive, dependencies)
+				err = c.DeploymentProcessConverter.ToHclById(*project.DeploymentProcessId, dependencies)
 			}
 		}
 
@@ -1271,40 +1277,40 @@ func (c *ProjectConverter) exportDependencyLookups(project octopus.Project, depe
 func (c *ProjectConverter) exportDependencies(project octopus.Project, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	// Export the project group
 	if stateless {
-		err := c.ProjectGroupConverter.ToHclStatelessById(project.ProjectGroupId, dependencies)
-
-		if err != nil {
+		if err := c.ProjectGroupConverter.ToHclStatelessById(project.ProjectGroupId, dependencies); err != nil {
 			return err
 		}
 
 		// Export the library sets
 		for _, v := range project.IncludedLibraryVariableSetIds {
-			err := c.LibraryVariableSetConverter.ToHclStatelessById(v, dependencies)
-
-			if err != nil {
+			if err := c.LibraryVariableSetConverter.ToHclStatelessById(v, dependencies); err != nil {
 				return err
 			}
 		}
 
 		// Export the lifecycles
-		err = c.LifecycleConverter.ToHclStatelessById(project.LifecycleId, dependencies)
-
-		if err != nil {
+		if err := c.LifecycleConverter.ToHclStatelessById(project.LifecycleId, dependencies); err != nil {
 			return err
 		}
 
-		// Export the tenants
-		err = c.TenantConverter.ToHclStatelessByProjectId(project.Id, dependencies)
+		// Also export the default lifecycle. This is useful for LLM training as it is expected to always exist.
+		defaultLifecycle := octopus.Lifecycle{}
+		if found, err := c.Client.GetResourceByName("Lifecycles", "Default Lifecycle", &defaultLifecycle); err != nil {
+			return err
+		} else if found {
+			if err := c.LifecycleConverter.ToHclStatelessById(defaultLifecycle.Id, dependencies); err != nil {
+				return err
+			}
+		}
 
-		if err != nil {
+		// Export the tenants
+		if err := c.TenantConverter.ToHclStatelessByProjectId(project.Id, dependencies); err != nil {
 			return err
 		}
 
 		// Export the git credentials
 		if project.PersistenceSettings.Credentials.Type == "Reference" && !c.ExcludeCaCProjectSettings {
-			err = c.GitCredentialsConverter.ToHclStatelessById(project.PersistenceSettings.Credentials.Id, dependencies)
-
-			if err != nil {
+			if err := c.GitCredentialsConverter.ToHclStatelessById(project.PersistenceSettings.Credentials.Id, dependencies); err != nil {
 				return err
 			}
 		}

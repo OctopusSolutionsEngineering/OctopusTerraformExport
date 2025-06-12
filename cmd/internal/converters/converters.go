@@ -77,12 +77,20 @@ type ConverterLookupByIdWithName interface {
 	ToHclLookupByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
 }
 
-// ConverterLookupByIdWithBranch converts an individual resource by its git branch, uses the supplied name for the Terraform resource, and
-// references external resources via a data source lookup
+// ConverterLookupByIdWithBranch converts an individual resource by its git branch, and references external resources via a data source lookup
 type ConverterLookupByIdWithBranch interface {
 	ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
 	ToHclByIdAndBranch(parentId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error
 	ToHclStatelessByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error
+}
+
+// ConverterLookupByIdWithBranchAndProject converts an individual resource by its git branch based on a parent project,
+// and references external resources via a data source lookup.
+// This interface is needed when looking up resources that can only be found from a parent project, such as CaC runbooks.
+type ConverterLookupByIdWithBranchAndProject interface {
+	ToHclLookupByIdBranchAndProject(projectId string, resourceId string, branch string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByIdBranchAndProject(projectId string, resourceId string, branch string, recursive bool, dependencies *data.ResourceDetailsCollection) error
+	ToHclStatelessByIdBranchAndProject(projectId string, resourceId string, branch string, dependencies *data.ResourceDetailsCollection) error
 }
 
 type ActionProcessor interface {
@@ -102,20 +110,27 @@ type ConverterAndLookupByIdAndNameOrBranch interface {
 	ConverterLookupByIdWithBranch
 }
 
-// ConverterAndLookupByIdAndNameWithProjects converts an individual resource by ID to HCL and to a data lookup
+// ConverterAndLookupByIdAndNameWithDeploymentProcesses converts an individual resource by ID to HCL and to a data lookup
 // with references to projects
-type ConverterAndLookupByIdAndNameWithProjects interface {
-	ConverterByIdWithName
-	ConverterLookupByIdWithName
+type ConverterAndLookupByIdAndNameWithDeploymentProcesses interface {
+	ConverterById
+	ConverterLookupById
+	ConverterToStatelessById
 	ActionProcessor
 }
 
-// ConverterAndLookupByIdAndNameOrBranchWithProjects converts an individual resource by ID or git branch to HCL and to a data lookup
+// ConverterAndLookupByIdAndNameOrBranchWithDeploymentProcesses converts an individual resource by ID or git branch to HCL and to a data lookup
 // with references to projects
-type ConverterAndLookupByIdAndNameOrBranchWithProjects interface {
-	ConverterByIdWithName
-	ConverterLookupByIdWithName
+type ConverterAndLookupByIdAndNameOrBranchWithDeploymentProcesses interface {
+	ConverterAndLookupByIdAndNameWithDeploymentProcesses
 	ConverterLookupByIdWithBranch
+	ActionProcessor
+}
+
+// ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcesses converts an individual resource by ID or git branch to HCL and based on a parent project
+type ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcesses interface {
+	ConverterAndLookupByIdAndNameWithDeploymentProcesses
+	ConverterLookupByIdWithBranchAndProject
 	ActionProcessor
 }
 
@@ -228,12 +243,13 @@ type ConverterAndLookupByProjectIdWithTerraDependencies interface {
 
 // ConverterByTenantId converts objects based on the relationship to a tenant
 type ConverterByTenantId interface {
-	ToHclByTenantId(projectId string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByTenantId(projectId string, stateless bool, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConvertToHclByResource converts objects directly
 type ConvertToHclByResource[C any] interface {
 	ToHclByResource(resource C, dependencies *data.ResourceDetailsCollection) error
+	ToHclByResourceStateless(resource C, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConvertToHclLookupByResource creates a data lookup from the objects

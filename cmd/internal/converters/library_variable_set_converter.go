@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/maputil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -397,7 +398,7 @@ func (c *LibraryVariableSetConverter) writeLibraryVariableSet(resource octopus.L
 		Type:         octopusdeployLibraryVariableSetsResourceType,
 		Name:         resourceName,
 		ResourceName: resource.Name,
-		Description:  resource.Description,
+		Description:  strutil.TrimPointer(resource.Description),
 		Template:     projectTemplates,
 	}
 
@@ -448,7 +449,7 @@ func (c *LibraryVariableSetConverter) writeScriptModule(resource octopus.Library
 		Type:         octopusdeployScriptModuleResourceType,
 		Name:         resourceName,
 		ResourceName: resource.Name,
-		Description:  resource.Description,
+		Description:  strutil.TrimPointer(resource.Description),
 		Script: terraform.TerraformScriptModuleScript{
 			Body:   script,
 			Syntax: scriptLanguage,
@@ -536,10 +537,10 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 	for i, v := range actionPackages {
 		collection = append(collection, terraform.TerraformTemplate{
 			Name:            v.Name,
-			Label:           v.Label,
+			Label:           strutil.NilIfEmptyPointer(v.Label),
 			HelpText:        v.HelpText,
 			DefaultValue:    strutil.EscapeDollarCurlyPointer(v.GetDefaultValueString()),
-			DisplaySettings: v.DisplaySettings,
+			DisplaySettings: maputil.NilIfEmptyMap(v.DisplaySettings),
 		})
 
 		templateMap = append(templateMap, data.ResourceDetails{

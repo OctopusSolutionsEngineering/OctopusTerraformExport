@@ -280,38 +280,8 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 	}
 
 	if recursive {
-		// The environments are a dependency that we need to lookup
-		for _, phase := range lifecycle.Phases {
-			for _, auto := range phase.AutomaticDeploymentTargets {
-				if stateless {
-					err := c.EnvironmentConverter.ToHclStatelessById(auto, dependencies)
-					if err != nil {
-						return err
-					}
-				} else {
-					err := c.EnvironmentConverter.ToHclById(auto, dependencies)
-					if err != nil {
-						return err
-					}
-				}
-
-			}
-			for _, optional := range phase.OptionalDeploymentTargets {
-				if stateless {
-					err := c.EnvironmentConverter.ToHclStatelessById(optional, dependencies)
-
-					if err != nil {
-						return err
-					}
-				} else {
-					err := c.EnvironmentConverter.ToHclById(optional, dependencies)
-
-					if err != nil {
-						return err
-					}
-				}
-
-			}
+		if err := c.exportDependencies(lifecycle, stateless, dependencies); err != nil {
+			return err
 		}
 	}
 
@@ -359,7 +329,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 				Id:                      strutil.InputPointerIfEnabled(c.IncludeIds, &lifecycle.Id),
 				SpaceId:                 strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", lifecycle.SpaceId)),
 				ResourceName:            lifecycle.Name,
-				Description:             lifecycle.Description,
+				Description:             strutil.TrimPointer(lifecycle.Description),
 				Phase:                   c.convertPhases(lifecycle.Phases, dependencies),
 				ReleaseRetentionPolicy:  c.convertPolicy(lifecycle.ReleaseRetentionPolicy),
 				TentacleRetentionPolicy: c.convertPolicy(lifecycle.TentacleRetentionPolicy),
@@ -427,4 +397,44 @@ func (c LifecycleConverter) convertTargets(environments []string, dependencies *
 	}
 
 	return converted
+}
+
+func (c LifecycleConverter) exportDependencies(lifecycle octopus.Lifecycle, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+
+	// The environments are a dependency that we need to lookup
+	for _, phase := range lifecycle.Phases {
+
+		for _, auto := range phase.AutomaticDeploymentTargets {
+			if stateless {
+				err := c.EnvironmentConverter.ToHclStatelessById(auto, dependencies)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := c.EnvironmentConverter.ToHclById(auto, dependencies)
+				if err != nil {
+					return err
+				}
+			}
+
+		}
+
+		for _, optional := range phase.OptionalDeploymentTargets {
+			if stateless {
+				err := c.EnvironmentConverter.ToHclStatelessById(optional, dependencies)
+
+				if err != nil {
+					return err
+				}
+			} else {
+				err := c.EnvironmentConverter.ToHclById(optional, dependencies)
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

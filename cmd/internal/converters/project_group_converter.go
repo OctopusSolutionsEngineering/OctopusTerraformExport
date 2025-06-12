@@ -324,7 +324,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 				Type:         octopusdeployProjectGroupResourceType,
 				Name:         projectName,
 				ResourceName: "${var." + projectName + "_name}",
-				Description:  resource.Description,
+				Description:  strutil.TrimPointer(resource.Description),
 			}
 			file := hclwrite.NewEmptyFile()
 

@@ -25,4 +25,11 @@ type Feed struct {
 
 	// Nuget
 	EnhancedMode bool
+
+	// Artifactory
+	Repository  *string
+	LayoutRegex *string
+
+	// S3
+	UseMachineCredentials *bool
 }

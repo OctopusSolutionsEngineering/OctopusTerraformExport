@@ -74,13 +74,8 @@ jobs:
           terraform_wrapper: false
 
       - name: Clone the Terraform provider source
-        run: git clone https://github.com/OctopusDeployLabs/terraform-provider-octopusdeploy.git
+        run: git clone https://github.com/OctopusDeploy/terraform-provider-octopusdeploy.git
         shell: bash
-
-#      - name: Check out the 0.22.0 release branch
-#        run: git checkout release/0.22.0
-#        shell: bash
-#        working-directory: terraform-provider-octopusdeploy
 
       - name: Build the Terraform provider from source
         run: go build -o terraform-provider-octopusdeploy
@@ -91,7 +86,7 @@ jobs:
           cat <<EOT >> ~/.terraformrc
           provider_installation {
               dev_overrides {
-              "octopusdeploylabs/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
+              "octopusdeploy/octopusdeploy" = "${{ github.workspace }}/terraform-provider-octopusdeploy"
             }
             direct {}
           }
@@ -121,8 +116,8 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
 
           # Override these values to test a specific container and version.
-          OCTOTESTIMAGEURL: octopusdeploy/linuxoctopus
-          OCTOTESTVERSION: 2024.3.3434
+          #OCTOTESTIMAGEURL: octopusdeploy/linuxoctopus
+          #OCTOTESTVERSION: 2024.3.3434
         run: |
           sudo apt install gotestsum
           gotestsum --junitfile node-summary.xml --format short-verbose -- -run "${{ steps.test_split.outputs.run }}" -timeout 0 ./...
@@ -207,10 +202,6 @@ jobs:
         uses: gittools/actions/gitversion/execute@v0.9.15
         with:
           additionalArguments: /overrideconfig mode=Mainline
-      - name: Install Octopus Deploy CLI
-        uses: OctopusDeploy/install-octopus-cli-action@v1
-        with:
-          version: latest
       - name: Install Dependencies
         run: go get ./...
         shell: bash
@@ -264,9 +255,14 @@ jobs:
         env:
           GOOS: darwin
           GOARCH: arm64
-          CGO_ENABLED: 0     
+          CGO_ENABLED: 0
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_windows_amd64_azure.exe cmd/azure/octoterra.go
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: 0
       - run: |
-          zip -r octoterra_macos_arm64_azure.zip . -x local.settings.json -x octoterra_linux_amd64_azure -x octoterra_linux_amd64_azure.zip -x octoterra_macos_amd64_azure -x octoterra_macos_amd64_azure.zip
+          zip -r octoterra_macos_arm64_azure.zip . -x local.settings.json -x octoterra_linux_amd64_azure -x octoterra_linux_amd64_azure.zip -x octoterra_macos_amd64_azure -x octoterra_macos_amd64_azure.zip -x octoterra_windows_amd64_azure.exe
         working-directory: functions  
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_windows_amd64.exe cmd/cli/octoterra.go
         env:
@@ -302,6 +298,7 @@ jobs:
             functions/octoterra_linux_amd64_azure.zip
             functions/octoterra_macos_amd64_azure.zip
             functions/octoterra_macos_arm64_azure.zip
+            functions/octoterra_windows_amd64_azure.exe
       - name: Push packages to Octopus Deploy
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
         uses: OctopusDeploy/push-package-action@v3

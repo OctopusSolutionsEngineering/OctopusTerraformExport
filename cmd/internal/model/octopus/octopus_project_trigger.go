@@ -8,6 +8,14 @@ type ProjectTrigger struct {
 	IsDisabled  bool
 	Filter      ProjectTriggerFilter
 	Action      ProjectTriggerAction
+	Sources     []ProjectTriggerSources
+}
+
+type ProjectTriggerSources struct {
+	DeploymentActionSlug string
+	GitDependencyName    string
+	IncludeFilePaths     []string
+	ExcludeFilePaths     []string
 }
 
 type ProjectTriggerFilter struct {
@@ -37,6 +45,7 @@ type ProjectTriggerFilter struct {
 
 type ProjectTriggerFilterPackage struct {
 	DeploymentActionSlug string
+	DeploymentAction     string
 	PackageReference     string
 }
 

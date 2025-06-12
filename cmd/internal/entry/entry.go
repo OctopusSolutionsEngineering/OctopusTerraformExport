@@ -39,7 +39,18 @@ func Entry(parseArgs args.Arguments, version string) (map[string]string, error) 
 		projectIds := []string{}
 
 		for _, project := range parseArgs.ProjectName {
-			projectId, err := ConvertProjectNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, project, version)
+			projectId, err := ConvertProjectNameToId(
+				parseArgs.Url,
+				parseArgs.Space,
+				parseArgs.ApiKey,
+				parseArgs.AccessToken,
+				project,
+				version,
+				parseArgs.UseRedirector,
+				parseArgs.RedirectorHost,
+				parseArgs.RedirectorServiceApiKey,
+				parseArgs.RedirecrtorApiKey,
+				parseArgs.RedirectorRedirections)
 
 			if err != nil {
 				return nil, err
@@ -52,7 +63,19 @@ func Entry(parseArgs args.Arguments, version string) (map[string]string, error) 
 	}
 
 	if parseArgs.RunbookName != "" {
-		runbookId, err := ConvertRunbookNameToId(parseArgs.Url, parseArgs.Space, parseArgs.ApiKey, parseArgs.ProjectId[0], parseArgs.RunbookName, version)
+		runbookId, err := ConvertRunbookNameToId(
+			parseArgs.Url,
+			parseArgs.Space,
+			parseArgs.ApiKey,
+			parseArgs.AccessToken,
+			parseArgs.ProjectId[0],
+			parseArgs.RunbookName,
+			version,
+			parseArgs.UseRedirector,
+			parseArgs.RedirectorHost,
+			parseArgs.RedirectorServiceApiKey,
+			parseArgs.RedirecrtorApiKey,
+			parseArgs.RedirectorRedirections)
 
 		if err != nil {
 			return nil, err
@@ -132,12 +155,30 @@ func getDependencies(parseArgs args.Arguments, version string) (*data.ResourceDe
 	}
 }
 
-func ConvertProjectNameToId(url string, space string, apiKey string, name string, version string) (string, error) {
+func ConvertProjectNameToId(
+	url string,
+	space string,
+	apiKey string,
+	accessToken string,
+	name string,
+	version string,
+	useRedirector bool,
+	redirectorHost string,
+	redirectorServiceApiKey string,
+	redirecrtorApiKey string,
+	redirectorRedirections string,
+) (string, error) {
 	octopusClient := client.OctopusApiClient{
-		Url:     url,
-		Space:   space,
-		ApiKey:  apiKey,
-		Version: version,
+		Url:                     url,
+		ApiKey:                  apiKey,
+		AccessToken:             accessToken,
+		Space:                   space,
+		Version:                 version,
+		UseRedirector:           useRedirector,
+		RedirectorHost:          redirectorHost,
+		RedirectorServiceApiKey: redirectorServiceApiKey,
+		RedirecrtorApiKey:       redirecrtorApiKey,
+		RedirectorRedirections:  redirectorRedirections,
 	}
 
 	collection := octopus.GeneralCollection[octopus.Project]{}
@@ -161,12 +202,30 @@ func ConvertProjectNameToId(url string, space string, apiKey string, name string
 	return "", errors.New("did not find project with name " + name + " in space " + space)
 }
 
-func ConvertRunbookNameToId(url string, space string, apiKey string, projectId string, runbookName string, version string) (string, error) {
+func ConvertRunbookNameToId(url string,
+	space string,
+	apiKey string,
+	accessToken string,
+	projectId string,
+	runbookName string,
+	version string,
+	useRedirector bool,
+	redirectorHost string,
+	redirectorServiceApiKey string,
+	redirecrtorApiKey string,
+	redirectorRedirections string,
+) (string, error) {
 	octopusClient := client.OctopusApiClient{
-		Url:     url,
-		Space:   space,
-		ApiKey:  apiKey,
-		Version: version,
+		Url:                     url,
+		ApiKey:                  apiKey,
+		AccessToken:             accessToken,
+		Space:                   space,
+		Version:                 version,
+		UseRedirector:           useRedirector,
+		RedirectorHost:          redirectorHost,
+		RedirectorServiceApiKey: redirectorServiceApiKey,
+		RedirecrtorApiKey:       redirecrtorApiKey,
+		RedirectorRedirections:  redirectorRedirections,
 	}
 
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
@@ -195,10 +254,16 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	group.SetLimit(10)
 
 	octopusClient := client.OctopusApiClient{
-		Url:     args.Url,
-		Space:   args.Space,
-		ApiKey:  args.ApiKey,
-		Version: version,
+		Url:                     args.Url,
+		ApiKey:                  args.ApiKey,
+		AccessToken:             args.AccessToken,
+		Space:                   args.Space,
+		Version:                 version,
+		UseRedirector:           args.UseRedirector,
+		RedirectorHost:          args.RedirectorHost,
+		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       args.RedirecrtorApiKey,
+		RedirectorRedirections:  args.RedirectorRedirections,
 	}
 
 	dependencies := data.ResourceDetailsCollection{}
@@ -258,19 +323,22 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.GetBackend(),
-		ProviderVersion:          args.ProviderVersion,
-		ExcludeProvider:          args.ExcludeProvider,
-		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-	}.ToHcl("space_population", true, &dependencies)
+		TerraformBackend:                args.GetBackend(),
+		ProviderVersion:                 args.ProviderVersion,
+		ExcludeProvider:                 args.ExcludeProvider,
+		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	if !args.Stateless {
 		converters.TerraformProviderGenerator{
-			TerraformBackend:         args.GetBackend(),
-			ProviderVersion:          args.ProviderVersion,
-			ExcludeProvider:          args.ExcludeProvider,
-			IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-		}.ToHcl("space_creation", false, &dependencies)
+			TerraformBackend:                args.GetBackend(),
+			ProviderVersion:                 args.ProviderVersion,
+			ExcludeProvider:                 args.ExcludeProvider,
+			IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		}.ToHcl("space_creation", false, args.IncludeProviderServerDetails, &dependencies)
 	}
 
 	machinePolicyConverter := converters.MachinePolicyConverter{
@@ -435,6 +503,22 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GenerateImportScripts:      args.GenerateImportScripts,
 	}
 
+	machineProxyConverter := converters.MachineProxyConverter{
+		Client:                      &octopusClient,
+		ErrGroup:                    &group,
+		ExcludeMachineProxies:       args.ExcludeMachineProxies,
+		ExcludeMachineProxiesRegex:  args.ExcludeMachineProxiesRegex,
+		ExcludeMachineProxiesExcept: args.ExcludeMachineProxiesExcept,
+		ExcludeAllMachineProxies:    args.ExcludeAllMachineProxies,
+		Excluder:                    converters.DefaultExcluder{},
+		LimitResourceCount:          args.LimitResourceCount,
+		IncludeSpaceInPopulation:    args.IncludeSpaceInPopulation,
+		IncludeIds:                  args.IncludeIds,
+		GenerateImportScripts:       args.GenerateImportScripts,
+		DummySecretVariableValues:   args.DummySecretVariableValues,
+		DummySecretGenerator:        dummySecretGenerator,
+	}
+
 	certificateConverter := converters.CertificateConverter{
 		Client:                    &octopusClient,
 		DummySecretVariableValues: args.DummySecretVariableValues,
@@ -453,6 +537,59 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
 	}
+
+	sshWorkerConverter := converters.SshWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+		AccountConverter: accountConverter,
+	}
+
+	listeningWorkerConverter := converters.ListeningWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+	}
+
+	k8sAgentWorkerConverter := converters.KubernetesAgentWorkerConverter{
+		BaseWorkerConverter: converters.BaseWorkerConverter{
+			Client:                   &octopusClient,
+			ErrGroup:                 &group,
+			Excluder:                 converters.DefaultExcluder{},
+			MachinePolicyConverter:   machinePolicyConverter,
+			ExcludeAllWorkers:        args.ExcludeAllWorkers,
+			ExcludeWorkers:           args.ExcludeWorkers,
+			ExcludeWorkersRegex:      args.ExcludeWorkersRegex,
+			ExcludeWorkersExcept:     args.ExcludeWorkersExcept,
+			LimitResourceCount:       args.LimitResourceCount,
+			IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
+			IncludeIds:               args.IncludeIds,
+			GenerateImportScripts:    args.GenerateImportScripts,
+		},
+	}
+
 	workerPoolConverter := converters.WorkerPoolConverter{
 		Client:                   &octopusClient,
 		ErrGroup:                 &group,
@@ -767,7 +904,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors: args.IgnoreCacErrors,
+		IgnoreCacErrors:      args.IgnoreCacErrors,
+		InlineVariableValues: args.InlineVariableValues,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -794,23 +932,28 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	runbookConverter := converters.RunbookConverter{
 		Client: &octopusClient,
 		RunbookProcessConverter: &converters.RunbookProcessConverter{
-			Client:                          &octopusClient,
-			OctopusActionProcessor:          nil,
-			IgnoreProjectChanges:            false,
-			WorkerPoolProcessor:             workerPoolProcessor,
-			ExcludeTenantTags:               args.ExcludeTenantTags,
-			ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
-			Excluder:                        converters.DefaultExcluder{},
-			TagSetConverter:                 &tagsetConverter,
-			LimitAttributeLength:            args.LimitAttributeLength,
-			ExcludeAllSteps:                 args.ExcludeAllSteps,
-			ExcludeSteps:                    args.ExcludeSteps,
-			ExcludeStepsRegex:               args.ExcludeStepsRegex,
-			ExcludeStepsExcept:              args.ExcludeStepsExcept,
-			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
-			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			DummySecretGenerator:            dummySecretGenerator,
-			DummySecretVariableValues:       args.DummySecretVariableValues,
+			DeploymentProcessConverterBase: converters.DeploymentProcessConverterBase{
+				ResourceType:                    "RunbookProcesses",
+				Client:                          &octopusClient,
+				OctopusActionProcessor:          nil,
+				IgnoreProjectChanges:            args.IgnoreProjectChanges,
+				WorkerPoolProcessor:             workerPoolProcessor,
+				ExcludeTenantTags:               args.ExcludeTenantTags,
+				ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
+				Excluder:                        converters.DefaultExcluder{},
+				TagSetConverter:                 &tagsetConverter,
+				LimitAttributeLength:            args.LimitAttributeLength,
+				ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
+				ExcludeAllSteps:                 args.ExcludeAllSteps,
+				ExcludeSteps:                    args.ExcludeSteps,
+				ExcludeStepsRegex:               args.ExcludeStepsRegex,
+				ExcludeStepsExcept:              args.ExcludeStepsExcept,
+				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
+				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+				DummySecretGenerator:            dummySecretGenerator,
+				DummySecretVariableValues:       args.DummySecretVariableValues,
+				IgnoreCacErrors:                 args.IgnoreCacErrors,
+			},
 		},
 		EnvironmentConverter:     environmentConverter,
 		ExcludedRunbooks:         nil,
@@ -825,6 +968,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
+		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
 	}
 
 	projectConverter := &converters.ProjectConverter{
@@ -835,25 +979,28 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ProjectGroupConverter:       projectGroupConverter,
 		TenantVariableConverter:     tenantVariableConverter,
 		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
-			Client:                          &octopusClient,
-			OctopusActionProcessor:          nil,
-			IgnoreProjectChanges:            false,
-			WorkerPoolProcessor:             workerPoolProcessor,
-			ExcludeTenantTags:               args.ExcludeTenantTags,
-			ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
-			Excluder:                        converters.DefaultExcluder{},
-			TagSetConverter:                 &tagsetConverter,
-			LimitAttributeLength:            args.LimitAttributeLength,
-			ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
-			ExcludeAllSteps:                 args.ExcludeAllSteps,
-			ExcludeSteps:                    args.ExcludeSteps,
-			ExcludeStepsRegex:               args.ExcludeStepsRegex,
-			ExcludeStepsExcept:              args.ExcludeStepsExcept,
-			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
-			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			DummySecretGenerator:            dummySecretGenerator,
-			DummySecretVariableValues:       args.DummySecretVariableValues,
-			IgnoreCacErrors:                 args.IgnoreCacErrors,
+			DeploymentProcessConverterBase: converters.DeploymentProcessConverterBase{
+				ResourceType:                    "DeploymentProcesses",
+				Client:                          &octopusClient,
+				OctopusActionProcessor:          nil,
+				IgnoreProjectChanges:            args.IgnoreProjectChanges,
+				WorkerPoolProcessor:             workerPoolProcessor,
+				ExcludeTenantTags:               args.ExcludeTenantTags,
+				ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
+				Excluder:                        converters.DefaultExcluder{},
+				TagSetConverter:                 &tagsetConverter,
+				LimitAttributeLength:            0,
+				ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
+				ExcludeAllSteps:                 args.ExcludeAllSteps,
+				ExcludeSteps:                    args.ExcludeSteps,
+				ExcludeStepsRegex:               args.ExcludeStepsRegex,
+				ExcludeStepsExcept:              args.ExcludeStepsExcept,
+				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
+				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+				DummySecretGenerator:            dummySecretGenerator,
+				DummySecretVariableValues:       args.DummySecretVariableValues,
+				IgnoreCacErrors:                 args.IgnoreCacErrors,
+			},
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -899,9 +1046,23 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IgnoreCacErrors:           args.IgnoreCacErrors,
 	}
 
+	deploymentFreezeConverter := converters.DeploymentFreezeConverter{
+		Client:                         &octopusClient,
+		ErrGroup:                       &group,
+		ExcludeDeploymentFreezes:       args.ExcludeDeploymentFreezes,
+		ExcludeDeploymentFreezesRegex:  args.ExcludeDeploymentFreezesRegex,
+		ExcludeDeploymentFreezesExcept: args.ExcludeDeploymentFreezesExcept,
+		ExcludeAllDeploymentFreezes:    args.ExcludeAllDeploymentFreezes,
+		Excluder:                       converters.DefaultExcluder{},
+		LimitResourceCount:             args.LimitResourceCount,
+		IncludeIds:                     args.IncludeIds,
+		GenerateImportScripts:          args.GenerateImportScripts,
+	}
+
 	spaceConverter := converters.SpaceConverter{
 		Client:                      &octopusClient,
 		ExcludeSpaceCreation:        args.ExcludeSpaceCreation,
+		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
 		AccountConverter:            accountConverter,
 		EnvironmentConverter:        environmentConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
@@ -934,6 +1095,11 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ErrGroup:                          &group,
 		StepTemplateConverter:             stepTemplateConverter,
 		TenantProjectConverter:            tenantProjectConverter,
+		DeploymentFreezeConverter:         deploymentFreezeConverter,
+		KubernetesAgentWorkerConverter:    k8sAgentWorkerConverter,
+		ListeningWorkerConverter:          listeningWorkerConverter,
+		SshWorkerConverter:                sshWorkerConverter,
+		MachineProxyConverter:             machineProxyConverter,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -947,6 +1113,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		ProjectExporter:                 projectConverter,
+		Client:                          &octopusClient,
 	}
 
 	// Projects and runbooks have circular references to other projects. For example, a project can have
@@ -976,10 +1143,16 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
-		Url:     args.Url,
-		Space:   args.Space,
-		ApiKey:  args.ApiKey,
-		Version: version,
+		Url:                     args.Url,
+		ApiKey:                  args.ApiKey,
+		AccessToken:             args.AccessToken,
+		Space:                   args.Space,
+		Version:                 version,
+		UseRedirector:           args.UseRedirector,
+		RedirectorHost:          args.RedirectorHost,
+		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       args.RedirecrtorApiKey,
+		RedirectorRedirections:  args.RedirectorRedirections,
 	}
 
 	dummySecretGenerator := dummy.DummySecret{}
@@ -1039,11 +1212,13 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.BackendBlock,
-		ProviderVersion:          args.ProviderVersion,
-		ExcludeProvider:          args.ExcludeProvider,
-		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-	}.ToHcl("space_population", true, &dependencies)
+		TerraformBackend:                args.BackendBlock,
+		ProviderVersion:                 args.ProviderVersion,
+		ExcludeProvider:                 args.ExcludeProvider,
+		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
 		Client:                    &octopusClient,
@@ -1233,23 +1408,28 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 	runbookConverter := converters.RunbookConverter{
 		Client: &octopusClient,
 		RunbookProcessConverter: &converters.RunbookProcessConverter{
-			Client:                          &octopusClient,
-			OctopusActionProcessor:          nil,
-			IgnoreProjectChanges:            args.IgnoreProjectChanges,
-			WorkerPoolProcessor:             workerPoolProcessor,
-			ExcludeTenantTags:               args.ExcludeTenantTags,
-			ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
-			Excluder:                        converters.DefaultExcluder{},
-			TagSetConverter:                 &tagsetConverter,
-			LimitAttributeLength:            0,
-			ExcludeAllSteps:                 args.ExcludeAllSteps,
-			ExcludeSteps:                    args.ExcludeSteps,
-			ExcludeStepsRegex:               args.ExcludeStepsRegex,
-			ExcludeStepsExcept:              args.ExcludeStepsExcept,
-			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
-			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			DummySecretGenerator:            dummySecretGenerator,
-			DummySecretVariableValues:       args.DummySecretVariableValues,
+			DeploymentProcessConverterBase: converters.DeploymentProcessConverterBase{
+				ResourceType:                    "RunbookProcesses",
+				Client:                          &octopusClient,
+				OctopusActionProcessor:          nil,
+				IgnoreProjectChanges:            args.IgnoreProjectChanges,
+				WorkerPoolProcessor:             workerPoolProcessor,
+				ExcludeTenantTags:               args.ExcludeTenantTags,
+				ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
+				Excluder:                        converters.DefaultExcluder{},
+				TagSetConverter:                 &tagsetConverter,
+				LimitAttributeLength:            args.LimitAttributeLength,
+				ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
+				ExcludeAllSteps:                 args.ExcludeAllSteps,
+				ExcludeSteps:                    args.ExcludeSteps,
+				ExcludeStepsRegex:               args.ExcludeStepsRegex,
+				ExcludeStepsExcept:              args.ExcludeStepsExcept,
+				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
+				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+				DummySecretGenerator:            dummySecretGenerator,
+				DummySecretVariableValues:       args.DummySecretVariableValues,
+				IgnoreCacErrors:                 args.IgnoreCacErrors,
+			},
 		},
 		EnvironmentConverter:     environmentConverter,
 		ExcludedRunbooks:         nil,
@@ -1264,6 +1444,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 		ErrGroup:                 nil,
+		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -1277,6 +1458,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		ProjectExporter:                 projectConverter,
+		Client:                          &octopusClient,
 	}
 
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
@@ -1293,10 +1475,16 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 func ConvertProjectToTerraform(args args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 
 	octopusClient := client.OctopusApiClient{
-		Url:     args.Url,
-		Space:   args.Space,
-		ApiKey:  args.ApiKey,
-		Version: version,
+		Url:                     args.Url,
+		ApiKey:                  args.ApiKey,
+		AccessToken:             args.AccessToken,
+		Space:                   args.Space,
+		Version:                 version,
+		UseRedirector:           args.UseRedirector,
+		RedirectorHost:          args.RedirectorHost,
+		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       args.RedirecrtorApiKey,
+		RedirectorRedirections:  args.RedirectorRedirections,
 	}
 
 	dummySecretGenerator := dummy.DummySecret{}
@@ -1356,11 +1544,13 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	}
 
 	converters.TerraformProviderGenerator{
-		TerraformBackend:         args.BackendBlock,
-		ProviderVersion:          args.ProviderVersion,
-		ExcludeProvider:          args.ExcludeProvider,
-		IncludeOctopusOutputVars: args.IncludeOctopusOutputVars,
-	}.ToHcl("space_population", true, &dependencies)
+		TerraformBackend:                args.BackendBlock,
+		ProviderVersion:                 args.ProviderVersion,
+		ExcludeProvider:                 args.ExcludeProvider,
+		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
+		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
+		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
 		Client:                    &octopusClient,
@@ -1853,7 +2043,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors: args.IgnoreCacErrors,
+		IgnoreCacErrors:      args.IgnoreCacErrors,
+		InlineVariableValues: args.InlineVariableValues,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -1923,23 +2114,28 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	runbookConverter := converters.RunbookConverter{
 		Client: &octopusClient,
 		RunbookProcessConverter: &converters.RunbookProcessConverter{
-			Client:                          &octopusClient,
-			OctopusActionProcessor:          nil,
-			IgnoreProjectChanges:            args.IgnoreProjectChanges,
-			WorkerPoolProcessor:             workerPoolProcessor,
-			ExcludeTenantTags:               args.ExcludeTenantTags,
-			ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
-			Excluder:                        converters.DefaultExcluder{},
-			TagSetConverter:                 &tagsetConverter,
-			LimitAttributeLength:            0,
-			ExcludeAllSteps:                 args.ExcludeAllSteps,
-			ExcludeSteps:                    args.ExcludeSteps,
-			ExcludeStepsRegex:               args.ExcludeStepsRegex,
-			ExcludeStepsExcept:              args.ExcludeStepsExcept,
-			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
-			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			DummySecretGenerator:            dummySecretGenerator,
-			DummySecretVariableValues:       args.DummySecretVariableValues,
+			DeploymentProcessConverterBase: converters.DeploymentProcessConverterBase{
+				ResourceType:                    "RunbookProcesses",
+				Client:                          &octopusClient,
+				OctopusActionProcessor:          nil,
+				IgnoreProjectChanges:            args.IgnoreProjectChanges,
+				WorkerPoolProcessor:             workerPoolProcessor,
+				ExcludeTenantTags:               args.ExcludeTenantTags,
+				ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
+				Excluder:                        converters.DefaultExcluder{},
+				TagSetConverter:                 &tagsetConverter,
+				LimitAttributeLength:            args.LimitAttributeLength,
+				ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
+				ExcludeAllSteps:                 args.ExcludeAllSteps,
+				ExcludeSteps:                    args.ExcludeSteps,
+				ExcludeStepsRegex:               args.ExcludeStepsRegex,
+				ExcludeStepsExcept:              args.ExcludeStepsExcept,
+				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
+				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+				DummySecretGenerator:            dummySecretGenerator,
+				DummySecretVariableValues:       args.DummySecretVariableValues,
+				IgnoreCacErrors:                 args.IgnoreCacErrors,
+			},
 		},
 		EnvironmentConverter:     environmentConverter,
 		ProjectConverter:         nil,
@@ -1954,6 +2150,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 		ErrGroup:                 nil,
+		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
 	}
 
 	projectConverter := converters.ProjectConverter{
@@ -1963,25 +2160,28 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		ProjectGroupConverter:       projectGroupConverter,
 		DeploymentProcessConverter: &converters.DeploymentProcessConverter{
-			Client:                          &octopusClient,
-			OctopusActionProcessor:          nil,
-			IgnoreProjectChanges:            args.IgnoreProjectChanges,
-			WorkerPoolProcessor:             workerPoolProcessor,
-			ExcludeTenantTags:               args.ExcludeTenantTags,
-			ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
-			Excluder:                        converters.DefaultExcluder{},
-			TagSetConverter:                 &tagsetConverter,
-			LimitAttributeLength:            0,
-			ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
-			ExcludeAllSteps:                 args.ExcludeAllSteps,
-			ExcludeSteps:                    args.ExcludeSteps,
-			ExcludeStepsRegex:               args.ExcludeStepsRegex,
-			ExcludeStepsExcept:              args.ExcludeStepsExcept,
-			IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
-			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
-			DummySecretGenerator:            dummySecretGenerator,
-			DummySecretVariableValues:       args.DummySecretVariableValues,
-			IgnoreCacErrors:                 args.IgnoreCacErrors,
+			DeploymentProcessConverterBase: converters.DeploymentProcessConverterBase{
+				ResourceType:                    "DeploymentProcesses",
+				Client:                          &octopusClient,
+				OctopusActionProcessor:          nil,
+				IgnoreProjectChanges:            args.IgnoreProjectChanges,
+				WorkerPoolProcessor:             workerPoolProcessor,
+				ExcludeTenantTags:               args.ExcludeTenantTags,
+				ExcludeTenantTagSets:            args.ExcludeTenantTagSets,
+				Excluder:                        converters.DefaultExcluder{},
+				TagSetConverter:                 &tagsetConverter,
+				LimitAttributeLength:            0,
+				ExcludeTerraformVariables:       args.ExcludeTerraformVariables,
+				ExcludeAllSteps:                 args.ExcludeAllSteps,
+				ExcludeSteps:                    args.ExcludeSteps,
+				ExcludeStepsRegex:               args.ExcludeStepsRegex,
+				ExcludeStepsExcept:              args.ExcludeStepsExcept,
+				IgnoreInvalidExcludeExcept:      args.IgnoreInvalidExcludeExcept,
+				ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+				DummySecretGenerator:            dummySecretGenerator,
+				DummySecretVariableValues:       args.DummySecretVariableValues,
+				IgnoreCacErrors:                 args.IgnoreCacErrors,
+			},
 		},
 		TenantConverter: &tenantConverter,
 		ProjectTriggerConverter: converters.ProjectTriggerConverter{
@@ -2038,6 +2238,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		StepTemplateConverter:           stepTemplateConverter,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		ProjectExporter:                 &projectConverter,
+		Client:                          &octopusClient,
 	}
 
 	// Projects and runbooks have circular references to other projects. For example, a project can have

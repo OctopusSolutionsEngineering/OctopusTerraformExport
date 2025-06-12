@@ -65,6 +65,21 @@ data "octopusdeploy_worker_pools" "worker_pool_docker" {
   take         = 1
 }
 
+data "octopusdeploy_feeds" "feed_octopus_server_releases__built_in_" {
+  feed_type    = "OctopusProject"
+  ids          = null
+  partial_name = "Octopus Server Releases"
+  skip         = 0
+  take         = 1
+  space_id = var.octopus_space_id
+  lifecycle {
+    postcondition {
+      error_message = "Failed to resolve a feed called \"Octopus Server Releases (built-in)\". This resource must exist in the space before this Terraform configuration is applied."
+      condition     = length(self.feeds) != 0
+    }
+  }
+}
+
 resource "octopusdeploy_project" "project_1" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -73,7 +88,7 @@ resource "octopusdeploy_project" "project_1" {
   discrete_channel_release             = false
   is_disabled                          = false
   is_discrete_channel_release          = false
-  is_version_controlled                = true
+  is_version_controlled                = false
   lifecycle_id                         = data.octopusdeploy_lifecycles.lifecycle_default_lifecycle.lifecycles[0].id
   name                                 = "Test"
   project_group_id                     = data.octopusdeploy_project_groups.project_group.project_groups[0].id
@@ -92,59 +107,45 @@ resource "octopusdeploy_project" "project_1" {
     exclude_unhealthy_targets       = false
     skip_machine_behavior           = "SkipUnavailableMachines"
   }
-
-  git_library_persistence_settings {
-    git_credential_id  = data.octopusdeploy_git_credentials.git.git_credentials[0].id
-    url                = "https://github.com/mcasperson/octogittest.git"
-    base_path          = ".octopus/integrationtest-${timestamp()}"
-    default_branch     = "main"
-    protected_branches = []
-  }
 }
 
-resource "octopusdeploy_deployment_process" "deployment_process_project_one" {
+resource "octopusdeploy_process" "deployment_process_project_one" {
   project_id = "${octopusdeploy_project.project_1.id}"
-
-  step {
-    condition           = "Success"
-    name                = "Deploy a Release"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.DeployRelease"
-      name                               = "Deploy a Release"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = true
-      is_required                        = false
-      worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
-        "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
-      }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-
-      primary_package {
-        package_id           = data.octopusdeploy_projects.other.projects[0].id
-        acquisition_location = "NotAcquired"
-        feed_id              = data.octopusdeploy_feeds.project_feed.feeds[0].id
-        properties           = {}
-      }
-
-      features = []
-    }
-
-    properties   = {}
-    target_roles = []
-  }
-
   depends_on = []
+}
+
+resource "octopusdeploy_process_steps_order" "process_step_order_project_one" {
+  process_id = "${octopusdeploy_process.deployment_process_project_one.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_project_one.id}"]
+}
+
+resource "octopusdeploy_process_step" "process_step_project_one" {
+  name                  = "Deploy a Release"
+  type                  = "Octopus.DeployRelease"
+  process_id            = "${octopusdeploy_process.deployment_process_project_one.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  primary_package       = {
+    acquisition_location = "NotAcquired",
+    feed_id = data.octopusdeploy_feeds.feed_octopus_server_releases__built_in_.feeds[0].id,
+    id = null,
+    package_id = data.octopusdeploy_projects.other.projects[0].id,
+    properties = null
+  }
+  slug                  = "deploy-a-release"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  worker_pool_id        = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
+  properties            = {
+  }
+  execution_properties  = {
+    "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
+    "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
+    "Octopus.Action.RunOnServer" = "true"
+  }
 }
 
 resource "octopusdeploy_variable" "excluded_variable" {
@@ -232,41 +233,37 @@ resource "octopusdeploy_project" "project_2" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "deployment_process_hello_world" {
+resource "octopusdeploy_process" "test" {
   project_id = "${octopusdeploy_project.project_2.id}"
-
-  step {
-    condition           = "Success"
-    name                = "Hello world (using Bash)"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.Script"
-      name                               = "Hello world (using Bash)"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = true
-      worker_pool_id                     = "${data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id}"
-      properties                         = {
-        "Octopus.Action.Script.ScriptSource" = "Inline"
-        "Octopus.Action.Script.ScriptBody" = "echo 'Hello world, using Bash'\n\n#TODO: Experiment with steps of your own :)\n\necho '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
-        "Octopus.Action.Script.Syntax" = "Bash"
-        "Octopus.Action.RunOnServer" = "true"
-      }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-      features                           = []
-    }
-
-    properties   = {}
-    target_roles = []
-  }
   depends_on = []
+}
+resource "octopusdeploy_process_steps_order" "test" {
+  process_id = "${octopusdeploy_process.test.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_get_mysql_host.id}"]
+}
+
+resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
+  name                  = "Get MySQL Host"
+  type                  = "Octopus.KubernetesRunScript"
+  process_id            = "${octopusdeploy_process.test.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  slug                  = "get-mysql-host"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  worker_pool_id        = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
+  execution_properties  = {
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+  }
+  properties            = {
+    "Octopus.Action.TargetRoles" = "eks"
+  }
 }
 
 resource "octopusdeploy_runbook" "runbook" {

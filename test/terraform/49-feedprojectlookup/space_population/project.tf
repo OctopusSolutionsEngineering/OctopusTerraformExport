@@ -84,87 +84,78 @@ resource "octopusdeploy_project" "project_1" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "test" {
-  project_id = octopusdeploy_project.project_1.id
+resource "octopusdeploy_process" "test" {
+  project_id = "${octopusdeploy_project.project_1.id}"
+  depends_on = []
+}
+resource "octopusdeploy_process_steps_order" "test" {
+  process_id = "${octopusdeploy_process.test.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_get_mysql_host.id}"]
+}
 
-  step {
-    condition           = "Success"
-    name                = "Get MySQL Host"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.KubernetesRunScript"
-      name                               = "Get MySQL Host"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = true
-      is_required                        = false
-      worker_pool_id                     = data.octopusdeploy_worker_pools.workerpool_default.worker_pools[0].id
-      properties                         = {
-        "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
-        "Octopus.Action.KubernetesContainers.Namespace" = ""
-        "OctopusUseBundledTooling" = "False"
-        "Octopus.Action.Script.ScriptSource" = "Inline"
-        "Octopus.Action.Script.Syntax" = "Bash"
-      }
-
-      environments          = []
-      excluded_environments = []
-      channels              = []
-      tenant_tags           = []
-
-      package {
-        name                      = "package1"
-        package_id                = "package1"
-        acquisition_location      = "Server"
-        extract_during_deployment = false
-        feed_id                   = data.octopusdeploy_feeds.docker.feeds[0].id
-        properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
-      }
-
-      package {
-        name                      = "package2"
-        package_id                = "package2"
-        acquisition_location      = "Server"
-        extract_during_deployment = false
-        feed_id                   = data.octopusdeploy_feeds.helm.feeds[0].id
-        properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
-      }
-
-      package {
-        name                      = "package3"
-        package_id                = "package3"
-        acquisition_location      = "Server"
-        extract_during_deployment = false
-        feed_id                   = data.octopusdeploy_feeds.maven.feeds[0].id
-        properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
-      }
-
-      package {
-        name                      = "package4"
-        package_id                = "package4"
-        acquisition_location      = "Server"
-        extract_during_deployment = false
-        feed_id                   = data.octopusdeploy_feeds.nuget.feeds[0].id
-        properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
-      }
-
-      package {
-        name                      = "package5"
-        package_id                = "package5"
-        acquisition_location      = "Server"
-        extract_during_deployment = false
-        feed_id                   = data.octopusdeploy_feeds.github.feeds[0].id
-        properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
-      }
-
-      features = []
+resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
+  name                  = "Get MySQL Host"
+  type                  = "Octopus.KubernetesRunScript"
+  process_id            = "${octopusdeploy_process.test.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  worker_pool_id                     = data.octopusdeploy_worker_pools.workerpool_default.worker_pools[0].id
+  package_requirement   = "LetOctopusDecide"
+  slug                  = "get-mysql-host"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  packages = {
+    "package1" = {
+      package_id                = "package1"
+      acquisition_location      = "Server"
+      extract_during_deployment = false
+      feed_id                   = data.octopusdeploy_feeds.docker.feeds[0].id
+      properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
     }
 
-    properties   = {}
-    target_roles = ["eks"]
+    "package2" = {
+      package_id                = "package2"
+      acquisition_location      = "Server"
+      extract_during_deployment = false
+      feed_id                   = data.octopusdeploy_feeds.helm.feeds[0].id
+      properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
+    }
+
+    "package3" = {
+      package_id                = "package3"
+      acquisition_location      = "Server"
+      extract_during_deployment = false
+      feed_id                   = data.octopusdeploy_feeds.maven.feeds[0].id
+      properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
+    }
+
+    "package4" = {
+      package_id                = "package4"
+      acquisition_location      = "Server"
+      extract_during_deployment = false
+      feed_id                   = data.octopusdeploy_feeds.nuget.feeds[0].id
+      properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
+    }
+
+    "package5" = {
+      name                      = "package5"
+      package_id                = "package5"
+      acquisition_location      = "Server"
+      extract_during_deployment = false
+      feed_id                   = data.octopusdeploy_feeds.github.feeds[0].id
+      properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
+    }
+  }
+  execution_properties  = {
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+  }
+  properties            = {
+    "Octopus.Action.TargetRoles" = "eks"
   }
 }
 

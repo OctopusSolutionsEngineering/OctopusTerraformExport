@@ -42,7 +42,7 @@ func (s StepTemplateGenerator) Generate(collection *data.ResourceDetailsCollecti
 	template := steptemplate.StepTemplate{
 		Id:              s.createStableGuid(name),
 		Name:            name,
-		Description:     description,
+		Description:     strings.TrimSpace(description),
 		ActionType:      "Octopus.TerraformApply",
 		Packages:        []string{},
 		GitDependencies: []string{},

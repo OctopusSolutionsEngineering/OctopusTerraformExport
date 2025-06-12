@@ -29,6 +29,13 @@ type ResourceParameter struct {
 type ResourceDetails struct {
 	// Id is the octopus ID of the exported resource
 	Id string
+	// ParentId is an optional field that allows a resource to define its parenr.
+	// This is useful when establishing dependencies between Terraform resources where it is not easy to identify the
+	// individual Terraform resources that belong to a parent. For example, a channel must depend on the steps in a project
+	// because a channel references step packages by name, and thus do not establish a direct relationship that can be
+	// deduced by Terraform. However, it is not easy to infer all the step resources that belong to a project based on ID
+	// alone. But by setting the ParentId field, it is possible to query all the steps that belong to a project.
+	ParentId string
 	// Name is the name of the resource
 	Name string
 	// Step templates have a calculated version value that is only available when the template is created. This value
@@ -42,10 +49,12 @@ type ResourceDetails struct {
 	ExternalID string
 	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
-	// Lookup is the ID of the resource created or looked up by Terraform
+	// Lookup is the ID of the resource created or looked up by Terraform. For example,
+	// "${octopusdeploy_project.my_project.id}".
+	// Lookup is the ID of the resource, while Dependency is the name of the resource in the Terraform.
 	Lookup string
-	// Dependency provides a way for one resource to depend on this resource. Usually the same of the Lookup, but can be
-	// a reference to a group of resources in stateless mode.
+	// Dependency provides a way for one resource to depend on this resource. It is a reference to the terraform
+	// resource, for example, "${octopusdeploy_project.my_project}".
 	Dependency string
 	// Count stores the HCL assigned to the count attribute. This is useful when child resources need to have the same
 	// count value as a parent.
@@ -247,6 +256,16 @@ func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, i
 	zap.L().Error("Failed to resolve dependency " + id + " of type " + resourceType)
 
 	return ""
+}
+
+// GetResourceDependencyFromParent returns the terraform references for a given resource type based on the parent ID.
+func (c *ResourceDetailsCollection) GetResourceDependencyFromParent(parentId string, resourceType string) []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return lo.FilterMap(c.Resources, func(item ResourceDetails, index int) (string, bool) {
+		return item.Dependency, item.ParentId == parentId && item.ResourceType == resourceType
+	})
 }
 
 // GetResources returns the Terraform references for resources of the given type and with the supplied ids.

@@ -13,6 +13,15 @@ var dollarCurlyEscapedRegex = regexp.MustCompile(`\$\$\{\\"\$\\"}\{`)
 var percentCurlyRegex = regexp.MustCompile(`%\{`)
 var percentCurlyEscapedRegex = regexp.MustCompile(`%%\{\\"%\\"}\{`)
 
+func TrimPointer(input *string) *string {
+	if input == nil {
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(*input)
+	return &trimmed
+}
+
 func StrPointer(input string) *string {
 	return &input
 }

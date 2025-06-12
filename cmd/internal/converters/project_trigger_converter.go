@@ -23,6 +23,8 @@ import (
 const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
 const octopusdeployProjectScheduledTrigger = "octopusdeploy_project_scheduled_trigger"
 const octopusdeployProjectFeedTrigger = "octopusdeploy_external_feed_create_release_trigger"
+const octopusdeployProjectGitTrigger = "octopusdeploy_git_trigger"
+const octopusdeployProjectArcTrigger = "octopusdeploy_built_in_trigger"
 
 type ProjectTriggerConverter struct {
 	Client                client.OctopusClient
@@ -41,14 +43,29 @@ func (c ProjectTriggerConverter) ToHclStatelessByProjectIdAndName(projectId stri
 }
 
 func (c ProjectTriggerConverter) toHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+	// The API endpoint /api/Spaces-1/projects/Projects-1/triggers does not return ARC triggers
+	// You have to add the triggerActionCategory query param to return ARC triggers
 	collection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
-	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection)
+	err := c.Client.GetAllResources(c.GetGroupResourceType(projectId), &collection, []string{"triggerActionCategory", "Deployment"})
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.ProjectTrigger]: %w", err)
 	}
 
-	for _, resource := range collection.Items {
+	// You have to add the triggerActionCategory query param to return the runbook triggers
+	runbookTriggerCollection := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+	err = c.Client.GetAllResources(c.GetGroupResourceType(projectId), &runbookTriggerCollection, []string{"triggerActionCategory", "Runbook"})
+
+	if err != nil {
+		return fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.ProjectTrigger]: %w", err)
+	}
+
+	// We want all the triggers
+	triggers := []octopus.ProjectTrigger{}
+	triggers = append(triggers, collection.Items...)
+	triggers = append(triggers, runbookTriggerCollection.Items...)
+
+	for _, resource := range triggers {
 		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
 			return nil
 		}
@@ -218,7 +235,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, recursive bool, lookup bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
 	// Some triggers are not supported
-	supportedTriggers := []string{"MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter"}
+	supportedTriggers := []string{"GitFilter", "ArcFeedFilter", "MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter"}
 	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {
 		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
 		return nil
@@ -235,6 +252,19 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, re
 
 	c.buildTargetTrigger(projectTrigger, stateless, projectId, projectName, dependencies)
 	c.buildScheduledTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
+
+	err := c.buildArcTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.buildGitTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
+
+	if err != nil {
+		return err
+	}
+
 	return c.buildFeedTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
 }
 
@@ -352,7 +382,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus.Pr
 			Id:                        strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
 			ResourceName:              projectTrigger.Name,
 			ProjectId:                 dependencies.GetResource("Projects", projectTrigger.ProjectId),
-			Description:               projectTrigger.Description,
+			Description:               strutil.TrimPointer(projectTrigger.Description),
 			Timezone:                  projectTrigger.Filter.Timezone,
 			IsDisabled:                projectTrigger.IsDisabled,
 			ChannelId:                 strutil.NilIfEmptyPointer(dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId)),
@@ -449,6 +479,146 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus.Project
 			// when importing a stateless project, the trigger is only created if the project does not exist
 			c.writeData(file, projectName, projectTriggerName)
 			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// This trigger needs the deployment process to be created first to ensure step names exist
+		if project.DeploymentProcessId != nil {
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+		}
+
+		if stateless {
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+
+	return nil
+}
+
+func (c ProjectTriggerConverter) buildArcTriggerResources(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	if projectTrigger.Filter.FilterType != "ArcFeedFilter" {
+		return nil
+	}
+
+	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
+
+	if c.GenerateImportScripts {
+		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectArcTrigger, dependencies)
+		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectArcTrigger, dependencies)
+	}
+
+	return c.buildArcTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
+}
+
+// getTriggerPackage resolves the step name and package name from the IDs returned by the API for use with the ARC trigger
+func (c ProjectTriggerConverter) getTriggerPackage(projectTrigger octopus.ProjectTrigger) (terraform.TerraformBuiltInTriggerPackage, error) {
+	releaseCreationPackage := terraform.TerraformBuiltInTriggerPackage{}
+
+	// There should always be a package, but be defensive here
+	if len(projectTrigger.Filter.Packages) != 0 {
+
+		// we need the project associated with the trigger
+		project := octopus.Project{}
+		err := c.Client.GetResourceById("Projects", projectTrigger.ProjectId, &project)
+
+		if err != nil {
+			return releaseCreationPackage, err
+		}
+
+		// We then need the deployment process associated with the project
+		deploymentProcess := octopus.DeploymentProcess{}
+
+		err = c.Client.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId), &deploymentProcess)
+
+		if err != nil {
+			return releaseCreationPackage, err
+		}
+
+		actions := lo.FlatMap(deploymentProcess.Steps, func(item octopus.Step, index int) []octopus.Action {
+			return lo.Filter(item.Actions, func(item octopus.Action, index int) bool {
+				return item.Id == projectTrigger.Filter.Packages[0].DeploymentAction
+			})
+		})
+
+		if len(actions) != 0 {
+			action := actions[0]
+
+			// We need the package referenced by the trigger
+			pkg, _, exists := lo.FindIndexOf(action.Packages, func(pkg octopus.Package) bool {
+				return strutil.EmptyIfNil(pkg.Id) == projectTrigger.Filter.Packages[0].PackageReference
+			})
+
+			if exists {
+				releaseCreationPackage.PackageReference = strutil.EmptyIfNil(pkg.Name)
+				releaseCreationPackage.DeploymentAction = strutil.EmptyIfNil(action.Name)
+			}
+		}
+
+	}
+
+	return releaseCreationPackage, nil
+}
+
+func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	project := octopus.Project{}
+	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
+	}
+
+	thisResource := data.ResourceDetails{}
+	thisResource.Name = projectTrigger.Name
+	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
+	thisResource.Id = projectTrigger.Id
+	thisResource.ResourceType = c.GetGroupResourceType(projectId)
+	thisResource.Lookup = "${" + octopusdeployProjectArcTrigger + "." + projectTriggerName + ".id}"
+
+	if stateless {
+		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the trigger anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProjectArcTrigger + "." + projectTriggerName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployProjectArcTrigger + "." + projectTriggerName + "}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProjectArcTrigger + "." + projectTriggerName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		releaseCreationPackage, err := c.getTriggerPackage(projectTrigger)
+
+		if err != nil {
+			return "", err
+		}
+
+		terraformResource := terraform.TerraformBuiltInTrigger{
+			Type:  octopusdeployProjectArcTrigger,
+			Name:  projectTriggerName,
+			Count: nil,
+			Id:    strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
+			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
+			SpaceId:   strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
+			ChannelId: dependencies.GetResource("Channels", strutil.EmptyIfNil(projectTrigger.Action.ChannelId)),
+			ProjectId: dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			// This is defined on the Terraform resource, but doesn't appear in the API
+			ReleaseCreationPackageStepId: nil,
+			ReleaseCreationPackage:       releaseCreationPackage,
+		}
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			// when importing a stateless project, the trigger is only created if the project does not exist
+			c.writeData(file, projectName, projectTriggerName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectArcTrigger + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -651,6 +821,100 @@ func (c ProjectTriggerConverter) exportEnvironments(projectTrigger octopus.Proje
 			}
 		}
 	}
+
+	return nil
+}
+
+func (c ProjectTriggerConverter) buildGitTriggerResources(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	if projectTrigger.Filter.FilterType != "GitFilter" {
+		return nil
+	}
+
+	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
+
+	if c.GenerateImportScripts {
+		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectGitTrigger, dependencies)
+		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectGitTrigger, dependencies)
+	}
+
+	return c.buildGitTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
+}
+
+func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	project := octopus.Project{}
+	_, err := c.Client.GetSpaceResourceById("Projects", projectId, &project)
+
+	if err != nil {
+		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
+	}
+
+	thisResource := data.ResourceDetails{}
+	thisResource.Name = projectTrigger.Name
+	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
+	thisResource.Id = projectTrigger.Id
+	thisResource.ResourceType = c.GetGroupResourceType(projectId)
+	thisResource.Lookup = "${" + octopusdeployProjectGitTrigger + "." + projectTriggerName + ".id}"
+
+	if stateless {
+		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the trigger anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProjectGitTrigger + "." + projectTriggerName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployProjectGitTrigger + "." + projectTriggerName + "}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProjectGitTrigger + "." + projectTriggerName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformGitTrigger{
+			Type:  octopusdeployProjectGitTrigger,
+			Name:  projectTriggerName,
+			Id:    strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
+			Count: nil,
+			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
+			SpaceId:      strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
+			ResourceName: projectTrigger.Name,
+			Description:  projectTrigger.Description,
+			ProjectId:    dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			ChannelId:    strutil.EmptyIfNil(dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId)),
+			IsDisabled:   strutil.NilIfFalse(projectTrigger.IsDisabled),
+			Sources: lo.Map(projectTrigger.Sources, func(item octopus.ProjectTriggerSources, index int) terraform.TerraformGitTriggerSource {
+				return terraform.TerraformGitTriggerSource{
+					DeploymentActionSlug: item.DeploymentActionSlug,
+					ExcludeFilePaths:     item.ExcludeFilePaths,
+					GitDependencyName:    item.GitDependencyName,
+					IncludeFilePaths:     item.IncludeFilePaths,
+				}
+			}),
+		}
+
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			// when importing a stateless project, the trigger is only created if the project does not exist
+			c.writeData(file, projectName, projectTriggerName)
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// This trigger needs the deployment process to be created first to ensure step names exist
+		if project.DeploymentProcessId != nil {
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+		}
+
+		if stateless {
+			hcl.WriteLifecyclePreventDestroyAttribute(block)
+		}
+
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
 
 	return nil
 }

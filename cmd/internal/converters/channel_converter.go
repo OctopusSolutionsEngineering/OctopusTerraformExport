@@ -252,7 +252,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &channel.Id),
 				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", channel.SpaceId)),
 				ResourceName: channel.Name,
-				Description:  channel.Description,
+				Description:  strutil.TrimPointer(channel.Description),
 				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),
 				ProjectId:    dependencies.GetResource("Projects", channel.ProjectId),
 				IsDefault:    channel.IsDefault,
@@ -277,12 +277,14 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 			there is any relationship. In order for the channel to be created after the deployment process,
 			we must make this dependency explicit. Otherwise, the channel may be created without the deployment
 			process, and Octopus will reject the channel rules.*/
-			manualDependencies := make([]string, 0)
-			for t, r := range terraformDependencies {
-				if t != "" && r != "" {
-					dependency := dependencies.GetResourceDependency(t, r)
-					dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
-					manualDependencies = append(manualDependencies, dependency)
+			manualDependencies := []string{}
+			for resourceType, parentId := range terraformDependencies {
+				if resourceType != "" && parentId != "" {
+					stepDependencies := dependencies.GetResourceDependencyFromParent(parentId, resourceType)
+					processedDependencies := lo.Map(stepDependencies, func(item string, index int) string {
+						return hcl.RemoveId(hcl.RemoveInterpolation(item))
+					})
+					manualDependencies = append(manualDependencies, processedDependencies...)
 				}
 			}
 			hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(manualDependencies[:], ",")+"]")

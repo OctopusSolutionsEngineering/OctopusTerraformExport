@@ -27,6 +27,12 @@ type Arguments struct {
 	IgnoreInvalidExcludeExcept      bool
 	Url                             string
 	ApiKey                          string
+	AccessToken                     string
+	UseRedirector                   bool
+	RedirectorHost                  string
+	RedirectorServiceApiKey         string
+	RedirecrtorApiKey               string
+	RedirectorRedirections          string
 	Space                           string
 	Destination                     string
 	Console                         bool
@@ -47,13 +53,17 @@ type Arguments struct {
 	DetachProjectTemplates          bool
 	DefaultSecretVariableValues     bool
 	DummySecretVariableValues       bool
+	InlineVariableValues            bool
 	ProviderVersion                 string
 	ExcludeProvider                 bool
+	IncludeProviderServerDetails    bool
 	IncludeOctopusOutputVars        bool
 	LimitAttributeLength            int
 	LimitResourceCount              int
 	GenerateImportScripts           bool
 	IgnoreCacErrors                 bool
+
+	OctopusManagedTerraformVars string
 
 	IgnoreProjectChanges         bool
 	IgnoreProjectVariableChanges bool
@@ -149,6 +159,11 @@ type Arguments struct {
 	ExcludeMachinePoliciesExcept StringSliceArgs
 	ExcludeAllMachinePolicies    bool
 
+	ExcludeMachineProxies       StringSliceArgs
+	ExcludeMachineProxiesRegex  StringSliceArgs
+	ExcludeMachineProxiesExcept StringSliceArgs
+	ExcludeAllMachineProxies    bool
+
 	ExcludeTenantTags StringSliceArgs
 
 	ExcludeTenantTagSets       StringSliceArgs
@@ -173,7 +188,17 @@ type Arguments struct {
 	ExcludeTargetsExcept             StringSliceArgs
 	ExcludeTargetsWithNoEnvironments bool
 
+	ExcludeAllWorkers    bool
+	ExcludeWorkers       StringSliceArgs
+	ExcludeWorkersRegex  StringSliceArgs
+	ExcludeWorkersExcept StringSliceArgs
+
 	ExcludeAllGitCredentials bool
+
+	ExcludeAllDeploymentFreezes    bool
+	ExcludeDeploymentFreezes       StringSliceArgs
+	ExcludeDeploymentFreezesExcept StringSliceArgs
+	ExcludeDeploymentFreezesRegex  StringSliceArgs
 }
 
 // GetBackend forces the use of a local backend for stateless exports
@@ -244,8 +269,16 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")
 	flags.StringVar(&arguments.ApiKey, "apiKey", "", "The Octopus api key")
+	flags.StringVar(&arguments.AccessToken, "accessToken", "", "The Octopus access token")
 	flags.StringVar(&arguments.Destination, "dest", "", "The directory to place the Terraform files in")
 	flags.BoolVar(&arguments.Console, "console", false, "Dump Terraform files to the console")
+
+	flags.BoolVar(&arguments.UseRedirector, "useRedirector", false, "Set to true to access the Octopus instance via the redirector")
+	flags.StringVar(&arguments.RedirectorHost, "redirectorHost", "", "The hostname of the redirector service")
+	flags.StringVar(&arguments.RedirectorServiceApiKey, "redirectorServiceApiKey", "", "The service api key of the redirector service")
+	flags.StringVar(&arguments.RedirecrtorApiKey, "redirecrtorApiKey", "", "The user api key of the redirector service")
+	flags.StringVar(&arguments.RedirectorRedirections, "redirectorRedirections", "", "The redirection rules for the redirector service")
+
 	flags.BoolVar(&arguments.Stateless, "stepTemplate", false, "Create an Octopus step template")
 	flags.Var(&arguments.StatelessAdditionalParams, "stepTemplateAdditionalParameters", "Indicates that a non-secret variable should be exposed as a parameter. The format of this option is \"ProjectName:VariableName\". This option is only used with the -stepTemplate option.")
 	flags.StringVar(&arguments.StepTemplateName, "stepTemplateName", "", "Step template name. Only used with the stepTemplate option.")
@@ -261,8 +294,10 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.ExcludeCaCProjectSettings, "excludeCaCProjectSettings", false, "Pass this to exclude any Config-As-Code settings in the exported projects. Typically you set -ignoreCacManagedValues=false -excludeCaCProjectSettings=true to essentially \"convert\" a CaC project to a regular project. Values from the \"main\" or \"master\" branches will be used first, or just fall back to the first configured branch.")
 	flags.BoolVar(&arguments.DefaultSecretVariableValues, "defaultSecretVariableValues", false, "Pass this to set the default value of secret variables to the octostache template referencing the variable.")
 	flags.BoolVar(&arguments.DummySecretVariableValues, "dummySecretVariableValues", false, "Pass this to set the default value of secret variables, account secrets, feed credentials to a dummy value. This allows resources with secret values to be created without knowing the secrets, while still allowing the secret values to be specified if they are known. This option takes precedence over the defaultSecretVariableValues option.")
+	flags.BoolVar(&arguments.InlineVariableValues, "inlineVariableValues", false, "Inline the project and library variable set variable values rather than exposing their value as a Terraform variable. Secret variables will be inlined as dummy values. This option takes precedence over DummySecretVariableValues and DefaultSecretVariableValues.")
 	flags.StringVar(&arguments.BackendBlock, "terraformBackend", "", "Specifies the backend type to be added to the exported Terraform configuration.")
 	flags.StringVar(&arguments.ProviderVersion, "providerVersion", "", "Specifies the Octopus Terraform provider version.")
+	flags.StringVar(&arguments.OctopusManagedTerraformVars, "octopusManagedTerraformVars", "", "Specifies the name of an Octopus variable to be used as a template string in the body of the terraform.tfvars file. This allows Octopus to inject all the variables used by Terraform from a variable containing the contents of a terraform.tfvars file.")
 	flags.BoolVar(&arguments.DetachProjectTemplates, "detachProjectTemplates", false, "Detaches any step templates in the exported Terraform.")
 	flags.BoolVar(&arguments.IncludeDefaultChannel, "includeDefaultChannel", false, "Internal use only. Includes the \"Default\" channel as a standard channel resource rather than a data block.")
 
@@ -321,6 +356,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeMachinePoliciesRegex, "excludeMachinePoliciesRegex", "A machine policy to be excluded when exporting a single project based on regex match. WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 	flags.Var(&arguments.ExcludeMachinePoliciesExcept, "excludeMachinePoliciesExcept", "All machine policies except those defined with excludeMachinePoliciesExcept are excluded.  WARNING: the exported module is unlikely to be complete and will fail to apply if this option is enabled.")
 
+	flags.BoolVar(&arguments.ExcludeAllMachineProxies, "excludeAllMachineProxies", false, "Exclude all machine proxies.")
+	flags.Var(&arguments.ExcludeMachineProxies, "excludeMachineProxies", "A machine proxy to be excluded when exporting a single project.")
+	flags.Var(&arguments.ExcludeMachineProxiesRegex, "excludeMachineProxiesRegex", "A machine proxy to be excluded when exporting a single project based on regex match.")
+	flags.Var(&arguments.ExcludeMachineProxiesExcept, "excludeMachineProxiesExcept", "All machine proxies except those defined with excludeMachineProxiesExcept are excluded.")
+
 	flags.BoolVar(&arguments.ExcludeAllTenantVariables, "excludeAllTenantVariables", false, "Exclude all tenant variables from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeTenantVariables, "excludeTenantVariables", "Exclude a tenant variable from being exported. WARNING: steps that used this variable may no longer function correctly.")
 	flags.Var(&arguments.ExcludeTenantVariablesExcept, "excludeTenantVariablesExcept", "All tenant variables except those defined with excludeTenantVariablesExcept are excluded. WARNING: steps that used other variables may no longer function correctly.")
@@ -352,6 +392,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeTargetsRegex, "excludeTargetsRegex", "Exclude targets from being exported based on a regex. WARNING: Variables that were scoped to targets will become unscoped.")
 	flags.Var(&arguments.ExcludeTargetsExcept, "excludeTargetsExcept", "Exclude all targets except for those define in this list. The targets in excludeTargets take precedence, so a tenant define here and in excludeTargets is excluded. WARNING: Variables that were scoped to other targets will become unscoped.")
 
+	flags.BoolVar(&arguments.ExcludeAllWorkers, "excludeAllWorkers", false, "Exclude all workers from being exported.")
+	flags.Var(&arguments.ExcludeWorkers, "excludeWorkers", "Exclude workers from being exported.")
+	flags.Var(&arguments.ExcludeWorkersRegex, "excludeWorkersRegex", "Exclude workers from being exported based on a regex.")
+	flags.Var(&arguments.ExcludeWorkersExcept, "excludeWorkersExcept", "Exclude all workers except for those define in this list. The targets in excludeWorkers take precedence, so a worker define here and in excludeWorkers is excluded.")
+
 	flags.BoolVar(&arguments.ExcludeAllProjects, "excludeAllProjects", false, "Exclude all projects from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjects, "excludeProjects", "Exclude a project from being exported. This is only used when exporting a space.")
 	flags.Var(&arguments.ExcludeProjectsRegex, "excludeProjectsRegex", "Exclude a project from being exported. This is only used when exporting a space.")
@@ -365,7 +410,14 @@ func ParseArgs(args []string) (Arguments, string, error) {
 
 	flags.BoolVar(&arguments.ExcludeAllGitCredentials, "excludeAllGitCredentials", false, "Exclude all git credentials. Must be used with -excludeCaCProjectSettings.")
 
+	flags.BoolVar(&arguments.ExcludeAllDeploymentFreezes, "excludeAllDeploymentFreezes", false, "Exclude all deployment freezes from being exported.")
+	flags.Var(&arguments.ExcludeDeploymentFreezes, "excludeDeploymentFreezes", "Exclude a deployment freezes from being exported.")
+	flags.Var(&arguments.ExcludeDeploymentFreezesRegex, "excludeDeploymentFreezesRegex", "Exclude a deployment freezes from being exported.")
+	flags.Var(&arguments.ExcludeDeploymentFreezesExcept, "excludeDeploymentFreezesExcept", "All deployment freezes except those defined with excludeProjectsExcept are excluded.")
+
 	flags.BoolVar(&arguments.ExcludeProvider, "excludeProvider", false, "Exclude the provider from the exported Terraform configuration files. This is useful when you want to use a parent module to define the backend, as the parent module must define the provider.")
+	flags.BoolVar(&arguments.IncludeProviderServerDetails, "includeProviderServerDetails", true, "Define the server UL and API keys as variables passed to the provider. Set this to false to use the OCTOPUS_ACCESS_TOKEN, OCTOPUS_URL, and OCTOPUS_APIKEY environment variables to configure the provider.")
+
 	flags.BoolVar(&arguments.IncludeOctopusOutputVars, "includeOctopusOutputVars", true, "Capture the Octopus server URL, API key and Space ID as output variables. This is useful when querying the Terraform state file to locate where the resources were created.")
 	flags.BoolVar(&arguments.IgnoreProjectChanges, "ignoreProjectChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project (including its variables) when exporting a single project.")
 	flags.BoolVar(&arguments.IgnoreProjectVariableChanges, "ignoreProjectVariableChanges", false, "Use the Terraform lifecycle meta-argument to ignore all changes to the project's variables when exporting a single project. This differs from the ignoreProjectChanges option by only ignoring changes to variables while reapplying changes to all other project settings.")
@@ -389,7 +441,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 		arguments.Url = os.Getenv("OCTOPUS_CLI_SERVER")
 	}
 
-	if arguments.ApiKey == "" {
+	if arguments.ApiKey == "" && arguments.AccessToken == "" {
 		arguments.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
 	}
 
@@ -411,7 +463,7 @@ func (arguments *Arguments) ConfigureGlobalSettings() error {
 	return nil
 }
 
-// ValidateExcludeExceptArgs removes any resource named in a Exclude<ResourceType>Except argument that does not
+// ValidateExcludeExceptArgs removes any resource named in an Exclude<ResourceType>Except argument that does not
 // exist in the Octopus instance. This is mostly used when external systems attempt to filter the results but
 // may place incorrect values into the Exclude<ResourceType>Except arguments.
 func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
@@ -420,9 +472,16 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 	}
 
 	octopusClient := client.OctopusApiClient{
-		Url:    arguments.Url,
-		Space:  arguments.Space,
-		ApiKey: arguments.ApiKey,
+		Url:                     arguments.Url,
+		ApiKey:                  arguments.ApiKey,
+		AccessToken:             arguments.AccessToken,
+		Space:                   arguments.Space,
+		Version:                 "",
+		UseRedirector:           arguments.UseRedirector,
+		RedirectorHost:          arguments.RedirectorHost,
+		RedirectorServiceApiKey: arguments.RedirectorServiceApiKey,
+		RedirecrtorApiKey:       arguments.RedirecrtorApiKey,
+		RedirectorRedirections:  arguments.RedirectorRedirections,
 	}
 
 	filteredProjects, err := filterNamedResource[octopus.Project](octopusClient, "Projects", arguments.ExcludeProjectsExcept)

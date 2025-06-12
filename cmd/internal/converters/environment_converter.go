@@ -343,7 +343,7 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 			Count:                      c.getCount(stateless, resourceName),
 			SpaceId:                    strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", environment.SpaceId)),
 			ResourceName:               environment.Name,
-			Description:                environment.Description,
+			Description:                strutil.TrimPointer(environment.Description),
 			AllowDynamicInfrastructure: environment.AllowDynamicInfrastructure,
 			UseGuidedFailure:           environment.UseGuidedFailure,
 			// The new provider is strict, and fields must not change value.

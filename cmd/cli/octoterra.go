@@ -28,8 +28,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Always print the version
+	zap.L().Info("Version: " + Version)
+
+	// Exit if the version argument was provided
 	if parseArgs.Version {
-		zap.L().Info("Version: " + Version)
 		os.Exit(0)
 	}
 
@@ -37,7 +40,7 @@ func main() {
 		errorExit("You must specify the URL with the -url argument")
 	}
 
-	if parseArgs.ApiKey == "" {
+	if parseArgs.ApiKey == "" && parseArgs.AccessToken == "" {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
