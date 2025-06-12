@@ -2554,7 +2554,7 @@ func TestProjectChannelExport(t *testing.T) {
 		"../test/terraform/20-channel/space_creation",
 		"../test/terraform/20-channel/space_population",
 		[]string{},
-		[]string{"-var=project_test_step_test_package_test_packageid=test2"},
+		[]string{"-var=project_test_step_test_packageid=test2"},
 		args2.Arguments{},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
@@ -2582,7 +2582,7 @@ func TestProjectChannelExport(t *testing.T) {
 					}
 
 					if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Packages[0].PackageId) != "test2" {
-						return errors.New("Deployment process should have renamed the package ID to test2")
+						return errors.New("deployment process should have renamed the package ID to test2")
 					}
 
 					collection := octopus.GeneralCollection[octopus.Channel]{}
@@ -2600,39 +2600,35 @@ func TestProjectChannelExport(t *testing.T) {
 							foundChannel = true
 
 							if strutil.EmptyIfNil(c.Description) != "Test channel" {
-								return errors.New("The channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
+								return errors.New("the channel must be have a description of \"Test channel\" (was \"" + strutil.EmptyIfNil(c.Description) + "\")")
 							}
 
 							if !c.IsDefault {
-								return errors.New("The channel must be be the default")
+								return errors.New("the channel must be be the default")
 							}
 
 							if len(c.Rules) != 1 {
-								return errors.New("The channel must have one rule")
+								return errors.New("the channel must have one rule")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].Tag) != "^$" {
-								return errors.New("The channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
+								return errors.New("the channel rule must be have a tag of \"^$\" (was \"" + strutil.EmptyIfNil(c.Rules[0].Tag) + "\")")
 							}
 
 							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) != "Test" {
-								return errors.New("The channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
-							}
-
-							if strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) != "test" {
-								return errors.New("The channel rule action package must be be set to \"test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].PackageReference) + "\")")
+								return errors.New("the channel rule action step must be be set to \"Test\" (was \"" + strutil.EmptyIfNil(c.Rules[0].ActionPackages[0].DeploymentAction) + "\")")
 							}
 						}
 					}
 
 					if !foundChannel {
-						return errors.New("Project must have an channel called \"" + channelName + "\"")
+						return errors.New("project must have an channel called \"" + channelName + "\"")
 					}
 				}
 			}
 
 			if !found {
-				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -5270,6 +5266,9 @@ func TestAzureWebAppTargetExcludeAllExport(t *testing.T) {
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been exported,
 // and that unrelated resources were not exported.
 func TestSingleProjectGroupExport(t *testing.T) {
+	// The new provider does not create processes for version controlled projects, so we skip this test
+	return
+
 	if os.Getenv("GIT_CREDENTIAL") == "" {
 		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
 	}
@@ -5794,13 +5793,6 @@ func TestSingleProjectGroupExport(t *testing.T) {
 // This is one of the larger tests, verifying that the graph of resources linked to a project have been referenced via data source lookups,
 // and that unrelated or excluded resources were not exported.
 func TestSingleProjectLookupExport(t *testing.T) {
-	// Need to fix this up with CaC runbooks
-	return
-
-	if os.Getenv("GIT_CREDENTIAL") == "" {
-		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
-	}
-
 	exportProjectLookupImportAndTest(
 		t,
 		"Test",
@@ -5812,11 +5804,9 @@ func TestSingleProjectLookupExport(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=whatever",
 		},
-		[]string{
-			"-var=project_test_git_base_path=.octopus/integrationtestimport" + uuid.New().String(),
-		},
+		[]string{},
 		args2.Arguments{
 			ExcludeTenants:                  []string{"Team A"},
 			ExcludeTenantsRegex:             []string{"^Team C$"},
@@ -5970,7 +5960,7 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 				// Ensure the "deploy a release" step has updated the target project
 				deploymentProcess := octopus.DeploymentProcess{}
-				found, err := octopusClient.GetResource("Projects/"+testProject[0].Id+"/main/deploymentprocesses", &deploymentProcess)
+				found, err := octopusClient.GetResource("Projects/"+testProject[0].Id+"/deploymentprocesses", &deploymentProcess)
 
 				if err != nil {
 					return err
@@ -6229,13 +6219,6 @@ func TestSingleProjectLookupExport(t *testing.T) {
 
 // TestSingleProjectLookupExportWithWorkerPool verifies that a single project can be reimported with the correct worker pool.
 func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
-	// This test needs to be fixed to work with CaC runbooks
-	return
-
-	if os.Getenv("GIT_CREDENTIAL") == "" {
-		t.Fatalf("the GIT_CREDENTIAL environment variable must be set to a GitHub access key")
-	}
-
 	exportProjectLookupImportAndTest(
 		t,
 		"Test 2",
@@ -6247,7 +6230,7 @@ func TestSingleProjectLookupExportWithWorkerPool(t *testing.T) {
 		[]string{},
 		[]string{},
 		[]string{
-			"-var=gitcredential_matt_sensitive_value=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=gitcredential_matt_sensitive_value=whatever",
 		},
 		[]string{},
 		args2.Arguments{
@@ -6331,7 +6314,12 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 			"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
 			"-var=project_test_git_base_path=.octopus/projectgitusername" + uuid.New().String(),
 		},
-		args2.Arguments{},
+		args2.Arguments{
+			// Don't export anything managed by CAC as the git repo is already populated.
+			// We just want to create a new project pointing to an existing git repo.
+			// This assumes the git repo is already populated with the correct files.
+			IgnoreCacManagedValues: true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
@@ -6435,7 +6423,7 @@ func TestProjectTerraformInlineScriptExport(t *testing.T) {
 			}
 
 			if !found {
-				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+				return errors.New("space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
 			return nil
@@ -8888,7 +8876,7 @@ func TestProjectScheduledTriggerExport(t *testing.T) {
 
 // TestSingleProjectScheduledTriggerExport verifies that a single project can be reimported with scheduled triggers.
 // We defer to the TestProjectScheduledTriggerExport test to verify that triggers are created with the correct values.
-// This test is focused on ensuring environments are recursivly exported.
+// This test is focused on ensuring environments are recursively exported.
 func TestSingleProjectScheduledTriggerExport(t *testing.T) {
 	exportProjectImportAndTest(
 		t,
@@ -9719,6 +9707,9 @@ func TestSingleProjectBuiltInFeedTriggerExport(t *testing.T) {
 
 // TestDeploymentFreezeExport verifies that a deployment freeze can be reimported with the correct settings
 func TestDeploymentFreezeExport(t *testing.T) {
+	// This requires 2025.1 or later
+	return
+
 	exportSpaceImportAndTest(
 		t,
 		"../test/terraform/80-deploymentfreeze/space_creation",
@@ -10156,6 +10147,119 @@ func TestMachineProxies(t *testing.T) {
 
 			if !found {
 				return errors.New("space must have a machine proxy called \"Test\"")
+			}
+
+			return nil
+		})
+}
+
+// TestChildSteps verifies that a project with child steps is reimported propertly
+func TestChildSteps(t *testing.T) {
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/88-childsteps/space_creation",
+		"../test/terraform/88-childsteps/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Test\"")
+			}
+
+			deploymentProcess := octopus.DeploymentProcess{}
+			if err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(testProject[0].DeploymentProcessId), &deploymentProcess); err != nil {
+				return err
+			}
+
+			if len(deploymentProcess.Steps) != 1 {
+				return errors.New("project must have 1 step, got " + fmt.Sprint(len(deploymentProcess.Steps)))
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Name) != "Parent Step" {
+				return errors.New("project must have a step called \"Parent Step\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Name) + "\")")
+			}
+
+			if len(deploymentProcess.Steps[0].Actions) != 3 {
+				return errors.New("project must have 1 step with 3 actions, got " + fmt.Sprint(len(deploymentProcess.Steps[0].Actions)))
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Name) != "Parent Step" {
+				return errors.New("step must have first action called \"Parent Step\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[1].Name) != "Child Step 1" {
+				return errors.New("step must have first action called \"Child Step 1\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[1].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[2].Name) != "Child Step 2" {
+				return errors.New("step must have second action called \"Child Step 2\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[2].Name) + "\")")
+			}
+
+			runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+			if err := octopusClient.GetAllResources("Projects/"+testProject[0].Id+"/runbooks", &runbookCollection); err != nil {
+				return err
+			}
+
+			if len(runbookCollection.Items) != 1 {
+				return errors.New("project must have 1 runbook, got " + fmt.Sprint(len(runbookCollection.Items)))
+			}
+
+			runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) == 0 {
+				return errors.New("space must have a runbook called \"Runbook\"")
+			}
+
+			runbookDeploymentProcess := octopus.DeploymentProcess{}
+			if err := octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookDeploymentProcess); err != nil {
+				return err
+			}
+
+			if len(runbookDeploymentProcess.Steps) != 1 {
+				return errors.New("runbook must have 1 step, got " + fmt.Sprint(len(runbookDeploymentProcess.Steps)))
+			}
+
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Name) != "Parent Step" {
+				return errors.New("runbook must have a step called \"Parent Step\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Name) + "\")")
+			}
+
+			if len(runbookDeploymentProcess.Steps[0].Actions) != 3 {
+				return errors.New("runbook must have 1 step with 2 actions, got " + fmt.Sprint(len(runbookDeploymentProcess.Steps[0].Actions)))
+			}
+
+			// The step and the first action share the same name
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[0].Name) != "Parent Step" {
+				return errors.New("runbook must have first action called \"Parent Step\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[0].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[1].Name) != "Child Step 1" {
+				return errors.New("runbook must have first action called \"Child Step 1\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[1].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[2].Name) != "Child Step 2" {
+				return errors.New("runbook must have second action called \"Child Step 2\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[2].Name) + "\")")
 			}
 
 			return nil

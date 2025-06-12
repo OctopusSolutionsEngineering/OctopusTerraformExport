@@ -44,7 +44,7 @@ func TestTenantVariableSecretName(t *testing.T) {
 
 func TestDeploymentProcessPropertySecretName(t *testing.T) {
 	named := octopus.NameId{Id: "named-id"}
-	action := octopus.Action{Id: "action-id"}
+	action := octopus.NameId{Id: "action-id"}
 	property := "property"
 	expected := "action_4120b0e641f4cf206433a3a2a69e1dbc960f1e424bac355a1346ba3382b61ca1_sensitive_value"
 	result := DeploymentProcessPropertySecretName(named, action, property)

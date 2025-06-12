@@ -36,4 +36,8 @@ func TestRemoveInterpolation(t *testing.T) {
 	if RemoveInterpolation("${resource.blah}") != "resource.blah" {
 		t.Fatal("Interpolation removal failed")
 	}
+
+	if RemoveInterpolation("resource.blah") != "resource.blah" {
+		t.Fatal("Interpolation removal failed")
+	}
 }

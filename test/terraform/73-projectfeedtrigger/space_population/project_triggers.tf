@@ -7,5 +7,5 @@ resource "octopusdeploy_external_feed_create_release_trigger" "my_trigger" {
     deployment_action_slug = "step1"
     package_reference      = "package1"
   }
-  depends_on = [octopusdeploy_deployment_process.test]
+  depends_on = [octopusdeploy_process_steps_order.test]
 }

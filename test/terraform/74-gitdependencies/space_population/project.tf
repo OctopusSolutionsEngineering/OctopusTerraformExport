@@ -38,45 +38,42 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "test" {
-  project_id = octopusdeploy_project.deploy_frontend_project.id
+resource "octopusdeploy_process" "test" {
+  project_id = "${octopusdeploy_project.deploy_frontend_project.id}"
+  depends_on = []
+}
+resource "octopusdeploy_process_steps_order" "test" {
+  process_id = "${octopusdeploy_process.test.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_get_mysql_host.id}"]
+}
 
-  step {
-    condition           = "Success"
-    name                = "Deploy a Helm Chart"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.HelmChartUpgrade"
-      name                               = "Deploy a Helm Chart"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = false
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.Helm.ResetValues" = "True"
-        "Octopus.Action.Helm.ClientVersion" = "V3"
-        "Octopus.Action.Script.ScriptSource" = "GitRepository"
-        "Octopus.Action.GitRepository.Source" = "External"
-        "Octopus.Action.Helm.ReleaseName" = "aaa"
-      }
-      git_dependency {
-        repository_uri = 	"https://github.com/OctopusDeploy/OctopusClients.git"
-        git_credential_type = "Library"
-        git_credential_id = octopusdeploy_git_credential.gitcredential_test.id
-        default_branch = "main"
-      }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-      features                           = []
+resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
+  name                  = "step1"
+  type                  = "Octopus.KubernetesRunScript"
+  process_id            = "${octopusdeploy_process.test.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  slug                  = "step1"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  git_dependencies = {
+    "" = {
+      repository_uri = "https://github.com/OctopusDeploy/OctopusClients.git"
+      git_credential_type = "Library"
+      git_credential_id = octopusdeploy_git_credential.gitcredential_test.id
+      default_branch = "main"
     }
-
-    properties   = {}
-    target_roles = ["k8s"]
+  }
+  execution_properties  = {
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+  }
+  properties            = {
+    "Octopus.Action.TargetRoles" = "eks"
   }
 }

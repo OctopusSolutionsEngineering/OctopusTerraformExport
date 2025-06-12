@@ -178,6 +178,17 @@ func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, de
 	return nil
 }
 
+func (c OctopusActionProcessor) ConvertContainerV2(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProcessStepContainer {
+	if container.Image != nil || container.FeedId != nil {
+		return &terraform.TerraformProcessStepContainer{
+			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
+			Image:  container.Image,
+		}
+	}
+
+	return nil
+}
+
 func (c OctopusActionProcessor) ConvertGitDependencies(gitDependencies []octopus.GitDependency, dependencies *data.ResourceDetailsCollection) []terraform.TerraformGitDependency {
 	result := make([]terraform.TerraformGitDependency, len(gitDependencies))
 	for i, gitDependency := range gitDependencies {
@@ -189,6 +200,25 @@ func (c OctopusActionProcessor) ConvertGitDependencies(gitDependencies []octopus
 		}
 	}
 	return result
+}
+
+func (c OctopusActionProcessor) ConvertGitDependenciesV2(gitDependencies []octopus.GitDependency, dependencies *data.ResourceDetailsCollection) *map[string]terraform.TerraformProcessStepGitDependencies {
+	result := map[string]terraform.TerraformProcessStepGitDependencies{}
+	for _, gitDependency := range gitDependencies {
+		result[strutil.EmptyIfNil(gitDependency.Name)] = terraform.TerraformProcessStepGitDependencies{
+			DefaultBranch:     strutil.EmptyIfNil(gitDependency.DefaultBranch),
+			GitCredentialType: strutil.EmptyIfNil(gitDependency.GitCredentialType),
+			RepositoryUri:     strutil.EmptyIfNil(gitDependency.RepositoryUri),
+			FilePathFilters:   nil,
+			GitCredentialId:   dependencies.GetResourcePointer("Git-Credentials", gitDependency.GitCredentialId),
+		}
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return &result
 }
 
 func (c OctopusActionProcessor) ReplaceIds(experimentalEnableStepTemplates bool, properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
@@ -223,9 +253,8 @@ func (c OctopusActionProcessor) EscapePercents(properties map[string]string) map
 // RemoveUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
 func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[string]string) map[string]string {
 	unnecessaryFields := []string{"Octopus.Action.Package.PackageId",
-		// This value is usually redundant and specified by the run_on_server property, but it doesn't work for runbooks in 0.12.2
-		// "Octopus.Action.RunOnServer",
-		"Octopus.Action.EnabledFeatures",
+		// Fix up this error: .execution_properties: element "Octopus.Action.Package.DownloadOnTentacle" has vanished.
+		"Octopus.Action.Package.DownloadOnTentacle",
 		"Octopus.Action.Aws.CloudFormationTemplateParametersRaw",
 		"Octopus.Action.Package.FeedId"}
 	sanitisedProperties := map[string]string{}

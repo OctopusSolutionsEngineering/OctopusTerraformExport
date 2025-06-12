@@ -47,46 +47,42 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
   }
 }
 
-resource "octopusdeploy_deployment_process" "deploy_backend" {
-  project_id = octopusdeploy_project.deploy_frontend_project.id
+resource "octopusdeploy_process" "process_tfapply" {
+  project_id = "${octopusdeploy_project.deploy_frontend_project.id}"
+  depends_on = []
+}
 
-  step {
-    condition           = "Success"
-    name                = "Test"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
+resource "octopusdeploy_process_steps_order" "process_step_order_tfapply" {
+  process_id = "${octopusdeploy_process.process_tfapply.id}"
+  steps      = ["${octopusdeploy_process_step.process_step_tfapply_test.id}"]
+}
 
-    action {
-      action_type                        = "Octopus.TerraformApply"
-      name                               = "Test"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = false
-      worker_pool_id                     = ""
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.Script.ScriptSource"                    = "Inline"
-        "Octopus.Action.Terraform.AzureAccount"                 = "False"
-        "Octopus.Action.Terraform.PlanJsonOutput"               = "False"
-        "Octopus.Action.Terraform.RunAutomaticFileSubstitution" = "True"
-        "Octopus.Action.GoogleCloud.UseVMServiceAccount"        = "True"
-        "Octopus.Action.Terraform.GoogleCloudAccount"           = "False"
-        "Octopus.Action.Terraform.TemplateParameters"           = jsonencode({})
-        "Octopus.Action.Terraform.AllowPluginDownloads"         = "True"
-        "Octopus.Action.Terraform.ManagedAccount"               = "None"
-        "Octopus.Action.Terraform.Template"                     = "#test"
-        "Octopus.Action.GoogleCloud.ImpersonateServiceAccount"  = "False"
-      }
-      environments          = []
-      excluded_environments = []
-      channels              = []
-      tenant_tags           = []
-      features              = []
-    }
-
-    properties   = {}
-    target_roles = []
+resource "octopusdeploy_process_step" "process_step_tfapply_test" {
+  name                  = "Test"
+  type                  = "Octopus.TerraformApply"
+  process_id            = "${octopusdeploy_process.process_tfapply.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  slug                  = "test"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  properties            = {
+  }
+  execution_properties  = {
+    "Octopus.Action.Terraform.RunAutomaticFileSubstitution" = "True"
+    "Octopus.Action.GoogleCloud.ImpersonateServiceAccount" = "False"
+    "Octopus.Action.Terraform.ManagedAccount" = "None"
+    "Octopus.Action.Terraform.GoogleCloudAccount" = "False"
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+    "Octopus.Action.Terraform.TemplateParameters" = jsonencode({        })
+    "Octopus.Action.Terraform.AllowPluginDownloads" = "True"
+    "Octopus.Action.Terraform.Template" = "#test"
+    "Octopus.Action.Terraform.AzureAccount" = "False"
+    "Octopus.Action.GoogleCloud.UseVMServiceAccount" = "True"
+    "Octopus.Action.Terraform.PlanJsonOutput" = "False"
   }
 }

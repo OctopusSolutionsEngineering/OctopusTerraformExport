@@ -33,8 +33,8 @@ func TenantVariableSecretName(tenantVariable octopus.TenantVariable) string {
 	return "tenantvariable_" + hash.Sha256Hash(tenantVariable.Id) + "_sensitive_value"
 }
 
-func DeploymentProcessPropertySecretName(named octopus.NamedResource, action octopus.Action, property string) string {
-	return "action_" + hash.Sha256Hash(named.GetId()+"_"+action.Id+"_"+property) + "_sensitive_value"
+func DeploymentProcessPropertySecretName(named octopus.NamedResource, action octopus.NamedResource, property string) string {
+	return "action_" + hash.Sha256Hash(named.GetId()+"_"+action.GetId()+"_"+property) + "_sensitive_value"
 }
 
 func GitCredentialSecretName(gitCredentials octopus.GitCredentials) string {

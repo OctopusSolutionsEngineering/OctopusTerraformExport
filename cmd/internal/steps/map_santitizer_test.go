@@ -11,7 +11,7 @@ func TestMapSanitizer(t *testing.T) {
 		SpaceId: "",
 		Name:    "parentName",
 	},
-		octopus.Action{
+		&octopus.Action{
 			Id: "actionname",
 		},
 		map[string]any{
@@ -20,7 +20,7 @@ func TestMapSanitizer(t *testing.T) {
 		}, nil)
 
 	if sanitizedMap["input"] != "test" {
-		t.Fatal("String should be passed through with o changes")
+		t.Fatal("String should be passed through with no changes")
 	}
 
 	if sanitizedMap["input2"] != "${var.action_4481fe3a58f14368f78761e4acd1bbcaabcb3e35e596829aec0a37c086d52df8_sensitive_value}" {
