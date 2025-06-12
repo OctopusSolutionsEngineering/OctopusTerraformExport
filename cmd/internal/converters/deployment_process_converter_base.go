@@ -20,6 +20,12 @@ import (
 	"github.com/samber/lo"
 )
 
+const octopusdeployProcessResourceType = "octopusdeploy_process"
+const octopusdeployProcessStepResourceType = "octopusdeploy_process_step"
+const octopusdeployProcessChildStepResourceType = "octopusdeploy_process_child_step"
+const octopusdeployProcessStepsOrderResourceType = "octopusdeploy_process_steps_order"
+const octopusdeployProcessStepsOrder = "octopusdeploy_process_steps_order"
+
 type DeploymentProcessConverterBase struct {
 	ResourceType                    string
 	Client                          client.OctopusClient
@@ -47,8 +53,17 @@ func (c *DeploymentProcessConverterBase) SetActionProcessor(actionProcessor *Oct
 	c.OctopusActionProcessor = actionProcessor
 }
 
+func (c *DeploymentProcessConverterBase) getParentName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource) string {
+	if parent != nil {
+		return parent.GetName()
+	}
+
+	return owner.GetName()
+}
+
 func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := c.generateProcessName(parent, owner)
+	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
 	err := c.exportDependencies(recursive, lookup, stateless, resource, dependencies)
 
@@ -60,12 +75,23 @@ func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, 
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = resource.GetId()
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${octopusdeploy_process." + resourceName + ".id}"
+	thisResource.Dependency = "${" + octopusdeployProcessResourceType + "." + resourceName + "}"
+
+	if stateless {
+		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProcessResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProcessResourceType + "." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
 		terraformProcessResource := terraform.TerraformProcess{
-			Type:      "octopusdeploy_process",
+			Type:      octopusdeployProcessResourceType,
 			Name:      resourceName,
 			Id:        nil,
 			SpaceId:   nil,
@@ -151,14 +177,25 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 	}
 
 	resourceName := c.generateChildStepOrderName(parent, owner, step)
+	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = owner.GetUltimateParent()
-	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + strutil.EmptyIfNil(step.Id)
+	thisResource.Id = c.getStepOrActionId(resource, owner, step)
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
-	thisResource.Lookup = "${octopusdeploy_process_steps_order." + resourceName + ".id}"
-	thisResource.Dependency = "${octopusdeploy_process_steps_order." + resourceName + "}"
+	thisResource.Dependency = "${" + octopusdeployProcessStepsOrder + "." + resourceName + "}"
+
+	if stateless {
+		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProcessStepsOrder + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProcessStepsOrder + "." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
@@ -167,12 +204,12 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 			Type:      "octopusdeploy_process_child_steps_order",
 			Name:      resourceName,
 			Id:        nil,
-			ProcessId: "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
-			ParentId:  "${octopusdeploy_process_step." + c.generateStepName(parent, owner, step) + ".id}",
+			ProcessId: dependencies.GetResource(c.GetResourceType(), resource.GetId()),
+			ParentId:  dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, step)),
 			// The first action is folded in the parent step, so we don't include it in the child steps.
 			// The child steps are the second action on and onwards in the step.
 			Children: lo.Map(step.Actions[1:], func(item octopus.Action, index int) string {
-				return "${octopusdeploy_process_child_step." + c.generateChildStepName(parent, owner, &item) + ".id}"
+				return dependencies.GetResource("DeploymentProcesses/ChildSteps", owner.GetId()+"/"+resource.GetId()+"/"+item.Id)
 			}),
 		}
 
@@ -197,25 +234,36 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 
 func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateStepOrderName(parent, owner)
+	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = resource.GetId()
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
-	thisResource.Lookup = "${octopusdeploy_process_steps_order." + resourceName + ".id}"
-	thisResource.Dependency = "${octopusdeploy_process_steps_order." + resourceName + "}"
+	thisResource.Dependency = "${" + octopusdeployProcessStepsOrderResourceType + "." + resourceName + "}"
+
+	if stateless {
+		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProcessStepsOrderResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProcessStepsOrderResourceType + "." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
 
 		terraformProcessStepsOrder := terraform.TerraformProcessStepsOrder{
-			Type:      "octopusdeploy_process_steps_order",
+			Type:      octopusdeployProcessStepsOrderResourceType,
 			Name:      resourceName,
 			Id:        nil,
-			ProcessId: "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
+			ProcessId: dependencies.GetResource(c.GetResourceType(), resource.GetId()),
 			Steps: lo.Map(steps, func(item octopus.Step, index int) string {
-				return "${octopusdeploy_process_step." + c.generateStepName(parent, owner, &item) + ".id}"
+				return dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, &item))
 			}),
 		}
 
@@ -240,25 +288,36 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 
 func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateChildStepName(parent, owner, action)
+	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + action.Id
-	thisResource.ResourceType = "DeploymentProcesses/Steps"
-	thisResource.Lookup = "${octopusdeploy_process_child_step." + resourceName + ".id}"
-	thisResource.Dependency = "${octopusdeploy_process_child_step." + resourceName + "}"
+	thisResource.ResourceType = "DeploymentProcesses/ChildSteps"
+	thisResource.Dependency = "${" + octopusdeployProcessChildStepResourceType + "." + resourceName + "}"
+
+	if stateless {
+		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProcessChildStepResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProcessChildStepResourceType + "." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
 		terraformProcessStepChild := terraform.TerraformProcessStep{
-			Type:                 "octopusdeploy_process_child_step",
+			Type:                 octopusdeployProcessChildStepResourceType,
 			Name:                 resourceName,
 			Id:                   nil, // Read only
 			ResourceName:         strutil.EmptyIfNil(action.Name),
 			ResourceType:         strutil.EmptyIfNil(action.ActionType),
-			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
-			ParentId:             strutil.StrPointer("${octopusdeploy_process_step." + c.generateStepName(parent, owner, step) + ".id}"),
+			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
+			ParentId:             strutil.NilIfEmpty(dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, step))),
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
 			Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
@@ -310,25 +369,36 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 
 func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateStepName(parent, owner, step)
+	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = owner.GetUltimateParent()
-	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + strutil.EmptyIfNil(step.Id)
+	thisResource.Id = c.getStepOrActionId(resource, owner, step)
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
-	thisResource.Lookup = "${octopusdeploy_process_step." + resourceName + ".id}"
-	thisResource.Dependency = "${octopusdeploy_process_step." + resourceName + "}"
+	thisResource.Dependency = "${" + octopusdeployProcessStepResourceType + "." + resourceName + "}"
+
+	if stateless {
+		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProcessStepResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProcessStepResourceType + "." + resourceName + ".id}"
+	}
+
 	thisResource.ToHcl = func() (string, error) {
 
 		file := hclwrite.NewEmptyFile()
 
 		terraformProcessStep := terraform.TerraformProcessStep{
-			Type:                 "octopusdeploy_process_step",
+			Type:                 octopusdeployProcessStepResourceType,
 			Name:                 resourceName,
 			Id:                   nil,
 			ResourceName:         strutil.EmptyIfNil(step.Name),
 			ResourceType:         "Dummy",
-			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
+			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
 			Channels:             nil,
 			Condition:            step.Condition,
 			Container:            nil,
@@ -419,6 +489,10 @@ func (c *DeploymentProcessConverterBase) generateStepOrderName(parent octopus.Na
 		return "process_step_order_" + sanitizer.SanitizeName(parent.GetName()) + "_" + sanitizer.SanitizeName(owner.GetName())
 	}
 	return "process_step_order_" + sanitizer.SanitizeName(owner.GetName())
+}
+
+func (c *DeploymentProcessConverterBase) getStepOrActionId(resource octopus.OctopusProcess, owner octopus.NameIdParentResource, step *octopus.Step) string {
+	return owner.GetId() + "/" + resource.GetId() + "/" + strutil.EmptyIfNil(step.Id)
 }
 
 func (c *DeploymentProcessConverterBase) generateChildStepOrderName(parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, named octopus.NamedResource) string {
