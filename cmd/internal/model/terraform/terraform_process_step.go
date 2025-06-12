@@ -1,13 +1,15 @@
 package terraform
 
 type TerraformProcessStep struct {
-	Type                 string                         `hcl:"type,label"`
-	Name                 string                         `hcl:"name,label"`
-	Count                *string                        `hcl:"count"`
-	Id                   *string                        `hcl:"id"`
-	ResourceName         string                         `hcl:"name"`
-	ResourceType         string                         `hcl:"type"`
-	ProcessId            string                         `hcl:"process_id"`
+	Type         string  `hcl:"type,label"`
+	Name         string  `hcl:"name,label"`
+	Count        *string `hcl:"count"`
+	Id           *string `hcl:"id"`
+	ResourceName string  `hcl:"name"`
+	ResourceType string  `hcl:"type"`
+	ProcessId    string  `hcl:"process_id"`
+	// ParentId is the ID of the parent step, if this step is a child step.
+	ParentId             *string                        `hcl:"parent_id"`
 	Channels             []string                       `hcl:"channels"`
 	Condition            *string                        `hcl:"condition"`
 	Container            *TerraformProcessStepContainer `hcl:"container"`

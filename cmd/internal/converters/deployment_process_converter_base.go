@@ -128,9 +128,9 @@ func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, 
 		c.generateSteps(stateless, resource, parent, owner, &step, dependencies)
 
 		if parentStep {
-			// Steps that have children create a new child step from all the actions.
-			for _, action := range step.Actions {
-				c.generateChildSteps(stateless, resource, parent, owner, &action, dependencies)
+			// Steps that have children create a new child step from all the actions after the first one.
+			for _, action := range step.Actions[1:] {
+				c.generateChildSteps(stateless, resource, parent, owner, &step, &action, dependencies)
 			}
 
 			// The child steps are captured in the TerraformProcessChildStepsOrder resource.
@@ -145,6 +145,11 @@ func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, 
 }
 
 func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+	if len(step.Actions) < 2 {
+		// This shouldn't happen, but if a step has no child actions, we don't create a child step order.
+		return
+	}
+
 	resourceName := c.generateChildStepOrderName(parent, owner, step)
 
 	thisResource := data.ResourceDetails{}
@@ -164,7 +169,9 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 			Id:        nil,
 			ProcessId: "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
 			ParentId:  "${octopusdeploy_process_step." + c.generateStepName(parent, owner, step) + ".id}",
-			Steps: lo.Map(step.Actions, func(item octopus.Action, index int) string {
+			// The first action is folded in the parent step, so we don't include it in the child steps.
+			// The child steps are the second action on and onwards in the step.
+			Children: lo.Map(step.Actions[1:], func(item octopus.Action, index int) string {
 				return "${octopusdeploy_process_child_step." + c.generateChildStepName(parent, owner, &item) + ".id}"
 			}),
 		}
@@ -231,7 +238,7 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateChildStepName(parent, owner, action)
 
 	thisResource := data.ResourceDetails{}
@@ -251,6 +258,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			ResourceName:         strutil.EmptyIfNil(action.Name),
 			ResourceType:         strutil.EmptyIfNil(action.ActionType),
 			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
+			ParentId:             strutil.StrPointer("${octopusdeploy_process_step." + c.generateStepName(parent, owner, step) + ".id}"),
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
 			Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
@@ -319,7 +327,7 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 			Name:                 resourceName,
 			Id:                   nil,
 			ResourceName:         strutil.EmptyIfNil(step.Name),
-			ResourceType:         "",
+			ResourceType:         "Dummy",
 			ProcessId:            "${octopusdeploy_process." + c.generateProcessName(parent, owner) + ".id}",
 			Channels:             nil,
 			Condition:            step.Condition,
@@ -343,11 +351,12 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 			PackageRequirement:   step.PackageRequirement,
 		}
 
-		standaloneStep := len(step.Actions) == 1
+		// This should always be true, but we check it to avoid panics.
+		hasChild := len(step.Actions) >= 1
 
 		// We build the output differently for a step with a single action (represented as a typical step in the UI)
 		// and a step with multiple actions (represented as a parent step with child steps in the UI).
-		if standaloneStep {
+		if hasChild {
 			action := step.Actions[0]
 
 			// The step type is the type of the first action.
@@ -386,7 +395,7 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 
 		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), step, file, dependencies)
 
-		if standaloneStep {
+		if hasChild {
 			c.assignProperties("execution_properties", block, owner, step.Actions[0].Properties, &step.Actions[0], file, dependencies)
 		}
 

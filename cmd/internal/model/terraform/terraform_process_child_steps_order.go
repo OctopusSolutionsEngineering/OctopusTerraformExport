@@ -8,5 +8,5 @@ type TerraformProcessChildStepsOrder struct {
 	Id        *string  `hcl:"id"`
 	ProcessId string   `hcl:"process_id"`
 	ParentId  string   `hcl:"parent_id"`
-	Steps     []string `hcl:"steps"`
+	Children  []string `hcl:"children"`
 }

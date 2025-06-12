@@ -10152,3 +10152,116 @@ func TestMachineProxies(t *testing.T) {
 			return nil
 		})
 }
+
+// TestChildSteps verifies that a project with child steps is reimported propertly
+func TestChildSteps(t *testing.T) {
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/88-childsteps/space_creation",
+		"../test/terraform/88-childsteps/space_population",
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Test\"")
+			}
+
+			deploymentProcess := octopus.DeploymentProcess{}
+			if err := octopusClient.GetResourceById("DeploymentProcesses", strutil.EmptyIfNil(testProject[0].DeploymentProcessId), &deploymentProcess); err != nil {
+				return err
+			}
+
+			if len(deploymentProcess.Steps) != 1 {
+				return errors.New("project must have 1 step, got " + fmt.Sprint(len(deploymentProcess.Steps)))
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Name) != "Parent Step" {
+				return errors.New("project must have a step called \"Parent Step\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Name) + "\")")
+			}
+
+			if len(deploymentProcess.Steps[0].Actions) != 3 {
+				return errors.New("project must have 1 step with 3 actions, got " + fmt.Sprint(len(deploymentProcess.Steps[0].Actions)))
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Name) != "Parent Step" {
+				return errors.New("step must have first action called \"Parent Step\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[0].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[1].Name) != "Child Step 1" {
+				return errors.New("step must have first action called \"Child Step 1\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[1].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[2].Name) != "Child Step 2" {
+				return errors.New("step must have second action called \"Child Step 2\" (was \"" + strutil.EmptyIfNil(deploymentProcess.Steps[0].Actions[2].Name) + "\")")
+			}
+
+			runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+			if err := octopusClient.GetAllResources("Projects/"+testProject[0].Id+"/runbooks", &runbookCollection); err != nil {
+				return err
+			}
+
+			if len(runbookCollection.Items) != 1 {
+				return errors.New("project must have 1 runbook, got " + fmt.Sprint(len(runbookCollection.Items)))
+			}
+
+			runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) == 0 {
+				return errors.New("space must have a runbook called \"Runbook\"")
+			}
+
+			runbookDeploymentProcess := octopus.DeploymentProcess{}
+			if err := octopusClient.GetResourceById("RunbookProcesses", strutil.EmptyIfNil(runbook[0].RunbookProcessId), &runbookDeploymentProcess); err != nil {
+				return err
+			}
+
+			if len(runbookDeploymentProcess.Steps) != 1 {
+				return errors.New("runbook must have 1 step, got " + fmt.Sprint(len(runbookDeploymentProcess.Steps)))
+			}
+
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Name) != "Parent Step" {
+				return errors.New("runbook must have a step called \"Parent Step\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Name) + "\")")
+			}
+
+			if len(runbookDeploymentProcess.Steps[0].Actions) != 3 {
+				return errors.New("runbook must have 1 step with 2 actions, got " + fmt.Sprint(len(runbookDeploymentProcess.Steps[0].Actions)))
+			}
+
+			// The step and the first action share the same name
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[0].Name) != "Parent Step" {
+				return errors.New("runbook must have first action called \"Parent Step\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[0].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[1].Name) != "Child Step 1" {
+				return errors.New("runbook must have first action called \"Child Step 1\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[1].Name) + "\")")
+			}
+
+			if strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[2].Name) != "Child Step 2" {
+				return errors.New("runbook must have second action called \"Child Step 2\" (was \"" + strutil.EmptyIfNil(runbookDeploymentProcess.Steps[0].Actions[2].Name) + "\")")
+			}
+
+			return nil
+		})
+}
