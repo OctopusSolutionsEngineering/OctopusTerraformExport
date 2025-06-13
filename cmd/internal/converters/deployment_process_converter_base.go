@@ -443,7 +443,6 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))
 			terraformProcessStep.Channels = sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...))
 			terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
-			terraformProcessStep.Condition = action.Condition
 			terraformProcessStep.GitDependencies = c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies)
 			terraformProcessStep.IsDisabled = boolutil.NilIfFalse(action.IsDisabled)
 			terraformProcessStep.IsRequired = boolutil.NilIfFalse(action.IsRequired)
