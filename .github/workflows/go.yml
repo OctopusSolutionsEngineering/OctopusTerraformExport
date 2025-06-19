@@ -23,6 +23,7 @@ name: Go Build
   push:
     paths-ignore:
       - '**/*.md'
+      - 'finetune/*.*'
 jobs:
   tests:
     name: Test
