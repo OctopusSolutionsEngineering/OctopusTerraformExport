@@ -112,7 +112,6 @@ def main():
             item = json.dumps(output_blob, separators=(',', ':'))
             f.write(item + "\n")
         print(f"Saved prompt response to {out_path}")
-        break
 
 if __name__ == "__main__":
     main()

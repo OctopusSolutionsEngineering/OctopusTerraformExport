@@ -1,5 +1,6 @@
 data "octopusdeploy_feeds" "project_feed" {
   feed_type    = "OctopusProject"
+  partial_name = "Octopus Server Releases"
   skip         = 0
   take         = 1
 }
@@ -304,7 +305,7 @@ resource "octopusdeploy_runbook" "runbook2" {
   force_package_download      = false
 }
 
-resource "octopusdeploy_runbook" "runbook3" {
+resource "octopusdeploy_runbook" "myrunbook3" {
   project_id         = octopusdeploy_project.project_1.id
   name               = "MyRunbook3"
   description        = "Test Runbook"
@@ -323,170 +324,158 @@ resource "octopusdeploy_runbook" "runbook3" {
   force_package_download      = false
 }
 
-resource "octopusdeploy_runbook_process" "runbook" {
-  runbook_id = octopusdeploy_runbook.runbook3.id
+resource "octopusdeploy_process" "process_test_myrunbook3" {
+  project_id = "${octopusdeploy_project.project_1.id}"
+  runbook_id = "${octopusdeploy_runbook.myrunbook3.id}"
+  depends_on = []
+}
 
-  step {
-    condition           = "Success"
-    name                = "Hello world (using PowerShell)"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
+resource "octopusdeploy_process_steps_order" "process_step_order_test_myrunbook3" {
+  process_id = "${octopusdeploy_process.process_test_myrunbook3.id}"
+  steps      = [
+    "${octopusdeploy_process_step.process_step_test_myrunbook3_hello_world__using_powershell_.id}",
+    "${octopusdeploy_process_step.process_step_test_myrunbook3_test.id}",
+    "${octopusdeploy_process_step.process_step_test_myrunbook3_run_an_azure_script.id}",
+    "${octopusdeploy_process_step.process_step_test_myrunbook3_deploy_a_release.id}"]
+}
 
-    action {
-      action_type                        = "Octopus.Script"
-      name                               = "Hello world (using PowerShell)"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = true
-      worker_pool_id                     = ""
-      properties                         = {
-        "Octopus.Action.Script.ScriptSource" = "Inline"
-        "Octopus.Action.Script.ScriptBody"   = "Write-Host 'Hello world, using PowerShell'\n\n#TODO: Experiment with steps of your own :)\n\nWrite-Host '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
-        "Octopus.Action.Script.Syntax"       = "PowerShell"
-      }
-      environments          = []
-      excluded_environments = []
-      channels              = []
-      tenant_tags           = []
-      features              = []
-
-      package {
-        name                      = "package1"
-        package_id                = "package1"
-        acquisition_location      = "Server"
-        extract_during_deployment = false
-        feed_id                   = "#{HelmFeed}"
-        properties                = { Extract = "True", Purpose = "", SelectionMode = "immediate" }
-      }
+variable "project_myrunbook3_step_test_packageid" {
+  type        = string
+  nullable    = false
+  sensitive   = false
+  description = "The package ID for the package named  from step Test in project MyRunbook3"
+  default     = "terraform"
+}
+resource "octopusdeploy_process_step" "process_step_test_myrunbook3_test" {
+  name                  = "Test"
+  type                  = "Octopus.TerraformApply"
+  process_id            = "${octopusdeploy_process.process_test_myrunbook3.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  primary_package       = {
+    acquisition_location = "Server",
+    feed_id = "${data.octopusdeploy_feeds.built_in_feed.feeds[0].id}",
+    id = null,
+    package_id = "${var.project_myrunbook3_step_test_packageid}",
+    properties = { SelectionMode = "immediate"
     }
-
-    properties   = {}
-    target_roles = []
   }
-
-  step {
-    condition           = "Success"
-    name                = "Test"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.TerraformApply"
-      name                               = "Test"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = false
-      worker_pool_id                     = ""
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.Terraform.PlanJsonOutput"               = "False"
-        "Octopus.Action.Terraform.TemplateDirectory"            = "blah"
-        "Octopus.Action.Terraform.ManagedAccount"               = "None"
-        "Octopus.Action.Terraform.GoogleCloudAccount"           = "False"
-        "Octopus.Action.Script.ScriptSource"                    = "Package"
-        "Octopus.Action.GoogleCloud.UseVMServiceAccount"        = "True"
-        "Octopus.Action.Terraform.AzureAccount"                 = "False"
-        "Octopus.Action.Package.DownloadOnTentacle"             = "False"
-        "Octopus.Action.Terraform.RunAutomaticFileSubstitution" = "True"
-        "Octopus.Action.GoogleCloud.ImpersonateServiceAccount"  = "False"
-        "Octopus.Action.Terraform.AllowPluginDownloads"         = "True"
-      }
-      environments          = []
-      excluded_environments = []
-      channels              = []
-      tenant_tags           = []
-      features              = []
-
-      primary_package {
-        package_id           = "terraform"
-        acquisition_location = "Server"
-        feed_id              = data.octopusdeploy_feeds.built_in_feed.feeds[0].id
-        properties           = { SelectionMode = "immediate" }
-      }
-    }
-
-    properties   = {}
-    target_roles = []
+  slug                  = "test"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  properties            = {
   }
-
-  step {
-    condition           = "Success"
-    name                = "Run an Azure Script"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
-
-    action {
-      action_type                        = "Octopus.AzurePowerShell"
-      name                               = "Run an Azure Script"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = false
-      is_required                        = false
-      worker_pool_id                     = ""
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.Script.Syntax"       = "PowerShell"
-        "Octopus.Action.Azure.AccountId"     = data.octopusdeploy_accounts.azure.accounts[0].id
-        "Octopus.Action.Script.ScriptBody"   = "echo \"hi\""
-        "OctopusUseBundledTooling"           = "False"
-        "Octopus.Action.Script.ScriptSource" = "Inline"
-      }
-      environments          = []
-      excluded_environments = []
-      channels              = []
-      tenant_tags           = []
-      features              = []
-      container {
-        feed_id = data.octopusdeploy_feeds.docker_feed.feeds[0].id
-        image   = "octopusdeploy/worker-tools:6.0.0-ubuntu.22.04"
-      }
-    }
-
-    properties   = {}
-    target_roles = []
+  execution_properties  = {
+    "Octopus.Action.Terraform.AllowPluginDownloads" = "True"
+    "Octopus.Action.RunOnServer" = "True"
+    "Octopus.Action.Terraform.GoogleCloudAccount" = "False"
+    "Octopus.Action.GoogleCloud.ImpersonateServiceAccount" = "False"
+    "Octopus.Action.Script.ScriptSource" = "Package"
+    "Octopus.Action.GoogleCloud.UseVMServiceAccount" = "True"
+    "Octopus.Action.Terraform.TemplateDirectory" = "blah"
+    "Octopus.Action.Terraform.AzureAccount" = "False"
+    "Octopus.Action.Terraform.ManagedAccount" = "None"
+    "Octopus.Action.Terraform.PlanJsonOutput" = "False"
+    "Octopus.Action.Terraform.RunAutomaticFileSubstitution" = "True"
   }
+}
 
-  step {
-    condition           = "Success"
-    name                = "Deploy a Release"
-    package_requirement = "LetOctopusDecide"
-    start_trigger       = "StartAfterPrevious"
+resource "octopusdeploy_process_step" "process_step_test_myrunbook3_run_an_azure_script" {
+  name                  = "Run an Azure Script"
+  type                  = "Octopus.AzurePowerShell"
+  process_id            = "${octopusdeploy_process.process_test_myrunbook3.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  slug                  = "run-an-azure-script"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  properties            = {
+  }
+  execution_properties  = {
+    "Octopus.Action.Azure.AccountId" = "${data.octopusdeploy_accounts.azure.accounts[0].id}"
+    "Octopus.Action.RunOnServer" = "True"
+    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+    "OctopusUseBundledTooling" = "False"
+  }
+}
 
-    action {
-      action_type                        = "Octopus.DeployRelease"
-      name                               = "Deploy a Release"
-      condition                          = "Success"
-      run_on_server                      = true
-      is_disabled                        = false
-      can_be_used_for_project_versioning = true
-      is_required                        = false
-      worker_pool_id                     = data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id
-      worker_pool_variable               = ""
-      properties                         = {
-        "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
-        "Octopus.Action.DeployRelease.ProjectId" = data.octopusdeploy_projects.other.projects[0].id
+variable "project_myrunbook3_step_hello_world__using_powershell__package_package1_packageid" {
+  type        = string
+  nullable    = false
+  sensitive   = false
+  description = "The package ID for the package named package1 from step Hello world (using PowerShell) in project MyRunbook3"
+  default     = "package1"
+}
+
+resource "octopusdeploy_process_step" "process_step_test_myrunbook3_hello_world__using_powershell_" {
+  name                  = "Hello world (using PowerShell)"
+  type                  = "Octopus.Script"
+  process_id            = "${octopusdeploy_process.process_test_myrunbook3.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  is_required           = true
+  package_requirement   = "LetOctopusDecide"
+  packages              = {
+    package1 = {
+      acquisition_location = "Server",
+      feed_id = "#{HelmFeed}",
+      id = null,
+      package_id = "${var.project_myrunbook3_step_hello_world__using_powershell__package_package1_packageid}",
+      properties = {
+        Extract = "True",
+        Purpose = "",
+        SelectionMode = "immediate"
       }
-      environments                       = []
-      excluded_environments              = []
-      channels                           = []
-      tenant_tags                        = []
-
-      primary_package {
-        package_id           = data.octopusdeploy_projects.other.projects[0].id
-        acquisition_location = "NotAcquired"
-        feed_id              = data.octopusdeploy_feeds.project_feed.feeds[0].id
-        properties           = {}
-      }
-
-      features = []
     }
+  }
+  slug                  = "hello-world-using-powershell"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  properties            = {
+  }
+  execution_properties  = {
+    "Octopus.Action.Script.ScriptBody" = "Write-Host 'Hello world, using PowerShell'\n\n#TODO: Experiment with steps of your own :)\n\nWrite-Host '[Learn more about the types of steps available in Octopus](https://oc.to/OnboardingAddStepsLearnMore)'"
+    "Octopus.Action.Script.ScriptSource" = "Inline"
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+    "Octopus.Action.RunOnServer" = "True"
+  }
+}
 
-    properties   = {}
-    target_roles = []
+resource "octopusdeploy_process_step" "process_step_test_myrunbook3_deploy_a_release" {
+  name                  = "Deploy a Release"
+  type                  = "Octopus.DeployRelease"
+  process_id            = "${octopusdeploy_process.process_test_myrunbook3.id}"
+  channels              = null
+  condition             = "Success"
+  environments          = null
+  excluded_environments = null
+  package_requirement   = "LetOctopusDecide"
+  primary_package       = {
+    acquisition_location = "NotAcquired",
+    feed_id = "${data.octopusdeploy_feeds.project_feed.feeds[0].id}",
+    id = null,
+    package_id = "${data.octopusdeploy_projects.other.projects[0].id}",
+    properties = null
+  }
+  slug                  = "deploy-a-release"
+  start_trigger         = "StartAfterPrevious"
+  tenant_tags           = null
+  worker_pool_id        = "${data.octopusdeploy_worker_pools.worker_pool_docker.worker_pools[0].id}"
+  properties            = {
+  }
+  execution_properties  = {
+    "Octopus.Action.DeployRelease.ProjectId" = "${data.octopusdeploy_projects.other.projects[0].id}"
+    "Octopus.Action.RunOnServer" = "true"
+    "Octopus.Action.DeployRelease.DeploymentCondition" = "Always"
   }
 }
