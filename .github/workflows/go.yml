@@ -241,7 +241,7 @@ jobs:
       # Microsoft.Azure.WebJobs.Script: WorkerConfig for runtime: custom not found.
       - run: |
           zip -r octoterra_linux_amd64_azure.zip . -x local.settings.json
-          cp octoterra_linux_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+          cp octoterra_linux_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}+${{ steps.determine_version.outputs.ShortSha }}.${{ github.run_number }}.${{ github.run_attempt }}.zip
         working-directory: functions
       # Create azure zip for macos (amd64+arm64)
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_macos_amd64_azure cmd/azure/octoterra.go
