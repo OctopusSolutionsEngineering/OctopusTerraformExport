@@ -15,7 +15,15 @@ resource "octopusdeploy_process_step" "process_step_every_step_project_deploy_a_
   excluded_environments = null
   notes                 = "This step deploys a Kubernetes Helm chart."
   package_requirement   = "LetOctopusDecide"
-  primary_package       = { acquisition_location = "Server", feed_id = "${octopusdeploy_helm_feed.feed_helm.id}", id = null, package_id = "${var.project_every_step_project_step_deploy_a_helm_chart_packageid}", properties = { SelectionMode = "immediate" } }
+  primary_package       = {
+    acquisition_location = "Server",
+    feed_id = "${octopusdeploy_helm_feed.feed_helm.id}",
+    id = null,
+    package_id = "${var.project_every_step_project_step_deploy_a_helm_chart_packageid}",
+    properties = {
+      SelectionMode = "immediate"
+    }
+  }
   slug                  = "deploy-a-helm-chart"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
