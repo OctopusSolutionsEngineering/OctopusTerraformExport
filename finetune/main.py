@@ -43,9 +43,10 @@ def query_azure_openai(tf_contents, schema_json):
     }
     user_prompt = (
         "Describe the terraform configuration in the form of a prompt to recreate the contents. "
-        "When defining the attributes of the terraform configuration, describe the attribute using the description from the resource schema.\n\n"
+        "When describing the terraform resource to be created, describe the resource using the description from the resource schema.\n"
+        "When defining the attributes of the terraform configuration, describe the attribute using the description from the resource schema.\n"
         "For example:\n"
-        "Create a data source \"octopusdeploy_feeds\" named \"built_in_feed\" with attributes: feed_type set to \"BuiltIn\" to filter the feed type, skip set to 0 to skip zero items in the response, and take set to 1 to take one item in the response.\n"
+        "Create a data source \"octopusdeploy_feeds\" named \"built_in_feed\" to provide information about existing feeds with attributes: feed_type set to \"BuiltIn\" to filter the feed type, skip set to 0 to skip zero items in the response, and take set to 1 to take one item in the response.\n"
         "Terraform files:\n"
         f"{tf_contents}\n\n"
         "Relevant resource schema:\n"
@@ -86,6 +87,9 @@ def filter_attributes_descriptions(obj):
 def main():
     schema = load_schema(SCHEMA_PATH)
     space_pop_dirs = find_space_population_dirs(BASE_DIR)
+
+    count = 2
+
     for space_pop_dir in space_pop_dirs:
         tf_files = get_tf_files(space_pop_dir)
         if not tf_files:
@@ -112,6 +116,11 @@ def main():
             item = json.dumps(output_blob, separators=(',', ':'))
             f.write(item + "\n")
         print(f"Saved prompt response to {out_path}")
+
+        # This is used to limit the number of test cases processed for debugging purposes.
+        # count -= 1
+        # if count <= 0:
+        #     break
 
 if __name__ == "__main__":
     main()
