@@ -10312,3 +10312,51 @@ func TestEverything(t *testing.T) {
 			return nil
 		})
 }
+
+// TestGuidedFailureMode verifies that a project has the guided failure mode enabled
+func TestGuidedFailureMode(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/90-guidedfailuremode/space_creation",
+		"../test/terraform/90-guidedfailuremode/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{
+			"-var=feed_docker_password=whatever",
+		},
+		args2.Arguments{
+			ExcludeProjectVariables: []string{"Test"},
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "On" {
+						return errors.New("the project must have a default guided failure mode of \"On\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
