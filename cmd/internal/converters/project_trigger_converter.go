@@ -307,7 +307,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 			ResourceName:    projectTrigger.Name,
 			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			EventCategories: projectTrigger.Filter.EventCategories,
-			EnvironmentIds:  projectTrigger.Filter.EnvironmentIds,
+			EnvironmentIds:  dependencies.GetResources("Environments", projectTrigger.Filter.EnvironmentIds...),
 			EventGroups:     projectTrigger.Filter.EventGroups,
 			Roles:           projectTrigger.Filter.Roles,
 			ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,
@@ -485,7 +485,12 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus.Project
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+			hcl.WriteUnquotedAttribute(
+				block,
+				"depends_on",
+				"["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency(
+					"DeploymentProcesses/StepOrder",
+					strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {
@@ -625,7 +630,12 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+			hcl.WriteUnquotedAttribute(
+				block,
+				"depends_on",
+				"["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency(
+					"DeploymentProcesses/StepOrder",
+					strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {
@@ -902,7 +912,12 @@ func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectT
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+			hcl.WriteUnquotedAttribute(
+				block,
+				"depends_on",
+				"["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency(
+					"DeploymentProcesses/StepOrder",
+					strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {
