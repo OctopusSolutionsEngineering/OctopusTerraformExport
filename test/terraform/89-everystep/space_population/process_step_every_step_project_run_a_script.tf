@@ -11,7 +11,7 @@ resource "octopusdeploy_process_step" "process_step_every_step_project_run_a_scr
   slug                  = "run-a-script"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = ["Cities/London"]
-  worker_pool_id        = "${data.octopusdeploy_worker_pools.workerpool_hosted_windows.worker_pools[0].id}"
+  worker_pool_id        = "${octopusdeploy_static_worker_pool.windows.id}"
   properties            = {
       }
   execution_properties  = {

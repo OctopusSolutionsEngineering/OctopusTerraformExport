@@ -11,7 +11,7 @@ resource "octopusdeploy_process_step" "process_step_every_step_project_apply_a_t
   slug                  = "apply-a-terraform-template"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
-  worker_pool_id        = "${data.octopusdeploy_worker_pools.workerpool_hosted_ubuntu.worker_pools[0].id}"
+  worker_pool_id        = "${octopusdeploy_static_worker_pool.ubuntu.id}"
   properties            = {
       }
   execution_properties  = {

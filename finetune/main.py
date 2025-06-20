@@ -101,6 +101,9 @@ def main():
                 content = f.read()
                 tf_contents += f"{content}\n"
                 all_resource_names.update(extract_resource_names(content))
+
+        tf_contents = "\n".join([line for line in tf_contents.splitlines() if not line.startswith("#")])  # Remove comments
+
         relevant_schemas = filter_resource_schemas(all_resource_names, schema)
         filtered_schemas = filter_attributes_descriptions(relevant_schemas)
         prompt_response = query_azure_openai(tf_contents, filtered_schemas)

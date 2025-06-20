@@ -342,7 +342,7 @@ func exportProjectLookupImportAndTest(
 	createImportSpaceVars []string,
 	prepopulateSpaceVars []string,
 	importSpaceVars []string,
-	argumnets args2.Arguments,
+	arguments args2.Arguments,
 	testFunc func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error) {
 
 	prepopulateImportSpaceModuleDirCopy, err := copyDir(prepopulateImportSpaceModuleDir)
@@ -412,14 +412,14 @@ func exportProjectLookupImportAndTest(
 			}
 
 			runbookId := ""
-			if argumnets.RunbookName != "" {
+			if arguments.RunbookName != "" {
 				runbookId, err = entry.ConvertRunbookNameToId(
 					url,
 					space,
 					test.ApiKey,
 					"",
 					projectId,
-					argumnets.RunbookName,
+					arguments.RunbookName,
 					"",
 					false,
 					"",
@@ -441,35 +441,36 @@ func exportProjectLookupImportAndTest(
 				ProjectId:                        []string{projectId},
 				ProjectName:                      []string{},
 				LookupProjectDependencies:        true,
-				IgnoreCacManagedValues:           argumnets.IgnoreCacManagedValues,
-				BackendBlock:                     argumnets.BackendBlock,
-				DetachProjectTemplates:           argumnets.DetachProjectTemplates,
-				DefaultSecretVariableValues:      argumnets.DefaultSecretVariableValues,
-				ProviderVersion:                  argumnets.ProviderVersion,
-				ExcludeAllRunbooks:               argumnets.ExcludeAllRunbooks,
-				ExcludeRunbooks:                  argumnets.ExcludeRunbooks,
-				ExcludeRunbooksRegex:             argumnets.ExcludeRunbooksRegex,
-				ExcludeProvider:                  argumnets.ExcludeProvider,
-				IncludeOctopusOutputVars:         argumnets.IncludeOctopusOutputVars,
-				ExcludeLibraryVariableSets:       argumnets.ExcludeLibraryVariableSets,
-				ExcludeLibraryVariableSetsRegex:  argumnets.ExcludeLibraryVariableSetsRegex,
-				IgnoreProjectChanges:             argumnets.IgnoreProjectChanges,
-				IgnoreProjectVariableChanges:     argumnets.IgnoreProjectVariableChanges,
-				IgnoreProjectGroupChanges:        argumnets.IgnoreProjectGroupChanges,
-				IgnoreProjectNameChanges:         argumnets.IgnoreProjectNameChanges,
-				ExcludeProjectVariables:          argumnets.ExcludeProjectVariables,
-				ExcludeProjectVariablesRegex:     argumnets.ExcludeProjectVariablesRegex,
-				ExcludeVariableEnvironmentScopes: argumnets.ExcludeVariableEnvironmentScopes,
-				LookUpDefaultWorkerPools:         argumnets.LookUpDefaultWorkerPools,
-				ExcludeTenants:                   argumnets.ExcludeTenants,
-				ExcludeAllTenants:                argumnets.ExcludeAllTenants,
-				ExcludeProjects:                  argumnets.ExcludeProjects,
-				ExcludeAllTargets:                argumnets.ExcludeAllTargets,
+				IgnoreCacManagedValues:           arguments.IgnoreCacManagedValues,
+				BackendBlock:                     arguments.BackendBlock,
+				DetachProjectTemplates:           arguments.DetachProjectTemplates,
+				DefaultSecretVariableValues:      arguments.DefaultSecretVariableValues,
+				ProviderVersion:                  arguments.ProviderVersion,
+				ExcludeAllRunbooks:               arguments.ExcludeAllRunbooks,
+				ExcludeRunbooks:                  arguments.ExcludeRunbooks,
+				ExcludeRunbooksRegex:             arguments.ExcludeRunbooksRegex,
+				ExcludeProvider:                  arguments.ExcludeProvider,
+				IncludeOctopusOutputVars:         arguments.IncludeOctopusOutputVars,
+				ExcludeLibraryVariableSets:       arguments.ExcludeLibraryVariableSets,
+				ExcludeLibraryVariableSetsRegex:  arguments.ExcludeLibraryVariableSetsRegex,
+				IgnoreProjectChanges:             arguments.IgnoreProjectChanges,
+				IgnoreProjectVariableChanges:     arguments.IgnoreProjectVariableChanges,
+				IgnoreProjectGroupChanges:        arguments.IgnoreProjectGroupChanges,
+				IgnoreProjectNameChanges:         arguments.IgnoreProjectNameChanges,
+				ExcludeProjectVariables:          arguments.ExcludeProjectVariables,
+				ExcludeProjectVariablesRegex:     arguments.ExcludeProjectVariablesRegex,
+				ExcludeVariableEnvironmentScopes: arguments.ExcludeVariableEnvironmentScopes,
+				LookUpDefaultWorkerPools:         arguments.LookUpDefaultWorkerPools,
+				ExcludeTenants:                   arguments.ExcludeTenants,
+				ExcludeAllTenants:                arguments.ExcludeAllTenants,
+				ExcludeProjects:                  arguments.ExcludeProjects,
+				ExcludeAllTargets:                arguments.ExcludeAllTargets,
 				RunbookId:                        runbookId,
 				RunbookName:                      "",
-				LookupProjectLinkTenants:         argumnets.LookupProjectLinkTenants,
+				LookupProjectLinkTenants:         arguments.LookupProjectLinkTenants,
 				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
+				DummySecretVariableValues:        arguments.DummySecretVariableValues,
 			}
 
 			var dependencies *data.ResourceDetailsCollection = nil
@@ -10266,7 +10267,8 @@ func TestChildSteps(t *testing.T) {
 		})
 }
 
-// TestAllSteps verifies that a project with all the steps is reimported properly
+// TestEverything verifies that a space with all resources can be exported and recreated. This test is generated by creating
+// a space in Octopus with every combination of resources and settings we can think of.
 //
 //	./octoterra \
 //	   -url $OCTOPUS_CLI_SERVER \
@@ -10275,21 +10277,17 @@ func TestChildSteps(t *testing.T) {
 //	   -projectName "Every Step Project" \
 //	   -dummySecretVariableValues \
 //	   -dest /tmp/octoexporta
-func TestAllSteps(t *testing.T) {
+func TestEverything(t *testing.T) {
 
-	exportProjectLookupImportAndTest(
+	exportSpaceImportAndTest(
 		t,
-		"Every Step Project",
 		"../test/terraform/89-everystep/space_creation",
-		"../test/terraform/89-everystep/space_prepopulation",
 		"../test/terraform/89-everystep/space_population",
-		"../test/terraform/89-everystep/space_creation",
-		"../test/terraform/89-everystep/space_prepopulation",
 		[]string{},
 		[]string{},
-		[]string{},
-		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			DummySecretVariableValues: true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
 			octopusClient := createClient(container, recreatedSpaceId)

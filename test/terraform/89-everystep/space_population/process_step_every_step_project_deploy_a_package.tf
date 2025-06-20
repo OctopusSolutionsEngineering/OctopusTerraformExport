@@ -15,7 +15,15 @@ resource "octopusdeploy_process_step" "process_step_every_step_project_deploy_a_
   excluded_environments = null
   notes                 = "This step copies a package to server or virtual machine."
   package_requirement   = "LetOctopusDecide"
-  primary_package       = { acquisition_location = "Server", feed_id = "${data.octopusdeploy_feeds.feed_octopus_server__built_in_.feeds[0].id}", id = null, package_id = "${var.project_every_step_project_step_deploy_a_package_packageid}", properties = { SelectionMode = "immediate" } }
+  primary_package       = {
+    acquisition_location = "Server",
+    feed_id = "${data.octopusdeploy_feeds.feed_octopus_server__built_in_.feeds[0].id}",
+    id = null,
+    package_id = "${var.project_every_step_project_step_deploy_a_package_packageid}",
+    properties = {
+      SelectionMode = "immediate"
+    }
+  }
   slug                  = "deploy-a-package"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null

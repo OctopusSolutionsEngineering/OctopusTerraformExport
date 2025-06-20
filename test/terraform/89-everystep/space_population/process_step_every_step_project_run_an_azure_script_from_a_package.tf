@@ -19,7 +19,7 @@ resource "octopusdeploy_process_step" "process_step_every_step_project_run_an_az
   slug                  = "run-an-azure-script-from-a-package"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = ["Business Units/Billing", "Business Units/Engineering", "Business Units/HR", "Business Units/Insurance", "Cities/London", "Cities/Madrid", "Cities/Sydney", "Cities/Washington", "Cities/Wellington", "Regions/ANZ", "Regions/Asia", "Regions/Europe", "Regions/US"]
-  worker_pool_id        = "${data.octopusdeploy_worker_pools.workerpool_hosted_ubuntu.worker_pools[0].id}"
+  worker_pool_id        = "${octopusdeploy_static_worker_pool.ubuntu.id}"
   properties            = {
       }
   execution_properties  = {
