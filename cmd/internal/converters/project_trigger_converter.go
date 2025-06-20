@@ -307,7 +307,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 			ResourceName:    projectTrigger.Name,
 			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			EventCategories: projectTrigger.Filter.EventCategories,
-			EnvironmentIds:  projectTrigger.Filter.EnvironmentIds,
+			EnvironmentIds:  dependencies.GetResources("Environments", projectTrigger.Filter.EnvironmentIds...),
 			EventGroups:     projectTrigger.Filter.EventGroups,
 			Roles:           projectTrigger.Filter.Roles,
 			ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,

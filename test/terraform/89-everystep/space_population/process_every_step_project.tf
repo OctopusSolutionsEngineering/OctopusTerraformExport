@@ -1,0 +1,4 @@
+resource "octopusdeploy_process" "process_every_step_project" {
+  project_id = "${octopusdeploy_project.project_every_step_project.id}"
+  depends_on = [octopusdeploy_tag_set.tagset_cities,octopusdeploy_tag.tagset_cities_tag_sydney,octopusdeploy_tag.tagset_cities_tag_sydney,octopusdeploy_tag.tagset_cities_tag_london,octopusdeploy_tag.tagset_cities_tag_london,octopusdeploy_tag.tagset_cities_tag_london,octopusdeploy_tag.tagset_cities_tag_washington,octopusdeploy_tag.tagset_cities_tag_washington,octopusdeploy_tag.tagset_cities_tag_madrid,octopusdeploy_tag.tagset_cities_tag_madrid,octopusdeploy_tag.tagset_cities_tag_wellington,octopusdeploy_tag.tagset_cities_tag_wellington]
+}

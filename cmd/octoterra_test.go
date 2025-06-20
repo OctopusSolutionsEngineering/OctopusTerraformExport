@@ -10265,3 +10265,52 @@ func TestChildSteps(t *testing.T) {
 			return nil
 		})
 }
+
+// TestAllSteps verifies that a project with all the steps is reimported properly
+//
+//	./octoterra \
+//	   -url $OCTOPUS_CLI_SERVER \
+//	   -space Spaces-3368 \
+//	   -apiKey $OCTOPUS_CLI_API_KEY \
+//	   -projectName "Every Step Project" \
+//	   -dummySecretVariableValues \
+//	   -dest /tmp/octoexporta
+func TestAllSteps(t *testing.T) {
+
+	exportProjectLookupImportAndTest(
+		t,
+		"Every Step Project",
+		"../test/terraform/89-everystep/space_creation",
+		"../test/terraform/89-everystep/space_prepopulation",
+		"../test/terraform/89-everystep/space_population",
+		"../test/terraform/89-everystep/space_creation",
+		"../test/terraform/89-everystep/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Every Step Project"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Every Step Project\"")
+			}
+
+			return nil
+		})
+}
