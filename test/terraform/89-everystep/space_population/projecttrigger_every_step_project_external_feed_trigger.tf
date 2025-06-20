@@ -8,5 +8,6 @@ resource "octopusdeploy_external_feed_create_release_trigger" "projecttrigger_ev
     deployment_action_slug = "deploy-a-helm-chart"
     package_reference      = ""
   }
-  depends_on = [octopusdeploy_process_steps_order.process_step_order_every_step_project]
+  depends_on = [octopusdeploy_process_steps_order.process_step_order_every_step_project,
+    octopusdeploy_process_step.process_step_every_step_project_deploy_a_helm_chart]
 }
