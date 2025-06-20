@@ -111,7 +111,7 @@ def main():
                 {"role": "assistant", "content": tf_contents}
             ]
         }
-        out_path = "octopus_ai_prompt_response.json"
+        out_path = "octopus_ai_prompt_response.jsonl"
         with open(out_path, "a") as f:
             item = json.dumps(output_blob, separators=(',', ':'))
             f.write(item + "\n")
