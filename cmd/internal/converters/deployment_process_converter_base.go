@@ -530,6 +530,7 @@ func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, b
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.FixActionFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
 

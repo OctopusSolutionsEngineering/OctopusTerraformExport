@@ -250,6 +250,26 @@ func (c OctopusActionProcessor) EscapePercents(properties map[string]string) map
 	return sanitisedProperties
 }
 
+// FixActionFields deals with the case where the server returns lower case values for boolean properties
+func (c OctopusActionProcessor) FixActionFields(properties map[string]string) map[string]string {
+	return lo.MapValues(properties, func(value string, key string) string {
+		/*
+			Fix this error:
+			When applying changes to
+			octopusdeploy_process_step.process_step_test_runbook_hello_world__using_powershell_,
+			provider "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]"
+			produced an unexpected new value:
+			.execution_properties["Octopus.Action.RunOnServer"]: was
+			cty.StringVal("True"), but now cty.StringVal("true").
+		*/
+
+		if key == "Octopus.Action.RunOnServer" {
+			return strings.ToLower(value)
+		}
+		return value
+	})
+}
+
 // RemoveUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
 func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[string]string) map[string]string {
 	unnecessaryFields := []string{"Octopus.Action.Package.PackageId",
@@ -337,15 +357,6 @@ func (c OctopusActionProcessor) RemoveUnnecessaryStepFields(properties map[strin
 		}
 	}
 	return sanitisedProperties
-}
-
-func (c OctopusActionProcessor) GetRunOnServer(properties map[string]any) bool {
-	v, ok := properties["Octopus.Action.RunOnServer"]
-	if ok {
-		return strings.ToLower(fmt.Sprint(v)) == "true"
-	}
-
-	return true
 }
 
 // ReplaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.
