@@ -10323,9 +10323,7 @@ func TestGuidedFailureMode(t *testing.T) {
 		"../test/terraform/z-createspace",
 		[]string{},
 		[]string{},
-		[]string{
-			"-var=feed_docker_password=whatever",
-		},
+		[]string{},
 		args2.Arguments{
 			ExcludeProjectVariables: []string{"Test"},
 		},
