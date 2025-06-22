@@ -13,10 +13,9 @@ SCHEMA_PATH = "schema.json"
 BASE_DIR = "../test/terraform"
 # These are bolierplate files that don't add any unique value to the training data.
 EXCLUDE_FILES = {"config.tf", "provider.tf", "space.tf", "provider_vars.tf"}
-EXCLUDE_DIRS = {"89-everystep"}
 
 def find_space_population_dirs(base_dir):
-    return [os.path.join(dp, "space_population") for dp, dn, fn in os.walk(base_dir) if "space_population" in dn and not any(excluded in dp for excluded in EXCLUDE_DIRS)]
+    return [os.path.join(dp, "space_population") for dp, dn, fn in os.walk(base_dir) if "space_population" in dn]
 
 def get_tf_files(space_pop_dir):
     return [
