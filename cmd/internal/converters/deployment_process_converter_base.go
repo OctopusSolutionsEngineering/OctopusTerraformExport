@@ -320,7 +320,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			ParentId:             strutil.NilIfEmpty(dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, step))),
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
-			Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
+			Container:            c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies),
 			Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
 			ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
 			ExecutionProperties:  nil, // This is assigned by assignProperties()
@@ -438,6 +438,7 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 				return "", err
 			}
 
+			terraformProcessStep.Container = c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies)
 			terraformProcessStep.WorkerPoolVariable = strutil.NilIfEmptyPointer(action.WorkerPoolVariable)
 			terraformProcessStep.Environments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...))
 			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))
