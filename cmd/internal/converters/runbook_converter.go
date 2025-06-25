@@ -376,9 +376,8 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			// when importing a stateless project, the channel is only created if the project does not exist
-			c.writeData(file, project.Name, runbookName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + runbookName + ".projects) != 0 ? 0 : 1}")
+			// when importing a stateless project, the runbook is only created if the project does not exist
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + project.Name + ".projects) != 0 ? 0 : 1}")
 		}
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)

@@ -316,8 +316,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 
 		if stateless {
 			// when importing a stateless project, the trigger is only created if the project does not exist
-			c.writeData(file, projectName, projectTriggerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
