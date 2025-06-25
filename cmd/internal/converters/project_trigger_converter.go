@@ -290,7 +290,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "}"
@@ -344,7 +344,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus.Pr
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + "}"
@@ -448,7 +448,7 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus.Project
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectFeedTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectFeedTrigger + "." + projectTriggerName + "}"
@@ -586,7 +586,7 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectArcTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectArcTrigger + "." + projectTriggerName + "}"
@@ -864,7 +864,7 @@ func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectT
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectGitTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectGitTrigger + "." + projectTriggerName + "}"
