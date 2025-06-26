@@ -346,7 +346,7 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 	if stateless {
 		// There is no way to look up an existing runbook. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + sanitizer.SanitizeName(project.Name) + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(project.Name) + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployRunbookResourceType + "." + runbookName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployRunbookResourceType + "." + runbookName + "}"
@@ -377,7 +377,7 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 
 		if stateless {
 			// when importing a stateless project, the runbook is only created if the project does not exist
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + sanitizer.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
 		}
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)
