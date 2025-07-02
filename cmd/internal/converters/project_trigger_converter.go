@@ -290,7 +290,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectDeploymentTargetTriggerResourceType + "." + projectTriggerName + "}"
@@ -307,7 +307,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 			ResourceName:    projectTrigger.Name,
 			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			EventCategories: projectTrigger.Filter.EventCategories,
-			EnvironmentIds:  projectTrigger.Filter.EnvironmentIds,
+			EnvironmentIds:  dependencies.GetResources("Environments", projectTrigger.Filter.EnvironmentIds...),
 			EventGroups:     projectTrigger.Filter.EventGroups,
 			Roles:           projectTrigger.Filter.Roles,
 			ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,
@@ -316,8 +316,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 
 		if stateless {
 			// when importing a stateless project, the trigger is only created if the project does not exist
-			c.writeData(file, projectName, projectTriggerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -345,7 +344,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus.Pr
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectScheduledTrigger + "." + projectTriggerName + "}"
@@ -399,8 +398,7 @@ func (c ProjectTriggerConverter) buildScheduledTrigger(projectTrigger octopus.Pr
 
 		if stateless {
 			// when importing a stateless project, the trigger is only created if the project does not exist
-			c.writeData(file, projectName, projectTriggerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -450,7 +448,7 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus.Project
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectFeedTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectFeedTrigger + "." + projectTriggerName + "}"
@@ -477,15 +475,19 @@ func (c ProjectTriggerConverter) buildFeedTrigger(projectTrigger octopus.Project
 
 		if stateless {
 			// when importing a stateless project, the trigger is only created if the project does not exist
-			c.writeData(file, projectName, projectTriggerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+			hcl.WriteUnquotedAttribute(
+				block,
+				"depends_on",
+				"["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency(
+					"DeploymentProcesses/StepOrder",
+					strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {
@@ -584,7 +586,7 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectArcTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectArcTrigger + "." + projectTriggerName + "}"
@@ -617,15 +619,19 @@ func (c ProjectTriggerConverter) buildArcTrigger(projectTrigger octopus.ProjectT
 
 		if stateless {
 			// when importing a stateless project, the trigger is only created if the project does not exist
-			c.writeData(file, projectName, projectTriggerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectArcTrigger + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectArcTrigger + "." + projectName + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+			hcl.WriteUnquotedAttribute(
+				block,
+				"depends_on",
+				"["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency(
+					"DeploymentProcesses/StepOrder",
+					strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {
@@ -858,7 +864,7 @@ func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectT
 	if stateless {
 		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the trigger anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 " +
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 " +
 			"? null " +
 			": " + octopusdeployProjectGitTrigger + "." + projectTriggerName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployProjectGitTrigger + "." + projectTriggerName + "}"
@@ -894,15 +900,19 @@ func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectT
 
 		if stateless {
 			// when importing a stateless project, the trigger is only created if the project does not exist
-			c.writeData(file, projectName, projectTriggerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + "." + projectTriggerName + ".projects) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		// This trigger needs the deployment process to be created first to ensure step names exist
 		if project.DeploymentProcessId != nil {
-			hcl.WriteUnquotedAttribute(block, "depends_on", "["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency("DeploymentProcesses", strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
+			hcl.WriteUnquotedAttribute(
+				block,
+				"depends_on",
+				"["+hcl.RemoveId(hcl.RemoveInterpolation(dependencies.GetResourceDependency(
+					"DeploymentProcesses/StepOrder",
+					strutil.EmptyIfNil(project.DeploymentProcessId))))+"]")
 		}
 
 		if stateless {

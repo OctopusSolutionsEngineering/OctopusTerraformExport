@@ -320,7 +320,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			ParentId:             strutil.NilIfEmpty(dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, step))),
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
-			Container:            c.OctopusActionProcessor.ConvertContainerV2(action.Container, dependencies),
+			Container:            c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies),
 			Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
 			ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
 			ExecutionProperties:  nil, // This is assigned by assignProperties()
@@ -438,12 +438,12 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 				return "", err
 			}
 
+			terraformProcessStep.Container = c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies)
 			terraformProcessStep.WorkerPoolVariable = strutil.NilIfEmptyPointer(action.WorkerPoolVariable)
 			terraformProcessStep.Environments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...))
 			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))
 			terraformProcessStep.Channels = sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...))
 			terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
-			terraformProcessStep.Condition = action.Condition
 			terraformProcessStep.GitDependencies = c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies)
 			terraformProcessStep.IsDisabled = boolutil.NilIfFalse(action.IsDisabled)
 			terraformProcessStep.IsRequired = boolutil.NilIfFalse(action.IsRequired)
@@ -531,6 +531,7 @@ func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, b
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.FixActionFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
 

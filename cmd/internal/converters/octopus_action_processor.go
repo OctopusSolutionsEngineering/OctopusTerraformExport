@@ -167,18 +167,7 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 	return nil
 }
 
-func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformContainer {
-	if container.Image != nil || container.FeedId != nil {
-		return &terraform.TerraformContainer{
-			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
-			Image:  container.Image,
-		}
-	}
-
-	return nil
-}
-
-func (c OctopusActionProcessor) ConvertContainerV2(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProcessStepContainer {
+func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProcessStepContainer {
 	if container.Image != nil || container.FeedId != nil {
 		return &terraform.TerraformProcessStepContainer{
 			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
@@ -248,6 +237,26 @@ func (c OctopusActionProcessor) EscapePercents(properties map[string]string) map
 		sanitisedProperties[k] = strings.ReplaceAll(v, "%{", "%%{")
 	}
 	return sanitisedProperties
+}
+
+// FixActionFields deals with the case where the server returns lower case values for boolean properties
+func (c OctopusActionProcessor) FixActionFields(properties map[string]string) map[string]string {
+	return lo.MapValues(properties, func(value string, key string) string {
+		/*
+			Fix this error:
+			When applying changes to
+			octopusdeploy_process_step.process_step_test_runbook_hello_world__using_powershell_,
+			provider "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]"
+			produced an unexpected new value:
+			.execution_properties["Octopus.Action.RunOnServer"]: was
+			cty.StringVal("True"), but now cty.StringVal("true").
+		*/
+
+		if key == "Octopus.Action.RunOnServer" {
+			return strings.ToLower(value)
+		}
+		return value
+	})
 }
 
 // RemoveUnnecessaryActionFields removes generic property bag values that have more specific terraform properties
@@ -337,15 +346,6 @@ func (c OctopusActionProcessor) RemoveUnnecessaryStepFields(properties map[strin
 		}
 	}
 	return sanitisedProperties
-}
-
-func (c OctopusActionProcessor) GetRunOnServer(properties map[string]any) bool {
-	v, ok := properties["Octopus.Action.RunOnServer"]
-	if ok {
-		return strings.ToLower(fmt.Sprint(v)) == "true"
-	}
-
-	return true
 }
 
 // ReplaceFeedIds looks for any property value that is a valid feed ID and replaces it with a resource ID lookup.

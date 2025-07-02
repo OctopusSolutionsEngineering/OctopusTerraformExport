@@ -23,6 +23,7 @@ name: Go Build
   push:
     paths-ignore:
       - '**/*.md'
+      - 'finetune/*.*'
 jobs:
   tests:
     name: Test
@@ -240,7 +241,7 @@ jobs:
       # Microsoft.Azure.WebJobs.Script: WorkerConfig for runtime: custom not found.
       - run: |
           zip -r octoterra_linux_amd64_azure.zip . -x local.settings.json
-          cp octoterra_linux_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+          cp octoterra_linux_amd64_azure.zip octoterra_azure.${{ steps.determine_version.outputs.semVer }}+${{ steps.determine_version.outputs.ShortSha }}.${{ github.run_number }}.${{ github.run_attempt }}.zip
         working-directory: functions
       # Create azure zip for macos (amd64+arm64)
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_macos_amd64_azure cmd/azure/octoterra.go
@@ -307,7 +308,7 @@ jobs:
           OCTOPUS_URL: ${{ secrets.COPILOT_OCTOPUS_URL }}
           OCTOPUS_SPACE: ${{ secrets.COPILOT_OCTOPUS_SPACE }}
         with:
-          packages: functions/octoterra_azure.${{ steps.determine_version.outputs.semVer }}.zip
+          packages: functions/octoterra_azure.${{ steps.determine_version.outputs.semVer }}+${{ steps.determine_version.outputs.ShortSha }}.${{ github.run_number }}.${{ github.run_attempt }}.zip
           overwrite_mode: OverwriteExisting
       - name: Create Octopus Release
         if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
@@ -318,7 +319,7 @@ jobs:
           OCTOPUS_SPACE: ${{ secrets.COPILOT_OCTOPUS_SPACE }}
         with:
           project: Octopus Octoterra Function
-          packages: octoterra_azure:${{ steps.determine_version.outputs.semVer }}
+          packages: octoterra_azure:${{ steps.determine_version.outputs.semVer }}+${{ steps.determine_version.outputs.ShortSha }}.${{ github.run_number }}.${{ github.run_attempt }}
           release_number: ${{ steps.determine_version.outputs.semVer }}+${{ steps.determine_version.outputs.ShortSha }}.${{ github.run_number }}.${{ github.run_attempt }}
           git_ref: main
       - name: Set up QEMU
