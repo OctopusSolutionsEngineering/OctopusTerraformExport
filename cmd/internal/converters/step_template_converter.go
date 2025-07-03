@@ -22,9 +22,6 @@ import (
 const octopusdeployStepTemplateResourceType = "octopusdeploy_step_template"
 const octopusdeployStepTemplateDataType = "external"
 
-// StepTemplateConverter is a placeholder for real step templates. We use the shell_script resource type to run custom
-// PowerShell scripts to manage step templates, and the external data source type to query the Octopus API.
-// This implementation will eventually be replaced when step templates are fully supported by the Octopus Terraform provider.
 type StepTemplateConverter struct {
 	ErrGroup                        *errgroup.Group
 	Client                          client.OctopusClient

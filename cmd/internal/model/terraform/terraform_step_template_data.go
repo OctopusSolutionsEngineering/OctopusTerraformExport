@@ -1,7 +1,7 @@
 package terraform
 
 // TerraformStepTemplateData represents a step template in Terraform
-// https://registry.terraform.io/providers/OctopusDeployLabs/octopusdeploy/latest/docs/data-sources/step_template
+// https://registry.terraform.io/providers/OctopusDeploy/octopusdeploy/latest/docs/data-sources/step_template
 type TerraformStepTemplateData struct {
 	Type    string  `hcl:"type,label"`
 	Name    string  `hcl:"name,label"`
