@@ -22,8 +22,10 @@ import (
 
 const octopusdeployProcessResourceType = "octopusdeploy_process"
 const octopusdeployProcessStepResourceType = "octopusdeploy_process_step"
+const octopusdeployProcessTemplateStepResourceType = "octopusdeploy_process_templated_step"
 const octopusdeployProcessChildStepResourceType = "octopusdeploy_process_child_step"
 const octopusdeployProcessStepsOrderResourceType = "octopusdeploy_process_steps_order"
+const octopusdeployProcessTemplatedStepsOrderResourceType = "octopusdeploy_process_templated_child_step"
 const octopusdeployProcessStepsOrder = "octopusdeploy_process_steps_order"
 
 type DeploymentProcessConverterBase struct {
@@ -158,6 +160,7 @@ func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, 
 			// Steps that have children create a new child step from all the actions after the first one.
 			for _, action := range step.Actions[1:] {
 				c.generateChildSteps(stateless, resource, parent, owner, &step, &action, dependencies)
+				c.generateTemplateChildSteps(stateless, resource, parent, owner, &step, &action, dependencies)
 			}
 
 			// The child steps are captured in the TerraformProcessChildStepsOrder resource.
@@ -288,6 +291,11 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 }
 
 func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+	if _, ok := action.Properties["Octopus.Action.Template.Id"]; ok {
+		// This is a templated step, so we don't generate a resource for it.
+		return
+	}
+
 	resourceName := c.generateChildStepName(parent, owner, action)
 	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
@@ -368,8 +376,94 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 	dependencies.AddResource(thisResource)
 }
 
+func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+	if _, ok := action.Properties["Octopus.Action.Template.Id"]; !ok {
+		// This is a templated step, so we don't generate a resource for it.
+		return
+	}
+
+	resourceName := c.generateChildStepName(parent, owner, action)
+	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
+
+	thisResource := data.ResourceDetails{}
+	thisResource.FileName = "space_population/" + resourceName + ".tf"
+	thisResource.ParentId = owner.GetUltimateParent()
+	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + action.Id
+	thisResource.ResourceType = "DeploymentProcesses/ChildSteps"
+	thisResource.Dependency = "${" + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + "}"
+
+	if stateless {
+		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the runbook anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + "[0].id}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + ".id}"
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+		file := hclwrite.NewEmptyFile()
+
+		terraformProcessStepChild := terraform.TerraformProcessTemplatedStep{
+			Type:                 octopusdeployProcessTemplatedStepsOrderResourceType,
+			Name:                 resourceName,
+			ResourceName:         strutil.EmptyIfNil(action.Name),
+			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
+			ParentId:             strutil.NilIfEmpty(dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, step))),
+			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
+			Condition:            action.Condition,
+			Container:            c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies),
+			Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
+			ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
+			ExecutionProperties:  nil, // This is assigned by assignProperties()
+			IsDisabled:           boolutil.NilIfFalse(action.IsDisabled),
+			IsRequired:           boolutil.NilIfFalse(action.IsRequired),
+			Notes:                action.Notes,
+			Slug:                 action.Slug,
+			SpaceId:              nil,
+			TenantTags:           sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
+			WorkerPoolId:         nil, // This is assigned by assignWorkerPool()
+			WorkerPoolVariable:   strutil.NilIfEmptyPointer(action.WorkerPoolVariable),
+			StartTrigger:         nil, // This is not defined on a child step
+			Properties:           nil, // These properties are not used for child steps
+			PackageRequirement:   nil, // This is not defined on a child step
+		}
+
+		if stateless {
+			// only create the deployment process, step order, and steps if the project was created
+			terraformProcessStepChild.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
+		}
+
+		if err := c.assignWorkerPool(&terraformProcessStepChild, action, file, dependencies); err != nil {
+			return "", err
+		}
+
+		block := gohcl.EncodeAsBlock(terraformProcessStepChild, "resource")
+
+		if c.IgnoreProjectChanges {
+			hcl.WriteLifecycleAllAttribute(block)
+		}
+
+		c.assignProperties("execution_properties", block, owner, action.Properties, action, file, dependencies)
+
+		file.Body().AppendBlock(block)
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+}
+
 func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
-	if _, ok := step.Properties["Octopus.Action.Template.Id"]; !ok {
+	// This should always be true, but we check it to avoid panics.
+	hasChild := len(step.Actions) >= 1
+
+	if !hasChild {
+		return
+	}
+
+	if _, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]; !ok {
 		// This is not a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -382,16 +476,16 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = c.getStepOrActionId(resource, owner, step)
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
-	thisResource.Dependency = "${" + octopusdeployProcessStepResourceType + "." + resourceName + "}"
+	thisResource.Dependency = "${" + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "}"
 
 	if stateless {
 		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the runbook anyway.
 		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
 			"? null " +
-			": " + octopusdeployProcessStepResourceType + "." + resourceName + "[0].id}"
+			": " + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "[0].id}"
 	} else {
-		thisResource.Lookup = "${" + octopusdeployProcessStepResourceType + "." + resourceName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployProcessTemplateStepResourceType + "." + resourceName + ".id}"
 	}
 
 	thisResource.ToHcl = func() (string, error) {
@@ -399,7 +493,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 		file := hclwrite.NewEmptyFile()
 
 		terraformProcessStep := terraform.TerraformProcessTemplatedStep{
-			Type:                 octopusdeployProcessStepResourceType,
+			Type:                 octopusdeployProcessTemplateStepResourceType,
 			Name:                 resourceName,
 			ResourceName:         strutil.EmptyIfNil(step.Name),
 			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
@@ -473,7 +567,14 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 }
 
 func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
-	if _, ok := step.Properties["Octopus.Action.Template.Id"]; ok {
+	// This should always be true, but we check it to avoid panics.
+	hasChild := len(step.Actions) >= 1
+
+	if !hasChild {
+		return
+	}
+
+	if _, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]; ok {
 		// This is a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -530,9 +631,6 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 			Properties:           nil,
 			PackageRequirement:   step.PackageRequirement,
 		}
-
-		// This should always be true, but we check it to avoid panics.
-		hasChild := len(step.Actions) >= 1
 
 		// We build the output differently for a step with a single action (represented as a typical step in the UI)
 		// and a step with multiple actions (represented as a parent step with child steps in the UI).

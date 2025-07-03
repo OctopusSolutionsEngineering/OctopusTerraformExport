@@ -9,6 +9,7 @@ type TerraformProcessTemplatedStep struct {
 	Name                 string                         `hcl:"name,label"`
 	Count                *string                        `hcl:"count"`
 	ResourceName         string                         `hcl:"name"`
+	ParentId             *string                        `hcl:"parent_id"`
 	ProcessId            string                         `hcl:"process_id"`
 	TemplateId           string                         `hcl:"template_id"`
 	TemplateVersion      string                         `hcl:"template_version"`
