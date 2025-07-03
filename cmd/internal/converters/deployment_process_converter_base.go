@@ -366,7 +366,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("execution_properties", block, owner, action.Properties, action, file, dependencies)
+		c.assignProperties("execution_properties", block, owner, action.Properties, []string{}, action, file, dependencies)
 
 		file.Body().AppendBlock(block)
 
@@ -377,7 +377,9 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 }
 
 func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
-	if _, ok := action.Properties["Octopus.Action.Template.Id"]; !ok {
+	templateId, ok := action.Properties["Octopus.Action.Template.Id"]
+
+	if !ok {
 		// This is a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -445,7 +447,11 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("execution_properties", block, owner, action.Properties, action, file, dependencies)
+		if parameters, err := c.getTemplateParameters(templateId.(string)); err != nil {
+			return "", err
+		} else {
+			c.assignProperties("execution_properties", block, owner, action.Properties, parameters, action, file, dependencies)
+		}
 
 		file.Body().AppendBlock(block)
 
@@ -453,6 +459,20 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 	}
 
 	dependencies.AddResource(thisResource)
+}
+
+// getTemplateParameters retrieves the parameters of a step template by its ID.
+func (c *DeploymentProcessConverterBase) getTemplateParameters(templateId string) ([]string, error) {
+	template := octopus.StepTemplate{}
+	_, err := c.Client.GetSpaceResourceById("ActionTemplates", templateId, &template)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.Map(template.Parameters, func(item octopus.StepTemplateParameters, index int) string {
+		return item.Name
+	}), nil
 }
 
 func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
@@ -558,10 +578,22 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), step, file, dependencies)
+		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), []string{}, step, file, dependencies)
 
 		if hasChild {
-			c.assignProperties("execution_properties", block, owner, step.Actions[0].Properties, &step.Actions[0], file, dependencies)
+
+			template := octopus.StepTemplate{}
+			_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), templateId.(string), &template)
+
+			if err != nil {
+				return "", err
+			}
+
+			if parameters, err := c.getTemplateParameters(templateId.(string)); err != nil {
+				return "", err
+			} else {
+				c.assignProperties("execution_properties", block, owner, step.Actions[0].Properties, parameters, &step.Actions[0], file, dependencies)
+			}
 		}
 
 		file.Body().AppendBlock(block)
@@ -677,10 +709,10 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), step, file, dependencies)
+		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), []string{}, step, file, dependencies)
 
 		if hasChild {
-			c.assignProperties("execution_properties", block, owner, step.Actions[0].Properties, &step.Actions[0], file, dependencies)
+			c.assignProperties("execution_properties", block, owner, step.Actions[0].Properties, []string{}, &step.Actions[0], file, dependencies)
 		}
 
 		file.Body().AppendBlock(block)
@@ -731,7 +763,7 @@ func (c *DeploymentProcessConverterBase) generateChildStepName(parent octopus.Na
 	return "process_child_step_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, stepTemplateProperties []string, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
@@ -745,6 +777,7 @@ func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, b
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.RemoveFields(sanitizedProperties, stepTemplateProperties)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveStepTemplateFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.FixActionFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)

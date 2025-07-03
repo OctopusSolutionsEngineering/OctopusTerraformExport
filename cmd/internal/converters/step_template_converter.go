@@ -292,14 +292,14 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 		*/
 		thisResource.VersionLookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
 			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + "_versions.result)[0] " +
-			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Version}"
+			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].version}"
 		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
 			"? keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)[0] " +
-			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].output.Id}"
+			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
-		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Id}"
-		thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".output.Version}"
+		thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".id}"
+		thisResource.VersionLookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".version}"
 	}
 
 	thisResource.ToHcl = func() (string, error) {

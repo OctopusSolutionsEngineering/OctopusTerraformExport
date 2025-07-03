@@ -162,6 +162,7 @@ func exportSpaceImportAndTest(
 				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
 				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
+				ExperimentalEnableStepTemplates:  arguments.ExperimentalEnableStepTemplates,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
@@ -10368,7 +10369,8 @@ func TestStepTemplates(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{
-			DummySecretVariableValues: true,
+			DummySecretVariableValues:       true,
+			ExperimentalEnableStepTemplates: true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
