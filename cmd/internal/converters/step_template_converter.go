@@ -408,16 +408,21 @@ func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTempla
 			id = uuid.New().String()
 		}
 
-		return terraform.TerraformStepTemplateParameter{
-			Id:           id,
-			Name:         item.Name,
-			Label:        strutil.NilIfEmpty(item.Label),
-			HelpText:     strutil.NilIfEmpty(item.HelpText),
-			DefaultValue: strutil.NilIfEmpty(fmt.Sprint(item.DefaultValue)),
+		template := terraform.TerraformStepTemplateParameter{
+			Id:       id,
+			Name:     item.Name,
+			Label:    strutil.NilIfEmpty(item.Label),
+			HelpText: strutil.NilIfEmpty(item.HelpText),
 			DisplaySettings: map[string]string{
 				"Octopus.ControlType": item.DisplaySettings.OctopusControlType,
 			},
 		}
+
+		if strutil.IsString(item.DefaultValue) {
+			template.DefaultValue = strutil.NilIfEmpty(fmt.Sprint(item.DefaultValue))
+		}
+
+		return template
 	})
 }
 
