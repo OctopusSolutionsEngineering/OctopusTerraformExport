@@ -20,6 +20,15 @@ resource "octopusdeploy_variable" "string_variable" {
   value     = "PlainText"
 }
 
+resource "octopusdeploy_step_template" "steptemplate_hello_world" {
+  action_type     = "Octopus.Script"
+  name            = "Hello World"
+  step_package_id = "Octopus.Script"
+  packages        = []
+  parameters      = [{ default_value = "World!", display_settings = { "Octopus.ControlType" = "SingleLineText" }, help_text = null, id = "fb95b2e8-3395-4b63-9c23-549c133841ab", label = null, name = "HelloWorld.Message" }]
+  properties      = { "Octopus.Action.Script.ScriptBody" = "echo \"Hello #{HelloWorld.Message}\"", "Octopus.Action.Script.ScriptSource" = "Inline", "Octopus.Action.Script.Syntax" = "PowerShell" }
+}
+
 resource "octopusdeploy_project" "deploy_frontend_project" {
   auto_create_release                  = false
   default_guided_failure_mode          = "EnvironmentDefault"
@@ -46,177 +55,37 @@ resource "octopusdeploy_project" "deploy_frontend_project" {
   }
 }
 
-resource "octopusdeploy_process" "test" {
+resource "octopusdeploy_process" "process_step_template" {
   project_id = "${octopusdeploy_project.deploy_frontend_project.id}"
   depends_on = []
 }
 
-resource "octopusdeploy_process_steps_order" "test" {
-  process_id = "${octopusdeploy_process.test.id}"
-  steps      = ["${octopusdeploy_process_step.parent_step.id}"]
+resource "octopusdeploy_process_steps_order" "process_step_order_step_template" {
+  process_id = "${octopusdeploy_process.process_step_template.id}"
+  steps      = ["${octopusdeploy_process_templated_step.process_step_step_template_hello_world.id}"]
 }
 
-resource "octopusdeploy_process_step" "parent_step" {
-  name                  = "Parent Step"
-  type                  = "Placeholder"
-  process_id            = "${octopusdeploy_process.test.id}"
-  channels              = null
-  condition             = "Variable"
-  environments          = null
-  excluded_environments = null
-  package_requirement   = "LetOctopusDecide"
-  start_trigger         = "StartAfterPrevious"
-  tenant_tags           = null
-  properties            = {
-    "Octopus.Step.ConditionVariableExpression" = "#{IsTrue}"
-    "Octopus.Action.TargetRoles" = "cloud"
-  }
-}
-
-resource "octopusdeploy_process_child_steps_order" "process_child_step_order_tfproviderv1_parent_step" {
-  process_id = octopusdeploy_process.test.id
-  parent_id  = octopusdeploy_process_step.parent_step.id
-  children      = [
-    octopusdeploy_process_child_step.process_child_step_test_child_step_1.id,
-    octopusdeploy_process_child_step.process_child_step_test_child_step_2.id]
-}
-
-resource "octopusdeploy_process_child_step" "process_child_step_test_child_step_1" {
-  name                  = "Child Step 1"
-  type                  = "Octopus.Script"
-  process_id            = "${octopusdeploy_process.test.id}"
-  parent_id = octopusdeploy_process_step.parent_step.id
-  channels              = null
-  condition             = "Success"
-  environments          = ["${octopusdeploy_environment.production_environment.id}"]
-  excluded_environments = null
-  is_required           = true
-  notes                 = "notes"
-  tenant_tags           = null
-  execution_properties  = {
-    "Octopus.Action.AutoRetry.MaximumCount" = "3"
-    "Octopus.Action.AutoRetry.MinimumBackoff" = "15"
-    "Octopus.Action.ExecutionTimeout.Minutes" = "10"
-    "OctopusUseBundledTooling" = "False"
-    "Octopus.Action.RunOnServer" = "true"
-    "Octopus.Action.Script.ScriptSource" = "Inline"
-    "Octopus.Action.Script.Syntax" = "PowerShell"
-    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
-  }
-}
-
-resource "octopusdeploy_process_child_step" "process_child_step_test_child_step_2" {
-  name                  = "Child Step 2"
-  type                  = "Octopus.Script"
-  process_id            = "${octopusdeploy_process.test.id}"
-  parent_id = octopusdeploy_process_step.parent_step.id
-  channels              = null
-  condition             = "Variable"
-  environments          = ["${octopusdeploy_environment.development_environment.id}"]
-  excluded_environments = null
-  is_required           = true
-  tenant_tags           = null
-  execution_properties  = {
-    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
-    "Octopus.Action.AutoRetry.MaximumCount" = "3"
-    "OctopusUseBundledTooling" = "False"
-    "Octopus.Action.ExecutionTimeout.Minutes" = "10"
-    "Octopus.Action.RunOnServer" = "true"
-    "Octopus.Action.ConditionVariableExpression" = "#{IsTrue}"
-    "Octopus.Action.Script.Syntax" = "PowerShell"
-    "Octopus.Action.AutoRetry.MinimumBackoff" = "15"
-    "Octopus.Action.Script.ScriptSource" = "Inline"
-  }
-}
-
-resource "octopusdeploy_runbook" "runbook_runbookcac_test" {
-  name                        = "Runbook"
-  project_id                  = "${octopusdeploy_project.deploy_frontend_project.id}"
-  environment_scope           = "All"
-  environments                = []
-  force_package_download      = false
-  default_guided_failure_mode = "EnvironmentDefault"
-  description                 = ""
-  multi_tenancy_mode          = "Untenanted"
-
-  retention_policy {
-    quantity_to_keep = 100
-  }
-
-  connectivity_policy {
-    allow_deployments_to_no_targets = true
-    exclude_unhealthy_targets       = false
-    skip_machine_behavior           = "None"
-  }
-}
-
-resource "octopusdeploy_process" "process_runbookcac_test" {
-  project_id = "${octopusdeploy_project.deploy_frontend_project.id}"
-  runbook_id = "${octopusdeploy_runbook.runbook_runbookcac_test.id}"
-  depends_on = []
-}
-
-resource "octopusdeploy_process_steps_order" "process_step_order_runbookcac_test" {
-  process_id = "${octopusdeploy_process.process_runbookcac_test.id}"
-  steps      = ["${octopusdeploy_process_step.process_step_runbookcac_test_parent_step.id}"]
-}
-
-resource "octopusdeploy_process_step" "process_step_runbookcac_test_parent_step" {
-  name                  = "Parent Step"
-  type                  = "Placeholder"
-  process_id            = "${octopusdeploy_process.process_runbookcac_test.id}"
+resource "octopusdeploy_process_templated_step" "process_step_step_template_hello_world" {
+  name                  = "Hello World"
+  process_id            = "${octopusdeploy_process.process_step_template.id}"
+  template_id           = "${octopusdeploy_step_template.steptemplate_hello_world.id}"
+  template_version      = "${octopusdeploy_step_template.steptemplate_hello_world.version}"
   channels              = null
   condition             = "Success"
   environments          = null
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
+  slug                  = "hello-world"
   start_trigger         = "StartAfterPrevious"
   tenant_tags           = null
+  worker_pool_id        = null
   properties            = {
-    "Octopus.Action.TargetRoles" = "eks"
   }
-}
-
-resource "octopusdeploy_process_child_steps_order" "process_child_step_order_runbookcac_test_parent_step" {
-  process_id = "${octopusdeploy_process.process_runbookcac_test.id}"
-  parent_id  = "${octopusdeploy_process_step.process_step_runbookcac_test_parent_step.id}"
-  children      = ["${octopusdeploy_process_child_step.process_child_step_runbookcac_test_child_step_1.id}", "${octopusdeploy_process_child_step.process_child_step_runbookcac_test_child_step_2.id}"]
-}
-
-resource "octopusdeploy_process_child_step" "process_child_step_runbookcac_test_child_step_1" {
-  name                  = "Child Step 1"
-  type                  = "Octopus.Script"
-  process_id            = "${octopusdeploy_process.process_runbookcac_test.id}"
-  parent_id = octopusdeploy_process_step.process_step_runbookcac_test_parent_step.id
-  channels              = null
-  condition             = "Success"
-  environments          = null
-  excluded_environments = null
-  tenant_tags           = null
   execution_properties  = {
-    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
-    "Octopus.Action.Script.ScriptSource" = "Inline"
     "Octopus.Action.Script.Syntax" = "PowerShell"
-    "OctopusUseBundledTooling" = "False"
+    "Octopus.Action.Script.ScriptBody" = "echo \"Hello #{HelloWorld.Message}\""
+    "HelloWorld.Message" = "World!"
     "Octopus.Action.RunOnServer" = "true"
-  }
-}
-
-resource "octopusdeploy_process_child_step" "process_child_step_runbookcac_test_child_step_2" {
-  name                  = "Child Step 2"
-  type                  = "Octopus.Script"
-  process_id            = "${octopusdeploy_process.process_runbookcac_test.id}"
-  parent_id = octopusdeploy_process_step.process_step_runbookcac_test_parent_step.id
-  channels              = null
-  condition             = "Success"
-  environments          = null
-  excluded_environments = null
-  tenant_tags           = null
-  execution_properties  = {
-    "Octopus.Action.Script.ScriptBody" = "echo \"hi\""
     "Octopus.Action.Script.ScriptSource" = "Inline"
-    "Octopus.Action.Script.Syntax" = "PowerShell"
-    "OctopusUseBundledTooling" = "False"
-    "Octopus.Action.RunOnServer" = "true"
   }
 }
