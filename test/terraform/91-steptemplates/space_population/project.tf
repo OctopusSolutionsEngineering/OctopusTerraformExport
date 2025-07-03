@@ -43,7 +43,11 @@ resource "octopusdeploy_step_template" "steptemplate_hello_world" {
       name = "HelloWorld.Secret"
     }
   ]
-  properties      = { "Octopus.Action.Script.ScriptBody" = "echo \"Hello #{HelloWorld.Message}\"", "Octopus.Action.Script.ScriptSource" = "Inline", "Octopus.Action.Script.Syntax" = "PowerShell" }
+  properties      = {
+    "Octopus.Action.Script.ScriptBody" = "echo \"Hello #{HelloWorld.Message}\"",
+    "Octopus.Action.Script.ScriptSource" = "Inline",
+    "Octopus.Action.Script.Syntax" = "PowerShell"
+  }
 }
 
 resource "octopusdeploy_project" "deploy_frontend_project" {
