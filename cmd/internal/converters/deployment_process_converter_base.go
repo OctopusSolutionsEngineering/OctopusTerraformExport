@@ -463,7 +463,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 		return
 	}
 
-	if _, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]; !ok {
+	templateId, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]
+	if !ok {
 		// This is not a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -495,8 +496,12 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 		terraformProcessStep := terraform.TerraformProcessTemplatedStep{
 			Type:                 octopusdeployProcessTemplateStepResourceType,
 			Name:                 resourceName,
+			Count:                nil,
 			ResourceName:         strutil.EmptyIfNil(step.Name),
+			ParentId:             nil,
 			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
+			TemplateId:           dependencies.GetResource("ActionTemplates", templateId.(string)),
+			TemplateVersion:      dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string)),
 			Channels:             nil,
 			Condition:            step.Condition,
 			Container:            nil,
@@ -506,14 +511,15 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			IsDisabled:           nil,
 			IsRequired:           nil,
 			Notes:                nil,
+			PackageRequirement:   step.PackageRequirement,
+			Parameters:           nil,
+			Properties:           nil,
 			Slug:                 nil,
 			SpaceId:              nil,
+			StartTrigger:         step.StartTrigger,
 			TenantTags:           nil,
 			WorkerPoolId:         nil,
 			WorkerPoolVariable:   nil,
-			StartTrigger:         step.StartTrigger,
-			Properties:           nil,
-			PackageRequirement:   step.PackageRequirement,
 		}
 
 		// This should always be true, but we check it to avoid panics.
@@ -739,8 +745,8 @@ func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, b
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
+	sanitizedProperties = c.OctopusActionProcessor.RemoveStepTemplateFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.FixActionFields(sanitizedProperties)
-	sanitizedProperties = c.OctopusActionProcessor.DetachStepTemplates(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)
 
 	hcl.WriteStepProperties(propertyName, block, sanitizedProperties)

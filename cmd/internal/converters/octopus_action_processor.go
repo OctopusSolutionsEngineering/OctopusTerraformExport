@@ -275,14 +275,11 @@ func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[str
 	return sanitisedProperties
 }
 
-// DetachStepTemplates detaches step templates, which is achieved by removing the template properties
-func (c OctopusActionProcessor) DetachStepTemplates(properties map[string]string) map[string]string {
-	// don't proceed if we are not detaching step templates or have enabled step template support
-	if !c.DetachProjectTemplates || c.ExperimentalEnableStepTemplates {
-		return properties
+func (c OctopusActionProcessor) RemoveStepTemplateFields(properties map[string]string) map[string]string {
+	unnecessaryFields := []string{
+		"Octopus.Action.Template.Id",
+		"Octopus.Action.Template.Version",
 	}
-
-	unnecessaryFields := []string{"Octopus.Action.Template.Id", "Octopus.Action.Template.Version"}
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
 		if !sliceutil.Contains(unnecessaryFields, k) {

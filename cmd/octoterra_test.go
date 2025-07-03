@@ -10358,3 +10358,39 @@ func TestGuidedFailureMode(t *testing.T) {
 			return nil
 		})
 }
+
+func TestStepTemplates(t *testing.T) {
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/91-steptemplates/space_creation",
+		"../test/terraform/91-steptemplates/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			DummySecretVariableValues: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Test\"")
+			}
+
+			return nil
+		})
+}
