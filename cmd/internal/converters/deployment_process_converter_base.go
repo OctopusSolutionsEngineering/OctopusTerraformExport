@@ -49,6 +49,7 @@ type DeploymentProcessConverterBase struct {
 	DummySecretGenerator            dummy.DummySecretGenerator
 	DummySecretVariableValues       bool
 	IgnoreCacErrors                 bool
+	DetachProjectTemplates          bool
 }
 
 func (c *DeploymentProcessConverterBase) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
@@ -291,7 +292,7 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 }
 
 func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
-	if _, ok := action.Properties["Octopus.Action.Template.Id"]; ok {
+	if _, ok := action.Properties["Octopus.Action.Template.Id"]; ok && !c.DetachProjectTemplates {
 		// This is a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -379,7 +380,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
 	templateId, ok := action.Properties["Octopus.Action.Template.Id"]
 
-	if !ok {
+	if !ok || c.DetachProjectTemplates {
 		// This is a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -484,7 +485,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 	}
 
 	templateId, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]
-	if !ok {
+	if !ok || c.DetachProjectTemplates {
 		// This is not a templated step, so we don't generate a resource for it.
 		return
 	}
@@ -612,8 +613,8 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, resource 
 		return
 	}
 
-	if _, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]; ok {
-		// This is a templated step, so we don't generate a resource for it.
+	// We process this step if it is not a template or if we are detaching project templates.
+	if _, ok := step.Actions[0].Properties["Octopus.Action.Template.Id"]; ok && !c.DetachProjectTemplates {
 		return
 	}
 
