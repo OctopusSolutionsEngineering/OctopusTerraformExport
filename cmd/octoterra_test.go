@@ -10360,6 +10360,7 @@ func TestGuidedFailureMode(t *testing.T) {
 		})
 }
 
+// TestStepTemplates verifies s space with projects using step templates is recreated
 func TestStepTemplates(t *testing.T) {
 
 	exportSpaceImportAndTest(
@@ -10397,6 +10398,7 @@ func TestStepTemplates(t *testing.T) {
 		})
 }
 
+// TestStepTemplatesDetached ensures that detached step templates don't have a template id or version in te properties
 func TestStepTemplatesDetached(t *testing.T) {
 
 	exportSpaceImportAndTest(
