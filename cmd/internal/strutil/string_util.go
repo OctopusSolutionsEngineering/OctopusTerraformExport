@@ -2,6 +2,7 @@ package strutil
 
 import (
 	"github.com/samber/lo"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +13,10 @@ var dollarCurlyRegex = regexp.MustCompile(`\$\{`)
 var dollarCurlyEscapedRegex = regexp.MustCompile(`\$\$\{\\"\$\\"}\{`)
 var percentCurlyRegex = regexp.MustCompile(`%\{`)
 var percentCurlyEscapedRegex = regexp.MustCompile(`%%\{\\"%\\"}\{`)
+
+func IsString(value interface{}) bool {
+	return reflect.TypeOf(value).Kind() == reflect.String
+}
 
 func TrimPointer(input *string) *string {
 	if input == nil {

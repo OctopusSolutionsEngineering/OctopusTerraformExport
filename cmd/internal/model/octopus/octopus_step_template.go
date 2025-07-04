@@ -19,7 +19,7 @@ type StepTemplate struct {
 	SpaceId                   *string                  `json:"SpaceId"`
 	Version                   *int                     `json:"Version"`
 	Name                      string                   `json:"Name"`
-	Description               string                   `json:"Description"`
+	Description               *string                  `json:"Description"`
 	ActionType                string                   `json:"ActionType"`
 	Packages                  []Package                `json:"Packages"`
 	GitDependencies           []string                 `json:"GitDependencies"`

@@ -1,5 +1,7 @@
 package terraform
 
+import "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+
 type TerraformProcessStep struct {
 	Type         string  `hcl:"type,label"`
 	Name         string  `hcl:"name,label"`
@@ -32,6 +34,10 @@ type TerraformProcessStep struct {
 	TenantTags         []string           `hcl:"tenant_tags"`
 	WorkerPoolId       *string            `hcl:"worker_pool_id"`
 	WorkerPoolVariable *string            `hcl:"worker_pool_variable"`
+}
+
+func (a *TerraformProcessStep) SetWorkerPoolId(workerPool string) {
+	a.WorkerPoolId = strutil.NilIfEmpty(workerPool)
 }
 
 type TerraformProcessStepContainer struct {

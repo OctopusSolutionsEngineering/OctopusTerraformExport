@@ -266,23 +266,19 @@ func (c OctopusActionProcessor) RemoveUnnecessaryActionFields(properties map[str
 		"Octopus.Action.Package.DownloadOnTentacle",
 		"Octopus.Action.Aws.CloudFormationTemplateParametersRaw",
 		"Octopus.Action.Package.FeedId"}
-	sanitisedProperties := map[string]string{}
-	for k, v := range properties {
-		if !sliceutil.Contains(unnecessaryFields, k) {
-			sanitisedProperties[k] = v
-		}
-	}
-	return sanitisedProperties
+
+	return c.RemoveFields(properties, unnecessaryFields)
 }
 
-// DetachStepTemplates detaches step templates, which is achieved by removing the template properties
-func (c OctopusActionProcessor) DetachStepTemplates(properties map[string]string) map[string]string {
-	// don't proceed if we are not detaching step templates or have enabled step template support
-	if !c.DetachProjectTemplates || c.ExperimentalEnableStepTemplates {
-		return properties
+func (c OctopusActionProcessor) RemoveStepTemplateFields(properties map[string]string) map[string]string {
+	unnecessaryFields := []string{
+		"Octopus.Action.Template.Id",
+		"Octopus.Action.Template.Version",
 	}
+	return c.RemoveFields(properties, unnecessaryFields)
+}
 
-	unnecessaryFields := []string{"Octopus.Action.Template.Id", "Octopus.Action.Template.Version"}
+func (c OctopusActionProcessor) RemoveFields(properties map[string]string, unnecessaryFields []string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
 		if !sliceutil.Contains(unnecessaryFields, k) {

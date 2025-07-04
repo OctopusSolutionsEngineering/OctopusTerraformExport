@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
 	github.com/otiai10/copy v1.14.0
-	github.com/samber/lo v1.38.1
+	github.com/samber/lo v1.51.0
 	github.com/spf13/viper v1.18.2
 	github.com/zeebo/xxh3 v1.0.2
 	go.uber.org/zap v1.27.0

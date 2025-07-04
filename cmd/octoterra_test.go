@@ -162,6 +162,7 @@ func exportSpaceImportAndTest(
 				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
 				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
+				ExperimentalEnableStepTemplates:  arguments.ExperimentalEnableStepTemplates,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
@@ -10353,6 +10354,101 @@ func TestGuidedFailureMode(t *testing.T) {
 
 			if !found {
 				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}
+
+// TestStepTemplates verifies s space with projects using step templates is recreated
+func TestStepTemplates(t *testing.T) {
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/91-steptemplates/space_creation",
+		"../test/terraform/91-steptemplates/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			DummySecretVariableValues:       true,
+			ExperimentalEnableStepTemplates: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Test\"")
+			}
+
+			return nil
+		})
+}
+
+// TestStepTemplatesDetached ensures that detached step templates don't have a template id or version in te properties
+func TestStepTemplatesDetached(t *testing.T) {
+
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/91-steptemplates/space_creation",
+		"../test/terraform/91-steptemplates/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			DummySecretVariableValues: true,
+			DetachProjectTemplates:    true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Test\"")
+			}
+
+			deploymentProcess := octopus.DeploymentProcess{}
+			_, err := octopusClient.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(testProject[0].DeploymentProcessId), &deploymentProcess)
+
+			if err != nil {
+				return err
+			}
+
+			hasTemplateId := lo.HasKey(deploymentProcess.Steps[0].Actions[0].Properties, "Octopus.Action.Template.Id")
+
+			if hasTemplateId {
+				return errors.New("deployment process must not have template id in properties")
+			}
+
+			hasTemplateVersion := lo.HasKey(deploymentProcess.Steps[0].Actions[0].Properties, "Octopus.Action.Template.Version")
+
+			if hasTemplateVersion {
+				return errors.New("deployment process must not have template version in properties")
 			}
 
 			return nil

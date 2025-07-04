@@ -319,6 +319,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		LimitResourceCount:              0,
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -952,6 +953,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 				DummySecretGenerator:            dummySecretGenerator,
 				DummySecretVariableValues:       args.DummySecretVariableValues,
 				IgnoreCacErrors:                 args.IgnoreCacErrors,
+				DetachProjectTemplates:          args.DetachProjectTemplates,
 			},
 		},
 		EnvironmentConverter:     environmentConverter,
@@ -999,6 +1001,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 				DummySecretGenerator:            dummySecretGenerator,
 				DummySecretVariableValues:       args.DummySecretVariableValues,
 				IgnoreCacErrors:                 args.IgnoreCacErrors,
+				DetachProjectTemplates:          args.DetachProjectTemplates,
 			},
 		},
 		TenantConverter: &tenantConverter,
@@ -1207,6 +1210,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:              0,
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -1427,6 +1431,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 				DummySecretGenerator:            dummySecretGenerator,
 				DummySecretVariableValues:       args.DummySecretVariableValues,
 				IgnoreCacErrors:                 args.IgnoreCacErrors,
+				DetachProjectTemplates:          args.DetachProjectTemplates,
 			},
 		},
 		EnvironmentConverter:     environmentConverter,
@@ -1538,6 +1543,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		LimitResourceCount:              0,
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -2178,6 +2184,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 				DummySecretGenerator:            dummySecretGenerator,
 				DummySecretVariableValues:       args.DummySecretVariableValues,
 				IgnoreCacErrors:                 args.IgnoreCacErrors,
+				DetachProjectTemplates:          args.DetachProjectTemplates,
 			},
 		},
 		TenantConverter: &tenantConverter,
