@@ -408,9 +408,24 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
+		// The native step template data source does not have the ability to look up the template ID and version.
+		// So we just reference them as is. This will work when a project is recreated in the same space,
+		// but will fail across spaces as the template IDs change.
+		newTemplateId := step.Actions[0].Properties["Octopus.Action.Template.Id"]
+		newTemplateVersion := step.Actions[0].Properties["Octopus.Action.Template.Version"]
+
+		// If the experimental flag is enabled, we use a workaround to query the template ID and version
+		// from the API.
+		if c.ExperimentalEnableStepTemplates {
+			newTemplateId = dependencies.GetResource("ActionTemplates", templateId.(string))
+			newTemplateVersion = dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string))
+		}
+
 		terraformProcessStepChild := terraform.TerraformProcessTemplatedStep{
 			Type:                 octopusdeployProcessTemplatedStepsOrderResourceType,
 			Name:                 resourceName,
+			TemplateId:           newTemplateId.(string),
+			TemplateVersion:      newTemplateVersion.(string),
 			ResourceName:         strutil.EmptyIfNil(action.Name),
 			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
 			ParentId:             strutil.NilIfEmpty(dependencies.GetResource("DeploymentProcesses/Steps", c.getStepOrActionId(resource, owner, step))),
@@ -514,6 +529,19 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 
 		file := hclwrite.NewEmptyFile()
 
+		// The native step template data source does not have the ability to look up the template ID and version.
+		// So we just reference them as is. This will work when a project is recreated in the same space,
+		// but will fail across spaces as the template IDs change.
+		newTemplateId := step.Actions[0].Properties["Octopus.Action.Template.Id"]
+		newTemplateVersion := step.Actions[0].Properties["Octopus.Action.Template.Version"]
+
+		// If the experimental flag is enabled, we use a workaround to query the template ID and version
+		// from the API.
+		if c.ExperimentalEnableStepTemplates {
+			newTemplateId = dependencies.GetResource("ActionTemplates", templateId.(string))
+			newTemplateVersion = dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string))
+		}
+
 		terraformProcessStep := terraform.TerraformProcessTemplatedStep{
 			Type:                 octopusdeployProcessTemplateStepResourceType,
 			Name:                 resourceName,
@@ -521,8 +549,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			ResourceName:         strutil.EmptyIfNil(step.Name),
 			ParentId:             nil,
 			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
-			TemplateId:           dependencies.GetResource("ActionTemplates", templateId.(string)),
-			TemplateVersion:      dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string)),
+			TemplateId:           newTemplateId.(string),
+			TemplateVersion:      newTemplateVersion.(string),
 			Channels:             nil,
 			Condition:            step.Condition,
 			Container:            nil,
