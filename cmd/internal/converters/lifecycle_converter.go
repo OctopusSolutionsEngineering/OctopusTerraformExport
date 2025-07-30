@@ -19,6 +19,7 @@ import (
 
 const octopusdeployLifecyclesDataType = "octopusdeploy_lifecycles"
 const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
+const defaultLifecycleName = "Default Lifecycle"
 
 type LifecycleConverter struct {
 	Client                   client.OctopusClient
@@ -285,11 +286,11 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 		}
 	}
 
-	forceLookup := lookup || lifecycle.Name == "Default Lifecycle"
+	forceLookup := lookup || lifecycle.Name == defaultLifecycleName
 
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && lifecycle.Name != defaultLifecycleName {
 		c.toBashImport(resourceName, lifecycle.Name, dependencies)
 		c.toPowershellImport(resourceName, lifecycle.Name, dependencies)
 	}

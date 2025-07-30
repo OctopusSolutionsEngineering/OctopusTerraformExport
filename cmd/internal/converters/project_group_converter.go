@@ -18,6 +18,7 @@ import (
 
 const octopusdeployProjectGroupsDataType = "octopusdeploy_project_groups"
 const octopusdeployProjectGroupResourceType = "octopusdeploy_project_group"
+const defaultProjectGroup = "Default Project Group"
 
 type ProjectGroupConverter struct {
 	Client                     client.OctopusClient
@@ -281,11 +282,11 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 	thisResource := data.ResourceDetails{}
 
-	forceLookup := lookup || resource.Name == "Default Project Group"
+	forceLookup := lookup || resource.Name == defaultProjectGroup
 
 	projectName := "project_group_" + sanitizer.SanitizeName(resource.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && resource.Name != defaultProjectGroup {
 		c.toBashImport(projectName, resource.Name, dependencies)
 		c.toPowershellImport(projectName, resource.Name, dependencies)
 	}
