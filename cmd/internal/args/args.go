@@ -61,6 +61,7 @@ type Arguments struct {
 	LimitAttributeLength            int
 	LimitResourceCount              int
 	GenerateImportScripts           bool
+	GenerateImportBlocks            bool
 	IgnoreCacErrors                 bool
 
 	OctopusManagedTerraformVars string
@@ -265,6 +266,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.IncludeIds, "includeIds", false, "For internal use only. Include the \"id\" field on generated resources. Note that this is almost always unnecessary and undesirable.")
 	flags.BoolVar(&arguments.IncludeSpaceInPopulation, "includeSpaceInPopulation", false, "For internal use only. Include the space resource in the space population script. Note that this is almost always unnecessary and undesirable, as the space resources are included in the space creation module.")
 	flags.BoolVar(&arguments.GenerateImportScripts, "generateImportScripts", false, "Generate Bash and Powershell scripts used to import resources into the Terraform state.")
+	flags.BoolVar(&arguments.GenerateImportBlocks, "generateImportBlocks", false, "Add import blocks to the generated Terraform. This is useful when you want to export resources and then immediately import them, effectively having Terraform take ownership of existing Octopus resources.")
 	flags.BoolVar(&arguments.InsecureTls, "insecureTls", false, "Ignore certificate errors when connecting to the Octopus server.")
 	flags.StringVar(&arguments.Url, "url", "", "The Octopus URL e.g. https://myinstance.octopus.app")
 	flags.StringVar(&arguments.Space, "space", "", "The Octopus space name or ID")

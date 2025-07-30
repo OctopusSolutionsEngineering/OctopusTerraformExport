@@ -982,6 +982,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
+		GenerateImportBlocks:     args.GenerateImportBlocks,
 	}
 
 	projectConverter := &converters.ProjectConverter{
@@ -1058,6 +1059,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
 		ExcludeAllTenants:         args.ExcludeAllTenants,
 		IgnoreCacErrors:           args.IgnoreCacErrors,
+		GenerateImportBlocks:      args.GenerateImportBlocks,
 	}
 
 	deploymentFreezeConverter := converters.DeploymentFreezeConverter{
@@ -1427,6 +1429,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantsExcept:        args.ExcludeTenantsExcept,
 		ExcludeAllTenants:           args.ExcludeAllTenants,
 		IgnoreCacErrors:             args.IgnoreCacErrors,
+		GenerateImportBlocks:        args.GenerateImportBlocks,
 	}
 
 	runbookConverter := converters.RunbookConverter{
@@ -1470,6 +1473,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		GenerateImportScripts:    args.GenerateImportScripts,
 		ErrGroup:                 nil,
 		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
+		GenerateImportBlocks:     args.GenerateImportBlocks,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -2189,6 +2193,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		GenerateImportScripts:    args.GenerateImportScripts,
 		ErrGroup:                 nil,
 		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
+		GenerateImportBlocks:     args.GenerateImportBlocks,
 	}
 
 	projectConverter := converters.ProjectConverter{
@@ -2264,6 +2269,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
 		ExcludeAllTenants:         args.ExcludeAllTenants,
 		IgnoreCacErrors:           args.IgnoreCacErrors,
+		GenerateImportBlocks:      args.GenerateImportBlocks,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{

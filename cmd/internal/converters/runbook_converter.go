@@ -42,6 +42,7 @@ type RunbookConverter struct {
 	IncludeIds                   bool
 	GenerateImportScripts        bool
 	IgnoreCacManagedValues       bool
+	GenerateImportBlocks         bool
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -388,6 +389,10 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
+		if c.GenerateImportBlocks && !stateless {
+			c.writeImportBlock(file, stateless, runbookName)
+		}
+
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
@@ -395,6 +400,21 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c *RunbookConverter) writeImportBlock(file *hclwrite.File, stateless bool, resourceName string) {
+	if c.GenerateImportBlocks && !stateless {
+		c.writeData(file, "${var."+resourceName+"_name}", resourceName)
+
+		importResource := terraform.TerraformImport{}
+
+		importBlock := gohcl.EncodeAsBlock(importResource, "import")
+
+		hcl.WriteUnquotedAttribute(importBlock, "to", octopusdeployProjectResourceType+"."+resourceName)
+		hcl.WriteUnquotedAttribute(importBlock, "id", "data."+octopusdeployProjectsDataType+"."+resourceName+".projects[0].id")
+
+		file.Body().AppendBlock(importBlock)
+	}
 }
 
 func (c *RunbookConverter) GetResourceType() string {

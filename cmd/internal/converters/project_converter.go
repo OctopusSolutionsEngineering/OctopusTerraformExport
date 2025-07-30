@@ -71,6 +71,7 @@ type ProjectConverter struct {
 	ExcludeTenantsExcept      args.StringSliceArgs
 	ExcludeAllTenants         bool
 	IgnoreCacErrors           bool
+	GenerateImportBlocks      bool
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -572,12 +573,29 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
+		c.writeImportBlock(file, stateless, projectName)
+
 		file.Body().AppendBlock(block)
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c *ProjectConverter) writeImportBlock(file *hclwrite.File, stateless bool, projectName string) {
+	if c.GenerateImportBlocks && !stateless {
+		c.writeData(file, "${var."+projectName+"_name}", projectName)
+
+		importResource := terraform.TerraformImport{}
+
+		importBlock := gohcl.EncodeAsBlock(importResource, "import")
+
+		hcl.WriteUnquotedAttribute(importBlock, "to", octopusdeployProjectResourceType+"."+projectName)
+		hcl.WriteUnquotedAttribute(importBlock, "id", "data."+octopusdeployProjectsDataType+"."+projectName+".projects[0].id")
+
+		file.Body().AppendBlock(importBlock)
+	}
 }
 
 func (c *ProjectConverter) writeGitUrlVar(projectName string, project octopus.Project, file *hclwrite.File) {
