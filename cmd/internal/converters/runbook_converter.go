@@ -226,7 +226,7 @@ then
 fi
 
 RESOURCE_NAME="%s"
-RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Runbooks" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") and select(.ProjectId == \"${PROJECT_ID}\") | .Id")
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Runbooks" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\" and .ProjectId == \"${PROJECT_ID}\") | .Id")
 
 if [[ -z RESOURCE_ID ]]
 then
