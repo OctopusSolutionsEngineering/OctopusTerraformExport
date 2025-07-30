@@ -133,6 +133,12 @@ func (c *DeploymentProcessConverter) toHclById(id string, recursive bool, statel
 	}
 
 	zap.L().Info("Deployment Process: " + resource.Id)
+
+	if c.GenerateImportScripts {
+		c.toBashImport(c.generateProcessName(nil, &project), project.GetName(), dependencies)
+		c.toPowershellImport(c.generateProcessName(nil, &project), project.GetName(), dependencies)
+	}
+
 	return c.toHcl(&resource, nil, &project, recursive, false, stateless, dependencies)
 }
 
@@ -166,4 +172,131 @@ func (c *DeploymentProcessConverter) ToHclLookupById(id string, dependencies *da
 	}
 
 	return c.toHcl(&resource, nil, &project, false, true, false, dependencies)
+}
+
+// toBashImport creates a bash script to import the resource
+func (c *DeploymentProcessConverter) toBashImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required"
+    exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+
+if [[ -z RESOURCE_ID ]]
+then
+	echo "No project found with the name ${RESOURCE_NAME}"
+	exit 1
+fi
+
+echo "Importing project deployment process ${RESOURCE_ID}"
+
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}`,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					projectName,
+					octopusdeployProcessResourceType,
+					resourceName),
+				nil
+		},
+	})
+}
+
+// toPowershellImport creates a powershell script to import the resource
+func (c *DeploymentProcessConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No project found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing project $ResourceId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId`,
+					resourceName,
+					projectName,
+					octopusdeployProcessResourceType,
+					resourceName),
+				nil
+		},
+	})
 }

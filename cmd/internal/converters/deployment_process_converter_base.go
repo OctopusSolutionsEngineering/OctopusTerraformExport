@@ -50,6 +50,7 @@ type DeploymentProcessConverterBase struct {
 	DummySecretVariableValues       bool
 	IgnoreCacErrors                 bool
 	DetachProjectTemplates          bool
+	GenerateImportScripts           bool
 }
 
 func (c *DeploymentProcessConverterBase) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
