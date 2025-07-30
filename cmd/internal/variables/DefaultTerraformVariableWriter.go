@@ -18,7 +18,7 @@ type DefaultTerraformVariableWriter struct {
 	DummySecretGenerator        dummy.DummySecretGenerator
 }
 
-func (c DefaultTerraformVariableWriter) WriteTerraformVariablesForSecret(resourceType string, file *hclwrite.File, variable octopus.NamedResource, dependencies *data.ResourceDetailsCollection) *string {
+func (c *DefaultTerraformVariableWriter) WriteTerraformVariablesForSecret(resourceType string, file *hclwrite.File, variable octopus.NamedResource, dependencies *data.ResourceDetailsCollection) *string {
 	// We don't know the value of secrets, so the value is just nil
 	if c.ExcludeTerraformVariables {
 		return nil

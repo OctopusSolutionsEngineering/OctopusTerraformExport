@@ -330,7 +330,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 		InlineVariableValues:            args.InlineVariableValues,
 		DummySecretGenerator:            dummySecretGenerator,
-		TerraformVariableWriter:         terraformVariableWriter,
+		TerraformVariableWriter:         &terraformVariableWriter,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -917,7 +917,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		},
 		IgnoreCacErrors:         args.IgnoreCacErrors,
 		InlineVariableValues:    args.InlineVariableValues,
-		TerraformVariableWriter: terraformVariableWriter,
+		TerraformVariableWriter: &terraformVariableWriter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -1232,7 +1232,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 		InlineVariableValues:            args.InlineVariableValues,
 		DummySecretGenerator:            dummySecretGenerator,
-		TerraformVariableWriter:         terraformVariableWriter,
+		TerraformVariableWriter:         &terraformVariableWriter,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -1575,7 +1575,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
 		InlineVariableValues:            args.InlineVariableValues,
 		DummySecretGenerator:            dummySecretGenerator,
-		TerraformVariableWriter:         terraformVariableWriter,
+		TerraformVariableWriter:         &terraformVariableWriter,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -2080,7 +2080,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		},
 		IgnoreCacErrors:         args.IgnoreCacErrors,
 		InlineVariableValues:    args.InlineVariableValues,
-		TerraformVariableWriter: terraformVariableWriter,
+		TerraformVariableWriter: &terraformVariableWriter,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -2112,7 +2112,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantTags:                 args.ExcludeTenantTags,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges,
 		DummySecretGenerator:              dummySecretGenerator,
-		TerraformVariableWriter:           terraformVariableWriter,
+		TerraformVariableWriter:           &terraformVariableWriter,
 		Excluder:                          converters.DefaultExcluder{},
 		ErrGroup:                          nil,
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
