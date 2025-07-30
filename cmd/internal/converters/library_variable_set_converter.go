@@ -372,7 +372,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 
 	if strutil.EmptyIfNil(resource.ContentType) == "Variables" {
 
-		if c.GenerateImportScripts {
+		if c.GenerateImportScripts && !stateless {
 			c.toBashImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
 			c.toPowershellImport(octopusdeployLibraryVariableSetsResourceType, resourceName, resource.Name, dependencies)
 		}
@@ -380,7 +380,7 @@ func (c *LibraryVariableSetConverter) toHcl(resource octopus.LibraryVariableSet,
 			return c.writeLibraryVariableSet(resource, resourceName, projectTemplates, stateless)
 		}
 	} else if strutil.EmptyIfNil(resource.ContentType) == "ScriptModule" {
-		if c.GenerateImportScripts {
+		if c.GenerateImportScripts && !stateless {
 			c.toBashImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
 			c.toPowershellImport(octopusdeployScriptModuleResourceType, resourceName, resource.Name, dependencies)
 		}

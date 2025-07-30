@@ -302,7 +302,7 @@ func (c MachineProxyConverter) toHcl(resource octopus.MachineProxy, recursive bo
 
 	machineProxyName := "machine_proxy_" + sanitizer.SanitizeName(resource.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(machineProxyName, resource.Name, dependencies)
 		c.toPowershellImport(machineProxyName, resource.Name, dependencies)
 	}

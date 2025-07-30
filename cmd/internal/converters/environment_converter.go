@@ -319,7 +319,7 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 
 	resourceName := "environment_" + sanitizer.SanitizeName(environment.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(resourceName, environment.Name, dependencies)
 		c.toPowershellImport(resourceName, environment.Name, dependencies)
 	}

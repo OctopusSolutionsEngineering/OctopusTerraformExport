@@ -379,7 +379,7 @@ func (c AzureWebAppTargetConverter) toHcl(target octopus.AzureWebAppResource, re
 
 	targetName := "target_" + sanitizer.SanitizeName(target.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(targetName, target.Name, dependencies)
 		c.toPowershellImport(targetName, target.Name, dependencies)
 	}

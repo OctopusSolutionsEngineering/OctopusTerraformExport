@@ -307,7 +307,7 @@ func (c CertificateConverter) toHcl(certificate octopus.Certificate, recursive b
 
 	certificateName := "certificate_" + sanitizer.SanitizeName(certificate.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(certificateName, certificate.Name, dependencies)
 		c.toPowershellImport(certificateName, certificate.Name, dependencies)
 	}

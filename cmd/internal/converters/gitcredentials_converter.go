@@ -253,7 +253,7 @@ func (c GitCredentialsConverter) toHcl(gitCredentials octopus.GitCredentials, _ 
 
 	gitCredentialsName := "gitcredential_" + sanitizer.SanitizeName(gitCredentials.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(gitCredentialsName, gitCredentials.Name, dependencies)
 		c.toPowershellImport(gitCredentialsName, gitCredentials.Name, dependencies)
 	}

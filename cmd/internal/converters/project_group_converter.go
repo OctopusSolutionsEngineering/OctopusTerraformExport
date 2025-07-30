@@ -286,7 +286,7 @@ func (c ProjectGroupConverter) toHcl(resource octopus.ProjectGroup, recursive bo
 
 	projectName := "project_group_" + sanitizer.SanitizeName(resource.Name)
 
-	if c.GenerateImportScripts && resource.Name != defaultProjectGroup {
+	if c.GenerateImportScripts && resource.Name != defaultProjectGroup && !lookup && !stateless {
 		c.toBashImport(projectName, resource.Name, dependencies)
 		c.toPowershellImport(projectName, resource.Name, dependencies)
 	}

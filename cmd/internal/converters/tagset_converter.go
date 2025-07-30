@@ -213,7 +213,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 
 	tagSetName := "tagset_" + sanitizer.SanitizeName(tagSet.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(tagSetName, tagSet.Name, dependencies)
 		c.toPowershellImport(tagSetName, tagSet.Name, dependencies)
 	}

@@ -319,7 +319,7 @@ func (c FeedConverter) exportDocker(stateless bool, dependencies *data.ResourceD
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployDockerContainerRegistryResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -414,7 +414,7 @@ func (c FeedConverter) exportAws(stateless bool, dependencies *data.ResourceDeta
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployAwsElasticContainerRegistryResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployAwsElasticContainerRegistryResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -504,7 +504,7 @@ func (c FeedConverter) exportMaven(stateless bool, dependencies *data.ResourceDe
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployMavenFeedResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployMavenFeedResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -601,7 +601,7 @@ func (c FeedConverter) exportGithub(stateless bool, dependencies *data.ResourceD
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployGithubRepositoryFeedResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployGithubRepositoryFeedResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -696,7 +696,7 @@ func (c FeedConverter) exportHelm(stateless bool, dependencies *data.ResourceDet
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployHelmFeedResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployHelmFeedResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -790,7 +790,7 @@ func (c FeedConverter) exportNuget(stateless bool, dependencies *data.ResourceDe
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployNugetFeedResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployNugetFeedResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -882,7 +882,7 @@ func (c FeedConverter) exportArtifactory(stateless bool, dependencies *data.Reso
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployArtifactoryFeedResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployArtifactoryFeedResourceType, resourceName, resource.Name, dependencies)
 	}
@@ -972,7 +972,7 @@ func (c FeedConverter) exportS3(stateless bool, dependencies *data.ResourceDetai
 		return false
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(octopusdeployS3FeedResourceType, resourceName, resource.Name, dependencies)
 		c.toPowershellImport(octopusdeployS3FeedResourceType, resourceName, resource.Name, dependencies)
 	}

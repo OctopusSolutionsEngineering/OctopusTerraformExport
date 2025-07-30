@@ -290,7 +290,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
-	if c.GenerateImportScripts && lifecycle.Name != defaultLifecycleName {
+	if c.GenerateImportScripts && lifecycle.Name != defaultLifecycleName && !stateless {
 		c.toBashImport(resourceName, lifecycle.Name, dependencies)
 		c.toPowershellImport(resourceName, lifecycle.Name, dependencies)
 	}

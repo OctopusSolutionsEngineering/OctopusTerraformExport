@@ -310,7 +310,7 @@ func (c ListeningWorkerConverter) toHcl(worker octopus.Worker, recursive bool, s
 
 	workerName := "worker_" + sanitizer.SanitizeName(worker.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(workerName, worker.Name, dependencies)
 		c.toPowershellImport(workerName, worker.Name, dependencies)
 	}

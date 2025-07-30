@@ -411,7 +411,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		return err
 	}
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectName, project.Name, dependencies)
 		c.toPowershellImport(projectName, project.Name, dependencies)
 	}

@@ -298,7 +298,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 				fallback))
 
 		} else {
-			if c.GenerateImportScripts {
+			if c.GenerateImportScripts && !stateless {
 				c.toBashImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
 				c.toPowershellImport(octopusdeployDynamicWorkerPoolResourceType, resourceName, pool.Name, dependencies)
 			}
@@ -325,7 +325,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 				fallback2))
 
 		} else {
-			if c.GenerateImportScripts {
+			if c.GenerateImportScripts && !stateless {
 				c.toBashImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
 				c.toPowershellImport(octopusdeployStaticWorkerPoolResourcePool, resourceName, pool.Name, dependencies)
 			}

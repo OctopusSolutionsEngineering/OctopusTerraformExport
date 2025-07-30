@@ -275,7 +275,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, dependencies)
 		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectDeploymentTargetTriggerResourceType, dependencies)
 	}
@@ -422,7 +422,7 @@ func (c ProjectTriggerConverter) buildFeedTriggerResources(projectTrigger octopu
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectFeedTrigger, dependencies)
 		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectFeedTrigger, dependencies)
 	}
@@ -511,7 +511,7 @@ func (c ProjectTriggerConverter) buildArcTriggerResources(projectTrigger octopus
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectArcTrigger, dependencies)
 		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectArcTrigger, dependencies)
 	}
@@ -666,7 +666,7 @@ func (c ProjectTriggerConverter) buildScheduledTriggerResources(projectTrigger o
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectScheduledTrigger, dependencies)
 		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectScheduledTrigger, dependencies)
 	}
@@ -838,7 +838,7 @@ func (c ProjectTriggerConverter) buildGitTriggerResources(projectTrigger octopus
 
 	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectGitTrigger, dependencies)
 		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployProjectGitTrigger, dependencies)
 	}

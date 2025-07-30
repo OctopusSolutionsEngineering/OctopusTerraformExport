@@ -327,7 +327,7 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 	resourceNameSuffix := sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeName(runbook.Name)
 	runbookName := "runbook_" + resourceNameSuffix
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(runbookName, project.Name, runbook.Name, dependencies)
 		c.toPowershellImport(runbookName, project.Name, runbook.Name, dependencies)
 	}

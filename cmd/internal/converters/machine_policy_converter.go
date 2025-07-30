@@ -255,7 +255,7 @@ func (c MachinePolicyConverter) toHcl(machinePolicy octopus.MachinePolicy, _ boo
 
 	policyName := "machinepolicy_" + sanitizer.SanitizeName(machinePolicy.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(policyName, machinePolicy.Name, dependencies)
 		c.toPowershellImport(policyName, machinePolicy.Name, dependencies)
 	}

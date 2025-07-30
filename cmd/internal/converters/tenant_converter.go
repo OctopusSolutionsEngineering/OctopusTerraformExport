@@ -333,7 +333,7 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 
 	tenantName := "tenant_" + sanitizer.SanitizeName(tenant.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(tenantName, tenant.Name, dependencies)
 		c.toPowershellImport(tenantName, tenant.Name, dependencies)
 	}

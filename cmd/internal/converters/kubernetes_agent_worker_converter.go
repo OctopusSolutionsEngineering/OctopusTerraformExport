@@ -310,7 +310,7 @@ func (c KubernetesAgentWorkerConverter) toHcl(worker octopus.KubernetesAgentWork
 
 	workerName := "worker_" + sanitizer.SanitizeName(worker.Name)
 
-	if c.GenerateImportScripts {
+	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(workerName, worker.Name, dependencies)
 		c.toPowershellImport(workerName, worker.Name, dependencies)
 	}
