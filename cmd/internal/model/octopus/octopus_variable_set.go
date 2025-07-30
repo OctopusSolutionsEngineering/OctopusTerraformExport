@@ -25,6 +25,20 @@ type Variable struct {
 	Prompt      Prompt
 }
 
+func (v *Variable) GetId() string {
+	if v == nil {
+		return ""
+	}
+	return v.Id
+}
+
+func (v *Variable) GetName() string {
+	if v == nil {
+		return ""
+	}
+	return v.Name
+}
+
 // GetVariableSetId returns the ID of the variable set and the variable. This generates a unique value
 // because cloning a project results in duplicate variable IDs.
 func (v *Variable) GetVariableSetId(variableSet *VariableSet) string {

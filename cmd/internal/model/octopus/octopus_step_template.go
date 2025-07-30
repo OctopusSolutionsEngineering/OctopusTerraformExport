@@ -40,6 +40,20 @@ type StepTemplateParameters struct {
 	DisplaySettings StepTemplateParameterDisplaySettings `json:"DisplaySettings"`
 }
 
+func (stepTemplateParameters *StepTemplateParameters) GetId() string {
+	if stepTemplateParameters == nil {
+		return ""
+	}
+	return stepTemplateParameters.Id
+}
+
+func (stepTemplateParameters *StepTemplateParameters) GetName() string {
+	if stepTemplateParameters == nil {
+		return ""
+	}
+	return stepTemplateParameters.Name
+}
+
 type StepTemplateParameterDisplaySettings struct {
 	OctopusControlType string `json:"Octopus.ControlType"`
 }

@@ -18,12 +18,13 @@ type TerraformStepTemplate struct {
 }
 
 type TerraformStepTemplateParameter struct {
-	Id              string            `cty:"id"`
-	Name            string            `cty:"name"`
-	Label           *string           `cty:"label"`
-	HelpText        *string           `cty:"help_text"`
-	DefaultValue    *string           `cty:"default_value"`
-	DisplaySettings map[string]string `cty:"display_settings"`
+	Id                    string            `cty:"id"`
+	Name                  string            `cty:"name"`
+	Label                 *string           `cty:"label"`
+	HelpText              *string           `cty:"help_text"`
+	DefaultValue          *string           `cty:"default_value"`
+	DefaultSensitiveValue *string           `cty:"default_sensitive_value"`
+	DisplaySettings       map[string]string `cty:"display_settings"`
 }
 
 type TerraformStepTemplatePackage struct {

@@ -35,7 +35,7 @@ resource "octopusdeploy_step_template" "steptemplate_hello_world" {
       name = "HelloWorld.Message"
     },
     {
-      default_value = "SecretValue",
+      default_sensitive_value = "SecretValue",
       display_settings = { "Octopus.ControlType" = "Sensitive" },
       help_text = null,
       id = "ca5b66cc-c859-407b-b4df-d6bab42ad2f1",

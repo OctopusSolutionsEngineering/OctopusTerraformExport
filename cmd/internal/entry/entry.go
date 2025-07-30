@@ -11,6 +11,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/generators"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/variables"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"os"
@@ -270,6 +271,13 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 
 	dummySecretGenerator := dummy.DummySecret{}
 
+	terraformVariableWriter := variables.DefaultTerraformVariableWriter{
+		ExcludeTerraformVariables:   args.ExcludeTerraformVariables,
+		DummySecretVariableValues:   args.DummySecretVariableValues,
+		DefaultSecretVariableValues: args.DefaultSecretVariableValues,
+		DummySecretGenerator:        dummySecretGenerator,
+	}
+
 	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
 		Excluder:                     converters.DefaultExcluder{},
 		ExcludeAllProjects:           args.ExcludeAllProjects,
@@ -320,6 +328,9 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
+		InlineVariableValues:            args.InlineVariableValues,
+		DummySecretGenerator:            dummySecretGenerator,
+		TerraformVariableWriter:         terraformVariableWriter,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -904,8 +915,9 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors:      args.IgnoreCacErrors,
-		InlineVariableValues: args.InlineVariableValues,
+		IgnoreCacErrors:         args.IgnoreCacErrors,
+		InlineVariableValues:    args.InlineVariableValues,
+		TerraformVariableWriter: terraformVariableWriter,
 	}
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{
 		Client:                           &octopusClient,
@@ -1159,6 +1171,13 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 
 	dummySecretGenerator := dummy.DummySecret{}
 
+	terraformVariableWriter := variables.DefaultTerraformVariableWriter{
+		ExcludeTerraformVariables:   args.ExcludeTerraformVariables,
+		DummySecretVariableValues:   args.DummySecretVariableValues,
+		DefaultSecretVariableValues: args.DefaultSecretVariableValues,
+		DummySecretGenerator:        dummySecretGenerator,
+	}
+
 	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
 		Excluder:                     converters.DefaultExcluder{},
 		ExcludeAllProjects:           args.ExcludeAllProjects,
@@ -1211,6 +1230,9 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
+		InlineVariableValues:            args.InlineVariableValues,
+		DummySecretGenerator:            dummySecretGenerator,
+		TerraformVariableWriter:         terraformVariableWriter,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -1492,6 +1514,13 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 
 	dummySecretGenerator := dummy.DummySecret{}
 
+	terraformVariableWriter := variables.DefaultTerraformVariableWriter{
+		ExcludeTerraformVariables:   args.ExcludeTerraformVariables,
+		DummySecretVariableValues:   args.DummySecretVariableValues,
+		DefaultSecretVariableValues: args.DefaultSecretVariableValues,
+		DummySecretGenerator:        dummySecretGenerator,
+	}
+
 	tenantCommonVariableProcessor := converters.TenantCommonVariableProcessor{
 		Excluder:                     converters.DefaultExcluder{},
 		ExcludeAllProjects:           args.ExcludeAllProjects,
@@ -1544,6 +1573,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		GenerateImportScripts:           false,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
 		IncludeSpaceInPopulation:        args.IncludeSpaceInPopulation,
+		InlineVariableValues:            args.InlineVariableValues,
+		DummySecretGenerator:            dummySecretGenerator,
+		TerraformVariableWriter:         terraformVariableWriter,
 	}
 
 	converters.TerraformProviderGenerator{
@@ -2046,8 +2078,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors:      args.IgnoreCacErrors,
-		InlineVariableValues: args.InlineVariableValues,
+		IgnoreCacErrors:         args.IgnoreCacErrors,
+		InlineVariableValues:    args.InlineVariableValues,
+		TerraformVariableWriter: terraformVariableWriter,
 	}
 
 	variableSetConverterForLibrary := converters.VariableSetConverter{
@@ -2079,6 +2112,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantTags:                 args.ExcludeTenantTags,
 		IgnoreProjectChanges:              args.IgnoreProjectChanges,
 		DummySecretGenerator:              dummySecretGenerator,
+		TerraformVariableWriter:           terraformVariableWriter,
 		Excluder:                          converters.DefaultExcluder{},
 		ErrGroup:                          nil,
 		ExcludeTerraformVariables:         args.ExcludeTerraformVariables,
@@ -2089,7 +2123,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 			Client:                           &octopusClient,
 			ExcludeVariableEnvironmentScopes: args.ExcludeVariableEnvironmentScopes,
 		},
-		IgnoreCacErrors: args.IgnoreCacErrors,
+		IgnoreCacErrors:      args.IgnoreCacErrors,
+		InlineVariableValues: false,
 	}
 
 	libraryVariableSetConverter := converters.LibraryVariableSetConverter{

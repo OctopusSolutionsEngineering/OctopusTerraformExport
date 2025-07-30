@@ -15,6 +15,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/variables"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
@@ -60,6 +61,7 @@ type VariableSetConverter struct {
 	ExcludeTenantTags                 args.StringSliceArgs
 	IgnoreProjectChanges              bool
 	DummySecretGenerator              dummy.DummySecretGenerator
+	TerraformVariableWriter           variables.TerraformVariableWriter
 
 	Excluder                  ExcludeByName
 	ErrGroup                  *errgroup.Group
@@ -967,10 +969,12 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 			}
 
 			var sensitiveValue *string = nil
-			if !c.InlineVariableValues {
-				sensitiveValue = c.writeTerraformVariablesForSecret(file, v, dependencies)
-			} else if v.IsSensitive {
-				sensitiveValue = strutil.StrPointer("\"" + *c.DummySecretGenerator.GetDummySecret() + "\"")
+			if v.IsSensitive {
+				if !c.InlineVariableValues {
+					sensitiveValue = c.TerraformVariableWriter.WriteTerraformVariablesForSecret(c.GetResourceType(), file, &v, dependencies)
+				} else {
+					sensitiveValue = strutil.StrPointer("\"" + *c.DummySecretGenerator.GetDummySecret() + "\"")
+				}
 			}
 
 			scope, err := c.convertScope(v, resource, dependencies)
@@ -1051,56 +1055,6 @@ func (c *VariableSetConverter) toHcl(resource octopus.VariableSet, recursive boo
 	return nil
 }
 
-func (c *VariableSetConverter) writeTerraformVariablesForSecret(file *hclwrite.File, variable octopus.Variable, dependencies *data.ResourceDetailsCollection) *string {
-	if variable.IsSensitive {
-		// We don't know the value of secrets, so the value is just nil
-		if c.ExcludeTerraformVariables {
-			return nil
-		}
-
-		var defaultValue *string = nil
-
-		variableName := naming.VariableSecretName(variable)
-
-		// Dummy values are used if we are not also replacing the variable with an octostache template
-		// with the DefaultSecretVariableValues option.
-		if c.DummySecretVariableValues && !c.DefaultSecretVariableValues {
-			defaultValue = c.DummySecretGenerator.GetDummySecret()
-			dependencies.AddDummy(data.DummyVariableReference{
-				VariableName: variableName,
-				ResourceName: variable.Name,
-				ResourceType: c.GetResourceType(),
-			})
-		}
-
-		secretVariableResource := terraform.TerraformVariable{
-			Name:        variableName,
-			Type:        "string",
-			Nullable:    true,
-			Sensitive:   true,
-			Description: "The secret variable value associated with the variable " + variable.Name,
-			Default:     defaultValue,
-		}
-
-		block := gohcl.EncodeAsBlock(secretVariableResource, "variable")
-		hcl.WriteUnquotedAttribute(block, "type", "string")
-
-		// If we are writing an octostache template, we need to have any string escaped for inclusion in a terraform
-		// string. JSON escaping will get us most of the way there. We also need to escape any terraform syntax, which
-		// unfortunately is easier said than done as there appears to be no way to write a double dollar sign with
-		// the HCL serialization library, so we need to get a little creative.
-		if c.DefaultSecretVariableValues {
-			hcl.WriteUnquotedAttribute(block, "default", "<<EOT\n#{"+variable.Name+" | Replace \"([$])([{])\" \"$1$1$2\" | Replace \"([%])([{])\" \"$1$1$2\"}\nEOT")
-		}
-
-		file.Body().AppendBlock(block)
-
-		return c.convertSecretValue(variable, variableName)
-	}
-
-	return nil
-}
-
 func (c *VariableSetConverter) writeTerraformVariablesForString(file *hclwrite.File, variable octopus.Variable, value *string) *string {
 	if c.ExcludeTerraformVariables {
 		return value
@@ -1139,22 +1093,6 @@ func (c *VariableSetConverter) GetResourceType() string {
 
 func (c *VariableSetConverter) GetGroupResourceType(projectId string) string {
 	return "Projects/" + projectId + "/Variables"
-}
-
-func (c *VariableSetConverter) convertSecretValue(variable octopus.Variable, resourceName string) *string {
-	if !variable.IsSensitive {
-		return nil
-	}
-
-	// The heredoc string introduces a line break at the end of the string. We remove it here.
-	// See https://discuss.hashicorp.com/t/trailing-new-line-in-key-vault-after-using-heredoc-syntax/14561
-	if c.DefaultSecretVariableValues {
-		value := "replace(var." + resourceName + ", \"/\\n$/\", \"\")"
-		return &value
-	}
-
-	value := "var." + resourceName
-	return &value
 }
 
 func (c *VariableSetConverter) convertValue(variable octopus.Variable, resourceName string) *string {

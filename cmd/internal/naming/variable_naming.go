@@ -17,8 +17,8 @@ consideration.
 // Octopus sensitive variable. This name has to be unique to avoid conflicts and generated in
 // a deterministic way to ensure that the same name is used when the export is run multiple times
 // and also when the values are populated by external tools.
-func VariableSecretName(variable octopus.Variable) string {
-	return "variable_" + hash.Sha256Hash(variable.Id) + "_sensitive_value"
+func VariableSecretName(variable octopus.NamedResource) string {
+	return "variable_" + hash.Sha256Hash(variable.GetId()) + "_sensitive_value"
 }
 
 func VariableValueName(variable octopus.Variable) string {

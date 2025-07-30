@@ -5,11 +5,13 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/variables"
 	"github.com/google/uuid"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
@@ -34,6 +36,9 @@ type StepTemplateConverter struct {
 	GenerateImportScripts           bool
 	ExperimentalEnableStepTemplates bool
 	IncludeSpaceInPopulation        bool
+	InlineVariableValues            bool
+	DummySecretGenerator            dummy.DummySecretGenerator
+	TerraformVariableWriter         variables.TerraformVariableWriter
 }
 
 func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -367,7 +372,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			StepPackageId:             template.StepPackageId,
 			CommunityActionTemplateId: template.CommunityActionTemplateId,
 			Packages:                  c.convertPackages(template.Packages),
-			Parameters:                c.convertParameters(template.Parameters),
+			Parameters:                c.convertParameters(template.Parameters, file, dependencies),
 			Properties:                template.Properties,
 		}
 
@@ -396,7 +401,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	return nil
 }
 
-func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTemplateParameters) []terraform.TerraformStepTemplateParameter {
+func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTemplateParameters, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) []terraform.TerraformStepTemplateParameter {
 	return lo.Map(parameters, func(item octopus.StepTemplateParameters, index int) terraform.TerraformStepTemplateParameter {
 		/*
 			The TF provider requires a UUID for the ID. However, it is possible that the ID is null or an empty string
@@ -420,6 +425,14 @@ func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTempla
 
 		if strutil.IsString(item.DefaultValue) {
 			template.DefaultValue = strutil.NilIfEmpty(fmt.Sprint(item.DefaultValue))
+		} else {
+			var sensitiveValue *string = nil
+			if !c.InlineVariableValues {
+				sensitiveValue = c.TerraformVariableWriter.WriteTerraformVariablesForSecret(c.GetResourceType(), file, &item, dependencies)
+			} else {
+				sensitiveValue = strutil.StrPointer("\"" + *c.DummySecretGenerator.GetDummySecret() + "\"")
+			}
+			template.DefaultSensitiveValue = sensitiveValue
 		}
 
 		return template
