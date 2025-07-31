@@ -250,8 +250,19 @@ fi
 
 echo "Importing project deployment process ${RESOURCE_NAME} ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}`,
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" deploymentprocess-${RESOURCE_ID}
+fi
+
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" deploymentprocess-${RESOURCE_ID}
+fi`,
 					resourceName,
 					resourceName,
 					resourceName,
@@ -395,7 +406,12 @@ fi
 echo "Importing project deployment process step \"${STEP_NAME}\" ${STEP_ID}"
 
 # Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${STEP_ID}`,
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" deploymentprocess-${RESOURCE_ID}:${STEP_ID}
+fi`,
 					resourceName,
 					resourceName,
 					resourceName,
@@ -539,7 +555,7 @@ PARENT_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Pro
 
 if [[ -z "${PARENT_STEP_ID}" ]]
 then
-	echo "No parent step found with the name ${PARENT_STEP_NAME}"
+	echo "No project parent step found with the name ${PARENT_STEP_NAME}"
 	exit 1
 fi
 
@@ -555,7 +571,12 @@ fi
 echo "Importing project deployment process child step \"${CHILD_STEP_NAME}\" ${CHILD_STEP_ID}"
 
 # Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}`,
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" deploymentprocess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}
+fi`,
 					resourceName,
 					resourceName,
 					resourceName,

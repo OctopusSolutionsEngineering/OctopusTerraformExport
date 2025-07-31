@@ -315,7 +315,21 @@ fi
 
 echo "Importing project ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, projectName, octopusdeployProjectResourceType, resourceName), nil
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${RESOURCE_ID}
+fi`,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					projectName,
+					octopusdeployProjectResourceType,
+					resourceName),
+				nil
 		},
 	})
 }

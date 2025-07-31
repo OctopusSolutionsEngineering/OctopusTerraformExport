@@ -297,8 +297,19 @@ fi
 
 echo "Importing runbook ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s RunbookProcess-${RESOURCE_ID}
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s RunbookProcess-${RESOURCE_ID}`,
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" RunbookProcess-${RESOURCE_ID}
+fi
+
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" RunbookProcess-${RESOURCE_ID}
+fi`,
 					resourceName,
 					resourceName,
 					resourceName,
@@ -362,9 +373,9 @@ if ([System.String]::IsNullOrEmpty($ProjectId)) {
 
 $ResourceName="%s"
 
-$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Runbooks?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Runbooks?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Items | 
-	Where-Object {$_.Name -eq $ResourceName -and $_.ProjectId -eq $ProjectId} | 
+	Where-Object {$_.Name -eq $ResourceName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
@@ -465,7 +476,12 @@ fi
 echo "Importing runbook \"${RESOURCE_NAME}\" deployment process step \"${STEP_NAME}\" ${STEP_ID}"
 
 # Step ID is in the format "RunbookProcess-Runbooks-123:00000000-0000-0000-0000-000000000001"
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" RunbookProcess-${RESOURCE_ID}:${STEP_ID}`,
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" RunbookProcess-${RESOURCE_ID}:${STEP_ID}
+fi`,
 					resourceName,
 					resourceName,
 					resourceName,
@@ -596,26 +612,35 @@ then
     exit 1
 fi
 
-RESOURCE_NAME="%s"
-RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+PROJECT_NAME="%s"
+PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
 
-if [[ -z RESOURCE_ID ]]
+if [[ -z "${PROJECT_ID}" ]]
+then
+	echo "No project found with the name ${PROJECT_NAME}"
+	exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Runbooks" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+
+if [[ -z "${RESOURCE_ID}" ]]
 then
 	echo "No project found with the name ${RESOURCE_NAME}"
 	exit 1
 fi
 
 PARENT_STEP_NAME="%s"
-PARENT_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[] | select(.Name == \"${PARENT_STEP_NAME}\") | .Id")
+PARENT_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/runbookProcesses/RunbookProcess-${RESOURCE_ID}" | jq -r ".Steps[] | select(.Name == \"${PARENT_STEP_NAME}\") | .Id")
 
 if [[ -z "${PARENT_STEP_ID}" ]]
 then
-	echo "No parent step found with the name ${PARENT_STEP_NAME}"
+	echo "No runbook parent step found with the name ${PARENT_STEP_NAME}"
 	exit 1
 fi
 
 CHILD_STEP_NAME="%s"
-CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[].Actions[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
+CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/runbookProcesses/RunbookProcess-${RESOURCE_ID}" | jq -r ".Steps[].Actions[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
 
 if [[ -z "${CHILD_STEP_ID}" ]]
 then
@@ -626,13 +651,19 @@ fi
 echo "Importing runbook \"${RESOURCE_NAME}\" deployment process child step \"${CHILD_STEP_NAME}\" ${CHILD_STEP_ID}"
 
 # Step ID is in the format "RunbookProcess-Runbooks-123:00000000-0000-0000-0000-000000000001"
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" RunbookProcess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}`,
-					resourceName,
-					resourceName,
-					resourceName,
-					resourceName,
-					resourceName,
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" RunbookProcess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}
+fi`,
+					resourceName, // comments
+					resourceName, // comments
+					resourceName, // comments
+					resourceName, // comments
+					resourceName, // comments
 					projectName,
+					runbookName,
 					parentStepName,
 					stepName,
 					octopusdeployProcessChildStepResourceType,
@@ -679,13 +710,25 @@ $headers = @{
     "X-Octopus-ApiKey" = $ApiKey
 }
 
-$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+$ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ProjectName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ProjectName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ProjectId)) {
+	echo "No project found with the name $ProjectName"
+	exit 1
+}
+
+$ResourceName="%s"
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Runbooks?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Items | 
 	Where-Object {$_.Name -eq $ResourceName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No project found with the name $ResourceName"
+	echo "No runbook found with the name $ResourceName"
 	exit 1
 }
 
@@ -715,6 +758,7 @@ echo "Importing project $StepId"
 terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId:$ParentStepId:$ChildStepId`,
 					resourceName,
 					projectName,
+					runbookName,
 					parentStepName,
 					stepName,
 					octopusdeployProcessChildStepResourceType,
