@@ -215,8 +215,8 @@ func (c *RunbookProcessConverter) ToHclLookupById(id string, dependencies *data.
 
 func (c *RunbookProcessConverter) exportScripts(project octopus.Project, runbook octopus.Runbook, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) {
 	if c.GenerateImportScripts {
-		c.toBashImport(c.generateProcessName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
-		c.toPowershellImport(c.generateProcessName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
+		c.toBashImport(c.generateProcessName(&project, &runbook), c.generateStepOrderName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
+		c.toPowershellImport(c.generateProcessName(&project, &runbook), c.generateStepOrderName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
 
 		validSteps := c.getValidSteps(&resource)
 
@@ -233,7 +233,7 @@ func (c *RunbookProcessConverter) exportScripts(project octopus.Project, runbook
 }
 
 // toBashImport creates a bash script to import the resource
-func (c *RunbookProcessConverter) toBashImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c *RunbookProcessConverter) toBashImport(resourceName string, stepsOrderResourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -306,17 +306,17 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 					resourceName,
 					octopusProjectName,
 					octopusResourceName,
-					octopusdeployRunbookResourceType,
+					octopusdeployProcessResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
-					resourceName),
+					stepsOrderResourceName),
 				nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *RunbookProcessConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c *RunbookProcessConverter) toPowershellImport(resourceName string, stepsOrderResourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -382,7 +382,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 					octopusdeployRunbookResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
-					resourceName),
+					stepsOrderResourceName),
 				nil
 		},
 	})
@@ -456,16 +456,16 @@ fi
 STEP_NAME="%s"
 STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/runbookProcesses/RunbookProcess-${RESOURCE_ID}" | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
 
-if [[ -z STEP_ID ]]
+if [[ -z "${STEP_ID}" ]]
 then
-	echo "No step found with the name ${STEP_ID}"
+	echo "No step found with the name ${STEP_NAME}"
 	exit 1
 fi
 
-echo "Importing project deployment process step ${STEP_ID}"
+echo "Importing runbook \"${RESOURCE_NAME}\" deployment process step \"${STEP_NAME}\" ${STEP_ID}"
 
-# Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${STEP_ID}`,
+# Step ID is in the format "RunbookProcess-Runbooks-123:00000000-0000-0000-0000-000000000001"
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" RunbookProcess-${RESOURCE_ID}:${STEP_ID}`,
 					resourceName,
 					resourceName,
 					resourceName,
@@ -474,7 +474,7 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 					projectName,
 					runbookName,
 					stepName,
-					octopusdeployProcessChildStepResourceType,
+					octopusdeployProcessStepResourceType,
 					resourceName),
 				nil
 		},
@@ -540,11 +540,11 @@ if ([System.String]::IsNullOrEmpty($StepId)) {
 
 echo "Importing project $StepId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId:StepId`,
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId:StepId`,
 					resourceName,
 					projectName,
 					stepName,
-					octopusdeployProcessChildStepResourceType,
+					octopusdeployProcessStepResourceType,
 					resourceName),
 				nil
 		},
@@ -623,10 +623,10 @@ then
 	exit 1
 fi
 
-echo "Importing project deployment process step ${CHILD_STEP_ID}"
+echo "Importing runbook \"${RESOURCE_NAME}\" deployment process child step \"${CHILD_STEP_NAME}\" ${CHILD_STEP_ID}"
 
-# Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}`,
+# Step ID is in the format "RunbookProcess-Runbooks-123:00000000-0000-0000-0000-000000000001"
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" RunbookProcess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}`,
 					resourceName,
 					resourceName,
 					resourceName,
@@ -712,7 +712,7 @@ if ([System.String]::IsNullOrEmpty($ChildStepId)) {
 
 echo "Importing project $StepId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId:$ParentStepId:$ChildStepId`,
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId:$ParentStepId:$ChildStepId`,
 					resourceName,
 					projectName,
 					parentStepName,

@@ -19,6 +19,7 @@ type TerraformProviderGenerator struct {
 	ExcludeProvider                 bool
 	IncludeOctopusOutputVars        bool
 	OctopusManagedTerraformVars     string
+	GenerateImportScripts           bool
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
@@ -41,6 +42,38 @@ func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool,
 			return "#{" + strings.TrimSpace(c.OctopusManagedTerraformVars) + "}", nil
 		}
 		dependencies.AddResource(thisResource)
+	}
+
+	if c.GenerateImportScripts {
+		bashRunAllResource := data.ResourceDetails{}
+		bashRunAllResource.FileName = directory + "/import.sh"
+		bashRunAllResource.Id = ""
+		bashRunAllResource.ResourceType = ""
+		bashRunAllResource.Lookup = ""
+		bashRunAllResource.ToHcl = func() (string, error) {
+			return "for f in *.sh; do if [[ \"$f\" != \"import.sh\" ]]; then bash \"$f\" \"$@\"; fi; done", nil
+		}
+		dependencies.AddResource(bashRunAllResource)
+
+		ps1RunAllResource := data.ResourceDetails{}
+		ps1RunAllResource.FileName = directory + "/import.ps1"
+		ps1RunAllResource.Id = ""
+		ps1RunAllResource.ResourceType = ""
+		ps1RunAllResource.Lookup = ""
+		ps1RunAllResource.ToHcl = func() (string, error) {
+			return `param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    $Args
+)
+
+$scriptName = $MyInvocation.MyCommand.Name
+
+Get-ChildItem -Path . -Filter *.ps1 | Where-Object { $_.Name -ne $scriptName } | ForEach-Object {
+    Write-Host "Running $($_.Name)..."
+    & $_.FullName @Args
+}`, nil
+		}
+		dependencies.AddResource(ps1RunAllResource)
 	}
 }
 

@@ -340,6 +340,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
 		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		GenerateImportScripts:           args.GenerateImportScripts,
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	if !args.Stateless {
@@ -349,6 +350,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 			ExcludeProvider:                 args.ExcludeProvider,
 			IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
 			ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+			GenerateImportScripts:           args.GenerateImportScripts,
 		}.ToHcl("space_creation", false, args.IncludeProviderServerDetails, &dependencies)
 	}
 
@@ -1244,6 +1246,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
 		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		GenerateImportScripts:           args.GenerateImportScripts,
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
@@ -1588,6 +1591,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		IncludeOctopusOutputVars:        args.IncludeOctopusOutputVars,
 		OctopusManagedTerraformVars:     args.OctopusManagedTerraformVars,
 		ExperimentalEnableStepTemplates: args.ExperimentalEnableStepTemplates,
+		GenerateImportScripts:           args.GenerateImportScripts,
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{

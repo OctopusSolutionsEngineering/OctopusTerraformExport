@@ -177,8 +177,8 @@ func (c *DeploymentProcessConverter) ToHclLookupById(id string, dependencies *da
 
 func (c *DeploymentProcessConverter) exportScripts(project octopus.Project, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) {
 	if c.GenerateImportScripts {
-		c.toBashImport(c.generateProcessName(nil, &project), project.GetName(), dependencies)
-		c.toPowershellImport(c.generateProcessName(nil, &project), project.GetName(), dependencies)
+		c.toBashImport(c.generateProcessName(nil, &project), c.generateStepOrderName(nil, &project), project.GetName(), dependencies)
+		c.toPowershellImport(c.generateProcessName(nil, &project), c.generateStepOrderName(nil, &project), project.GetName(), dependencies)
 
 		validSteps := c.getValidSteps(&resource)
 
@@ -195,7 +195,7 @@ func (c *DeploymentProcessConverter) exportScripts(project octopus.Project, reso
 }
 
 // toBashImport creates a bash script to import the resource
-func (c *DeploymentProcessConverter) toBashImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverter) toBashImport(resourceName string, stepsOrderResourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -248,7 +248,7 @@ then
 	exit 1
 fi
 
-echo "Importing project deployment process ${RESOURCE_ID}"
+echo "Importing project deployment process ${RESOURCE_NAME} ${RESOURCE_ID}"
 
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}`,
@@ -261,14 +261,14 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 					octopusdeployProcessResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
-					resourceName),
+					stepsOrderResourceName),
 				nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *DeploymentProcessConverter) toPowershellImport(resourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverter) toPowershellImport(resourceName string, stepsOrderResourceName string, projectName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -321,7 +321,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 					octopusdeployProcessResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
-					resourceName),
+					stepsOrderResourceName),
 				nil
 		},
 	})
@@ -384,15 +384,15 @@ fi
 # The step name and the name of the first action are the same.
 # These names are used for the step resource type.
 STEP_NAME="%s"
-STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[].Actions[] | select(.Name == \"${STEP_NAME}\") | .Id")
+STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
 
-if [[ -z STEP_ID ]]
+if [[ -z "${STEP_ID}" ]]
 then
-	echo "No step found with the name ${STEP_ID}"
+	echo "No step found with the name ${STEP_NAME}"
 	exit 1
 fi
 
-echo "Importing project deployment process step ${STEP_ID}"
+echo "Importing project deployment process step \"${STEP_NAME}\" ${STEP_ID}"
 
 # Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${STEP_ID}`,
@@ -403,7 +403,7 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 					resourceName,
 					projectName,
 					stepName,
-					octopusdeployProcessChildStepResourceType,
+					octopusdeployProcessStepResourceType,
 					resourceName),
 				nil
 		},
@@ -473,7 +473,7 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 					resourceName,
 					projectName,
 					stepName,
-					octopusdeployProcessChildStepResourceType,
+					octopusdeployProcessStepResourceType,
 					resourceName),
 				nil
 		},
@@ -552,7 +552,7 @@ then
 	exit 1
 fi
 
-echo "Importing project deployment process step ${CHILD_STEP_ID}"
+echo "Importing project deployment process child step \"${CHILD_STEP_NAME}\" ${CHILD_STEP_ID}"
 
 # Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}`,
