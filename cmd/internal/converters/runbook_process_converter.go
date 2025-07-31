@@ -565,8 +565,7 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 }
 
 $StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
-	Select-Object -ExpandProperty Steps | 
-	Select-Object -ExpandProperty Actions | 
+	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $StepName} | 
 	Select-Object -ExpandProperty Id
 

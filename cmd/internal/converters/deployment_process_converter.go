@@ -482,8 +482,7 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 }
 
 $StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
-	Select-Object -ExpandProperty Steps | 
-	Select-Object -ExpandProperty Actions | 
+	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $StepName} | 
 	Select-Object -ExpandProperty Id
 
@@ -492,12 +491,12 @@ if ([System.String]::IsNullOrEmpty($StepId)) {
 	exit 1
 }
 
-echo "Importing project $StepId"
+echo "Importing project step $StepId for project $ResourceId"
 
 $Id="%s.%s"
 terraform state list "${ID}" *> $null
 if ($LASTEXITCODE -ne 0) {
-	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "deploymentprocess-$ResourceId:StepId"
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "deploymentprocess-$($ResourceId):$($StepId)"
 }`,
 					resourceName,
 					projectName,
@@ -573,7 +572,7 @@ then
 fi
 
 CHILD_STEP_NAME="%s"
-CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[].Actions[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
+CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
 
 if [[ -z "${CHILD_STEP_ID}" ]]
 then
@@ -673,7 +672,7 @@ if ([System.String]::IsNullOrEmpty($ChildStepId)) {
 	exit 1
 }
 
-echo "Importing project $StepId"
+echo "Importing project child step $StepId into parent step $ParentStepId for project $ResourceId"
 
 $Id="%s.%s"
 terraform state list "${ID}" *> $null

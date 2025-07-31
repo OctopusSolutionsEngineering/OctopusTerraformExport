@@ -264,7 +264,16 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing lifecycle $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployLifecycleResourceType, resourceName), nil
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id $ResourceId
+}`,
+					resourceName,
+					projectName,
+					octopusdeployLifecycleResourceType,
+					resourceName),
+				nil
 		},
 	})
 }
@@ -290,7 +299,7 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 
 	resourceName := "lifecycle_" + sanitizer.SanitizeName(lifecycle.Name)
 
-	if c.GenerateImportScripts && lifecycle.Name != defaultLifecycleName && !stateless {
+	if c.GenerateImportScripts && lifecycle.Name != defaultLifecycleName && !stateless && !lookup {
 		c.toBashImport(resourceName, lifecycle.Name, dependencies)
 		c.toPowershellImport(resourceName, lifecycle.Name, dependencies)
 	}
