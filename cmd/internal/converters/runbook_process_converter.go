@@ -70,6 +70,8 @@ func (c *RunbookProcessConverter) toHclByIdBranchAndProject(parentId string, run
 		return fmt.Errorf("project with ID %s not found", parentId)
 	}
 
+	c.exportScripts(project, runbook, resource, dependencies)
+
 	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
 }
 
@@ -113,6 +115,8 @@ func (c *RunbookProcessConverter) ToHclLookupByIdBranchAndProject(parentId strin
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
+
+	c.exportScripts(project, runbook, resource, dependencies)
 
 	return c.toHcl(&resource, &project, &runbook, false, true, false, dependencies)
 }
@@ -163,10 +167,7 @@ func (c *RunbookProcessConverter) toHclById(id string, recursive bool, stateless
 
 	zap.L().Info("Deployment Process: " + resource.Id)
 
-	if c.GenerateImportScripts {
-		c.toBashImport(c.generateProcessName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
-		c.toPowershellImport(c.generateProcessName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
-	}
+	c.exportScripts(project, runbook, resource, dependencies)
 
 	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
 }
@@ -207,12 +208,28 @@ func (c *RunbookProcessConverter) ToHclLookupById(id string, dependencies *data.
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
+	c.exportScripts(project, runbook, resource, dependencies)
+
+	return c.toHcl(&resource, &project, &runbook, false, true, false, dependencies)
+}
+
+func (c *RunbookProcessConverter) exportScripts(project octopus.Project, runbook octopus.Runbook, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) {
 	if c.GenerateImportScripts {
 		c.toBashImport(c.generateProcessName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
 		c.toPowershellImport(c.generateProcessName(&project, &runbook), project.GetName(), runbook.GetName(), dependencies)
-	}
 
-	return c.toHcl(&resource, &project, &runbook, false, true, false, dependencies)
+		validSteps := c.getValidSteps(&resource)
+
+		for _, step := range validSteps {
+			c.toStepBashImport(c.generateStepName(&project, &runbook, &step), project.GetName(), runbook.GetName(), step.GetName(), dependencies)
+			c.toStepPowershellImport(c.generateStepName(&project, &runbook, &step), project.GetName(), runbook.GetName(), step.GetName(), dependencies)
+
+			for _, action := range step.Actions[1:] {
+				c.toChildStepBashImport(c.generateChildStepName(&project, &runbook, &action), project.GetName(), runbook.GetName(), step.GetName(), action.GetName(), dependencies)
+				c.toChildStepPowershellImport(c.generateChildStepName(&project, &runbook, &action), project.GetName(), runbook.GetName(), step.GetName(), action.GetName(), dependencies)
+			}
+		}
+	}
 }
 
 // toBashImport creates a bash script to import the resource
@@ -365,6 +382,342 @@ terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=
 					octopusdeployRunbookResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
+					resourceName),
+				nil
+		},
+	})
+}
+
+// toStepBashImport creates a bash script to import the step resource
+func (c *RunbookProcessConverter) toStepBashImport(resourceName string, projectName string, runbookName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required"
+    exit 1
+fi
+
+PROJECT_NAME="%s"
+PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
+
+if [[ -z "${PROJECT_ID}" ]]
+then
+	echo "No project found with the name ${PROJECT_NAME}"
+	exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Runbooks" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+
+if [[ -z "${RESOURCE_ID}" ]]
+then
+	echo "No project found with the name ${RESOURCE_NAME}"
+	exit 1
+fi
+
+# The step name and the name of the first action are the same.
+# These names are used for the step resource type.
+STEP_NAME="%s"
+STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/runbookProcesses/RunbookProcess-${RESOURCE_ID}" | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
+
+if [[ -z STEP_ID ]]
+then
+	echo "No step found with the name ${STEP_ID}"
+	exit 1
+fi
+
+echo "Importing project deployment process step ${STEP_ID}"
+
+# Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${STEP_ID}`,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					projectName,
+					runbookName,
+					stepName,
+					octopusdeployProcessChildStepResourceType,
+					resourceName),
+				nil
+		},
+	})
+}
+
+// toPowershellImport creates a powershell script to import the resource
+func (c *RunbookProcessConverter) toStepPowershellImport(resourceName string, projectName string, runbookName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+$StepName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No project found with the name $ResourceName"
+	exit 1
+}
+
+$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Steps | 
+	Select-Object -ExpandProperty Actions | 
+	Where-Object {$_.Name -eq $StepName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($StepId)) {
+	echo "No step found with the name $StepName"
+	exit 1
+}
+
+echo "Importing project $StepId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId:StepId`,
+					resourceName,
+					projectName,
+					stepName,
+					octopusdeployProcessChildStepResourceType,
+					resourceName),
+				nil
+		},
+	})
+}
+
+// toChildStepBashImport creates a bash script to import the child step resource
+func (c *RunbookProcessConverter) toChildStepBashImport(resourceName string, projectName string, runbookName string, parentStepName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required"
+    exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+
+if [[ -z RESOURCE_ID ]]
+then
+	echo "No project found with the name ${RESOURCE_NAME}"
+	exit 1
+fi
+
+PARENT_STEP_NAME="%s"
+PARENT_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[] | select(.Name == \"${PARENT_STEP_NAME}\") | .Id")
+
+if [[ -z "${PARENT_STEP_ID}" ]]
+then
+	echo "No parent step found with the name ${PARENT_STEP_NAME}"
+	exit 1
+fi
+
+CHILD_STEP_NAME="%s"
+CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[].Actions[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
+
+if [[ -z "${CHILD_STEP_ID}" ]]
+then
+	echo "No child step found with the name ${CHILD_STEP_NAME}"
+	exit 1
+fi
+
+echo "Importing project deployment process step ${CHILD_STEP_ID}"
+
+# Step ID is in the format "deploymentprocess-Projects-123:00000000-0000-0000-0000-000000000001"
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "%s.%s" deploymentprocess-${RESOURCE_ID}:${PARENT_STEP_ID}:${CHILD_STEP_ID}`,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					projectName,
+					parentStepName,
+					stepName,
+					octopusdeployProcessChildStepResourceType,
+					resourceName),
+				nil
+		},
+	})
+}
+
+// toChildStepPowershellImport creates a powershell script to import the child step resource
+func (c *RunbookProcessConverter) toChildStepPowershellImport(resourceName string, projectName string, runbookName string, parentStepName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$ResourceName="%s"
+$ParentStepName="%s"
+$ChildStepName="%s"
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	echo "No project found with the name $ResourceName"
+	exit 1
+}
+
+$ParentStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Steps |
+	Where-Object {$_.Name -eq $ParentStepName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ParentStepId)) {
+	echo "No step found with the name $ParentStepName"
+	exit 1
+}
+
+$ChildStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Steps | 
+	Select-Object -ExpandProperty Actions | 
+	Where-Object {$_.Name -eq $ChildStepName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ChildStepId)) {
+	echo "No step found with the name $ChildStepName"
+	exit 1
+}
+
+echo "Importing project $StepId"
+
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId:$ParentStepId:$ChildStepId`,
+					resourceName,
+					projectName,
+					parentStepName,
+					stepName,
+					octopusdeployProcessChildStepResourceType,
 					resourceName),
 				nil
 		},

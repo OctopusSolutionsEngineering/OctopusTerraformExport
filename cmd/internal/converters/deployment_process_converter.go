@@ -55,6 +55,8 @@ func (c *DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch 
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
 
+	c.exportScripts(project, resource, dependencies)
+
 	return c.toHcl(&resource, nil, &project, recursive, false, stateless, dependencies)
 }
 
@@ -91,6 +93,8 @@ func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, b
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", err)
 	}
+
+	c.exportScripts(project, resource, dependencies)
 
 	return c.toHcl(&resource, nil, &project, false, true, false, dependencies)
 }
