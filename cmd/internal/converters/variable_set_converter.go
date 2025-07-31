@@ -476,10 +476,16 @@ if ($Resource.Count -eq 0) {
 	exit 1
 }
 
-$ResourceId = $Resource.Id
-echo "Importing variable $ResourceId"
+# It is possible for multiple variables to have the exact same scope. We select the first one.
+$Resource = $Resource | Select-Object -First 1
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s "$($ProjectId):$($ResourceId)"`,
+echo "Importing variable $($Resource.Id) into project '$ProjectName' $ProjectId"
+
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "$($ProjectId):$($Resource.Id)"
+}`,
 				resourceName,
 				strings.Join(envNames, ","),
 				strings.Join(machineNames, ","),
@@ -646,13 +652,15 @@ if ($Resource.Count -eq 0) {
 	exit 1
 }
 
-$ResourceId = $Resource.Id
-echo "Importing variable $ResourceId"
+# It is possible for multiple variables to have the exact same scope. We select the first one.
+$Resource = $Resource | Select-Object -First 1
+
+echo "Importing into variable set $VariableSetId the variable $($Resource.Name) $($Resource.Id)"
 
 $Id="%s.%s"
 terraform state list "${ID}" *> $null
 if ($LASTEXITCODE -ne 0) {
-	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "$($VariableSetId):$($ResourceId)"
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "$($VariableSetId):$($Resource.Id)"
 }`,
 				resourceName,
 				strings.Join(envNames, ","),
