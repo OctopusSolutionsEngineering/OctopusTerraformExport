@@ -649,7 +649,11 @@ if ($Resource.Count -eq 0) {
 $ResourceId = $Resource.Id
 echo "Importing variable $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s "$($VariableSetId):$($ResourceId)"`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "$($VariableSetId):$($ResourceId)"
+}`,
 				resourceName,
 				strings.Join(envNames, ","),
 				strings.Join(machineNames, ","),

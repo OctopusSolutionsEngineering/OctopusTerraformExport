@@ -61,16 +61,22 @@ func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool,
 		ps1RunAllResource.ResourceType = ""
 		ps1RunAllResource.Lookup = ""
 		ps1RunAllResource.ToHcl = func() (string, error) {
-			return `param(
-    [Parameter(ValueFromRemainingArguments = $true)]
-    $Args
+			return `param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
 )
 
 $scriptName = $MyInvocation.MyCommand.Name
 
 Get-ChildItem -Path . -Filter *.ps1 | Where-Object { $_.Name -ne $scriptName } | ForEach-Object {
     Write-Host "Running $($_.Name)..."
-    & $_.FullName @Args
+    & $_.FullName -ApiKey $ApiKey -Url $Url -SpaceId $SpaceId
 }`, nil
 		}
 		dependencies.AddResource(ps1RunAllResource)

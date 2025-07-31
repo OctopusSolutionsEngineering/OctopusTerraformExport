@@ -325,8 +325,17 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing project $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $id deploymentprocess-$ResourceId
+}
+
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id deploymentprocess-$ResourceId
+}`,
 					resourceName,
 					projectName,
 					octopusdeployProcessResourceType,
@@ -485,7 +494,11 @@ if ([System.String]::IsNullOrEmpty($StepId)) {
 
 echo "Importing project $StepId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId:StepId`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "deploymentprocess-$ResourceId:StepId"
+}`,
 					resourceName,
 					projectName,
 					stepName,
@@ -662,7 +675,11 @@ if ([System.String]::IsNullOrEmpty($ChildStepId)) {
 
 echo "Importing project $StepId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId:$ParentStepId:$ChildStepId`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "deploymentprocess-$($ResourceId):$($ParentStepId):$($ChildStepId)"
+}`,
 					resourceName,
 					projectName,
 					parentStepName,

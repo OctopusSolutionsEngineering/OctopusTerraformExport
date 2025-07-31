@@ -381,7 +381,16 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing project $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, projectName, octopusdeployProjectResourceType, resourceName), nil
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id $ResourceId
+}`,
+					resourceName,
+					projectName,
+					octopusdeployProjectResourceType,
+					resourceName),
+				nil
 		},
 	})
 }

@@ -385,12 +385,21 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing runbook $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$ResourceId"
+}
+
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$ResourceId"
+}`,
 					resourceName,
 					octopusProjectName,
 					octopusResourceName,
-					octopusdeployRunbookResourceType,
+					octopusdeployProcessResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
 					stepsOrderResourceName),
@@ -533,13 +542,25 @@ $headers = @{
     "X-Octopus-ApiKey" = $ApiKey
 }
 
-$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
+$ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ProjectName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ProjectName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ProjectId)) {
+	echo "No project found with the name $ProjectName"
+	exit 1
+}
+
+$ResourceName="%s"
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Runbooks?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Items | 
 	Where-Object {$_.Name -eq $ResourceName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No project found with the name $ResourceName"
+	echo "No runbook found with the name $ResourceName"
 	exit 1
 }
 
@@ -556,9 +577,14 @@ if ([System.String]::IsNullOrEmpty($StepId)) {
 
 echo "Importing project $StepId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId:StepId`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$($ResourceId):$($StepId)"
+}`,
 					resourceName,
 					projectName,
+					runbookName,
 					stepName,
 					octopusdeployProcessStepResourceType,
 					resourceName),
@@ -755,7 +781,11 @@ if ([System.String]::IsNullOrEmpty($ChildStepId)) {
 
 echo "Importing project $StepId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId:$ParentStepId:$ChildStepId`,
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$($ResourceId):$($ParentStepId):$($ChildStepId)"
+}`,
 					resourceName,
 					projectName,
 					runbookName,
