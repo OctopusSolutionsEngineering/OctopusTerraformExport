@@ -230,6 +230,7 @@ fi
 
 echo "Importing project deployment process ${RESOURCE_ID}"
 
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s deploymentprocess-${RESOURCE_ID}`,
 					resourceName,
 					resourceName,
@@ -238,6 +239,8 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 					resourceName,
 					projectName,
 					octopusdeployProcessResourceType,
+					resourceName,
+					octopusdeployProcessStepsOrderResourceType,
 					resourceName),
 				nil
 		},
@@ -291,10 +294,13 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing project $ResourceId"
 
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId
 terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s deploymentprocess-$ResourceId`,
 					resourceName,
 					projectName,
 					octopusdeployProcessResourceType,
+					resourceName,
+					octopusdeployProcessStepsOrderResourceType,
 					resourceName),
 				nil
 		},

@@ -280,6 +280,7 @@ fi
 
 echo "Importing runbook ${RESOURCE_ID}"
 
+terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s RunbookProcess-${RESOURCE_ID}
 terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s RunbookProcess-${RESOURCE_ID}`,
 					resourceName,
 					resourceName,
@@ -289,6 +290,8 @@ terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus
 					octopusProjectName,
 					octopusResourceName,
 					octopusdeployRunbookResourceType,
+					resourceName,
+					octopusdeployProcessStepsOrderResourceType,
 					resourceName),
 				nil
 		},
@@ -354,11 +357,14 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 echo "Importing runbook $ResourceId"
 
+terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId
 terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s RunbookProcess-$ResourceId`,
 					resourceName,
 					octopusProjectName,
 					octopusResourceName,
 					octopusdeployRunbookResourceType,
+					resourceName,
+					octopusdeployProcessStepsOrderResourceType,
 					resourceName),
 				nil
 		},
