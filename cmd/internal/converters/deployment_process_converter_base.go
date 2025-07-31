@@ -142,14 +142,7 @@ func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, 
 	dependencies.AddResource(thisResource)
 
 	// Get all the valid steps
-	validSteps := FilterSteps(
-		resource.GetSteps(),
-		c.IgnoreInvalidExcludeExcept,
-		c.Excluder,
-		c.ExcludeAllSteps,
-		c.ExcludeSteps,
-		c.ExcludeStepsRegex,
-		c.ExcludeStepsExcept)
+	validSteps := c.getValidSteps(resource)
 
 	for _, step := range validSteps {
 		parentStep := len(step.Actions) > 1
@@ -174,6 +167,17 @@ func (c *DeploymentProcessConverterBase) toHcl(resource octopus.OctopusProcess, 
 	c.generateStepOrder(stateless, resource, parent, owner, validSteps, dependencies)
 
 	return nil
+}
+
+func (c *DeploymentProcessConverterBase) getValidSteps(resource octopus.OctopusProcess) []octopus.Step {
+	return FilterSteps(
+		resource.GetSteps(),
+		c.IgnoreInvalidExcludeExcept,
+		c.Excluder,
+		c.ExcludeAllSteps,
+		c.ExcludeSteps,
+		c.ExcludeStepsRegex,
+		c.ExcludeStepsExcept)
 }
 
 func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
