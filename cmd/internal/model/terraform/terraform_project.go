@@ -43,9 +43,10 @@ type TerraformTemplate struct {
 }
 
 type TerraformConnectivityPolicy struct {
-	AllowDeploymentsToNoTargets bool   `hcl:"allow_deployments_to_no_targets"`
-	ExcludeUnhealthyTargets     bool   `hcl:"exclude_unhealthy_targets"`
-	SkipMachineBehavior         string `hcl:"skip_machine_behavior"`
+	AllowDeploymentsToNoTargets bool     `hcl:"allow_deployments_to_no_targets"`
+	ExcludeUnhealthyTargets     bool     `hcl:"exclude_unhealthy_targets"`
+	SkipMachineBehavior         string   `hcl:"skip_machine_behavior"`
+	TargetRoles                 []string `hcl:"target_roles"`
 }
 
 type TerraformGitLibraryPersistenceSettings struct {

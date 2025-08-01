@@ -471,6 +471,7 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook *octopus.Runbook) *
 		AllowDeploymentsToNoTargets: runbook.ConnectivityPolicy.AllowDeploymentsToNoTargets,
 		ExcludeUnhealthyTargets:     runbook.ConnectivityPolicy.ExcludeUnhealthyTargets,
 		SkipMachineBehavior:         runbook.ConnectivityPolicy.SkipMachineBehavior,
+		TargetRoles:                 runbook.ConnectivityPolicy.TargetRoles,
 	}
 }
 

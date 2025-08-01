@@ -4,6 +4,7 @@ type ProjectConnectivityPolicy struct {
 	AllowDeploymentsToNoTargets bool
 	ExcludeUnhealthyTargets     bool
 	SkipMachineBehavior         string
+	TargetRoles                 []string
 }
 
 type ProjectCacDeploymentSettings struct {

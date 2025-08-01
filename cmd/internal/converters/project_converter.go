@@ -890,6 +890,7 @@ func (c *ProjectConverter) convertDatabaseConnectivityPolicy(project octopus.Pro
 		AllowDeploymentsToNoTargets: project.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets,
 		ExcludeUnhealthyTargets:     project.ProjectConnectivityPolicy.ExcludeUnhealthyTargets,
 		SkipMachineBehavior:         project.ProjectConnectivityPolicy.SkipMachineBehavior,
+		TargetRoles:                 project.ProjectConnectivityPolicy.TargetRoles,
 	}, nil
 }
 
@@ -903,6 +904,7 @@ func (c *ProjectConverter) convertCaCConnectivityPolicy(project octopus.Project)
 		AllowDeploymentsToNoTargets: deploymentSettings.ConnectivityPolicy.AllowDeploymentsToNoTargets,
 		ExcludeUnhealthyTargets:     deploymentSettings.ConnectivityPolicy.ExcludeUnhealthyTargets,
 		SkipMachineBehavior:         deploymentSettings.ConnectivityPolicy.SkipMachineBehavior,
+		TargetRoles:                 deploymentSettings.ConnectivityPolicy.TargetRoles,
 	}, nil
 }
 
