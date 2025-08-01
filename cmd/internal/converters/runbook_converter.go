@@ -258,7 +258,7 @@ fi`,
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *RunbookConverter) toPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c *RunbookConverter) toPowershellImport(resourceName string, projectName string, runbookName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -322,8 +322,8 @@ if ($LASTEXITCODE -ne 0) {
 	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id $ResourceId
 }`,
 					resourceName,
-					octopusProjectName,
-					octopusResourceName,
+					projectName,
+					runbookName,
 					octopusdeployRunbookResourceType,
 					resourceName),
 				nil

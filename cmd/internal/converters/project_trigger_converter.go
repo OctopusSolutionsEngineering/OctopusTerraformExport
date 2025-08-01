@@ -164,7 +164,22 @@ fi
 
 echo "Importing trigger ${RESOURCE_ID}"
 
-terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" %s.%s ${RESOURCE_ID}`, resourceName, resourceName, resourceName, resourceName, resourceName, octopusProjectName, octopusResourceName, octopusResourceType, resourceName), nil
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" ${ID} ${RESOURCE_ID}
+fi`,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					octopusProjectName,
+					octopusResourceName,
+					octopusResourceType,
+					resourceName),
+				nil
 		},
 	})
 }
@@ -222,13 +237,23 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Trig
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No target found with the name $ResourceName"
+	echo "No trigger found with the name $ResourceName"
 	exit 1
 }
 
-echo "Importing target $ResourceId"
+echo "Importing trigger $ResourceId"
 
-terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" %s.%s $ResourceId`, resourceName, octopusProjectName, octopusResourceName, octopusResourceType, resourceName), nil
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id $ResourceId
+}`,
+					resourceName,
+					octopusProjectName,
+					octopusResourceName,
+					octopusResourceType,
+					resourceName),
+				nil
 		},
 	})
 }

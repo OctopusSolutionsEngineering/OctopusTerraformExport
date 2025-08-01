@@ -327,7 +327,7 @@ fi`,
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *RunbookProcessConverter) toPowershellImport(resourceName string, stepsOrderResourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+func (c *RunbookProcessConverter) toPowershellImport(resourceName string, stepsOrderResourceName string, projectName string, runbookName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -397,8 +397,8 @@ if ($LASTEXITCODE -ne 0) {
 	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$ResourceId"
 }`,
 					resourceName,
-					octopusProjectName,
-					octopusResourceName,
+					projectName,
+					runbookName,
 					octopusdeployProcessResourceType,
 					resourceName,
 					octopusdeployProcessStepsOrderResourceType,
@@ -535,8 +535,7 @@ param (
     [string]$SpaceId
 )
 
-$ResourceName="%s"
-$StepName="%s"
+$ProjectName="%s"
 
 $headers = @{
     "X-Octopus-ApiKey" = $ApiKey
@@ -564,7 +563,9 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 	exit 1
 }
 
-$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+$StepName="%s"
+
+$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/deploymentprocesses" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $StepName} | 
 	Select-Object -ExpandProperty Id
@@ -574,7 +575,7 @@ if ([System.String]::IsNullOrEmpty($StepId)) {
 	exit 1
 }
 
-echo "Importing project $StepId"
+echo "Importing runbook $ResourceName deployment process step $StepName $StepId"
 
 $Id="%s.%s"
 terraform state list "${ID}" *> $null
@@ -728,8 +729,7 @@ param (
 )
 
 $ResourceName="%s"
-$ParentStepName="%s"
-$ChildStepName="%s"
+$ProjectName="%s"
 
 $headers = @{
     "X-Octopus-ApiKey" = $ApiKey
@@ -757,7 +757,9 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 	exit 1
 }
 
-$ParentStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+$ParentStepName="%s"
+
+$ParentStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/deploymentprocesses" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $ParentStepName} | 
 	Select-Object -ExpandProperty Id
@@ -767,7 +769,9 @@ if ([System.String]::IsNullOrEmpty($ParentStepId)) {
 	exit 1
 }
 
-$ChildStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+$ChildStepName="%s"
+
+$ChildStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/deploymentprocesses" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Steps | 
 	Select-Object -ExpandProperty Actions | 
 	Where-Object {$_.Name -eq $ChildStepName} | 
@@ -785,6 +789,7 @@ terraform state list "${ID}" *> $null
 if ($LASTEXITCODE -ne 0) {
 	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$($ResourceId):$($ParentStepId):$($ChildStepId)"
 }`,
+					resourceName,
 					resourceName,
 					projectName,
 					runbookName,
