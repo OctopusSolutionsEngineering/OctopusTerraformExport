@@ -229,13 +229,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
@@ -382,13 +382,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
@@ -543,13 +543,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
@@ -558,7 +558,7 @@ RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" -
 
 if [[ -z "${RESOURCE_ID}" ]]
 then
-	echo "No project found with the name ${RESOURCE_NAME}"
+	echo "No project found with the name ${RESOURCE_NAME}" >&2
 	exit 1
 fi
 
@@ -567,16 +567,16 @@ PARENT_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Pro
 
 if [[ -z "${PARENT_STEP_ID}" ]]
 then
-	echo "No project parent step found with the name ${PARENT_STEP_NAME}"
+	echo "No project parent step found with the name ${PARENT_STEP_NAME}" >&2
 	exit 1
 fi
 
 CHILD_STEP_NAME="%s"
-CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
+CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[].Actions[] | select(.Name == \"${CHILD_STEP_NAME}\") | .Id")
 
 if [[ -z "${CHILD_STEP_ID}" ]]
 then
-	echo "No child step found with the name ${CHILD_STEP_NAME}"
+	echo "No project child step found with the name ${CHILD_STEP_NAME}" >&2
 	exit 1
 fi
 

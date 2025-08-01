@@ -134,13 +134,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
@@ -154,13 +154,16 @@ then
 fi
 
 RESOURCE_NAME="%s"
-RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Triggers" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+DEPLOYMENT_RESOURCE_ID=$(curl --silent -G --data-urlencode "triggerActionCategory=Deployment" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Triggers" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+RUNBOOK_RESOURCE_ID=$(curl --silent -G --data-urlencode "triggerActionCategory=Runbook" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Triggers" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
-if [[ -z "${RESOURCE_ID}" ]]
+if [[ -z "${DEPLOYMENT_RESOURCE_ID}" && -z "${RUNBOOK_RESOURCE_ID}" ]]
 then
 	echo "No trigger found with the name ${RESOURCE_NAME}"
 	exit 1
 fi
+
+RESOURCE_ID=${DEPLOYMENT_RESOURCE_ID:-$RUNBOOK_RESOURCE_ID}
 
 echo "Importing trigger ${RESOURCE_ID}"
 
@@ -231,8 +234,15 @@ if ([System.String]::IsNullOrEmpty($ProjectId)) {
 
 $ResourceName="%s"
 
-$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Triggers?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ResourceName))" -Method Get -Headers $headers |
-	Select-Object -ExpandProperty Items | 
+$DeploymentTriggers = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Triggers?triggerActionCategory=Deployment" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items
+
+$RunbookTriggers = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Triggers?triggerActionCategory=Runbook" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items
+
+$AllTriggers = $DeploymentTriggers + $RunbookTriggers
+
+$ResourceId = $AllTriggers | 
 	Where-Object {$_.Name -eq $ResourceName} | 
 	Select-Object -ExpandProperty Id
 

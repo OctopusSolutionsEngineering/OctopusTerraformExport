@@ -267,13 +267,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
@@ -443,13 +443,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
@@ -628,13 +628,13 @@ fi
 
 if ! command -v jq &> /dev/null
 then
-    echo "jq is required"
+    echo "jq is required" >&2
     exit 1
 fi
 
 if ! command -v curl &> /dev/null
 then
-    echo "curl is required"
+    echo "curl is required" >&2
     exit 1
 fi
 
