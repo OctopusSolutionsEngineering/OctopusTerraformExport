@@ -20,6 +20,6 @@ type TerraformRunbook struct {
 }
 
 type RetentionPolicy struct {
-	QuantityToKeep    int   `hcl:"quantity_to_keep"`
+	QuantityToKeep    *int  `hcl:"quantity_to_keep"`
 	ShouldKeepForever *bool `hcl:"should_keep_forever"`
 }

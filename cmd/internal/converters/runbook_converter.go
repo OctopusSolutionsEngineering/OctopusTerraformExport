@@ -8,6 +8,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -475,7 +476,7 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook *octopus.Runbook) *
 
 func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *terraform.RetentionPolicy {
 	return &terraform.RetentionPolicy{
-		QuantityToKeep:    runbook.RunRetentionPolicy.QuantityToKeep,
+		QuantityToKeep:    intutil.NilIfTrue(runbook.RunRetentionPolicy.QuantityToKeep, runbook.RunRetentionPolicy.ShouldKeepForever),
 		ShouldKeepForever: boolutil.NilIfFalse(runbook.RunRetentionPolicy.ShouldKeepForever),
 	}
 }

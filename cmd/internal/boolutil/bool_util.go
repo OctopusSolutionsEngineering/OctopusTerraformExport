@@ -16,3 +16,7 @@ func NilIfFalse(input bool) *bool {
 
 	return &input
 }
+
+func BoolPtr(input bool) *bool {
+	return &input
+}

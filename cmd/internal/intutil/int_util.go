@@ -23,6 +23,14 @@ func NilIfZero(input int) *int {
 	return &input
 }
 
+func NilIfTrue(input int, nilValue bool) *int {
+	if nilValue {
+		return nil
+	}
+
+	return &input
+}
+
 func ParseIntPointer(input *string) (*int, error) {
 	if input == nil {
 		return nil, nil
