@@ -219,7 +219,7 @@ fi
 PROJECT_NAME="%s"
 PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
 
-if [[ -z PROJECT_ID ]]
+if [[ -z "${PROJECT_ID}" ]]
 then
 	echo "No project found with the name ${PROJECT_NAME}"
 	exit 1

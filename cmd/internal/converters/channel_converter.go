@@ -21,6 +21,7 @@ import (
 
 const octopusdeployChannelDataType = "octopusdeploy_channels"
 const octopusdeployChannelResourceType = "octopusdeploy_channel"
+const defaultChannelName = "Default"
 
 type ChannelConverter struct {
 	Client                   client.OctopusClient
@@ -39,6 +40,7 @@ type ChannelConverter struct {
 	ExcludeChannelsRegex     args.StringSliceArgs
 	ExcludeChannelsExcept    args.StringSliceArgs
 	ExcludeInvalidChannels   bool
+	GenerateImportScripts    bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -190,15 +192,21 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		}
 	}
 
+	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
+
+	if c.GenerateImportScripts && !stateless && channel.Name != defaultChannelName {
+		c.toBashImport(resourceName, project.Name, channel.Name, dependencies)
+		c.toPowershellImport(resourceName, project.Name, channel.Name, dependencies)
+	}
+
 	thisResource := data.ResourceDetails{}
 	thisResource.Name = channel.Name
-	resourceName := "channel_" + sanitizer.SanitizeName(project.Name) + "_" + sanitizer.SanitizeNamePointer(&channel.Name)
 	projectResourceName := "project_" + sanitizer.SanitizeName(project.Name)
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = channel.Id
 	thisResource.ResourceType = c.GetResourceType()
 
-	if channel.Name == "Default" && !c.IncludeDefaultChannel {
+	if channel.Name == defaultChannelName && !c.IncludeDefaultChannel {
 		thisResource.Dependency = "${" + octopusdeployProjectResourceType + "." + projectResourceName + "}"
 
 		// TODO: this is a hack.
@@ -393,4 +401,164 @@ func (c ChannelConverter) convertActionPackages(actionPackages []octopus.ActionP
 		})
 	}
 	return collection
+}
+
+// toBashImport creates a bash script to import the resource
+func (c *ChannelConverter) toBashImport(resourceName string, octopusProjectName string, octopusResourceName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required" >&2
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required" >&2
+    exit 1
+fi
+
+PROJECT_NAME="%s"
+PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
+
+if [[ -z "${PROJECT_ID}" ]]
+then
+	echo "No project found with the name ${PROJECT_NAME}"
+	exit 1
+fi
+
+RESOURCE_NAME="%s"
+RESOURCE_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/channels" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
+
+if [[ -z "${RESOURCE_ID}" ]]
+then
+	echo "No channel found with the name ${RESOURCE_NAME}"
+	exit 1
+fi
+
+echo "Importing channel ${RESOURCE_ID}"
+
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${RESOURCE_ID}
+fi`,
+
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					resourceName,
+					octopusProjectName,
+					octopusResourceName,
+					octopusdeployChannelResourceType,
+					resourceName),
+				nil
+		},
+	})
+}
+
+// toPowershellImport creates a powershell script to import the resource
+func (c *ChannelConverter) toPowershellImport(resourceName string, projectName string, runbookName string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".ps1",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.ps1 API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$ApiKey,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Url,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SpaceId
+)
+
+$headers = @{
+    "X-Octopus-ApiKey" = $ApiKey
+}
+
+$ProjectName="%s"
+
+$ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&partialName=$([System.Web.HttpUtility]::UrlEncode($ProjectName))" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ProjectName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ProjectId)) {
+	Write-Error "No project found with the name $ProjectName"
+	exit 1
+}
+
+$ResourceName="%s"
+
+$ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Channels" -Method Get -Headers $headers |
+	Select-Object -ExpandProperty Items | 
+	Where-Object {$_.Name -eq $ResourceName} | 
+	Select-Object -ExpandProperty Id
+
+if ([System.String]::IsNullOrEmpty($ResourceId)) {
+	Write-Error "No channel found with the name $ResourceName"
+	exit 1
+}
+
+echo "Importing channnel $ResourceId"
+
+$Id="%s.%s"
+terraform state list "${ID}" *> $null
+if ($LASTEXITCODE -ne 0) {
+	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id $ResourceId
+}`,
+					resourceName,
+					projectName,
+					runbookName,
+					octopusdeployChannelResourceType,
+					resourceName),
+				nil
+		},
+	})
 }

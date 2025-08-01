@@ -500,6 +500,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ExcludeChannelsRegex:     args.ExcludeChannelsRegex,
 		ExcludeChannelsExcept:    args.ExcludeChannelsExcept,
 		ExcludeInvalidChannels:   args.ExcludeInvalidChannels,
+		GenerateImportScripts:    args.GenerateImportScripts,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
@@ -1661,6 +1662,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeChannelsRegex:     args.ExcludeChannelsRegex,
 		ExcludeChannelsExcept:    args.ExcludeChannelsExcept,
 		ExcludeInvalidChannels:   args.ExcludeInvalidChannels,
+		GenerateImportScripts:    args.GenerateImportScripts,
 	}
 
 	projectGroupConverter := converters.ProjectGroupConverter{
