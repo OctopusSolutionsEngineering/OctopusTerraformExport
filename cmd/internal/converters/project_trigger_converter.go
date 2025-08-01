@@ -921,7 +921,7 @@ func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectT
 			ProjectId:    dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			ChannelId:    strutil.EmptyIfNil(dependencies.GetResourcePointer("Channels", projectTrigger.Action.ChannelId)),
 			IsDisabled:   strutil.NilIfFalse(projectTrigger.IsDisabled),
-			Sources: lo.Map(projectTrigger.Sources, func(item octopus.ProjectTriggerSources, index int) terraform.TerraformGitTriggerSource {
+			Sources: lo.Map(projectTrigger.Filter.Sources, func(item octopus.ProjectTriggerSources, index int) terraform.TerraformGitTriggerSource {
 				return terraform.TerraformGitTriggerSource{
 					DeploymentActionSlug: item.DeploymentActionSlug,
 					ExcludeFilePaths:     item.ExcludeFilePaths,

@@ -8,7 +8,6 @@ type ProjectTrigger struct {
 	IsDisabled  bool
 	Filter      ProjectTriggerFilter
 	Action      ProjectTriggerAction
-	Sources     []ProjectTriggerSources
 }
 
 type ProjectTriggerSources struct {
@@ -41,6 +40,7 @@ type ProjectTriggerFilter struct {
 	CronExpression      *string
 	HourInterval        *int
 	MinuteInterval      *int
+	Sources             []ProjectTriggerSources
 }
 
 type ProjectTriggerFilterPackage struct {
