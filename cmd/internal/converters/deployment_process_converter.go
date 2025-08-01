@@ -242,7 +242,7 @@ fi
 RESOURCE_NAME="%s"
 RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
-if [[ -z RESOURCE_ID ]]
+if [[ -z "${RESOURCE_ID}" ]]
 then
 	echo "No project found with the name ${RESOURCE_NAME}"
 	exit 1
@@ -319,7 +319,7 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&part
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No project found with the name $ResourceName"
+	Write-Error "No project found with the name $ResourceName"
 	exit 1
 }
 
@@ -395,7 +395,7 @@ fi
 RESOURCE_NAME="%s"
 RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
-if [[ -z RESOURCE_ID ]]
+if [[ -z "${RESOURCE_ID}" ]]
 then
 	echo "No project found with the name ${RESOURCE_NAME}"
 	exit 1
@@ -477,7 +477,7 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&part
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No project found with the name $ResourceName"
+	Write-Error "No project found with the name $ResourceName"
 	exit 1
 }
 
@@ -487,7 +487,7 @@ $StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploym
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($StepId)) {
-	echo "No step found with the name $StepName"
+	Write-Error "No step found with the name $StepName"
 	exit 1
 }
 
@@ -556,7 +556,7 @@ fi
 RESOURCE_NAME="%s"
 RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
-if [[ -z RESOURCE_ID ]]
+if [[ -z "${RESOURCE_ID}" ]]
 then
 	echo "No project found with the name ${RESOURCE_NAME}"
 	exit 1
@@ -647,7 +647,7 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&part
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No project found with the name $ResourceName"
+	Write-Error "No project found with the name $ResourceName"
 	exit 1
 }
 
@@ -657,7 +657,7 @@ $ParentStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/d
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ParentStepId)) {
-	echo "No step found with the name $ParentStepName"
+	Write-Error "No step found with the name $ParentStepName"
 	exit 1
 }
 
@@ -668,7 +668,7 @@ $ChildStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/de
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ChildStepId)) {
-	echo "No step found with the name $ChildStepName"
+	Write-Error "No step found with the name $ChildStepName"
 	exit 1
 }
 

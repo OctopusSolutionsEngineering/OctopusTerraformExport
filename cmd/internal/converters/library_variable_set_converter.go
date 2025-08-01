@@ -238,7 +238,7 @@ fi
 RESOURCE_NAME="%s"
 RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/LibraryVariableSets" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\") | .Id")
 
-if [[ -z RESOURCE_ID ]]
+if [[ -z "${RESOURCE_ID}" ]]
 then
 	echo "No target found with the name ${RESOURCE_NAME}"
 	exit 1
@@ -292,7 +292,7 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/LibraryVariableSets?take
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No library variable set found with the name $ResourceName"
+	Write-Error "No library variable set found with the name $ResourceName"
 	exit 1
 }
 

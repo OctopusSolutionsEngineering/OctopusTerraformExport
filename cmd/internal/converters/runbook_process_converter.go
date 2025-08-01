@@ -289,7 +289,7 @@ fi
 RESOURCE_NAME="%s"
 RESOURCE_ID=$(curl --silent -G --data-urlencode "partialName=${RESOURCE_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Runbooks" | jq -r ".Items[] | select(.Name == \"${RESOURCE_NAME}\" and .ProjectId == \"${PROJECT_ID}\") | .Id")
 
-if [[ -z RESOURCE_ID ]]
+if [[ -z "${RESOURCE_ID}" ]]
 then
 	echo "No runbook found with the name ${RESOURCE_NAME}"
 	exit 1
@@ -367,7 +367,7 @@ $ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&parti
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ProjectId)) {
-	echo "No project found with the name $ProjectName"
+	Write-Error "No project found with the name $ProjectName"
 	exit 1
 }
 
@@ -379,7 +379,7 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Runb
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No runbook found with the name $ResourceName"
+	Write-Error "No runbook found with the name $ResourceName"
 	exit 1
 }
 
@@ -478,7 +478,7 @@ STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/$
 
 if [[ -z "${STEP_ID}" ]]
 then
-	echo "No step found with the name ${STEP_NAME}"
+	echo "No runbook sungle step found with the name ${STEP_NAME}"
 	exit 1
 fi
 
@@ -547,7 +547,7 @@ $ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&parti
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ProjectId)) {
-	echo "No project found with the name $ProjectName"
+	Write-Error "No project found with the name $ProjectName"
 	exit 1
 }
 
@@ -559,19 +559,19 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Runb
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No runbook found with the name $ResourceName"
+	Write-Error "No runbook found with the name $ResourceName"
 	exit 1
 }
 
 $StepName="%s"
 
-$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/deploymentprocesses" -Method Get -Headers $headers |
+$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/runbookProcesses/RunbookProcess-$ResourceId" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $StepName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($StepId)) {
-	echo "No step found with the name $StepName"
+	Write-Error "No runbook single step found with the name $StepName"
 	exit 1
 }
 
@@ -670,7 +670,7 @@ CHILD_STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Proj
 
 if [[ -z "${CHILD_STEP_ID}" ]]
 then
-	echo "No child step found with the name ${CHILD_STEP_NAME}"
+	echo "No runbook child step found with the name ${CHILD_STEP_NAME}"
 	exit 1
 fi
 
@@ -741,7 +741,7 @@ $ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&parti
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ProjectId)) {
-	echo "No project found with the name $ProjectName"
+	Write-Error "No project found with the name $ProjectName"
 	exit 1
 }
 
@@ -753,32 +753,32 @@ $ResourceId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/Runb
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ResourceId)) {
-	echo "No runbook found with the name $ResourceName"
+	Write-Error "No runbook found with the name $ResourceName"
 	exit 1
 }
 
 $ParentStepName="%s"
 
-$ParentStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/deploymentprocesses" -Method Get -Headers $headers |
+$ParentStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/runbookProcesses/RunbookProcess-$ResourceId" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $ParentStepName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ParentStepId)) {
-	echo "No step found with the name $ParentStepName"
+	Write-Error "No runbook parent step found with the name $ParentStepName"
 	exit 1
 }
 
 $ChildStepName="%s"
 
-$ChildStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/deploymentprocesses" -Method Get -Headers $headers |
+$ChildStepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/runbookProcesses/RunbookProcess-$ResourceId" -Method Get -Headers $headers |
 	Select-Object -ExpandProperty Steps | 
 	Select-Object -ExpandProperty Actions | 
 	Where-Object {$_.Name -eq $ChildStepName} | 
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ChildStepId)) {
-	echo "No step found with the name $ChildStepName"
+	Write-Error "No runbook child step found with the name $ChildStepName"
 	exit 1
 }
 

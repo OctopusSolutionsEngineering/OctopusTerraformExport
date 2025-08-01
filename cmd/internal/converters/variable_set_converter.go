@@ -311,7 +311,7 @@ $ProjectId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects?take=10000&parti
 	Select-Object -ExpandProperty Id
 
 if ([System.String]::IsNullOrEmpty($ProjectId)) {
-	echo "No project found with the name $ProjectName"
+	Write-Error "No project found with the name $ProjectName"
 	exit 1
 }
 
@@ -325,7 +325,7 @@ $Resource = $Variables |
 	Where-Object {$_.Name -eq $ResourceName}
 
 if ($Resource -eq $null) {
-	echo "No variable found with the name $ResourceName"
+	Write-Error "No variable found with the name $ResourceName"
 	exit 1
 }
 
@@ -400,7 +400,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same environment scopes"
+	Write-Error "No variable found with the same environment scopes"
 	exit 1
 }
 
@@ -412,7 +412,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same machine scopes"
+	Write-Error "No variable found with the same machine scopes"
 	exit 1
 }
 
@@ -421,7 +421,7 @@ echo "Testing roles"
 $Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Role $RoleScopes }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same role scopes"
+	Write-Error "No variable found with the same role scopes"
 	exit 1
 }
 
@@ -433,7 +433,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same channel scopes"
+	Write-Error "No variable found with the same channel scopes"
 	exit 1
 }
 
@@ -445,7 +445,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same action scopes"
+	Write-Error "No variable found with the same action scopes"
 	exit 1
 }
 
@@ -472,7 +472,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same process owner scopes"
+	Write-Error "No variable found with the same process owner scopes"
 	exit 1
 }
 
@@ -546,7 +546,7 @@ $VariableSet = Invoke-RestMethod -Uri "$Url/api/$SpaceId/LibraryVariableSets?tak
 	Where-Object {$_.Name -eq $VariableSetName} 
 
 if ($VariableSet -eq $null) {
-	echo "No library variable set found with the name $VariableSetName"
+	Write-Error "No library variable set found with the name $VariableSetName"
 	exit 1
 }
 
@@ -561,7 +561,7 @@ $Resource = $Variables |
 	Where-Object {$_.Name -eq $ResourceName}
 
 if ($Resource -eq $null) {
-	echo "No variable found with the name $ResourceName"
+	Write-Error "No variable found with the name $ResourceName"
 	exit 1
 }
 
@@ -615,7 +615,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same environment scopes"
+	Write-Error "No variable found with the same environment scopes"
 	exit 1
 }
 
@@ -627,7 +627,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same machine scopes"
+	Write-Error "No variable found with the same machine scopes"
 	exit 1
 }
 
@@ -636,7 +636,7 @@ echo "Testing roles"
 $Resource = $Resource | Where-Object { Test-ArraysEqual $_.Scope.Role $RoleScopes }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same role scopes"
+	Write-Error "No variable found with the same role scopes"
 	exit 1
 }
 
@@ -648,7 +648,7 @@ $Resource = $Resource | Where-Object {
 }
 
 if ($Resource.Count -eq 0) {
-	echo "No variable found with the same channel scopes"
+	Write-Error "No variable found with the same channel scopes"
 	exit 1
 }
 
