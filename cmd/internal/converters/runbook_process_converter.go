@@ -221,8 +221,20 @@ func (c *RunbookProcessConverter) exportScripts(project octopus.Project, runbook
 		validSteps := c.getValidSteps(&resource)
 
 		for _, step := range validSteps {
-			c.toStepBashImport(c.generateStepName(&project, &runbook, &step), project.GetName(), runbook.GetName(), step.GetName(), dependencies)
-			c.toStepPowershellImport(c.generateStepName(&project, &runbook, &step), project.GetName(), runbook.GetName(), step.GetName(), dependencies)
+			c.toStepBashImport(
+				c.generateStepName(&project, &runbook, &step),
+				c.generateChildStepOrderName(&project, &runbook, &step),
+				project.GetName(),
+				runbook.GetName(),
+				step.GetName(),
+				dependencies)
+			c.toStepPowershellImport(
+				c.generateStepName(&project, &runbook, &step),
+				c.generateChildStepOrderName(&project, &runbook, &step),
+				project.GetName(),
+				runbook.GetName(),
+				step.GetName(),
+				dependencies)
 
 			for _, action := range step.Actions[1:] {
 				c.toChildStepBashImport(c.generateChildStepName(&project, &runbook, &action), project.GetName(), runbook.GetName(), step.GetName(), action.GetName(), dependencies)
@@ -409,7 +421,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 // toStepBashImport creates a bash script to import the step resource
-func (c *RunbookProcessConverter) toStepBashImport(resourceName string, projectName string, runbookName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+func (c *RunbookProcessConverter) toStepBashImport(resourceName string, childStepsOrderResourceName string, projectName string, runbookName string, stepName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -474,7 +486,9 @@ fi
 # The step name and the name of the first action are the same.
 # These names are used for the step resource type.
 STEP_NAME="%s"
-STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/runbookProcesses/RunbookProcess-${RESOURCE_ID}" | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
+DEPLOYMENT_PROCESS=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/runbookProcesses/RunbookProcess-${RESOURCE_ID}")
+STEP_ID=$(echo ${DEPLOYMENT_PROCESS} | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
+ACTION_COUNT=$(echo ${DEPLOYMENT_PROCESS} | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Actions | length")
 
 if [[ -z "${STEP_ID}" ]]
 then
@@ -490,6 +504,16 @@ terraform state list "${ID}" &> /dev/null
 if [[ $? -ne 0 ]]
 then
 	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" RunbookProcess-${RESOURCE_ID}:${STEP_ID}
+fi
+
+if [[ $ACTION_COUNT -gt 1 ]]
+then
+	ID="%s.%s"
+	terraform state list "${ID}" &> /dev/null
+	if [[ $? -ne 0 ]]
+	then
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" RunbookProcess-${RESOURCE_ID}:${STEP_ID}
+	fi
 fi`,
 					resourceName,
 					resourceName,
@@ -500,14 +524,16 @@ fi`,
 					runbookName,
 					stepName,
 					octopusdeployProcessStepResourceType,
-					resourceName),
+					resourceName,
+					octopusdeployProcessChildStepsOrder,
+					childStepsOrderResourceName),
 				nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *RunbookProcessConverter) toStepPowershellImport(resourceName string, projectName string, runbookName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+func (c *RunbookProcessConverter) toStepPowershellImport(resourceName string, childStepsOrderResourceName string, projectName string, runbookName string, stepName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -565,10 +591,17 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 
 $StepName="%s"
 
-$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/runbookProcesses/RunbookProcess-$ResourceId" -Method Get -Headers $headers |
+$DeploymentProcess = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectId/runbookProcesses/RunbookProcess-$ResourceId" -Method Get -Headers $headers
+$StepId = $DeploymentProcess |
 	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $StepName} | 
 	Select-Object -ExpandProperty Id
+$ActionCount = $DeploymentProcess |
+	Select-Object -ExpandProperty Steps |
+	Where-Object {$_.Name -eq $StepName} |
+	Select-Object -ExpandProperty Actions |
+	Measure-Object |
+	Select-Object -ExpandProperty Count
 
 if ([System.String]::IsNullOrEmpty($StepId)) {
 	Write-Error "No runbook single step found with the name $StepName"
@@ -581,13 +614,23 @@ $Id="%s.%s"
 terraform state list "${ID}" *> $null
 if ($LASTEXITCODE -ne 0) {
 	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$($ResourceId):$($StepId)"
+}
+
+if ($ActionCount -gt 1) {
+	$Id="%s.%s"
+	terraform state list "${ID}" *> $null
+	if ($LASTEXITCODE -ne 0) {
+		terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "RunbookProcess-$($ResourceId):$($StepId)"
+	}
 }`,
 					resourceName,
 					projectName,
 					runbookName,
 					stepName,
 					octopusdeployProcessStepResourceType,
-					resourceName),
+					resourceName,
+					octopusdeployProcessChildStepsOrder,
+					childStepsOrderResourceName),
 				nil
 		},
 	})

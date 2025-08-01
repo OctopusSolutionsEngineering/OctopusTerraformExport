@@ -183,12 +183,32 @@ func (c *DeploymentProcessConverter) exportScripts(project octopus.Project, reso
 		validSteps := c.getValidSteps(&resource)
 
 		for _, step := range validSteps {
-			c.toStepBashImport(c.generateStepName(nil, &project, &step), project.GetName(), step.GetName(), dependencies)
-			c.toStepPowershellImport(c.generateStepName(nil, &project, &step), project.GetName(), step.GetName(), dependencies)
+			c.toStepBashImport(
+				c.generateStepName(nil, &project, &step),
+				c.generateChildStepOrderName(nil, &project, &step),
+				project.GetName(),
+				step.GetName(),
+				dependencies)
+			c.toStepPowershellImport(
+				c.generateStepName(nil, &project, &step),
+				c.generateChildStepOrderName(nil, &project, &step),
+				project.GetName(),
+				step.GetName(),
+				dependencies)
 
 			for _, action := range step.Actions[1:] {
-				c.toChildStepBashImport(c.generateChildStepName(nil, &project, &action), project.GetName(), step.GetName(), action.GetName(), dependencies)
-				c.toChildStepPowershellImport(c.generateChildStepName(nil, &project, &action), project.GetName(), step.GetName(), action.GetName(), dependencies)
+				c.toChildStepBashImport(
+					c.generateChildStepName(nil, &project, &action),
+					project.GetName(),
+					step.GetName(),
+					action.GetName(),
+					dependencies)
+				c.toChildStepPowershellImport(
+					c.generateChildStepName(nil, &project, &action),
+					project.GetName(),
+					step.GetName(),
+					action.GetName(),
+					dependencies)
 			}
 		}
 	}
@@ -348,7 +368,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 // toStepBashImport creates a bash script to import the step resource
-func (c *DeploymentProcessConverterBase) toStepBashImport(resourceName string, projectName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) toStepBashImport(resourceName string, childStepsOrderResourceName string, projectName string, stepName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
@@ -404,7 +424,9 @@ fi
 # The step name and the name of the first action are the same.
 # These names are used for the step resource type.
 STEP_NAME="%s"
-STEP_ID=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses" | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
+DEPLOYMENT_PROCESS=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${RESOURCE_ID}/deploymentprocesses")
+STEP_ID=$(echo ${DEPLOYMENT_PROCESS} | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Id")
+ACTION_COUNT=$(echo ${DEPLOYMENT_PROCESS} | jq -r ".Steps[] | select(.Name == \"${STEP_NAME}\") | .Actions | length")
 
 if [[ -z "${STEP_ID}" ]]
 then
@@ -420,6 +442,16 @@ terraform state list "${ID}" &> /dev/null
 if [[ $? -ne 0 ]]
 then
 	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" deploymentprocess-${RESOURCE_ID}:${STEP_ID}
+fi
+
+if [[ $ACTION_COUNT -gt 1 ]]
+then
+	ID="%s.%s"
+	terraform state list "${ID}" &> /dev/null
+	if [[ $? -ne 0 ]]
+	then
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" deploymentprocess-${RESOURCE_ID}:${STEP_ID}
+	fi
 fi`,
 					resourceName,
 					resourceName,
@@ -429,14 +461,16 @@ fi`,
 					projectName,
 					stepName,
 					octopusdeployProcessStepResourceType,
-					resourceName),
+					resourceName,
+					octopusdeployProcessChildStepsOrder,
+					childStepsOrderResourceName),
 				nil
 		},
 	})
 }
 
 // toPowershellImport creates a powershell script to import the resource
-func (c *DeploymentProcessConverterBase) toStepPowershellImport(resourceName string, projectName string, stepName string, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) toStepPowershellImport(resourceName string, childStepsOrderResourceName string, projectName string, stepName string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -481,10 +515,17 @@ if ([System.String]::IsNullOrEmpty($ResourceId)) {
 	exit 1
 }
 
-$StepId = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers |
+$DeploymentProcess = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ResourceId/deploymentprocesses" -Method Get -Headers $headers
+$StepId = $DeploymentProcess  |
 	Select-Object -ExpandProperty Steps |
 	Where-Object {$_.Name -eq $StepName} | 
 	Select-Object -ExpandProperty Id
+$ActionCount = $DeploymentProcess |
+	Select-Object -ExpandProperty Steps |
+	Where-Object {$_.Name -eq $StepName} |
+	Select-Object -ExpandProperty Actions |
+	Measure-Object |
+	Select-Object -ExpandProperty Count
 
 if ([System.String]::IsNullOrEmpty($StepId)) {
 	Write-Error "No step found with the name $StepName"
@@ -497,12 +538,22 @@ $Id="%s.%s"
 terraform state list "${ID}" *> $null
 if ($LASTEXITCODE -ne 0) {
 	terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "deploymentprocess-$($ResourceId):$($StepId)"
+}
+
+if ($ActionCount -gt 1) {
+	$Id="%s.%s"
+	terraform state list "${ID}" *> $null
+	if ($LASTEXITCODE -ne 0) {
+		terraform import "-var=octopus_server=$Url" "-var=octopus_apikey=$ApiKey" "-var=octopus_space_id=$SpaceId" $Id "deploymentprocess-$($ResourceId):$($StepId)"
+	}
 }`,
 					resourceName,
 					projectName,
 					stepName,
 					octopusdeployProcessStepResourceType,
-					resourceName),
+					resourceName,
+					octopusdeployProcessChildStepsOrder,
+					childStepsOrderResourceName),
 				nil
 		},
 	})
