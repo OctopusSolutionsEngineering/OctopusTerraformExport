@@ -27,6 +27,7 @@ const octopusdeployProcessChildStepResourceType = "octopusdeploy_process_child_s
 const octopusdeployProcessStepsOrderResourceType = "octopusdeploy_process_steps_order"
 const octopusdeployProcessTemplatedStepsOrderResourceType = "octopusdeploy_process_templated_child_step"
 const octopusdeployProcessStepsOrder = "octopusdeploy_process_steps_order"
+const octopusdeployProcessChildStepsOrder = "octopusdeploy_process_child_steps_order"
 
 type DeploymentProcessConverterBase struct {
 	ResourceType                    string
@@ -194,16 +195,16 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 	thisResource.ParentId = owner.GetUltimateParent()
 	thisResource.Id = c.getStepOrActionId(resource, owner, step)
 	thisResource.ResourceType = "DeploymentProcesses/StepOrder"
-	thisResource.Dependency = "${" + octopusdeployProcessStepsOrder + "." + resourceName + "}"
+	thisResource.Dependency = "${" + octopusdeployProcessChildStepsOrder + "." + resourceName + "}"
 
 	if stateless {
 		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
 		// if the project exists, nothing will be created that needs to look up the runbook anyway.
 		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
 			"? null " +
-			": " + octopusdeployProcessStepsOrder + "." + resourceName + "[0].id}"
+			": " + octopusdeployProcessChildStepsOrder + "." + resourceName + "[0].id}"
 	} else {
-		thisResource.Lookup = "${" + octopusdeployProcessStepsOrder + "." + resourceName + ".id}"
+		thisResource.Lookup = "${" + octopusdeployProcessChildStepsOrder + "." + resourceName + ".id}"
 	}
 
 	thisResource.ToHcl = func() (string, error) {
@@ -211,7 +212,7 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 		file := hclwrite.NewEmptyFile()
 
 		terraformProcessChildStepsOrder := terraform.TerraformProcessChildStepsOrder{
-			Type:      "octopusdeploy_process_child_steps_order",
+			Type:      octopusdeployProcessChildStepsOrder,
 			Name:      resourceName,
 			Id:        nil,
 			ProcessId: dependencies.GetResource(c.GetResourceType(), resource.GetId()),
