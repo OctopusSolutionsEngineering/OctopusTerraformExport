@@ -476,8 +476,10 @@ if ($Resource.Count -eq 0) {
 	exit 1
 }
 
-# It is possible for multiple variables to have the exact same scope. We select the first one.
-$Resource = $Resource | Select-Object -First 1
+if ($Resource.Count -gt 1) {
+	Write-Error "Multiple variables found with the same scopes. It is therefore impossible to know which variable to import. Please delete any duplicate variables and rerun the import script.."
+	exit 1
+}
 
 echo "Importing variable $($Resource.Id) into project '$ProjectName' $ProjectId"
 
@@ -652,8 +654,10 @@ if ($Resource.Count -eq 0) {
 	exit 1
 }
 
-# It is possible for multiple variables to have the exact same scope. We select the first one.
-$Resource = $Resource | Select-Object -First 1
+if ($Resource.Count -gt 1) {
+	Write-Error "Multiple variables found with the same scopes. It is therefore impossible to know which variable to import. Please delete any duplicate variables and rerun the import script.."
+	exit 1
+}
 
 echo "Importing into variable set $VariableSetId the variable $($Resource.Name) $($Resource.Id)"
 
