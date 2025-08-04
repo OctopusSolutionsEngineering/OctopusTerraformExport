@@ -989,10 +989,17 @@ func (c *ProjectConverter) convertUsernamePasswordGitPersistence(project octopus
 // getDeploymentProcessStepId finds the internal ID of the action. This is despite the fact that the API used the
 // parameter "DonorPackageStepId" - it is actually an Action ID, not a step ID.
 func (c *ProjectConverter) getDeploymentProcessStepId(project octopus.Project, dependencies *data.ResourceDetailsCollection) *string {
-	return strutil.NilIfEmpty(dependencies.GetResourceDependency("DeploymentProcesses/Steps",
+	stepId := dependencies.GetResourceDependency("DeploymentProcesses/Steps",
 		project.Id+"/"+
 			strutil.EmptyIfNil(project.DeploymentProcessId)+"/"+
-			strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId)))
+			strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId))
+
+	actionId := dependencies.GetResourceDependency("DeploymentProcesses/ChildSteps",
+		project.Id+"/"+
+			strutil.EmptyIfNil(project.DeploymentProcessId)+"/"+
+			strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId))
+
+	return strutil.NilIfEmpty(strutil.DefaultIfEmpty(stepId, actionId))
 }
 
 func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {

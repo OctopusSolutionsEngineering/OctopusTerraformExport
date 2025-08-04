@@ -309,7 +309,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = owner.GetUltimateParent()
-	thisResource.Id = owner.GetId() + "/" + resource.GetId() + "/" + action.Id
+	thisResource.Id = c.getActionId(resource, owner, action)
 	thisResource.ResourceType = "DeploymentProcesses/ChildSteps"
 	thisResource.Dependency = "${" + octopusdeployProcessChildStepResourceType + "." + resourceName + "}"
 

@@ -31,9 +31,11 @@ type ResourceDetails struct {
 	Id string
 	// AlternateId is the alternate octopus ID of the exported resource.
 	// This can occur when a single Terraform resource represents multiple Octopus resources.
-	// An example is a octopusdeploy_process_step resource, which represents the step and the first action in the step.
+	// An example is an octopusdeploy_process_step resource, which represents the combination of a step
+	// and the first action in the step. Sometimes we need to reference the step by its ID, and sometimes
+	// we need to reference the action by its ID.
 	AlternateId string
-	// ParentId is an optional field that allows a resource to define its parenr.
+	// ParentId is an optional field that allows a resource to define its parent.
 	// This is useful when establishing dependencies between Terraform resources where it is not easy to identify the
 	// individual Terraform resources that belong to a parent. For example, a channel must depend on the steps in a project
 	// because a channel references step packages by name, and thus do not establish a direct relationship that can be
