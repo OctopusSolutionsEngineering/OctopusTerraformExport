@@ -1041,7 +1041,7 @@ func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project,
 		Template:           strutil.NilIfEmpty(deploymentSettings.VersioningStrategy.Template),
 	}
 
-	if project.VersioningStrategy.DonorPackage != nil {
+	if deploymentSettings.VersioningStrategy.DonorPackage != nil {
 		versioningStrategyTerraformResource.DonorPackage = &terraform.TerraformProjectVersioningStrategyDonorPackage{
 			DeploymentAction: strutil.EmptyIfNil(deploymentSettings.VersioningStrategy.DonorPackage.DeploymentAction),
 			PackageReference: strutil.EmptyIfNil(deploymentSettings.VersioningStrategy.DonorPackage.PackageReference),
