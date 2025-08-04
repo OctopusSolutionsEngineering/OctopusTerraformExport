@@ -544,6 +544,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		if stateless {
 			c.writeData(file, "${var."+projectName+"_name}", projectName)
 			terraformResource.Count = strutil.StrPointer(thisResource.Count)
+
+			if versioningStrategy != nil {
+				versioningStrategy.Count = strutil.StrPointer(thisResource.Count)
+			}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
