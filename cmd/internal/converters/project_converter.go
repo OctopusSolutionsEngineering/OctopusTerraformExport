@@ -25,6 +25,7 @@ import (
 
 const octopusdeployProjectsDataType = "octopusdeploy_projects"
 const octopusdeployProjectResourceType = "octopusdeploy_project"
+const octopusdeployProjectVersioningStrategyResourceType = "octopusdeploy_project_versioning_strategy"
 
 type ProjectConverter struct {
 	Client                      client.OctopusClient
@@ -485,7 +486,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			return "", err
 		}
 
-		versioningStrategy, err := c.convertVersioningStrategy(project)
+		versioningStrategy, err := c.convertVersioningStrategy(project, projectName, dependencies)
 
 		if err != nil {
 			return "", err
@@ -512,7 +513,6 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
-			VersioningStrategy:                     versioningStrategy,
 		}
 
 		// There is no point ignoring changes for stateless exports
@@ -596,6 +596,12 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		}
 
 		file.Body().AppendBlock(block)
+
+		if versioningStrategy != nil {
+			versioningStrategyBlock := gohcl.EncodeAsBlock(versioningStrategy, "resource")
+			file.Body().AppendBlock(versioningStrategyBlock)
+		}
+
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
@@ -976,75 +982,74 @@ func (c *ProjectConverter) convertUsernamePasswordGitPersistence(project octopus
 	}
 }
 
-func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
-	// Don't define a versioning strategy if it is not set
-	if project.VersioningStrategy.Template == "" {
-		return nil, nil
-	}
+// getDeploymentProcessStepId finds the internal ID of the action. This is despite the fact that the API used the
+// parameter "DonorPackageStepId" - it is actually an Action ID, not a step ID.
+func (c *ProjectConverter) getDeploymentProcessStepId(project octopus.Project, dependencies *data.ResourceDetailsCollection) *string {
+	return strutil.NilIfEmpty(dependencies.GetResourceDependency("DeploymentProcesses/Steps",
+		project.Id+"/"+
+			strutil.EmptyIfNil(project.DeploymentProcessId)+"/"+
+			strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId)))
+}
 
-	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
-	// needs to know the name of the step and package to base the versioning on, and the deployment process
-	// needs to know the project to attach itself to. If the versioning strategy is set to use packages,
-	// simply return nil.
-	if strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId) != "" ||
-		project.VersioningStrategy.DonorPackage != nil {
-		return nil, nil
-	}
-
-	versioningStrategy := terraform.TerraformVersioningStrategy{
-		Template:           project.VersioningStrategy.Template,
-		DonorPackageStepId: nil,
-		DonorPackage:       nil,
+func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
+	versioningStrategyTerraformResource := terraform.TerraformProjectVersioningStrategy{
+		Type:               octopusdeployProjectVersioningStrategyResourceType,
+		Name:               projectName,
+		Count:              nil,
+		ProjectId:          "${" + octopusdeployProjectResourceType + "." + projectName + ".id}",
+		SpaceId:            strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
+		DonorPackageStepId: c.getDeploymentProcessStepId(project, dependencies),
+		Template:           strutil.NilIfEmpty(project.VersioningStrategy.Template),
 	}
 
 	if project.VersioningStrategy.DonorPackage != nil {
-		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
-			DeploymentAction: project.VersioningStrategy.DonorPackage.DeploymentAction,
-			PackageReference: project.VersioningStrategy.DonorPackage.PackageReference,
+		versioningStrategyTerraformResource.DonorPackage = &terraform.TerraformProjectVersioningStrategyDonorPackage{
+			DeploymentAction: strutil.EmptyIfNil(project.VersioningStrategy.DonorPackage.DeploymentAction),
+			PackageReference: strutil.EmptyIfNil(project.VersioningStrategy.DonorPackage.PackageReference),
 		}
 	}
 
-	return &versioningStrategy, nil
+	return &versioningStrategyTerraformResource, nil
 }
 
-func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
 	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
 	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
 		return nil, err
 	}
 
-	if deploymentSettings.VersioningStrategy.Template == "" {
-		return nil, nil
-	}
-
-	versioningStrategy := terraform.TerraformVersioningStrategy{
-		Template:           deploymentSettings.VersioningStrategy.Template,
-		DonorPackageStepId: nil,
-		DonorPackage:       nil,
+	versioningStrategyTerraformResource := terraform.TerraformProjectVersioningStrategy{
+		Type:               octopusdeployProjectVersioningStrategyResourceType,
+		Name:               projectName,
+		Count:              nil,
+		ProjectId:          "${" + octopusdeployProjectResourceType + "." + projectName + ".id}",
+		SpaceId:            strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
+		DonorPackageStepId: c.getDeploymentProcessStepId(project, dependencies),
+		Template:           strutil.NilIfEmpty(deploymentSettings.VersioningStrategy.Template),
 	}
 
 	if project.VersioningStrategy.DonorPackage != nil {
-		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
-			DeploymentAction: deploymentSettings.VersioningStrategy.DonorPackage.DeploymentAction,
-			PackageReference: deploymentSettings.VersioningStrategy.DonorPackage.PackageReference,
+		versioningStrategyTerraformResource.DonorPackage = &terraform.TerraformProjectVersioningStrategyDonorPackage{
+			DeploymentAction: strutil.EmptyIfNil(deploymentSettings.VersioningStrategy.DonorPackage.DeploymentAction),
+			PackageReference: strutil.EmptyIfNil(deploymentSettings.VersioningStrategy.DonorPackage.PackageReference),
 		}
 	}
 
-	return &versioningStrategy, nil
+	return &versioningStrategyTerraformResource, nil
 }
 
-func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
 	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
 		return nil, nil
 	}
 
-	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored..
+	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored.
 	// The actual values come from branch specific settings.
 	if project.HasCacConfigured() {
-		return c.convertCaCVersioningStrategy(project)
+		return c.convertCaCVersioningStrategy(project, projectName, dependencies)
 	}
 
-	return c.convertDatabaseVersioningStrategy(project)
+	return c.convertDatabaseVersioningStrategy(project, projectName, dependencies)
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.

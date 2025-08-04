@@ -29,6 +29,10 @@ type ResourceParameter struct {
 type ResourceDetails struct {
 	// Id is the octopus ID of the exported resource
 	Id string
+	// AlternateId is the alternate octopus ID of the exported resource.
+	// This can occur when a single Terraform resource represents multiple Octopus resources.
+	// An example is a octopusdeploy_process_step resource, which represents the step and the first action in the step.
+	AlternateId string
 	// ParentId is an optional field that allows a resource to define its parenr.
 	// This is useful when establishing dependencies between Terraform resources where it is not easy to identify the
 	// individual Terraform resources that belong to a parent. For example, a channel must depend on the steps in a project
@@ -247,7 +251,7 @@ func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, i
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if (r.Id == id || r.AlternateId == id) && r.ResourceType == resourceType {
 			// return the dependency field if it was defined, otherwise fall back to the lookup field
 			return strutil.DefaultIfEmpty(r.Dependency, r.Lookup)
 		}
@@ -256,6 +260,29 @@ func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, i
 	zap.L().Error("Failed to resolve dependency " + id + " of type " + resourceType)
 
 	return ""
+}
+
+// GetResourceDependencyPointer returns the terraform references for a given resource type and id.
+// The returned string is used only for the depends_on field, as it may reference to a collection of resources
+// rather than a single ID.
+func (c *ResourceDetailsCollection) GetResourceDependencyPointer(resourceType string, id *string) *string {
+	if id == nil {
+		return nil
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, r := range c.Resources {
+		if r.Id == *id && r.ResourceType == resourceType {
+			// return the dependency field if it was defined, otherwise fall back to the lookup field
+			return strutil.NilIfEmpty(strutil.DefaultIfEmpty(r.Dependency, r.Lookup))
+		}
+	}
+
+	zap.L().Error("Failed to resolve dependency " + *id + " of type " + resourceType)
+
+	return nil
 }
 
 // GetResourceDependencyFromParent returns the terraform references for a given resource type based on the parent ID.

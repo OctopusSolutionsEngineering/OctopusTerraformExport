@@ -23,7 +23,6 @@ type TerraformProject struct {
 	GitLibraryPersistenceSettings          *TerraformGitLibraryPersistenceSettings          `hcl:"git_library_persistence_settings,block"`
 	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings        `hcl:"git_anonymous_persistence_settings,block"`
 	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings `hcl:"git_username_password_persistence_settings,block"`
-	VersioningStrategy                     *TerraformVersioningStrategy                     `hcl:"versioning_strategy,block"`
 	Lifecycle                              *TerraformLifecycleMetaArgument                  `hcl:"lifecycle,block"`
 }
 
@@ -71,17 +70,6 @@ type TerraformGitUsernamePasswordPersistenceSettings struct {
 	BasePath          string `hcl:"base_path"`
 	DefaultBranch     string `hcl:"default_branch"`
 	ProtectedBranches string `hcl:"protected_branches"`
-}
-
-type TerraformVersioningStrategy struct {
-	Template           string                 `hcl:"template"`
-	DonorPackageStepId *string                `hcl:"donor_package_step_id"`
-	DonorPackage       *TerraformDonorPackage `hcl:"donor_package,block"`
-}
-
-type TerraformDonorPackage struct {
-	DeploymentAction *string `hcl:"deployment_action"`
-	PackageReference *string `hcl:"package_reference"`
 }
 
 type TerraformLifecycleMetaArgument struct {
