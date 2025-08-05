@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -19,8 +22,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"slices"
-	"strings"
 )
 
 const octopusdeployProjectsDataType = "octopusdeploy_projects"
@@ -497,7 +498,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			ResourceName:                           resourceName,
 			Id:                                     strutil.InputPointerIfEnabled(c.IncludeIds, &project.Id),
 			SpaceId:                                strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
-			AutoCreateRelease:                      false, // TODO: Would be project.AutoCreateRelease, but there is no way to reference the package
+			AutoCreateRelease:                      nil,
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
