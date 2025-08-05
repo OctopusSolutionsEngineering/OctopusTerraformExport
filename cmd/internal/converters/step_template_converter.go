@@ -346,7 +346,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates?take=10000" -Method GET -Headers $headers
 					$communityTemplate = $response.content | ConvertFrom-Json | Select-Object -Expand Items | ? {$_.Website -eq "` + thisResource.ExternalID + `"} | % {
 						# Then install the step template
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+						$installResponse = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)" -Method GET -Headers $headers
 						$stepTemplateObject = $response.content | ConvertFrom-Json
 						# Step properties might include large scripts that break GRPC limits, so we exclude them
 						$stepTemplateObject = $stepTemplateObject | Select-Object -ExcludeProperty Properties
