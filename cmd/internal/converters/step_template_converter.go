@@ -328,6 +328,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($state.Id)" -Method GET -Headers $headers
 						if ($response.StatusCode -eq 200) {
 							$stepTemplateObject = $response.Content | ConvertFrom-Json
+							# Step properties might include large scripts that break GRPC limits, so we exclude them
+							$stepTemplateObject = $stepTemplateObject | Select-Object -ExcludeProperty Properties
 							Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 						} else {
 							Write-Host "{}"
@@ -346,6 +348,8 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						# Then install the step template
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
 						$stepTemplateObject = $response.content | ConvertFrom-Json
+						# Step properties might include large scripts that break GRPC limits, so we exclude them
+						$stepTemplateObject = $stepTemplateObject | Select-Object -ExcludeProperty Properties
 						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
