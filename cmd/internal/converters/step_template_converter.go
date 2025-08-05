@@ -311,13 +311,14 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		file := hclwrite.NewEmptyFile()
 
-		// This resource uses the shell_script resource type to execute a custom script to ensure a community
-		// step template is installed.
-		communityStepTemplateResource := terraform.TerraformShellScript{
-			Type: "shell_script",
-			Name: stepTemplateName,
-			LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
-				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading community step template')
+		if thisResource.ExternalID != "" {
+			// This resource uses the shell_script resource type to execute a custom script to ensure a community
+			// step template is installed.
+			communityStepTemplateResource := terraform.TerraformShellScript{
+				Type: "shell_script",
+				Name: stepTemplateName,
+				LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
+					Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading community step template')
 					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						$host.ui.WriteErrorLine('State ID is empty')
@@ -335,7 +336,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 							Write-Host "{}"
 						}
 					}`)),
-				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create community step template')
+					Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create community step template')
 					if ([string]::IsNullOrEmpty("` + thisResource.ExternalID + `")) {
 						Write-Host "{}"
 					}
@@ -357,21 +358,22 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId,Website,HistoryUrl
 						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`),
-				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
-			},
-			SensitiveEnvironment: map[string]string{
-				"SERVER":  "${var.octopus_server}",
-				"SPACEID": "${var.octopus_space_id}",
-				"APIKEY":  "${var.octopus_apikey}",
-			},
-			WorkingDirectory: strutil.StrPointer("${path.module}"),
+					Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
+				},
+				SensitiveEnvironment: map[string]string{
+					"SERVER":  "${var.octopus_server}",
+					"SPACEID": "${var.octopus_space_id}",
+					"APIKEY":  "${var.octopus_apikey}",
+				},
+				WorkingDirectory: strutil.StrPointer("${path.module}"),
+			}
+
+			communityStepTemplateBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
+
+			file.Body().AppendBlock(communityStepTemplateBlock)
 		}
 
-		communityStepTemplateBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
-
-		file.Body().AppendBlock(communityStepTemplateBlock)
-
-		var communityActionTemplate string = ""
+		communityActionTemplate := ""
 		if thisResource.ExternalID != "" {
 			communityActionTemplate = "${shell_script." + stepTemplateName + ".output.Id}"
 		}
