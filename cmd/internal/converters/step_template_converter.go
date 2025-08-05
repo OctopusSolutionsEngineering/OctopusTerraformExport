@@ -329,7 +329,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						if ($response.StatusCode -eq 200) {
 							$stepTemplateObject = $response.Content | ConvertFrom-Json
 							# Step properties might include large scripts that break GRPC limits, so we exclude them
-							$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId
+							$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId,Website,HistoryUrl
 							Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 						} else {
 							Write-Host "{}"
@@ -354,7 +354,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						$response = Invoke-WebRequest -ProgressAction SilentlyContinue -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)" -Method GET -Headers $headers
 						$stepTemplateObject = $response.content | ConvertFrom-Json
 						# Step properties might include large scripts that break GRPC limits, so we exclude them
-						$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId
+						$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId,Website,HistoryUrl
 						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
