@@ -373,7 +373,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		var communityActionTemplate string = ""
 		if thisResource.ExternalID != "" {
-			communityActionTemplate = "${shell_script." + stepTemplateName + ".CommunityActionTemplateId}"
+			communityActionTemplate = "${shell_script." + stepTemplateName + ".output.Id}"
 		}
 
 		terraformResource := terraform.TerraformStepTemplate{
