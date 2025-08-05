@@ -377,7 +377,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			ActionType:                template.ActionType,
 			SpaceId:                   strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", strutil.EmptyIfNil(template.SpaceId))),
 			ResourceName:              template.Name,
-			Description:               template.Description,
+			Description:               strutil.TrimPointer(template.Description), // The API trims whitespace, which can lead to a "Provider produced inconsistent result after apply" error
 			StepPackageId:             template.StepPackageId,
 			CommunityActionTemplateId: template.CommunityActionTemplateId,
 			Packages:                  c.convertPackages(template.Packages),
