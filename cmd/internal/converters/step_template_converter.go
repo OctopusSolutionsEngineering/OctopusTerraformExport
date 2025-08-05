@@ -371,6 +371,11 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		file.Body().AppendBlock(communityStepTemplateBlock)
 
+		var communityActionTemplate string = ""
+		if thisResource.ExternalID != "" {
+			communityActionTemplate = "${" + stepTemplateName + ".CommunityActionTemplateId}"
+		}
+
 		terraformResource := terraform.TerraformStepTemplate{
 			Type:                      octopusdeployStepTemplateResourceType,
 			Name:                      stepTemplateName,
@@ -379,7 +384,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			ResourceName:              template.Name,
 			Description:               strutil.TrimPointer(template.Description), // The API trims whitespace, which can lead to a "Provider produced inconsistent result after apply" error
 			StepPackageId:             template.StepPackageId,
-			CommunityActionTemplateId: template.CommunityActionTemplateId,
+			CommunityActionTemplateId: strutil.NilIfEmpty(communityActionTemplate),
 			Packages:                  c.convertPackages(template.Packages),
 			Parameters:                c.convertParameters(template.Parameters, file, dependencies),
 			Properties:                template.Properties,
