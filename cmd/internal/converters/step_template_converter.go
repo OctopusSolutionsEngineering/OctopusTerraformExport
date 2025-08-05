@@ -311,7 +311,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		file := hclwrite.NewEmptyFile()
 
-		// This resource uses the shell_script resource type to exeucte a custom script to ensure a community
+		// This resource uses the shell_script resource type to execute a custom script to ensure a community
 		// step template is installed.
 		communityStepTemplateResource := terraform.TerraformShellScript{
 			Type: "shell_script",
@@ -329,7 +329,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						if ($response.StatusCode -eq 200) {
 							$stepTemplateObject = $response.Content | ConvertFrom-Json
 							# Step properties might include large scripts that break GRPC limits, so we exclude them
-							$stepTemplateObject = $stepTemplateObject | Select-Object -ExcludeProperty Properties
+							$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId
 							Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 						} else {
 							Write-Host "{}"
@@ -350,7 +350,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)" -Method GET -Headers $headers
 						$stepTemplateObject = $response.content | ConvertFrom-Json
 						# Step properties might include large scripts that break GRPC limits, so we exclude them
-						$stepTemplateObject = $stepTemplateObject | Select-Object -ExcludeProperty Properties
+						$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId
 						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`),
 				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
