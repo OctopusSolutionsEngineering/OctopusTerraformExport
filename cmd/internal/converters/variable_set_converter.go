@@ -585,30 +585,30 @@ for ENVIRONMENT_NAME in "${ENVIRONMENT_SCOPES[@]}"; do
   ENVRIONMENT_ID=$(echo "${VARIABLES}" | jq -r --arg name "${ENVIRONMENT_NAME}" '.ScopeValues.Environments[] | select(.Name == $name) | .Id')
   ENVIRONMENT_SCOPES_IDS+=("$ENVRIONMENT_ID")
 done
-ENVIRONMENT_SCOPES_IDS_SORTED=$(printf "%s\n" "${ENVIRONMENT_SCOPES_IDS[@]}" | sort)
+ENVIRONMENT_SCOPES_IDS_SORTED=$(printf "%%s\n" "${ENVIRONMENT_SCOPES_IDS[@]}" | sort)
 
 declare -a MACHINE_SCOPES_IDS=()
 for MACHINE_NAME in "${MACHINE_SCOPES[@]}"; do
   MACHINE_ID=$(echo "${VARIABLES}" | jq -r --arg name "${MACHINE_NAME}" '.ScopeValues.Machines[] | select(.Name == $name) | .Id')
   MACHINE_SCOPES_IDS+=("MACHINE_ID")
 done
-MACHINE_SCOPES_IDS_SORTED=$(printf "%s\n" "${MACHINE_SCOPES_IDS[@]}" | sort)
+MACHINE_SCOPES_IDS_SORTED=$(printf "%%s\n" "${MACHINE_SCOPES_IDS[@]}" | sort)
 
-ROLE_SCOPES_NAMES_SORTED=$(printf "%s\n" "${ROLE_SCOPES[@]}" | sort)
+ROLE_SCOPES_NAMES_SORTED=$(printf "%%s\n" "${ROLE_SCOPES[@]}" | sort)
 
 declare -a CHANNEL_SCOPES_IDS=()
 for CHANNEL_NAME in "${CHANNEL_SCOPES[@]}"; do
   CHANNEL_ID=$(echo "${VARIABLES}" | jq -r --arg name "${CHANNEL_NAME}" '.ScopeValues.Channels[] | select(.Name == $name) | .Id')
   CHANNEL_SCOPES_IDS+=("CHANNEL_ID")
 done
-CHANNEL_SCOPES_IDS_SORTED=$(printf "%s\n" "${CHANNEL_SCOPES_IDS[@]}" | sort)
+CHANNEL_SCOPES_IDS_SORTED=$(printf "%%s\n" "${CHANNEL_SCOPES_IDS[@]}" | sort)
 
 declare -a ACTION_SCOPES_IDS=()
 for ACTION_NAME in "${ACTION_SCOPES[@]}"; do
   ACTION_ID=$(echo "${DEPLOYMENT_PROCESS}" | jq -r --arg name "${ACTION_NAME}" '.Steps.Actions[] | select(.Name == $name) | .Id')
   ACTION_SCOPES_IDS+=("ACTION_ID")
 done
-ACTION_SCOPES_IDS_SORTED=$(printf "%s\n" "${ACTION_SCOPES_IDS[@]}" | sort)
+ACTION_SCOPES_IDS_SORTED=$(printf "%%s\n" "${ACTION_SCOPES_IDS[@]}" | sort)
 
 declare -a OWNER_SCOPES_IDS=()
 for OWNER_NAME in "${OWNER_SCOPES[@]}"; do
@@ -624,7 +624,7 @@ for OWNER_NAME in "${OWNER_SCOPES[@]}"; do
     OWNER_SCOPES_IDS+=("$SCOPE_RUNBOOK_ID")
   fi
 done
-OWNER_SCOPES_IDS_SORTED=$(printf "%s\n" "${OWNER_SCOPES_IDS[@]}" | sort)
+OWNER_SCOPES_IDS_SORTED=$(printf "%%s\n" "${OWNER_SCOPES_IDS[@]}" | sort)
 
 # Find the variable that matches the name of the variable we want to import
 MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -r --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
@@ -667,7 +667,7 @@ while IFS= read -r line; do
 	  continue
 	fi
 
-	echo "Importing project ${RESOURCE_ID}"
+	echo "Importing variable ${VARIABLE_NAME}"
 	
 	ID="%s.%s"
 	terraform state list "${ID}" &> /dev/null
