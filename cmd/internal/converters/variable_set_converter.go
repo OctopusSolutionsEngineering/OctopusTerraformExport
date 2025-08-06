@@ -379,7 +379,7 @@ function Get-ProjectName {
     )
 
 	$Project = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$ProjectOwner" -Method Get -Headers $headers
-	return $Project.Name
+	return "Project-" + $Project.Name
 }
 
 function Get-RunbookName {
@@ -390,7 +390,7 @@ function Get-RunbookName {
 
 	$Runbook = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Runbooks/$RunbookOwner" -Method Get -Headers $headers
 	$Project = Invoke-RestMethod -Uri "$Url/api/$SpaceId/Projects/$Runbook.ProjectId" -Method Get -Headers $headers
-	return $Project.Name + ":" + $Runbook.Name
+	return "Runbook-" + $Project.Name + ":" + $Runbook.Name
 }
 
 # Check environment scopes
@@ -576,6 +576,53 @@ fi
 # Get the project variables and deployment process
 VARIABLES=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Variables")
 DEPLOYMENT_PROCESS=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/DeploymentProcesses")
+
+# Convert resource names to local IDs. The VARIABLES JSON blob contains a mapping from ID to name, so we don't need to
+# make separate API calls to get the names of the resources.
+
+declare -a ENVIRONMENT_SCOPES_IDS=()
+for ENVIRONMENT_NAME in "${ENVIRONMENT_SCOPES[@]}"; do
+  ENVRIONMENT_ID=$(echo "${VARIABLES}" | jq -r --arg name "${ENVIRONMENT_NAME}" '.ScopeValues.Environments[] | select(.Name == $name) | .Id')
+  ENVIRONMENT_SCOPES_IDS+=("$ENVRIONMENT_ID")
+done
+ENVIRONMENT_SCOPES_IDS_SORTED=$(printf "%s\n" "${ENVIRONMENT_SCOPES_IDS[@]}" | sort)
+
+declare -a MACHINE_SCOPES_IDS=()
+for MACHINE_NAME in "${MACHINE_SCOPES[@]}"; do
+  MACHINE_ID=$(echo "${VARIABLES}" | jq -r --arg name "${MACHINE_NAME}" '.ScopeValues.Machines[] | select(.Name == $name) | .Id')
+  MACHINE_SCOPES_IDS+=("MACHINE_ID")
+done
+MACHINE_SCOPES_IDS_SORTED=$(printf "%s\n" "${MACHINE_SCOPES_IDS[@]}" | sort)
+
+declare -a CHANNEL_SCOPES_IDS=()
+for CHANNEL_NAME in "${CHANNEL_SCOPES[@]}"; do
+  CHANNEL_ID=$(echo "${VARIABLES}" | jq -r --arg name "${CHANNEL_NAME}" '.ScopeValues.Channels[] | select(.Name == $name) | .Id')
+  CHANNEL_SCOPES_IDS+=("CHANNEL_ID")
+done
+CHANNEL_SCOPES_IDS_SORTED=$(printf "%s\n" "${CHANNEL_SCOPES_IDS[@]}" | sort)
+
+declare -a ACTION_SCOPES_IDS=()
+for ACTION_NAME in "${ACTION_SCOPES[@]}"; do
+  ACTION_ID=$(echo "${DEPLOYMENT_PROCESS}" | jq -r --arg name "${ACTION_NAME}" '.Steps.Actions[] | select(.Name == $name) | .Id')
+  ACTION_SCOPES_IDS+=("ACTION_ID")
+done
+ACTION_SCOPES_IDS_SORTED=$(printf "%s\n" "${ACTION_SCOPES_IDS[@]}" | sort)
+
+declare -a OWNER_SCOPES_IDS=()
+for OWNER_NAME in "${OWNER_SCOPES[@]}"; do
+  if [[ "$OWNER_NAME" == Project-* ]]; then
+	SCOPE_PROJECT_NAME=${OWNER_NAME:8}
+    SCOPE_PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${SCOPE_PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${SCOPE_PROJECT_NAME}\") | .Id")
+    OWNER_SCOPES_IDS+=("$SCOPE_PROJECT_ID")
+  else
+	SCOPE_PROJECT_NAME=${OWNER_NAME:8}
+    IFS=':' read -r -a SCOPE_PROJECT_NAME_ARRAY <<< "$SCOPE_PROJECT_NAME"
+    SCOPE_PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${SCOPE_PROJECT_NAME_ARRAY[0]}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${SCOPE_PROJECT_NAME_ARRAY[0]}\") | .Id")
+    SCOPE_RUNBOOK_ID=$(curl --silent -G --data-urlencode "partialName=${SCOPE_PROJECT_NAME_ARRAY[1]}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${SCOPE_PROJECT_ID}/Runbooks" | jq -r ".Items[] | select(.Name == \"${SCOPE_PROJECT_NAME_ARRAY[1]}\") | .Id")
+    OWNER_SCOPES_IDS+=("$SCOPE_RUNBOOK_ID")
+  fi
+done
+OWNER_SCOPES_IDS_SORTED=$(printf "%s\n" "${OWNER_SCOPES_IDS[@]}" | sort)
 
 # Find the variable that matches the name of the variable we want to import
 MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -r --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
@@ -841,7 +888,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 					ownersError = errors.Join(ownersError, err)
 				}
 
-				return projectName
+				return "Project-" + projectName
 			}
 
 			if strings.HasPrefix(owner, "Runbooks") {
@@ -859,7 +906,7 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 						ownersError = errors.Join(ownersError, fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Project: %w", projectErr))
 					}
 
-					return project.Name + ":" + runbook.Name
+					return "Runbook-" + project.Name + ":" + runbook.Name
 				}
 			}
 
