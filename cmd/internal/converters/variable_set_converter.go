@@ -719,7 +719,7 @@ echo "No variable found with the name ${VARIABLE_NAME} and the specified scopes.
 	})
 }
 
-// toVariableSetPowershellImport creates a powershell script to import the resource from an existing variable set
+// toVariableSetPowershellImport creates a powershell script to import a variable from a library variable set
 func (c *VariableSetConverter) toVariableSetPowershellImport(resourceName string, octopusVariableSetName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_library_variable_set_variable_" + resourceName + ".ps1",
@@ -895,10 +895,10 @@ if ($LASTEXITCODE -ne 0) {
 	})
 }
 
-// toProjectBashImport creates a bash script to import the resource
+// toVariableSetBashImport creates a bash script to import a variable from a library variable set
 func (c *VariableSetConverter) toVariableSetBashImport(resourceName string, octopusVariableSetName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
-		FileName: "space_population/import_project_variable_" + resourceName + ".sh",
+		FileName: "space_population/import_library_variable_set_variable_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
 			return fmt.Sprintf(`#!/bin/bash
 
@@ -947,6 +947,8 @@ CHANNELS="%s"
 LIBRARY_VARIABLE_SET_NAME="%s"
 VARIABLE_NAME="%s"
 
+echo "Variable Set Name: ${LIBRARY_VARIABLE_SET_NAME}"
+echo "Variable Name: ${VARIABLE_NAME}"
 echo "Environments: ${ENVIRONMENTS}"
 echo "Machines: ${MACHINES}"
 echo "Roles: ${ROLES}"
@@ -958,20 +960,18 @@ IFS=',' read -r -a ROLE_SCOPES <<< "$ROLES"
 IFS=',' read -r -a CHANNEL_SCOPES <<< "$CHANNELS"
 
 LIBRARY_VARIABLE_SET=$(curl --silent -G --data-urlencode "partialName=${LIBRARY_VARIABLE_SET_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/LibraryVariableSets" | jq -r ".Items[] | select(.Name == \"${LIBRARY_VARIABLE_SET_NAME}\")")
-LIBRARY_VARIABLE_SET_ID=$(echo "${LIBRARY_VARIABLE_SET}" | jq -r '.Id')
-LIBRARY_VARIABLE_SET_VARIABLE_SET_ID=$(echo "${LIBRARY_VARIABLE_SET}" | jq -r '.VariableSetId')
 
-if [[ -z "${LIBRARY_VARIABLE_SET_ID}" ]]
+if [[ -z "${LIBRARY_VARIABLE_SET}" ]]
 then
 	echo "No library variable set found with the name ${LIBRARY_VARIABLE_SET_NAME}"
 	exit 1
 fi
 
-# Get the variable set from the library variable set
-VARIABLE_SET=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Variables/${LIBRARY_VARIABLE_SET_VARIABLE_SET_ID}")
+LIBRARY_VARIABLE_SET_ID=$(echo "${LIBRARY_VARIABLE_SET}" | jq -r '.Id')
+LIBRARY_VARIABLE_SET_VARIABLE_SET_ID=$(echo "${LIBRARY_VARIABLE_SET}" | jq -r '.VariableSetId')
 
-# Get the variables that match the variable name we want to import
-VARIABLES=$(jq -n --argjson variableSet "$VARIABLE_SET" '$variableSet | .Variables[] | select(.Name == $VARIABLE_NAME)')
+# Get the variable set from the library variable set
+VARIABLES=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Variables/${LIBRARY_VARIABLE_SET_VARIABLE_SET_ID}")
 
 # Convert resource names to local IDs. The VARIABLES JSON blob contains a mapping from ID to name, so we don't need to
 # make separate API calls to get the names of the resources.
@@ -1007,28 +1007,28 @@ while IFS= read -r line; do
 
 	# Check environment scopes
 	VARIABLE_SCOPED_ENVIRONMENTS=$(echo "$line" | jq -r '.Scope.Environment // [] | .[]' | sort)
-	echo "Testing \"${VARIABLE_SCOPED_ENVIRONMENTS}\" == \"${ENVIRONMENT_SCOPES_IDS_SORTED}\""
+	echo "Testing Environments \"${VARIABLE_SCOPED_ENVIRONMENTS}\" == \"${ENVIRONMENT_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_ENVIRONMENTS" != "$ENVIRONMENT_SCOPES_IDS_SORTED" ]]; then
       continue
 	fi
 	
 	# Check machine scopes
     VARIABLE_SCOPED_MACHINES=$(echo "$line" | jq -r '.Scope.Machine // [] | .[]' | sort)
-	echo "Testing \"${VARIABLE_SCOPED_MACHINES}\" == \"${MACHINE_SCOPES_IDS_SORTED}\""
+	echo "Testing Machines \"${VARIABLE_SCOPED_MACHINES}\" == \"${MACHINE_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_MACHINES" != "$MACHINE_SCOPES_IDS_SORTED" ]]; then
 	  continue
     fi
 	
 	# Check role scopes
     VARIABLE_SCOPED_ROLES=$(echo "$line" | jq -r '.Scope.Role // [] | .[]' | sort)
-    echo "Testing \"${VARIABLE_SCOPED_ROLES}\" == \"${ROLE_SCOPES_NAMES_SORTED}\""
+    echo "Testing Roles \"${VARIABLE_SCOPED_ROLES}\" == \"${ROLE_SCOPES_NAMES_SORTED}\""
     if [[ "$VARIABLE_SCOPED_ROLES" != "$ROLE_SCOPES_NAMES_SORTED" ]]; then
 	  continue
 	fi
 	
 	# Check channel scopes
     VARIABLE_SCOPED_CHANNELS=$(echo "$line" | jq -r '.Scope.Channel // [] | .[]' | sort)
-   	echo "Testing \"${VARIABLE_SCOPED_CHANNELS}\" == \"${CHANNEL_SCOPES_IDS_SORTED}\""
+   	echo "Testing Channels \"${VARIABLE_SCOPED_CHANNELS}\" == \"${CHANNEL_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_CHANNELS" != "$CHANNEL_SCOPES_IDS_SORTED" ]]; then
       continue
     fi
@@ -1201,6 +1201,16 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 		}
 
 		c.toVariableSetPowershellImport(
+			resourceName,
+			libraryVariableSetName,
+			v.Name,
+			scopedEnvironmentNames,
+			scopedMachineNames,
+			v.Scope.Role,
+			scopedChannelNames,
+			dependencies)
+
+		c.toVariableSetBashImport(
 			resourceName,
 			libraryVariableSetName,
 			v.Name,
