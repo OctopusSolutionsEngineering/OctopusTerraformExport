@@ -505,9 +505,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 // toProjectBashImport creates a bash script to import the resource
-func (c *ProjectConverter) toProjectBashImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
+func (c *VariableSetConverter) toProjectBashImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
-		FileName: "space_population/import_" + resourceName + ".sh",
+		FileName: "space_population/import_project_variable_" + resourceName + ".sh",
 		ToHcl: func() (string, error) {
 			return fmt.Sprintf(`#!/bin/bash
 
@@ -627,42 +627,48 @@ done
 OWNER_SCOPES_IDS_SORTED=$(printf "%%s\n" "${OWNER_SCOPES_IDS[@]}" | sort)
 
 # Find the variable that matches the name of the variable we want to import
-MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -r --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
+MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -c --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
 
 while IFS= read -r line; do
 
 	# Check environment scopes
 	VARIABLE_SCOPED_ENVIRONMENTS=$(echo "$line" | jq -r '.Scope.Environment[]' | sort)
+	echo "Testing ${VARIABLE_SCOPED_ENVIRONMENTS} == ${ENVIRONMENT_SCOPES_IDS_SORTED}"
     if [[ "$VARIABLE_SCOPED_ENVIRONMENTS" != "$ENVIRONMENT_SCOPES_IDS_SORTED" ]]; then
       continue
 	fi
 	
 	# Check machine scopes
     VARIABLE_SCOPED_MACHINES=$(echo "$line" | jq -r '.Scope.Machine[]' | sort)
+	echo "Testing ${VARIABLE_SCOPED_MACHINES} == ${MACHINE_SCOPES_IDS_SORTED}"
     if [[ "$VARIABLE_SCOPED_MACHINES" != "$MACHINE_SCOPES_IDS_SORTED" ]]; then
 	  continue
     fi
 	
 	# Check role scopes
     VARIABLE_SCOPED_ROLES=$(echo "$line" | jq -r '.Scope.Role[]' | sort)
+    echo "Testing ${VARIABLE_SCOPED_ROLES} == ${ROLE_SCOPES_NAMES_SORTED}"
     if [[ "$VARIABLE_SCOPED_ROLES" != "$ROLE_SCOPES_NAMES_SORTED" ]]; then
 	  continue
 	fi
 	
 	# Check channel scopes
     VARIABLE_SCOPED_CHANNELS=$(echo "$line" | jq -r '.Scope.Channel[]' | sort)
+   	echo "Testing ${VARIABLE_SCOPED_CHANNELS} == ${CHANNEL_SCOPES_IDS_SORTED}"
     if [[ "$VARIABLE_SCOPED_CHANNELS" != "$CHANNEL_SCOPES_IDS_SORTED" ]]; then
       continue
     fi
 	
 	# Check action scopes
     VARIABLE_SCOPED_ACTIONS=$(echo "$line" | jq -r '.Scope.Action[]' | sort)
-    if [[ "$VARIABLE_SCOPED_ACTIONS" != "$ACTION_SCOPES_IDS_SORTED" ]]; then
+    echo "Testing ${VARIABLE_SCOPED_ACTIONS} == ${VARIABLE_SCOPED_ACTIONS}"
+    if [[ "$VARIABLE_SCOPED_ACTIONS" != "$VARIABLE_SCOPED_ACTIONS" ]]; then
 	  continue
 	fi
 	
 	# Check owner scopes
     VARIABLE_SCOPED_OWNERS=$(echo "$line" | jq -r '.Scope.ProcessOwner[]' | sort)
+    echo "Testing ${VARIABLE_SCOPED_OWNERS} == ${OWNER_SCOPES_IDS_SORTED}"
     if [[ "$VARIABLE_SCOPED_OWNERS" != "$OWNER_SCOPES_IDS_SORTED" ]]; then
 	  continue
 	fi
@@ -981,6 +987,17 @@ func (c *VariableSetConverter) processImportScript(resourceName string, parentId
 		}
 
 		c.toProjectPowershellImport(
+			resourceName,
+			project.Name,
+			v.Name,
+			scopedEnvironmentNames,
+			scopedMachineNames,
+			v.Scope.Role,
+			scopedChannelNames,
+			scopedActions,
+			scopedOwners,
+			dependencies)
+		c.toProjectBashImport(
 			resourceName,
 			project.Name,
 			v.Name,
