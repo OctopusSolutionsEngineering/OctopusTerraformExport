@@ -594,6 +594,8 @@ for MACHINE_NAME in "${MACHINE_SCOPES[@]}"; do
 done
 MACHINE_SCOPES_IDS_SORTED=$(printf "%s\n" "${MACHINE_SCOPES_IDS[@]}" | sort)
 
+ROLE_SCOPES_NAMES_SORTED=$(printf "%s\n" "${ROLE_SCOPES[@]}" | sort)
+
 declare -a CHANNEL_SCOPES_IDS=()
 for CHANNEL_NAME in "${CHANNEL_SCOPES[@]}"; do
   CHANNEL_ID=$(echo "${VARIABLES}" | jq -r --arg name "${CHANNEL_NAME}" '.ScopeValues.Channels[] | select(.Name == $name) | .Id')
@@ -627,26 +629,59 @@ OWNER_SCOPES_IDS_SORTED=$(printf "%s\n" "${OWNER_SCOPES_IDS[@]}" | sort)
 # Find the variable that matches the name of the variable we want to import
 MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -r --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
 
-# Check environment scopes
+while IFS= read -r line; do
 
-# Check machine scopes
+	# Check environment scopes
+	VARIABLE_SCOPED_ENVIRONMENTS=$(echo "$line" | jq -r '.Scope.Environment[]' | sort)
+    if [[ "$VARIABLE_SCOPED_ENVIRONMENTS" != "$ENVIRONMENT_SCOPES_IDS_SORTED" ]]; then
+      continue
+	fi
+	
+	# Check machine scopes
+    VARIABLE_SCOPED_MACHINES=$(echo "$line" | jq -r '.Scope.Machine[]' | sort)
+    if [[ "$VARIABLE_SCOPED_MACHINES" != "$MACHINE_SCOPES_IDS_SORTED" ]]; then
+	  continue
+    fi
+	
+	# Check role scopes
+    VARIABLE_SCOPED_ROLES=$(echo "$line" | jq -r '.Scope.Role[]' | sort)
+    if [[ "$VARIABLE_SCOPED_ROLES" != "$ROLE_SCOPES_NAMES_SORTED" ]]; then
+	  continue
+	fi
+	
+	# Check channel scopes
+    VARIABLE_SCOPED_CHANNELS=$(echo "$line" | jq -r '.Scope.Channel[]' | sort)
+    if [[ "$VARIABLE_SCOPED_CHANNELS" != "$CHANNEL_SCOPES_IDS_SORTED" ]]; then
+      continue
+    fi
+	
+	# Check action scopes
+    VARIABLE_SCOPED_ACTIONS=$(echo "$line" | jq -r '.Scope.Action[]' | sort)
+    if [[ "$VARIABLE_SCOPED_ACTIONS" != "$ACTION_SCOPES_IDS_SORTED" ]]; then
+	  continue
+	fi
+	
+	# Check owner scopes
+    VARIABLE_SCOPED_OWNERS=$(echo "$line" | jq -r '.Scope.ProcessOwner[]' | sort)
+    if [[ "$VARIABLE_SCOPED_OWNERS" != "$OWNER_SCOPES_IDS_SORTED" ]]; then
+	  continue
+	fi
 
-# Check role scopes
+	echo "Importing project ${RESOURCE_ID}"
+	
+	ID="%s.%s"
+	terraform state list "${ID}" &> /dev/null
+	if [[ $? -ne 0 ]]
+	then
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${RESOURCE_ID}
+	fi
 
-# Check channel scopes
+	exit 0
 
-# Check action scopes
+done <<< "$MATCHING_VARIABLES"
 
-# Check owner scopes
-
-echo "Importing project ${RESOURCE_ID}"
-
-ID="%s.%s"
-terraform state list "${ID}" &> /dev/null
-if [[ $? -ne 0 ]]
-then
-	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${RESOURCE_ID}
-fi`,
+echo "No variable found with the name ${VARIABLE_NAME} and the specified scopes."
+`,
 					resourceName,                      // comment
 					resourceName,                      // comment
 					resourceName,                      // comment
