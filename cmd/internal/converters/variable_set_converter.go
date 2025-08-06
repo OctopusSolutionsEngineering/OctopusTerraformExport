@@ -690,7 +690,7 @@ while IFS= read -r line; do
 	terraform state list "${ID}" &> /dev/null
 	if [[ $? -ne 0 ]]
 	then
-		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${VARIABLE_ID}
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${PROJECT_ID}:${VARIABLE_ID}
 	fi
 
 	exit 0
