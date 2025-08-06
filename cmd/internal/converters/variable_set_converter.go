@@ -3,6 +3,9 @@ package converters
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -22,8 +25,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/strings/slices"
-	"net/url"
-	"strings"
 )
 
 const octopusdeployVariableResourceType = "octopusdeploy_variable"
@@ -499,6 +500,122 @@ if ($LASTEXITCODE -ne 0) {
 				octopusResourceName,
 				octopusdeployVariableResourceType,
 				resourceName), nil
+		},
+	})
+}
+
+// toProjectBashImport creates a bash script to import the resource
+func (c *ProjectConverter) toProjectBashImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, actionNames []string, ownerNames []string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required" >&2
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required" >&2
+    exit 1
+fi
+
+ENVIRONMENTS="%s"
+MACHINES="%s"
+ROLES="%s"
+CHANNELS="%s"
+ACTIONS="%s"
+OWNERS="%s"
+PROJECT_NAME="%s"
+VARIABLE_NAME="%s"
+
+ENVIRONMENT_SCOPES=(${ENVIRONMENTS//,/ })
+MACHINE_SCOPES=(${MACHINES//,/ })
+ROLE_SCOPES=(${ROLES//,/ })
+CHANNEL_SCOPES=(${CHANNELS//,/ })
+ACTION_SCOPES=(${ACTIONS//,/ })
+OWNER_SCOPES=(${OWNERS//,/ })
+
+PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
+
+if [[ -z "${PROJECT_ID}" ]]
+then
+	echo "No project found with the name ${PROJECT_NAME}"
+	exit 1
+fi
+
+# Get the project variables and deployment process
+VARIABLES=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/Variables")
+DEPLOYMENT_PROCESS=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects/${PROJECT_ID}/DeploymentProcesses")
+
+# Find the variable that matches the name of the variable we want to import
+MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -r --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
+
+# Check environment scopes
+
+# Check machine scopes
+
+# Check role scopes
+
+# Check channel scopes
+
+# Check action scopes
+
+# Check owner scopes
+
+echo "Importing project ${RESOURCE_ID}"
+
+ID="%s.%s"
+terraform state list "${ID}" &> /dev/null
+if [[ $? -ne 0 ]]
+then
+	terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${RESOURCE_ID}
+fi`,
+					resourceName,                      // comment
+					resourceName,                      // comment
+					resourceName,                      // comment
+					resourceName,                      // comment
+					resourceName,                      // comment
+					strings.Join(envNames, ","),       // global variable
+					strings.Join(machineNames, ","),   // global variable
+					strings.Join(roleNames, ","),      // global variable
+					strings.Join(channelNames, ","),   // global variable
+					strings.Join(actionNames, ","),    // global variable
+					strings.Join(ownerNames, ","),     // global variable
+					octopusProjectName,                // global variable
+					octopusResourceName,               // global variable
+					octopusdeployVariableResourceType, // terraform import
+					resourceName),                     // terraform import
+				nil
 		},
 	})
 }
