@@ -720,7 +720,7 @@ echo "No variable found with the name ${VARIABLE_NAME} and the specified scopes.
 }
 
 // toVariableSetPowershellImport creates a powershell script to import the resource from an existing variable set
-func (c *VariableSetConverter) toVariableSetPowershellImport(resourceName string, octopusProjectName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
+func (c *VariableSetConverter) toVariableSetPowershellImport(resourceName string, octopusVariableSetName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
 	dependencies.AddResource(data.ResourceDetails{
 		FileName: "space_population/import_library_variable_set_variable_" + resourceName + ".ps1",
 		ToHcl: func() (string, error) {
@@ -887,10 +887,184 @@ if ($LASTEXITCODE -ne 0) {
 				strings.Join(machineNames, ","),
 				strings.Join(roleNames, ","),
 				strings.Join(channelNames, ","),
-				octopusProjectName,
+				octopusVariableSetName,
 				octopusResourceName,
 				octopusdeployVariableResourceType,
 				resourceName), nil
+		},
+	})
+}
+
+// toProjectBashImport creates a bash script to import the resource
+func (c *VariableSetConverter) toVariableSetBashImport(resourceName string, octopusVariableSetName string, octopusResourceName string, envNames []string, machineNames []string, roleNames []string, channelNames []string, dependencies *data.ResourceDetailsCollection) {
+	dependencies.AddResource(data.ResourceDetails{
+		FileName: "space_population/import_project_variable_" + resourceName + ".sh",
+		ToHcl: func() (string, error) {
+			return fmt.Sprintf(`#!/bin/bash
+
+# This script is used to import an exiting resource into the Terraform state.
+# It is useful when importing a Terraform module into an Octopus space that
+# already has existing resources.
+
+# Make the script executable with the command:
+# chmod +x ./import_%s.sh
+
+# Alternativly, run the script with bash directly:
+# /bin/bash ./import_%s.sh <options>
+
+# Run "terraform init" to download any required providers and to configure the
+# backend configuration
+
+# Then run the import script. Replace the API key, instance URL, and Space ID 
+# in the example below with the values of the space that the Terraform module 
+# will be imported into.
+
+# ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234
+
+if [[ $# -ne 3 ]]
+then
+	echo "Usage: ./import_%s.sh <API Key> <Octopus URL> <Space ID>"
+    echo "Example: ./import_%s.sh API-xxxxxxxxxxxx https://yourinstance.octopus.app Spaces-1234"
+	exit 1
+fi
+
+if ! command -v jq &> /dev/null
+then
+    echo "jq is required" >&2
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null
+then
+    echo "curl is required" >&2
+    exit 1
+fi
+
+ENVIRONMENTS="%s"
+MACHINES="%s"
+ROLES="%s"
+CHANNELS="%s"
+LIBRARY_VARIABLE_SET_NAME="%s"
+VARIABLE_NAME="%s"
+
+echo "Environments: ${ENVIRONMENTS}"
+echo "Machines: ${MACHINES}"
+echo "Roles: ${ROLES}"
+echo "Channels: ${CHANNELS}"
+
+IFS=',' read -r -a ENVIRONMENT_SCOPES <<< "$ENVIRONMENTS"
+IFS=',' read -r -a MACHINE_SCOPES <<< "$MACHINES"
+IFS=',' read -r -a ROLE_SCOPES <<< "$ROLES"
+IFS=',' read -r -a CHANNEL_SCOPES <<< "$CHANNELS"
+
+LIBRARY_VARIABLE_SET=$(curl --silent -G --data-urlencode "partialName=${LIBRARY_VARIABLE_SET_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/LibraryVariableSets" | jq -r ".Items[] | select(.Name == \"${LIBRARY_VARIABLE_SET_NAME}\")")
+LIBRARY_VARIABLE_SET_ID=$(echo "${LIBRARY_VARIABLE_SET}" | jq -r '.Id')
+LIBRARY_VARIABLE_SET_VARIABLE_SET_ID=$(echo "${LIBRARY_VARIABLE_SET}" | jq -r '.VariableSetId')
+
+if [[ -z "${LIBRARY_VARIABLE_SET_ID}" ]]
+then
+	echo "No library variable set found with the name ${LIBRARY_VARIABLE_SET_NAME}"
+	exit 1
+fi
+
+# Get the variable set from the library variable set
+VARIABLE_SET=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3/Variables/${LIBRARY_VARIABLE_SET_VARIABLE_SET_ID}")
+
+# Get the variables that match the variable name we want to import
+VARIABLES=$(jq -n --argjson variableSet "$VARIABLE_SET" '$variableSet | .Variables[] | select(.Name == $VARIABLE_NAME)')
+
+# Convert resource names to local IDs. The VARIABLES JSON blob contains a mapping from ID to name, so we don't need to
+# make separate API calls to get the names of the resources.
+
+declare -a ENVIRONMENT_SCOPES_IDS=()
+for ENVIRONMENT_NAME in "${ENVIRONMENT_SCOPES[@]}"; do
+  ENVRIONMENT_ID=$(echo "${VARIABLES}" | jq -r --arg name "${ENVIRONMENT_NAME}" '.ScopeValues.Environments[] | select(.Name == $name) | .Id')
+  echo "Found environment ${ENVIRONMENT_NAME} with ID ${ENVRIONMENT_ID}"
+  ENVIRONMENT_SCOPES_IDS+=("$ENVRIONMENT_ID")
+done
+ENVIRONMENT_SCOPES_IDS_SORTED=$(printf "%%s\n" "${ENVIRONMENT_SCOPES_IDS[@]}" | sort)
+
+declare -a MACHINE_SCOPES_IDS=()
+for MACHINE_NAME in "${MACHINE_SCOPES[@]}"; do
+  MACHINE_ID=$(echo "${VARIABLES}" | jq -r --arg name "${MACHINE_NAME}" '.ScopeValues.Machines[] | select(.Name == $name) | .Id')
+  MACHINE_SCOPES_IDS+=("MACHINE_ID")
+done
+MACHINE_SCOPES_IDS_SORTED=$(printf "%%s\n" "${MACHINE_SCOPES_IDS[@]}" | sort)
+
+ROLE_SCOPES_NAMES_SORTED=$(printf "%%s\n" "${ROLE_SCOPES[@]}" | sort)
+
+declare -a CHANNEL_SCOPES_IDS=()
+for CHANNEL_NAME in "${CHANNEL_SCOPES[@]}"; do
+  CHANNEL_ID=$(echo "${VARIABLES}" | jq -r --arg name "${CHANNEL_NAME}" '.ScopeValues.Channels[] | select(.Name == $name) | .Id')
+  CHANNEL_SCOPES_IDS+=("CHANNEL_ID")
+done
+CHANNEL_SCOPES_IDS_SORTED=$(printf "%%s\n" "${CHANNEL_SCOPES_IDS[@]}" | sort)
+
+# Find the variable that matches the name of the variable we want to import
+MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -c --arg name "${VARIABLE_NAME}" '.Variables[] | select(.Name == $name)')
+
+while IFS= read -r line; do
+
+	# Check environment scopes
+	VARIABLE_SCOPED_ENVIRONMENTS=$(echo "$line" | jq -r '.Scope.Environment // [] | .[]' | sort)
+	echo "Testing \"${VARIABLE_SCOPED_ENVIRONMENTS}\" == \"${ENVIRONMENT_SCOPES_IDS_SORTED}\""
+    if [[ "$VARIABLE_SCOPED_ENVIRONMENTS" != "$ENVIRONMENT_SCOPES_IDS_SORTED" ]]; then
+      continue
+	fi
+	
+	# Check machine scopes
+    VARIABLE_SCOPED_MACHINES=$(echo "$line" | jq -r '.Scope.Machine // [] | .[]' | sort)
+	echo "Testing \"${VARIABLE_SCOPED_MACHINES}\" == \"${MACHINE_SCOPES_IDS_SORTED}\""
+    if [[ "$VARIABLE_SCOPED_MACHINES" != "$MACHINE_SCOPES_IDS_SORTED" ]]; then
+	  continue
+    fi
+	
+	# Check role scopes
+    VARIABLE_SCOPED_ROLES=$(echo "$line" | jq -r '.Scope.Role // [] | .[]' | sort)
+    echo "Testing \"${VARIABLE_SCOPED_ROLES}\" == \"${ROLE_SCOPES_NAMES_SORTED}\""
+    if [[ "$VARIABLE_SCOPED_ROLES" != "$ROLE_SCOPES_NAMES_SORTED" ]]; then
+	  continue
+	fi
+	
+	# Check channel scopes
+    VARIABLE_SCOPED_CHANNELS=$(echo "$line" | jq -r '.Scope.Channel // [] | .[]' | sort)
+   	echo "Testing \"${VARIABLE_SCOPED_CHANNELS}\" == \"${CHANNEL_SCOPES_IDS_SORTED}\""
+    if [[ "$VARIABLE_SCOPED_CHANNELS" != "$CHANNEL_SCOPES_IDS_SORTED" ]]; then
+      continue
+    fi
+
+    VARIABLE_ID=$(echo "$line" | jq -r '.Id')
+
+	ID="%s.%s"
+
+	echo "Importing variable ${VARIABLE_NAME} ${VARIABLE_ID} into ${ID}"
+
+	terraform state list "${ID}" &> /dev/null
+	if [[ $? -ne 0 ]]
+	then
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${LIBRARY_VARIABLE_SET_ID}:${VARIABLE_ID}
+	fi
+
+	exit 0
+
+done <<< "$MATCHING_VARIABLES"
+
+echo "No variable found with the name ${VARIABLE_NAME} and the specified scopes."
+`,
+					resourceName,                      // comment
+					resourceName,                      // comment
+					resourceName,                      // comment
+					resourceName,                      // comment
+					resourceName,                      // comment
+					strings.Join(envNames, ","),       // global variable
+					strings.Join(machineNames, ","),   // global variable
+					strings.Join(roleNames, ","),      // global variable
+					strings.Join(channelNames, ","),   // global variable
+					octopusVariableSetName,            // global variable
+					octopusResourceName,               // global variable
+					octopusdeployVariableResourceType, // terraform import
+					resourceName),                     // terraform import
+				nil
 		},
 	})
 }
