@@ -558,12 +558,19 @@ OWNERS="%s"
 PROJECT_NAME="%s"
 VARIABLE_NAME="%s"
 
-ENVIRONMENT_SCOPES=(${ENVIRONMENTS//,/ })
-MACHINE_SCOPES=(${MACHINES//,/ })
-ROLE_SCOPES=(${ROLES//,/ })
-CHANNEL_SCOPES=(${CHANNELS//,/ })
-ACTION_SCOPES=(${ACTIONS//,/ })
-OWNER_SCOPES=(${OWNERS//,/ })
+echo "Environments: ${ENVIRONMENTS}"
+echo "Machines: ${MACHINES}"
+echo "Roles: ${ROLES}"
+echo "Channels: ${CHANNELS}"
+echo "Actions: ${ACTIONS}"
+echo "Owners: ${OWNERS}"
+
+IFS=',' read -r -a ENVIRONMENT_SCOPES <<< "$ENVIRONMENTS"
+IFS=',' read -r -a MACHINE_SCOPES <<< "$MACHINES"
+IFS=',' read -r -a ROLE_SCOPES <<< "$ROLES"
+IFS=',' read -r -a CHANNEL_SCOPES <<< "$CHANNELS"
+IFS=',' read -r -a ACTION_SCOPES <<< "$ACTIONS"
+IFS=',' read -r -a OWNER_SCOPES <<< "$OWNERS"
 
 PROJECT_ID=$(curl --silent -G --data-urlencode "partialName=${PROJECT_NAME}" --data-urlencode "take=10000" --header "X-Octopus-ApiKey: $1" "$2/api/$3/Projects" | jq -r ".Items[] | select(.Name == \"${PROJECT_NAME}\") | .Id")
 
@@ -583,6 +590,7 @@ DEPLOYMENT_PROCESS=$(curl --silent -G --header "X-Octopus-ApiKey: $1" "$2/api/$3
 declare -a ENVIRONMENT_SCOPES_IDS=()
 for ENVIRONMENT_NAME in "${ENVIRONMENT_SCOPES[@]}"; do
   ENVRIONMENT_ID=$(echo "${VARIABLES}" | jq -r --arg name "${ENVIRONMENT_NAME}" '.ScopeValues.Environments[] | select(.Name == $name) | .Id')
+  echo "Found environment ${ENVIRONMENT_NAME} with ID ${ENVRIONMENT_ID}"
   ENVIRONMENT_SCOPES_IDS+=("$ENVRIONMENT_ID")
 done
 ENVIRONMENT_SCOPES_IDS_SORTED=$(printf "%%s\n" "${ENVIRONMENT_SCOPES_IDS[@]}" | sort)
@@ -632,54 +640,57 @@ MATCHING_VARIABLES=$(echo "${VARIABLES}" | jq -c --arg name "${VARIABLE_NAME}" '
 while IFS= read -r line; do
 
 	# Check environment scopes
-	VARIABLE_SCOPED_ENVIRONMENTS=$(echo "$line" | jq -r '.Scope.Environment[]' | sort)
-	echo "Testing ${VARIABLE_SCOPED_ENVIRONMENTS} == ${ENVIRONMENT_SCOPES_IDS_SORTED}"
+	VARIABLE_SCOPED_ENVIRONMENTS=$(echo "$line" | jq -r '.Scope.Environment // [] | .[]' | sort)
+	echo "Testing \"${VARIABLE_SCOPED_ENVIRONMENTS}\" == \"${ENVIRONMENT_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_ENVIRONMENTS" != "$ENVIRONMENT_SCOPES_IDS_SORTED" ]]; then
       continue
 	fi
 	
 	# Check machine scopes
-    VARIABLE_SCOPED_MACHINES=$(echo "$line" | jq -r '.Scope.Machine[]' | sort)
-	echo "Testing ${VARIABLE_SCOPED_MACHINES} == ${MACHINE_SCOPES_IDS_SORTED}"
+    VARIABLE_SCOPED_MACHINES=$(echo "$line" | jq -r '.Scope.Machine // [] | .[]' | sort)
+	echo "Testing \"${VARIABLE_SCOPED_MACHINES}\" == \"${MACHINE_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_MACHINES" != "$MACHINE_SCOPES_IDS_SORTED" ]]; then
 	  continue
     fi
 	
 	# Check role scopes
-    VARIABLE_SCOPED_ROLES=$(echo "$line" | jq -r '.Scope.Role[]' | sort)
-    echo "Testing ${VARIABLE_SCOPED_ROLES} == ${ROLE_SCOPES_NAMES_SORTED}"
+    VARIABLE_SCOPED_ROLES=$(echo "$line" | jq -r '.Scope.Role // [] | .[]' | sort)
+    echo "Testing \"${VARIABLE_SCOPED_ROLES}\" == \"${ROLE_SCOPES_NAMES_SORTED}\""
     if [[ "$VARIABLE_SCOPED_ROLES" != "$ROLE_SCOPES_NAMES_SORTED" ]]; then
 	  continue
 	fi
 	
 	# Check channel scopes
-    VARIABLE_SCOPED_CHANNELS=$(echo "$line" | jq -r '.Scope.Channel[]' | sort)
-   	echo "Testing ${VARIABLE_SCOPED_CHANNELS} == ${CHANNEL_SCOPES_IDS_SORTED}"
+    VARIABLE_SCOPED_CHANNELS=$(echo "$line" | jq -r '.Scope.Channel // [] | .[]' | sort)
+   	echo "Testing \"${VARIABLE_SCOPED_CHANNELS}\" == \"${CHANNEL_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_CHANNELS" != "$CHANNEL_SCOPES_IDS_SORTED" ]]; then
       continue
     fi
 	
 	# Check action scopes
-    VARIABLE_SCOPED_ACTIONS=$(echo "$line" | jq -r '.Scope.Action[]' | sort)
-    echo "Testing ${VARIABLE_SCOPED_ACTIONS} == ${VARIABLE_SCOPED_ACTIONS}"
+    VARIABLE_SCOPED_ACTIONS=$(echo "$line" | jq -r '.Scope.Action // [] | .[]' | sort)
+    echo "Testing \"${VARIABLE_SCOPED_ACTIONS}\" == \"${VARIABLE_SCOPED_ACTIONS}\""
     if [[ "$VARIABLE_SCOPED_ACTIONS" != "$VARIABLE_SCOPED_ACTIONS" ]]; then
 	  continue
 	fi
 	
 	# Check owner scopes
-    VARIABLE_SCOPED_OWNERS=$(echo "$line" | jq -r '.Scope.ProcessOwner[]' | sort)
-    echo "Testing ${VARIABLE_SCOPED_OWNERS} == ${OWNER_SCOPES_IDS_SORTED}"
+    VARIABLE_SCOPED_OWNERS=$(echo "$line" | jq -r '.Scope.ProcessOwner // [] | .[]' | sort)
+    echo "Testing \"${VARIABLE_SCOPED_OWNERS}\" == \"${OWNER_SCOPES_IDS_SORTED}\""
     if [[ "$VARIABLE_SCOPED_OWNERS" != "$OWNER_SCOPES_IDS_SORTED" ]]; then
 	  continue
 	fi
 
-	echo "Importing variable ${VARIABLE_NAME}"
-	
+    VARIABLE_ID=$(echo "$line" | jq -r '.Id')
+
 	ID="%s.%s"
+
+	echo "Importing variable ${VARIABLE_NAME} ${VARIABLE_ID} into ${ID}"
+
 	terraform state list "${ID}" &> /dev/null
 	if [[ $? -ne 0 ]]
 	then
-		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${RESOURCE_ID}
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${VARIABLE_ID}
 	fi
 
 	exit 0
