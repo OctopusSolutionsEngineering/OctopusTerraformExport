@@ -289,7 +289,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		// Fallback is used when the default worker pool, usually called "Hosted Ubuntu" or "Hosted Windows", is not found.
 		// An empty string falls back to the default worker pool.
 		// Note this string is used inside an interpolation, which is why it is wrapped in quotes.
-		fallback := "''"
+		fallback := "null"
 
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName,
