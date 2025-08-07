@@ -1,10 +1,11 @@
 package data
 
 import (
+	"sync"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"sync"
 )
 
 type ToHcl func() (string, error)
@@ -167,7 +168,7 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if (r.Id == id || r.AlternateId == id) && r.ResourceType == resourceType {
 			return r.Lookup
 		}
 	}

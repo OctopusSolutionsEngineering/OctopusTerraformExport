@@ -487,6 +487,8 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			return "", err
 		}
 
+		// We'll switch to the new versioning strategy once this bug is resolved:
+		// https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/55
 		//versioningStrategy, err := c.convertVersioningStrategyV2(project, projectName, dependencies)
 		versioningStrategy, err := c.convertVersioningStrategy(project)
 
@@ -515,6 +517,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
+			VersioningStrategy:                     versioningStrategy,
 		}
 
 		// There is no point ignoring changes for stateless exports
@@ -547,9 +550,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			c.writeData(file, "${var."+projectName+"_name}", projectName)
 			terraformResource.Count = strutil.StrPointer(thisResource.Count)
 
-			if versioningStrategy != nil {
-				versioningStrategy.Count = strutil.StrPointer(thisResource.Count)
-			}
+			// This is used by the new versioning strategy resource
+			//if versioningStrategy != nil {
+			//	versioningStrategy.Count = strutil.StrPointer(thisResource.Count)
+			//}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -603,10 +607,11 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 		file.Body().AppendBlock(block)
 
-		if versioningStrategy != nil {
-			versioningStrategyBlock := gohcl.EncodeAsBlock(versioningStrategy, "resource")
-			file.Body().AppendBlock(versioningStrategyBlock)
-		}
+		// This is used by the new versioning strategy resource
+		//if versioningStrategy != nil {
+		//	versioningStrategyBlock := gohcl.EncodeAsBlock(versioningStrategy, "resource")
+		//	file.Body().AppendBlock(versioningStrategyBlock)
+		//}
 
 		return string(file.Bytes()), nil
 	}
@@ -1006,7 +1011,7 @@ func (c *ProjectConverter) getDeploymentProcessStepId(project octopus.Project, d
 	return strutil.NilIfEmpty(strutil.DefaultIfEmpty(stepId, actionId))
 }
 
-func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
+func (c *ProjectConverter) convertDatabaseVersioningStrategyV2(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
 	versioningStrategyTerraformResource := terraform.TerraformProjectVersioningStrategy{
 		Type:               octopusdeployProjectVersioningStrategyResourceType,
 		Name:               projectName,
@@ -1027,7 +1032,7 @@ func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Pro
 	return &versioningStrategyTerraformResource, nil
 }
 
-func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
+func (c *ProjectConverter) convertCaCVersioningStrategyV2(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
 	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
 	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
 		return nil, err
@@ -1132,10 +1137,10 @@ func (c *ProjectConverter) convertVersioningStrategyV2(project octopus.Project, 
 	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored.
 	// The actual values come from branch specific settings.
 	if project.HasCacConfigured() {
-		return c.convertCaCVersioningStrategy(project, projectName, dependencies)
+		return c.convertCaCVersioningStrategyV2(project, projectName, dependencies)
 	}
 
-	return c.convertDatabaseVersioningStrategy(project, projectName, dependencies)
+	return c.convertDatabaseVersioningStrategyV2(project, projectName, dependencies)
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.

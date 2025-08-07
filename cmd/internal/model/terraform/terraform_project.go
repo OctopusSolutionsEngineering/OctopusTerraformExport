@@ -24,6 +24,18 @@ type TerraformProject struct {
 	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings        `hcl:"git_anonymous_persistence_settings,block"`
 	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings `hcl:"git_username_password_persistence_settings,block"`
 	Lifecycle                              *TerraformLifecycleMetaArgument                  `hcl:"lifecycle,block"`
+	VersioningStrategy                     *TerraformVersioningStrategy                     `hcl:"versioning_strategy,block"`
+}
+
+type TerraformVersioningStrategy struct {
+	Template           string                 `hcl:"template"`
+	DonorPackageStepId *string                `hcl:"donor_package_step_id"`
+	DonorPackage       *TerraformDonorPackage `hcl:"donor_package,block"`
+}
+
+type TerraformDonorPackage struct {
+	DeploymentAction *string `hcl:"deployment_action"`
+	PackageReference *string `hcl:"package_reference"`
 }
 
 func (t TerraformProject) HasCacConfigured() bool {
