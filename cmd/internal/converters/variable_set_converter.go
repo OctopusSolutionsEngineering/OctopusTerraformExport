@@ -1612,6 +1612,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 	// BUG: A octopusdeploy_process_child_step includes both the step and the first action. Hwoever, the ID is the step ID.
 	// There is no way to get the ID of the action. This means that any variables scoped to the first step in a process
 	// will be recreated with the step ID, and not the action ID, leading to a "Missing Resource" error in the UI.
+	// See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/60
 	actions := c.getDeploymentProcessStepId(strutil.EmptyIfNil(variableSet.OwnerId), deploymentProcessId, variable.Scope.Action, dependencies)
 	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
 	environments := dependencies.GetResources("Environments", filteredEnvironments...)
