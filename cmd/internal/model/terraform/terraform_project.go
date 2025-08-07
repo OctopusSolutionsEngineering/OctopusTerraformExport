@@ -1,30 +1,45 @@
 package terraform
 
 type TerraformProject struct {
-	Type                                   string                                           `hcl:"type,label"`
-	Name                                   string                                           `hcl:"name,label"`
-	Count                                  *string                                          `hcl:"count"`
-	Id                                     *string                                          `hcl:"id"`
-	SpaceId                                *string                                          `hcl:"space_id"`
-	ResourceName                           string                                           `hcl:"name"`
-	AutoCreateRelease                      *bool                                            `hcl:"auto_create_release"`
-	DefaultGuidedFailureMode               *string                                          `hcl:"default_guided_failure_mode"`
-	DefaultToSkipIfAlreadyInstalled        bool                                             `hcl:"default_to_skip_if_already_installed"`
-	Description                            *string                                          `hcl:"description"`
-	DiscreteChannelRelease                 bool                                             `hcl:"discrete_channel_release"`
-	IsDisabled                             bool                                             `hcl:"is_disabled"`
-	IsVersionControlled                    bool                                             `hcl:"is_version_controlled"`
-	LifecycleId                            string                                           `hcl:"lifecycle_id"`
-	ProjectGroupId                         string                                           `hcl:"project_group_id"`
-	IncludedLibraryVariableSets            []string                                         `hcl:"included_library_variable_sets"`
-	TenantedDeploymentParticipation        *string                                          `hcl:"tenanted_deployment_participation"`
-	Template                               []TerraformTemplate                              `hcl:"template,block"`
-	ConnectivityPolicy                     *TerraformConnectivityPolicy                     `hcl:"connectivity_policy,block"`
-	GitLibraryPersistenceSettings          *TerraformGitLibraryPersistenceSettings          `hcl:"git_library_persistence_settings,block"`
-	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings        `hcl:"git_anonymous_persistence_settings,block"`
-	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings `hcl:"git_username_password_persistence_settings,block"`
-	Lifecycle                              *TerraformLifecycleMetaArgument                  `hcl:"lifecycle,block"`
-	VersioningStrategy                     *TerraformVersioningStrategy                     `hcl:"versioning_strategy,block"`
+	Type                                   string                                                  `hcl:"type,label"`
+	Name                                   string                                                  `hcl:"name,label"`
+	Count                                  *string                                                 `hcl:"count"`
+	Id                                     *string                                                 `hcl:"id"`
+	SpaceId                                *string                                                 `hcl:"space_id"`
+	ResourceName                           string                                                  `hcl:"name"`
+	AutoCreateRelease                      *bool                                                   `hcl:"auto_create_release"`
+	DefaultGuidedFailureMode               *string                                                 `hcl:"default_guided_failure_mode"`
+	DefaultToSkipIfAlreadyInstalled        bool                                                    `hcl:"default_to_skip_if_already_installed"`
+	Description                            *string                                                 `hcl:"description"`
+	DiscreteChannelRelease                 bool                                                    `hcl:"discrete_channel_release"`
+	IsDisabled                             bool                                                    `hcl:"is_disabled"`
+	IsVersionControlled                    bool                                                    `hcl:"is_version_controlled"`
+	LifecycleId                            string                                                  `hcl:"lifecycle_id"`
+	ProjectGroupId                         string                                                  `hcl:"project_group_id"`
+	IncludedLibraryVariableSets            []string                                                `hcl:"included_library_variable_sets"`
+	TenantedDeploymentParticipation        *string                                                 `hcl:"tenanted_deployment_participation"`
+	Template                               []TerraformTemplate                                     `hcl:"template,block"`
+	ConnectivityPolicy                     *TerraformConnectivityPolicy                            `hcl:"connectivity_policy,block"`
+	GitLibraryPersistenceSettings          *TerraformGitLibraryPersistenceSettings                 `hcl:"git_library_persistence_settings,block"`
+	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings               `hcl:"git_anonymous_persistence_settings,block"`
+	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings        `hcl:"git_username_password_persistence_settings,block"`
+	Lifecycle                              *TerraformLifecycleMetaArgument                         `hcl:"lifecycle,block"`
+	VersioningStrategy                     *TerraformVersioningStrategy                            `hcl:"versioning_strategy,block"`
+	JiraServiceManagementExtensionSettings *TerraformProjectJiraServiceManagementExtensionSettings `hcl:"jira_service_management_extension_settings,block"`
+	ServicenowExtensionSettings            *TerraformProjectServicenowExtensionSettings            `hcl:"servicenow_extension_settings,block"`
+}
+
+type TerraformProjectServicenowExtensionSettings struct {
+	ConnectionId                     string  `hcl:"connection_id"`
+	IsEnabled                        bool    `hcl:"is_enabled"`
+	IsStateAutomaticallyTransitioned bool    `hcl:"is_state_automatically_transitioned"`
+	StandardChangeTemplateName       *string `hcl:"standard_change_template_name"`
+}
+
+type TerraformProjectJiraServiceManagementExtensionSettings struct {
+	ConnectionId           string `hcl:"connection_id"`
+	IsEnabled              bool   `hcl:"is_enabled"`
+	ServiceDeskProjectName string `hcl:"service_desk_project_name"`
 }
 
 type TerraformVersioningStrategy struct {

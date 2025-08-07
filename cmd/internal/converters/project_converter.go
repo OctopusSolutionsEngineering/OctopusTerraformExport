@@ -499,12 +499,14 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
-			ResourceName:                           resourceName,
+			Count:                                  nil,
 			Id:                                     strutil.InputPointerIfEnabled(c.IncludeIds, &project.Id),
 			SpaceId:                                strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
+			ResourceName:                           resourceName,
 			AutoCreateRelease:                      nil,
 			DefaultGuidedFailureMode:               project.DefaultGuidedFailureMode,
 			DefaultToSkipIfAlreadyInstalled:        project.DefaultToSkipIfAlreadyInstalled,
+			Description:                            nil,
 			DiscreteChannelRelease:                 project.DiscreteChannelRelease,
 			IsDisabled:                             project.IsDisabled,
 			IsVersionControlled:                    versionControlled,
@@ -517,7 +519,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
+			Lifecycle:                              nil,
 			VersioningStrategy:                     versioningStrategy,
+			JiraServiceManagementExtensionSettings: c.convertJiraSettings(project),
+			ServicenowExtensionSettings:            c.convertServiceNowSettings(project),
 		}
 
 		// There is no point ignoring changes for stateless exports
@@ -975,6 +980,61 @@ func (c *ProjectConverter) convertAnonymousGitPersistence(project octopus.Projec
 		BasePath:          "${var." + projectName + "_git_base_path}",
 		DefaultBranch:     project.PersistenceSettings.DefaultBranch,
 		ProtectedBranches: "${jsondecode(var." + projectName + "_git_protected_branches)}",
+	}
+}
+
+func (c *ProjectConverter) convertJiraSettings(project octopus.Project) *terraform.TerraformProjectJiraServiceManagementExtensionSettings {
+	if project.ExtensionSettings == nil {
+		return nil
+	}
+
+	jiraExtension := lo.Filter(project.ExtensionSettings, func(item octopus.ExtensionSetting, index int) bool {
+		return item.ExtensionId == "jiraservicemanagement-integration"
+	})
+
+	if len(jiraExtension) == 0 {
+		return nil
+	}
+
+	connectionId := maputil.ValueOrStringDefault(jiraExtension[0].Values, "JsmConnectionId", "")
+
+	if connectionId == "" {
+		return nil
+	}
+
+	return &terraform.TerraformProjectJiraServiceManagementExtensionSettings{
+		ConnectionId:           connectionId,
+		IsEnabled:              maputil.ValueOrBoolDefault(jiraExtension[0].Values, "JsmChangeControlled", false),
+		ServiceDeskProjectName: maputil.ValueOrStringDefault(jiraExtension[0].Values, "ServiceDeskProjectName", ""),
+	}
+}
+
+func (c *ProjectConverter) convertServiceNowSettings(project octopus.Project) *terraform.TerraformProjectServicenowExtensionSettings {
+	if project.ExtensionSettings == nil {
+		return nil
+	}
+
+	snowExtension := lo.Filter(project.ExtensionSettings, func(item octopus.ExtensionSetting, index int) bool {
+		return item.ExtensionId == "servicenow-integration"
+	})
+
+	if len(snowExtension) == 0 {
+		return nil
+	}
+
+	connectionId := maputil.ValueOrStringDefault(snowExtension[0].Values, "ServiceNowConnectionId", "")
+
+	if connectionId == "" {
+		return nil
+	}
+
+	return &terraform.TerraformProjectServicenowExtensionSettings{
+		ConnectionId: connectionId,
+		IsEnabled:    maputil.ValueOrBoolDefault(snowExtension[0].Values, "ServiceNowChangeControlled", false),
+		// The TF provider exposes a boolean, but the API returns a string with at least 3 possible values.
+		// We can't capture the settings here.
+		IsStateAutomaticallyTransitioned: false,
+		StandardChangeTemplateName:       strutil.NilIfEmpty(maputil.ValueOrStringDefault(snowExtension[0].Values, "StandardChangeTemplateName", "")),
 	}
 }
 

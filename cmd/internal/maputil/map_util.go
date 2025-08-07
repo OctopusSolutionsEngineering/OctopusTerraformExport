@@ -19,3 +19,37 @@ func ToStringAnyMap(input map[string]string) map[string]any {
 		return any(value)
 	})
 }
+
+func ValueOrStringDefault(input map[string]any, key string, defaultValue string) string {
+	if input == nil {
+		return defaultValue
+	}
+
+	value, exists := input[key]
+	if !exists {
+		return defaultValue
+	}
+
+	if value == nil {
+		return defaultValue
+	}
+
+	return value.(string)
+}
+
+func ValueOrBoolDefault(input map[string]any, key string, defaultValue bool) bool {
+	if input == nil {
+		return defaultValue
+	}
+
+	value, exists := input[key]
+	if !exists {
+		return defaultValue
+	}
+
+	if value == nil {
+		return defaultValue
+	}
+
+	return value.(bool)
+}

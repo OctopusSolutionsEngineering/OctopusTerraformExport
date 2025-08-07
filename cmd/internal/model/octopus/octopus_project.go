@@ -59,7 +59,7 @@ type Project struct {
 	IncludedLibraryVariableSetIds   []string
 	PersistenceSettings             PersistenceSettings
 	VersioningStrategy              VersioningStrategy
-	// Todo: add service now and jira settings
+	ExtensionSettings               []ExtensionSetting
 }
 
 func (p *Project) GetParentId() *string {
@@ -107,4 +107,9 @@ type VersioningStrategy struct {
 type DonorPackage struct {
 	DeploymentAction *string
 	PackageReference *string
+}
+
+type ExtensionSetting struct {
+	ExtensionId string
+	Values      map[string]any
 }
