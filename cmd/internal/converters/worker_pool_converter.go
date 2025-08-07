@@ -288,18 +288,15 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 
 		// Fallback is used when the default worker pool, usually called "Hosted Ubuntu" or "Hosted Windows", is not found.
 		// An empty string falls back to the default worker pool.
-		fallback := ""
+		// Note this string is used inside an interpolation, which is why it is wrapped in quotes.
+		fallback := "\"\""
 
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName,
-				"workerpool_"+sanitizer.SanitizeName(fallback),
+				fallback,
 				&thisResource,
 				pool,
 				stateless)
-
-			dependencies.AddResource(*c.createStandAloneLookupResource(
-				"workerpool_"+sanitizer.SanitizeName(fallback),
-				fallback))
 
 		} else {
 			if c.GenerateImportScripts && !stateless {
@@ -431,6 +428,12 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 // to an on-premise instance, or vice versa.
 func (c WorkerPoolConverter) createStandAloneLookupResource(resourceName string, resourceDisplayName string) *data.ResourceDetails {
 
+	// Resource names might be empty - a default worker pool is just an empty string.
+	// There is no need to create a data source for it.
+	if resourceDisplayName == "" {
+		return nil
+	}
+
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Name = resourceDisplayName
@@ -476,13 +479,13 @@ func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName s
 	}
 }
 
-func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, fallbackResourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
+func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, fallbackDataLookup string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
 	if stateless {
 		// Stateless modules try to use the dynamic worker pool first, and if that fails, use the static worker pool
 		// This allows a module created on a cloud instance to be used in an on-premise instance.
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
 			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
-			": data." + octopusdeployWorkerPoolsDataType + "." + fallbackResourceName + ".worker_pools[0].id}"
+			": " + fallbackDataLookup + "}"
 	} else {
 		thisResource.Lookup = "${data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
 	}

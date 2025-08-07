@@ -129,6 +129,10 @@ func (c *ResourceDetailsCollection) AddResource(resources ...ResourceDetails) {
 		c.Resources = []ResourceDetails{}
 	}
 
+	if resources == nil {
+		return
+	}
+
 	/*
 		When running with multiple goroutines it is possible to have a race condition where a call to HasResource
 		returns false, indicating that a converter should go ahead and process the resource. But by the time
