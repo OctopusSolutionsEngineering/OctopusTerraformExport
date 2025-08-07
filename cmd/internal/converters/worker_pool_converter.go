@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -284,7 +285,10 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 
 	if pool.WorkerPoolType == "DynamicWorkerPool" {
 		forceLookup := lookup || pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu"
-		fallback := "Default Worker Pool"
+
+		// Fallback is used when the default worker pool, usually called "Hosted Ubuntu" or "Hosted Windows", is not found.
+		// An empty string falls back to the default worker pool.
+		fallback := ""
 
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName,
