@@ -1579,6 +1579,27 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 	return &display
 }
 
+// getDeploymentProcessStepId finds the internal ID of the action. This is despite the fact that the API calls the
+// parameter "DonorPackageStepId" - it is actually an Action ID, not a step ID.
+func (c *VariableSetConverter) getDeploymentProcessStepId(projectId string, deploymentProcessId string, actionIds []string, dependencies *data.ResourceDetailsCollection) []string {
+	// If there is no deployment process, there are no action IDs
+	if deploymentProcessId == "" {
+		return []string{}
+	}
+
+	return lo.Map(actionIds, func(item string, index int) string {
+		// The first action in a step is combined with the step, so here we lookup the "DeploymentProcesses/Steps" resource type
+		stepDependency := dependencies.GetResource("DeploymentProcesses/Steps",
+			projectId+"/"+deploymentProcessId+"/"+item)
+
+		// Second and subsequent actions are represented as "DeploymentProcesses/ChildSteps" resources, which we also need to check
+		actionDependency := dependencies.GetResource("DeploymentProcesses/ChildSteps",
+			projectId+"/"+deploymentProcessId+"/"+item)
+
+		return strutil.DefaultIfEmpty(stepDependency, actionDependency)
+	})
+}
+
 func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableSet octopus.VariableSet, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVariableScope, error) {
 	filteredEnvironments := c.EnvironmentFilter.FilterEnvironmentScope(variable.Scope.Environment)
 
@@ -1587,28 +1608,17 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 		zap.L().Warn("WARNING: Variable " + variable.Name + " removed all environment scopes.")
 	}
 
-	// Get a list of action IDs that includes the deployment process ID. This is because action IDs are
-	// not guaranteed to be unique and are saved in the dependencies with the deployment process ID as a prefix.
-	// If the variable set belongs to a library variable set, it can't be scoped to action, and so the profix
-	// won't be used.
-	actionPrefix, err := c.getDeploymentProcessFromVariable(variableSet)
+	deploymentProcessId, err := c.getDeploymentProcessFromVariable(variableSet)
 
 	if err != nil {
 		return nil, err
 	}
 
-	fixedActionIds := lo.Map(variable.Scope.Action, func(actionId string, index int) string {
-		return actionPrefix + "-" + actionId
-	})
-
-	// We should always find a prefix if there were any variable scopes. There may be edge cases
-	// where the action was deleted after the variable was created, for example a CaC project edited
-	// the deployment process but not the variable scopes.
-	if len(actionPrefix) == 0 && len(variable.Scope.Action) != 0 {
-		zap.L().Warn("WARNING: Variable " + variable.Name + " has action scopes but we did not find the deployment process. This means variables arr scoped to actions that do not exist.")
-	}
-
-	actions := dependencies.GetResources("Actions", fixedActionIds...)
+	// BUG: A octopusdeploy_process_child_step includes both the step and the first action. Hwoever, the ID is the step ID.
+	// There is no way to get the ID of the action. This means that any variables scoped to the first step in a process
+	// will be recreated with the step ID, and not the action ID, leading to a "Missing Resource" error in the UI.
+	// See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/60
+	actions := c.getDeploymentProcessStepId(strutil.EmptyIfNil(variableSet.OwnerId), deploymentProcessId, variable.Scope.Action, dependencies)
 	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
 	environments := dependencies.GetResources("Environments", filteredEnvironments...)
 	machines := dependencies.GetResources("Machines", variable.Scope.Machine...)
