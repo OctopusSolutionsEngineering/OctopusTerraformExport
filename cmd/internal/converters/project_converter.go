@@ -487,7 +487,8 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			return "", err
 		}
 
-		versioningStrategy, err := c.convertVersioningStrategy(project, projectName, dependencies)
+		//versioningStrategy, err := c.convertVersioningStrategyV2(project, projectName, dependencies)
+		versioningStrategy, err := c.convertVersioningStrategy(project)
 
 		if err != nil {
 			return "", err
@@ -1052,7 +1053,78 @@ func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project,
 	return &versioningStrategyTerraformResource, nil
 }
 
-func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
+func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
+		return nil, nil
+	}
+
+	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored..
+	// The actual values come from branch specific settings.
+	if project.HasCacConfigured() {
+		return c.convertCaCVersioningStrategy(project)
+	}
+
+	return c.convertDatabaseVersioningStrategy(project)
+}
+
+func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+	// Don't define a versioning strategy if it is not set
+	if project.VersioningStrategy.Template == "" {
+		return nil, nil
+	}
+
+	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
+	// needs to know the name of the step and package to base the versioning on, and the deployment process
+	// needs to know the project to attach itself to. If the versioning strategy is set to use packages,
+	// simply return nil.
+	if strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId) != "" ||
+		project.VersioningStrategy.DonorPackage != nil {
+		return nil, nil
+	}
+
+	versioningStrategy := terraform.TerraformVersioningStrategy{
+		Template:           project.VersioningStrategy.Template,
+		DonorPackageStepId: nil,
+		DonorPackage:       nil,
+	}
+
+	if project.VersioningStrategy.DonorPackage != nil {
+		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
+			DeploymentAction: project.VersioningStrategy.DonorPackage.DeploymentAction,
+			PackageReference: project.VersioningStrategy.DonorPackage.PackageReference,
+		}
+	}
+
+	return &versioningStrategy, nil
+}
+
+func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
+	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
+	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
+		return nil, err
+	}
+
+	if deploymentSettings.VersioningStrategy.Template == "" {
+		return nil, nil
+	}
+
+	versioningStrategy := terraform.TerraformVersioningStrategy{
+		Template:           deploymentSettings.VersioningStrategy.Template,
+		DonorPackageStepId: nil,
+		DonorPackage:       nil,
+	}
+
+	if project.VersioningStrategy.DonorPackage != nil {
+		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
+			DeploymentAction: deploymentSettings.VersioningStrategy.DonorPackage.DeploymentAction,
+			PackageReference: deploymentSettings.VersioningStrategy.DonorPackage.PackageReference,
+		}
+	}
+
+	return &versioningStrategy, nil
+}
+
+func (c *ProjectConverter) convertVersioningStrategyV2(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
 	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
 		return nil, nil
 	}
