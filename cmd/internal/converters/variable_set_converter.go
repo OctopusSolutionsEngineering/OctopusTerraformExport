@@ -1582,6 +1582,11 @@ func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *te
 // getDeploymentProcessStepId finds the internal ID of the action. This is despite the fact that the API calls the
 // parameter "DonorPackageStepId" - it is actually an Action ID, not a step ID.
 func (c *VariableSetConverter) getDeploymentProcessStepId(projectId string, deploymentProcessId string, actionIds []string, dependencies *data.ResourceDetailsCollection) []string {
+	// If there is no deployment process, there are no action IDs
+	if deploymentProcessId == "" {
+		return []string{}
+	}
+
 	return lo.Map(actionIds, func(item string, index int) string {
 		// The first action in a step is combined with the step, so here we lookup the "DeploymentProcesses/Steps" resource type
 		stepDependency := dependencies.GetResource("DeploymentProcesses/Steps",
