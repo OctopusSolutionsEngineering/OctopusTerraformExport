@@ -7,7 +7,7 @@ type TerraformProject struct {
 	Id                                     *string                                          `hcl:"id"`
 	SpaceId                                *string                                          `hcl:"space_id"`
 	ResourceName                           string                                           `hcl:"name"`
-	AutoCreateRelease                      bool                                             `hcl:"auto_create_release"`
+	AutoCreateRelease                      *bool                                            `hcl:"auto_create_release"`
 	DefaultGuidedFailureMode               *string                                          `hcl:"default_guided_failure_mode"`
 	DefaultToSkipIfAlreadyInstalled        bool                                             `hcl:"default_to_skip_if_already_installed"`
 	Description                            *string                                          `hcl:"description"`

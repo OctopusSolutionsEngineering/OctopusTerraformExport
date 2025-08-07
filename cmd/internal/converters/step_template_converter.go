@@ -311,13 +311,14 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 		file := hclwrite.NewEmptyFile()
 
-		// This resource uses the shell_script resource type to exeucte a custom script to ensure a community
-		// step template is installed.
-		communityStepTemplateResource := terraform.TerraformShellScript{
-			Type: "shell_script",
-			Name: stepTemplateName,
-			LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
-				Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading community step template')
+		if thisResource.ExternalID != "" {
+			// This resource uses the shell_script resource type to execute a custom script to ensure a community
+			// step template is installed.
+			communityStepTemplateResource := terraform.TerraformShellScript{
+				Type: "shell_script",
+				Name: stepTemplateName,
+				LifecycleCommands: terraform.TerraformShellScriptLifecycleCommands{
+					Read: strutil.StrPointer(strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Reading community step template')
 					$state = [Console]::In.ReadLine() | ConvertFrom-JSON
 					if ([string]::IsNullOrEmpty($state.Id)) {
 						$host.ui.WriteErrorLine('State ID is empty')
@@ -325,15 +326,17 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					} else {
 						$host.ui.WriteErrorLine('State ID is ($state.Id)')
 						$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($state.Id)" -Method GET -Headers $headers
+						$response = Invoke-WebRequest -ProgressAction SilentlyContinue -Uri "$($env:SERVER)/api/communityactiontemplates/$($state.Id)" -Method GET -Headers $headers
 						if ($response.StatusCode -eq 200) {
 							$stepTemplateObject = $response.Content | ConvertFrom-Json
+							# Step properties might include large scripts that break GRPC limits, so we exclude them
+							$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId,Website,HistoryUrl
 							Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 						} else {
 							Write-Host "{}"
 						}
 					}`)),
-				Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create community step template')
+					Create: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Create community step template')
 					if ([string]::IsNullOrEmpty("` + thisResource.ExternalID + `")) {
 						Write-Host "{}"
 					}
@@ -341,26 +344,39 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					$headers = @{ "X-Octopus-ApiKey" = $env:APIKEY }
 
 					# Find the step template with the matching external ID
-					$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates?take=10000" -Method GET -Headers $headers
+					$response = Invoke-WebRequest -ProgressAction SilentlyContinue  -Uri "$($env:SERVER)/api/communityactiontemplates?take=10000" -Method GET -Headers $headers
 					$communityTemplate = $response.content | ConvertFrom-Json | Select-Object -Expand Items | ? {$_.Website -eq "` + thisResource.ExternalID + `"} | % {
 						# Then install the step template
-						$response = Invoke-WebRequest -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+                        try {
+							$installResponse = Invoke-WebRequest -ProgressAction SilentlyContinue  -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)/installation/$($env:SPACEID)" -Method POST -Headers $headers
+						} catch {
+							# Silently fail if the step template is already installed
+						}
+						$response = Invoke-WebRequest -ProgressAction SilentlyContinue -Uri "$($env:SERVER)/api/communityactiontemplates/$($_.Id)" -Method GET -Headers $headers
 						$stepTemplateObject = $response.content | ConvertFrom-Json
+						# Step properties might include large scripts that break GRPC limits, so we exclude them
+						$stepTemplateObject = $stepTemplateObject | Select-Object -Property Id,Name,Description,Version,ActionType,CommunityActionTemplateId,StepPackageId,Website,HistoryUrl
 						Write-Host $($stepTemplateObject | ConvertTo-Json -Depth 100)
 					}`),
-				Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
-			},
-			SensitiveEnvironment: map[string]string{
-				"SERVER":  "${var.octopus_server}",
-				"SPACEID": "${var.octopus_space_id}",
-				"APIKEY":  "${var.octopus_apikey}",
-			},
-			WorkingDirectory: strutil.StrPointer("${path.module}"),
+					Delete: strutil.StripMultilineWhitespace(`$host.ui.WriteErrorLine('Delete community step template (no-op)'`),
+				},
+				SensitiveEnvironment: map[string]string{
+					"SERVER":  "${var.octopus_server}",
+					"SPACEID": "${var.octopus_space_id}",
+					"APIKEY":  "${var.octopus_apikey}",
+				},
+				WorkingDirectory: strutil.StrPointer("${path.module}"),
+			}
+
+			communityStepTemplateBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
+
+			file.Body().AppendBlock(communityStepTemplateBlock)
 		}
 
-		communityStepTemplateBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
-
-		file.Body().AppendBlock(communityStepTemplateBlock)
+		communityActionTemplate := ""
+		if thisResource.ExternalID != "" {
+			communityActionTemplate = "${shell_script." + stepTemplateName + ".output.Id}"
+		}
 
 		terraformResource := terraform.TerraformStepTemplate{
 			Type:                      octopusdeployStepTemplateResourceType,
@@ -368,9 +384,9 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			ActionType:                template.ActionType,
 			SpaceId:                   strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", strutil.EmptyIfNil(template.SpaceId))),
 			ResourceName:              template.Name,
-			Description:               template.Description,
+			Description:               strutil.TrimPointer(template.Description), // The API trims whitespace, which can lead to a "Provider produced inconsistent result after apply" error
 			StepPackageId:             template.StepPackageId,
-			CommunityActionTemplateId: template.CommunityActionTemplateId,
+			CommunityActionTemplateId: strutil.NilIfEmpty(communityActionTemplate),
 			Packages:                  c.convertPackages(template.Packages),
 			Parameters:                c.convertParameters(template.Parameters, file, dependencies),
 			Properties:                template.Properties,
