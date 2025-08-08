@@ -496,6 +496,8 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			return "", err
 		}
 
+		jsm := c.convertJiraSettings(file, project)
+
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
 			Name:                                   projectName,
@@ -521,7 +523,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
 			Lifecycle:                              nil,
 			VersioningStrategy:                     versioningStrategy,
-			JiraServiceManagementExtensionSettings: c.convertJiraSettings(project),
+			JiraServiceManagementExtensionSettings: jsm,
 			ServicenowExtensionSettings:            c.convertServiceNowSettings(project),
 		}
 
@@ -983,7 +985,7 @@ func (c *ProjectConverter) convertAnonymousGitPersistence(project octopus.Projec
 	}
 }
 
-func (c *ProjectConverter) convertJiraSettings(project octopus.Project) *terraform.TerraformProjectJiraServiceManagementExtensionSettings {
+func (c *ProjectConverter) convertJiraSettings(file *hclwrite.File, project octopus.Project) *terraform.TerraformProjectJiraServiceManagementExtensionSettings {
 	if project.ExtensionSettings == nil {
 		return nil
 	}
@@ -1002,10 +1004,39 @@ func (c *ProjectConverter) convertJiraSettings(project octopus.Project) *terrafo
 		return nil
 	}
 
+	jsmConnectionIdVariableName := "project_" + sanitizer.SanitizeName(project.Name) + "_jsm_connection_id"
+	jsmServiceDeskProjectNameVariableName := "project_" + sanitizer.SanitizeName(project.Name) + "_jsm_service_desk_project_name"
+
+	jsmConnectionIdVariable := terraform.TerraformVariable{
+		Name:        jsmConnectionIdVariableName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: "The Jira Service Manager Connection ID for project " + project.Name,
+		Default:     strutil.StrPointer(maputil.ValueOrStringDefault(jiraExtension[0].Values, "JsmConnectionId", "")),
+	}
+
+	jsmConnectionIdVariableBlock := gohcl.EncodeAsBlock(jsmConnectionIdVariable, "variable")
+	hcl.WriteUnquotedAttribute(jsmConnectionIdVariableBlock, "type", "string")
+	file.Body().AppendBlock(jsmConnectionIdVariableBlock)
+
+	jsmServiceDeskProjectNameVariable := terraform.TerraformVariable{
+		Name:        jsmServiceDeskProjectNameVariableName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: "The Jira Service Manager Service Desk Project Name for project " + project.Name,
+		Default:     strutil.StrPointer(maputil.ValueOrStringDefault(jiraExtension[0].Values, "ServiceDeskProjectName", "")),
+	}
+
+	jsmServiceDeskProjectNameVariableBlock := gohcl.EncodeAsBlock(jsmServiceDeskProjectNameVariable, "variable")
+	hcl.WriteUnquotedAttribute(jsmServiceDeskProjectNameVariableBlock, "type", "string")
+	file.Body().AppendBlock(jsmServiceDeskProjectNameVariableBlock)
+
 	return &terraform.TerraformProjectJiraServiceManagementExtensionSettings{
-		ConnectionId:           connectionId,
+		ConnectionId:           "${var." + jsmConnectionIdVariableName + "}",
 		IsEnabled:              maputil.ValueOrBoolDefault(jiraExtension[0].Values, "JsmChangeControlled", false),
-		ServiceDeskProjectName: maputil.ValueOrStringDefault(jiraExtension[0].Values, "ServiceDeskProjectName", ""),
+		ServiceDeskProjectName: "${var." + jsmServiceDeskProjectNameVariableName + "}",
 	}
 }
 
