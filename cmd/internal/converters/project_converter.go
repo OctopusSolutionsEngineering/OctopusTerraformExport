@@ -497,6 +497,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		}
 
 		jsm := c.convertJiraSettings(file, project)
+		snow := c.convertServiceNowSettings(file, project)
 
 		terraformResource := terraform.TerraformProject{
 			Type:                                   octopusdeployProjectResourceType,
@@ -524,7 +525,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			Lifecycle:                              nil,
 			VersioningStrategy:                     versioningStrategy,
 			JiraServiceManagementExtensionSettings: jsm,
-			ServicenowExtensionSettings:            c.convertServiceNowSettings(project),
+			ServicenowExtensionSettings:            snow,
 		}
 
 		// There is no point ignoring changes for stateless exports
@@ -1040,7 +1041,7 @@ func (c *ProjectConverter) convertJiraSettings(file *hclwrite.File, project octo
 	}
 }
 
-func (c *ProjectConverter) convertServiceNowSettings(project octopus.Project) *terraform.TerraformProjectServicenowExtensionSettings {
+func (c *ProjectConverter) convertServiceNowSettings(file *hclwrite.File, project octopus.Project) *terraform.TerraformProjectServicenowExtensionSettings {
 	if project.ExtensionSettings == nil {
 		return nil
 	}
@@ -1059,13 +1060,42 @@ func (c *ProjectConverter) convertServiceNowSettings(project octopus.Project) *t
 		return nil
 	}
 
+	snowConnectionIdVariableName := "project_" + sanitizer.SanitizeName(project.Name) + "_snow_connection_id"
+	snowStandardChangeTemplateName := "project_" + sanitizer.SanitizeName(project.Name) + "_snow_standard_change_template_name"
+
+	jsmConnectionIdVariable := terraform.TerraformVariable{
+		Name:        snowConnectionIdVariableName,
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: "The Jira Service Manager Connection ID for project " + project.Name,
+		Default:     strutil.StrPointer(connectionId),
+	}
+
+	snowConnectionIdVariableBlock := gohcl.EncodeAsBlock(jsmConnectionIdVariable, "variable")
+	hcl.WriteUnquotedAttribute(snowConnectionIdVariableBlock, "type", "string")
+	file.Body().AppendBlock(snowConnectionIdVariableBlock)
+
+	snowStandardChangeTemplateNameVariable := terraform.TerraformVariable{
+		Name:        snowStandardChangeTemplateName,
+		Type:        "string",
+		Nullable:    true,
+		Sensitive:   true,
+		Description: "The Jira Service Manager Service Desk Project Name for project " + project.Name,
+		Default:     strutil.NilIfEmpty(maputil.ValueOrStringDefault(snowExtension[0].Values, "StandardChangeTemplateName", "")),
+	}
+
+	snowStandardChangeTemplateNameVariableBlock := gohcl.EncodeAsBlock(snowStandardChangeTemplateNameVariable, "variable")
+	hcl.WriteUnquotedAttribute(snowStandardChangeTemplateNameVariableBlock, "type", "string")
+	file.Body().AppendBlock(snowStandardChangeTemplateNameVariableBlock)
+
 	return &terraform.TerraformProjectServicenowExtensionSettings{
-		ConnectionId: connectionId,
+		ConnectionId: "${var." + snowConnectionIdVariableName + "}",
 		IsEnabled:    maputil.ValueOrBoolDefault(snowExtension[0].Values, "ServiceNowChangeControlled", false),
 		// The TF provider exposes a boolean, but the API returns a string with at least 3 possible values.
 		// We can't capture the settings here.
 		IsStateAutomaticallyTransitioned: false,
-		StandardChangeTemplateName:       strutil.NilIfEmpty(maputil.ValueOrStringDefault(snowExtension[0].Values, "StandardChangeTemplateName", "")),
+		StandardChangeTemplateName:       strutil.StrPointer("${var." + snowStandardChangeTemplateName + "}"),
 	}
 }
 
