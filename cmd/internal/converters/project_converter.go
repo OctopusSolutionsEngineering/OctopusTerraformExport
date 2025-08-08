@@ -436,8 +436,6 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 		return err
 	}
 
-	c.exportSystemDependencies(dependencies)
-
 	if c.GenerateImportScripts && !stateless {
 		c.toBashImport(projectName, project.Name, dependencies)
 		c.toPowershellImport(projectName, project.Name, dependencies)
@@ -1264,10 +1262,6 @@ func (c *ProjectConverter) convertVersioningStrategyV2(project octopus.Project, 
 	}
 
 	return c.convertDatabaseVersioningStrategyV2(project, projectName, dependencies)
-}
-
-func (c *ProjectConverter) exportSystemDependencies(dependencies *data.ResourceDetailsCollection) {
-	c.LifecycleConverter.SystemDataToHcl(dependencies)
 }
 
 // exportChildDependencies exports those dependencies that are always required regardless of the recursive flag.

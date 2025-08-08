@@ -2,6 +2,11 @@ package entry
 
 import (
 	"errors"
+	"os"
+	"runtime/pprof"
+	"strings"
+	"sync"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/collections"
@@ -14,10 +19,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/variables"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"os"
-	"runtime/pprof"
-	"strings"
-	"sync"
 )
 
 // Entry takes the arguments, exports the Octopus resources to HCL in strings and returns the strings mapped to file names.
@@ -2297,6 +2298,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	// that references the OctopusActionProcessor.
 	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
+
+	// Export the system data sources
+	lifecycleConverter.SystemDataToHcl(&dependencies)
 
 	if args.LookupProjectDependencies {
 		for _, project := range args.ProjectId {
