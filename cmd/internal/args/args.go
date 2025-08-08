@@ -5,14 +5,15 @@ import (
 	"crypto/tls"
 	"errors"
 	"flag"
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/types"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
-	"net/http"
-	"os"
-	"strings"
 )
 
 type Arguments struct {
@@ -36,8 +37,8 @@ type Arguments struct {
 	Space                           string
 	Destination                     string
 	Console                         bool
-	ProjectId                       Projects
-	ProjectName                     Projects
+	ProjectId                       StringSliceArgs
+	ProjectName                     StringSliceArgs
 	RunbookId                       string
 	RunbookName                     string
 	LookupProjectDependencies       bool
@@ -208,23 +209,6 @@ func (arguments *Arguments) GetBackend() string {
 	}
 
 	return arguments.BackendBlock
-}
-
-type Projects []string
-
-func (i *Projects) String() string {
-	return "exported projects"
-}
-
-func (i *Projects) Set(value string) error {
-	trimmed := strings.TrimSpace(value)
-
-	if len(trimmed) == 0 {
-		return nil
-	}
-
-	*i = append(*i, trimmed)
-	return nil
 }
 
 type StringSliceArgs []string

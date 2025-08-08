@@ -73,6 +73,45 @@ type ProjectConverter struct {
 	ExcludeTenantsExcept      args.StringSliceArgs
 	ExcludeAllTenants         bool
 	IgnoreCacErrors           bool
+	LookupProjectDependencies bool
+	Stateless                 bool
+	ProjectId                 args.StringSliceArgs
+}
+
+// Export is the top level function that exports projects to HCL files.
+func (c *ProjectConverter) Export(dependencies *data.ResourceDetailsCollection) error {
+	// Export the system data sources
+	c.LifecycleConverter.SystemDataToHcl(dependencies)
+
+	if c.LookupProjectDependencies {
+		for _, project := range c.ProjectId {
+			err := c.ToHclByIdWithLookups(project, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		if c.Stateless {
+			for _, project := range c.ProjectId {
+				err := c.ToHclStatelessById(project, dependencies)
+
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			for _, project := range c.ProjectId {
+				err := c.ToHclById(project, dependencies)
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *ProjectConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {

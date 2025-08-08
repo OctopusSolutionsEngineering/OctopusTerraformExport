@@ -1120,6 +1120,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		ListeningWorkerConverter:          listeningWorkerConverter,
 		SshWorkerConverter:                sshWorkerConverter,
 		MachineProxyConverter:             machineProxyConverter,
+		Stateless:                         args.Stateless,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -1143,18 +1144,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
-	if args.Stateless {
-		err := spaceConverter.AllToStatelessHcl(&dependencies)
-
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := spaceConverter.AllToHcl(&dependencies)
-
-		if err != nil {
-			return nil, err
-		}
+	if err := spaceConverter.Export(&dependencies); err != nil {
+		return nil, err
 	}
 
 	return &dependencies, nil
@@ -2276,6 +2267,9 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		ExcludeTenantsExcept:      args.ExcludeTenantsExcept,
 		ExcludeAllTenants:         args.ExcludeAllTenants,
 		IgnoreCacErrors:           args.IgnoreCacErrors,
+		LookupProjectDependencies: args.LookupProjectDependencies,
+		Stateless:                 args.Stateless,
+		ProjectId:                 args.ProjectId,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -2299,35 +2293,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	projectConverter.DeploymentProcessConverter.SetActionProcessor(&octopusActionProcessor)
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
-	// Export the system data sources
-	lifecycleConverter.SystemDataToHcl(&dependencies)
-
-	if args.LookupProjectDependencies {
-		for _, project := range args.ProjectId {
-			err := projectConverter.ToHclByIdWithLookups(project, &dependencies)
-
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		if args.Stateless {
-			for _, project := range args.ProjectId {
-				err := projectConverter.ToHclStatelessById(project, &dependencies)
-
-				if err != nil {
-					return nil, err
-				}
-			}
-		} else {
-			for _, project := range args.ProjectId {
-				err := projectConverter.ToHclById(project, &dependencies)
-
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
+	if err := projectConverter.Export(&dependencies); err != nil {
+		return nil, err
 	}
 
 	return &dependencies, nil

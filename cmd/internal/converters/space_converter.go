@@ -52,6 +52,26 @@ type SpaceConverter struct {
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 	IncludeOctopusOutputVars          bool
+	Stateless                         bool
+}
+
+// Export is the top level function that exports a space to HCL files.
+func (c SpaceConverter) Export(dependencies *data.ResourceDetailsCollection) error {
+	if c.Stateless {
+		err := c.AllToStatelessHcl(dependencies)
+
+		if err != nil {
+			return err
+		}
+	} else {
+		err := c.AllToHcl(dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // AllToHcl is a bulk export that takes advantage of the collection endpoints to download and export everything
