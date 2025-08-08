@@ -56,6 +56,15 @@ type ConverterAndLookupWithStatelessById interface {
 	ConverterToStatelessById
 }
 
+// ConverterAndLookupWithStatelessByIdAndSystemData converts an individual resource by ID to HCL and to a data lookup
+// It also exports system data, which are data sources that are used in every space regardless of the resources in the space.
+type ConverterAndLookupWithStatelessByIdAndSystemData interface {
+	ConverterById
+	ConverterLookupById
+	ConverterToStatelessById
+	SystemDataToHcl(dependencies *data.ResourceDetailsCollection)
+}
+
 // ConverterAndWithLookupsById converts an individual resource by ID to HCL, either exporting all dependencies,
 // or looking up all dependencies
 type ConverterAndWithLookupsById interface {
@@ -263,6 +272,12 @@ type Converter interface {
 	AllToHcl(dependencies *data.ResourceDetailsCollection)
 	// AllToStatelessHcl converts all the resources of a given type to a stateless HCL module suitable for a step template.
 	AllToStatelessHcl(dependencies *data.ResourceDetailsCollection)
+}
+
+// Converter converts all objects in bulk, and exports system data
+type ConverterWithSystemData interface {
+	Converter
+	SystemDataToHcl(dependencies *data.ResourceDetailsCollection)
 }
 
 // ToHclByTenantIdAndProject exports tenant common and project variables for a project.

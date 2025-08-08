@@ -37,6 +37,27 @@ type LifecycleConverter struct {
 	GenerateImportScripts    bool
 }
 
+// SystemDataToHcl exports a data source for the first lifecycle in the space.
+// This data source is not dependent on any other resource being exported.
+// This is used as a fallback if no other lifecycle is found.
+// We always assume that at least one lifecycle exists.
+func (c LifecycleConverter) SystemDataToHcl(dependencies *data.ResourceDetailsCollection) {
+	thisResource := data.ResourceDetails{}
+	thisResource.FileName = "space_population/system_lifecycle_firstlifecycle.tf"
+	thisResource.Id = ""
+	thisResource.Name = ""
+	thisResource.ResourceType = c.GetResourceType()
+	thisResource.ToHcl = func() (string, error) {
+		// The fallback in case the default lifecycle is not found is to select the first lifecycle we can find.
+		file := hclwrite.NewEmptyFile()
+		firstLifecycle := c.buildData("system_lifecycle_firstlifecycle", "")
+		firstLifecycleBlock := gohcl.EncodeAsBlock(firstLifecycle, "data")
+		file.Body().AppendBlock(firstLifecycleBlock)
+		return string(file.Bytes()), nil
+	}
+	dependencies.AddResource(thisResource)
+}
+
 func (c LifecycleConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
@@ -334,11 +355,6 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 			}
 
 			file.Body().AppendBlock(block)
-
-			// The fallback in case the default lifecycle is not found is to select the first lifecycle we can find.
-			firstLifecycle := c.buildData("system_lifecycle_firstlifecycle", "")
-			firstLifecycleBlock := gohcl.EncodeAsBlock(firstLifecycle, "data")
-			file.Body().AppendBlock(firstLifecycleBlock)
 
 			return string(file.Bytes()), nil
 		}

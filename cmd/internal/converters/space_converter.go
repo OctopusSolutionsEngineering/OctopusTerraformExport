@@ -22,7 +22,7 @@ type SpaceConverter struct {
 	FeedConverter                     Converter
 	EnvironmentConverter              Converter
 	LibraryVariableSetConverter       Converter
-	LifecycleConverter                Converter
+	LifecycleConverter                ConverterWithSystemData
 	WorkerPoolConverter               Converter
 	TagSetConverter                   Converter
 	GitCredentialsConverter           Converter
@@ -79,6 +79,7 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	c.LibraryVariableSetConverter.AllToHcl(dependencies)
 
 	// Convert the lifecycles
+	c.LifecycleConverter.SystemDataToHcl(dependencies)
 	c.LifecycleConverter.AllToHcl(dependencies)
 
 	// Convert the worker pools
@@ -180,6 +181,7 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 	c.LibraryVariableSetConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the lifecycles
+	c.LifecycleConverter.SystemDataToHcl(dependencies)
 	c.LifecycleConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the worker pools
