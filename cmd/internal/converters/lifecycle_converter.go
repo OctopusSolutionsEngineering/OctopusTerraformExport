@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -138,12 +139,12 @@ func (c LifecycleConverter) ToHclLookupById(id string, dependencies *data.Resour
 
 }
 
-func (c LifecycleConverter) buildData(resourceName string, resource octopus.Lifecycle) terraform.TerraformLifecycleData {
+func (c LifecycleConverter) buildData(resourceName string, lifecycleName string) terraform.TerraformLifecycleData {
 	return terraform.TerraformLifecycleData{
 		Type:        octopusdeployLifecyclesDataType,
 		Name:        resourceName,
 		Ids:         nil,
-		PartialName: resource.Name,
+		PartialName: lifecycleName,
 		Skip:        0,
 		Take:        1,
 	}
@@ -151,7 +152,7 @@ func (c LifecycleConverter) buildData(resourceName string, resource octopus.Life
 
 // writeData appends the data block for stateless modules
 func (c LifecycleConverter) writeData(file *hclwrite.File, resource octopus.Lifecycle, resourceName string) {
-	terraformResource := c.buildData(resourceName, resource)
+	terraformResource := c.buildData(resourceName, resource.Name)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
 }
@@ -310,14 +311,34 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 	thisResource.Name = lifecycle.Name
 	thisResource.ResourceType = c.GetResourceType()
 	if forceLookup {
-		thisResource.Lookup = "${data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id}"
+
+		if lifecycle.Name != defaultLifecycleName {
+			// We expect any named lifecycle to exist
+			thisResource.Lookup = "${data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id} "
+		} else {
+			// If we are using the default lifecycle, we can fall back to the first lifecycle in the space
+			// in the event that the default lifecycle has been renamed.
+			thisResource.Lookup = "${length(data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles) != 0 " +
+				"? data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id" +
+				": data." + octopusdeployLifecyclesDataType + ".system_lifecycle_firstlifecycle.lifecycles[0].id}"
+		}
 
 		thisResource.ToHcl = func() (string, error) {
-			data := c.buildData(resourceName, lifecycle)
+			data := c.buildData(resourceName, lifecycle.Name)
 			file := hclwrite.NewEmptyFile()
 			block := gohcl.EncodeAsBlock(data, "data")
-			hcl.WriteLifecyclePostCondition(block, "Failed to resolve a lifecycle called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
+
+			// The default lifecycle may have been renamed, so we don't force it to exist.
+			if lifecycle.Name != defaultLifecycleName {
+				hcl.WriteLifecyclePostCondition(block, "Failed to resolve a lifecycle called \""+lifecycle.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(self.lifecycles) != 0")
+			}
+
 			file.Body().AppendBlock(block)
+
+			// The fallback in case the default lifecycle is not found is to select the first lifecycle we can find.
+			firstLifecycle := c.buildData("system_lifecycle_firstlifecycle", "")
+			firstLifecycleBlock := gohcl.EncodeAsBlock(firstLifecycle, "data")
+			file.Body().AppendBlock(firstLifecycleBlock)
 
 			return string(file.Bytes()), nil
 		}
