@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -18,7 +20,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"strconv"
 )
 
 const octopusdeployStepTemplateResourceType = "octopusdeploy_step_template"
@@ -389,7 +390,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			CommunityActionTemplateId: strutil.NilIfEmpty(communityActionTemplate),
 			Packages:                  c.convertPackages(template.Packages),
 			Parameters:                c.convertParameters(template.Parameters, file, dependencies),
-			Properties:                template.Properties,
+			Properties:                c.convertStepProperties(template.Properties),
 		}
 
 		if stateless {
@@ -415,6 +416,12 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c StepTemplateConverter) convertStepProperties(properties map[string]string) map[string]string {
+	// "Octopus.Action.RunOnServer" might be set on the step template, but it is not returned
+	// again when the step template is created. So we remove it here.
+	return lo.OmitByKeys(properties, []string{"Octopus.Action.RunOnServer"})
 }
 
 func (c StepTemplateConverter) convertParameters(parameters []octopus.StepTemplateParameters, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) []terraform.TerraformStepTemplateParameter {
