@@ -335,12 +335,12 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 
 		if lifecycle.Name != defaultLifecycleName {
 			// We expect any named lifecycle to exist
-			thisResource.Lookup = "${data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id} "
+			thisResource.Lookup = "${data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id}"
 		} else {
 			// If we are using the default lifecycle, we can fall back to the first lifecycle in the space
 			// in the event that the default lifecycle has been renamed.
 			thisResource.Lookup = "${length(data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles) != 0 " +
-				"? data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id" +
+				"? data." + octopusdeployLifecyclesDataType + "." + resourceName + ".lifecycles[0].id " +
 				": data." + octopusdeployLifecyclesDataType + ".system_lifecycle_firstlifecycle.lifecycles[0].id}"
 		}
 
