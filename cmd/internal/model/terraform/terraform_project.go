@@ -24,7 +24,6 @@ type TerraformProject struct {
 	GitAnonymousPersistenceSettings        *TerraformGitAnonymousPersistenceSettings               `hcl:"git_anonymous_persistence_settings,block"`
 	GitUsernamePasswordPersistenceSettings *TerraformGitUsernamePasswordPersistenceSettings        `hcl:"git_username_password_persistence_settings,block"`
 	Lifecycle                              *TerraformLifecycleMetaArgument                         `hcl:"lifecycle,block"`
-	VersioningStrategy                     *TerraformVersioningStrategy                            `hcl:"versioning_strategy,block"`
 	JiraServiceManagementExtensionSettings *TerraformProjectJiraServiceManagementExtensionSettings `hcl:"jira_service_management_extension_settings,block"`
 	ServicenowExtensionSettings            *TerraformProjectServicenowExtensionSettings            `hcl:"servicenow_extension_settings,block"`
 }
@@ -40,17 +39,6 @@ type TerraformProjectJiraServiceManagementExtensionSettings struct {
 	ConnectionId           string `hcl:"connection_id"`
 	IsEnabled              bool   `hcl:"is_enabled"`
 	ServiceDeskProjectName string `hcl:"service_desk_project_name"`
-}
-
-type TerraformVersioningStrategy struct {
-	Template           string                 `hcl:"template"`
-	DonorPackageStepId *string                `hcl:"donor_package_step_id"`
-	DonorPackage       *TerraformDonorPackage `hcl:"donor_package,block"`
-}
-
-type TerraformDonorPackage struct {
-	DeploymentAction *string `hcl:"deployment_action"`
-	PackageReference *string `hcl:"package_reference"`
 }
 
 func (t TerraformProject) HasCacConfigured() bool {

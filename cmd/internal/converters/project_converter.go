@@ -526,10 +526,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			return "", err
 		}
 
-		// We'll switch to the new versioning strategy once this bug is resolved:
-		// https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/55
-		//versioningStrategy, err := c.convertVersioningStrategyV2(project, projectName, dependencies)
-		versioningStrategy, err := c.convertVersioningStrategy(project)
+		versioningStrategy, err := c.convertVersioningStrategyV2(project, projectName, dependencies)
 
 		if err != nil {
 			return "", err
@@ -562,7 +559,6 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			GitAnonymousPersistenceSettings:        c.convertAnonymousGitPersistence(project, projectName),
 			GitUsernamePasswordPersistenceSettings: c.convertUsernamePasswordGitPersistence(project, projectName),
 			Lifecycle:                              nil,
-			VersioningStrategy:                     versioningStrategy,
 			JiraServiceManagementExtensionSettings: jsm,
 			ServicenowExtensionSettings:            snow,
 		}
@@ -597,10 +593,9 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			c.writeData(file, "${var."+projectName+"_name}", projectName)
 			terraformResource.Count = strutil.StrPointer(thisResource.Count)
 
-			// This is used by the new versioning strategy resource
-			//if versioningStrategy != nil {
-			//	versioningStrategy.Count = strutil.StrPointer(thisResource.Count)
-			//}
+			if versioningStrategy != nil {
+				versioningStrategy.Count = strutil.StrPointer(thisResource.Count)
+			}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -654,11 +649,10 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 
 		file.Body().AppendBlock(block)
 
-		// This is used by the new versioning strategy resource
-		//if versioningStrategy != nil {
-		//	versioningStrategyBlock := gohcl.EncodeAsBlock(versioningStrategy, "resource")
-		//	file.Body().AppendBlock(versioningStrategyBlock)
-		//}
+		if versioningStrategy != nil {
+			versioningStrategyBlock := gohcl.EncodeAsBlock(versioningStrategy, "resource")
+			file.Body().AppendBlock(versioningStrategyBlock)
+		}
 
 		return string(file.Bytes()), nil
 	}
@@ -1216,77 +1210,6 @@ func (c *ProjectConverter) convertCaCVersioningStrategyV2(project octopus.Projec
 	}
 
 	return &versioningStrategyTerraformResource, nil
-}
-
-func (c *ProjectConverter) convertVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
-	if c.IgnoreCacManagedValues && project.HasCacConfigured() {
-		return nil, nil
-	}
-
-	// If CaC is enabled, the top level ProjectConnectivityPolicy settings are supplied by the API but ignored..
-	// The actual values come from branch specific settings.
-	if project.HasCacConfigured() {
-		return c.convertCaCVersioningStrategy(project)
-	}
-
-	return c.convertDatabaseVersioningStrategy(project)
-}
-
-func (c *ProjectConverter) convertDatabaseVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
-	// Don't define a versioning strategy if it is not set
-	if project.VersioningStrategy.Template == "" {
-		return nil, nil
-	}
-
-	// Versioning based on packages creates a circular reference that Terraform can not resolve. The project
-	// needs to know the name of the step and package to base the versioning on, and the deployment process
-	// needs to know the project to attach itself to. If the versioning strategy is set to use packages,
-	// simply return nil.
-	if strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId) != "" ||
-		project.VersioningStrategy.DonorPackage != nil {
-		return nil, nil
-	}
-
-	versioningStrategy := terraform.TerraformVersioningStrategy{
-		Template:           project.VersioningStrategy.Template,
-		DonorPackageStepId: nil,
-		DonorPackage:       nil,
-	}
-
-	if project.VersioningStrategy.DonorPackage != nil {
-		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
-			DeploymentAction: project.VersioningStrategy.DonorPackage.DeploymentAction,
-			PackageReference: project.VersioningStrategy.DonorPackage.PackageReference,
-		}
-	}
-
-	return &versioningStrategy, nil
-}
-
-func (c *ProjectConverter) convertCaCVersioningStrategy(project octopus.Project) (*terraform.TerraformVersioningStrategy, error) {
-	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
-	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
-		return nil, err
-	}
-
-	if deploymentSettings.VersioningStrategy.Template == "" {
-		return nil, nil
-	}
-
-	versioningStrategy := terraform.TerraformVersioningStrategy{
-		Template:           deploymentSettings.VersioningStrategy.Template,
-		DonorPackageStepId: nil,
-		DonorPackage:       nil,
-	}
-
-	if project.VersioningStrategy.DonorPackage != nil {
-		versioningStrategy.DonorPackage = &terraform.TerraformDonorPackage{
-			DeploymentAction: deploymentSettings.VersioningStrategy.DonorPackage.DeploymentAction,
-			PackageReference: deploymentSettings.VersioningStrategy.DonorPackage.PackageReference,
-		}
-	}
-
-	return &versioningStrategy, nil
 }
 
 func (c *ProjectConverter) convertVersioningStrategyV2(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
