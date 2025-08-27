@@ -2,6 +2,9 @@ package converters
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -15,8 +18,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"net/url"
-	"strings"
 )
 
 const octopusdeployChannelDataType = "octopusdeploy_channels"
@@ -367,7 +368,15 @@ func (c ChannelConverter) convertRules(rules []octopus.Rule, deploymentprocess *
 		terraformRules = append(terraformRules, terraform.TerraformRule{
 			ActionPackage: c.convertActionPackages(v.ActionPackages, deploymentprocess),
 			Tag:           v.Tag,
-			VersionRange:  v.VersionRange,
+			/*
+					This needs to be a nil pointer if empty, otherwise we get an error like this:
+
+					When applying changes to octopusdeploy_channel.channel_test_test, provider
+				    "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]" produced an
+				    unexpected new value: .rule[0].version_range: was cty.StringVal(""), but now
+				    null.
+			*/
+			VersionRange: strutil.NilIfEmptyPointer(v.VersionRange),
 		})
 	}
 	return terraformRules
