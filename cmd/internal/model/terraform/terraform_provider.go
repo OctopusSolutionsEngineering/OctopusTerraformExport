@@ -52,10 +52,6 @@ func (c TerraformConfig) CreateTerraformConfig(backend string, version string, e
 	}
 
 	if experimentalStepTemplateEnabled {
-		config.RequiredProviders.ShellProvider = &ProviderDefinition{
-			Source:  "scottwinkler/shell",
-			Version: "1.7.10",
-		}
 		config.RequiredProviders.ExternalProvider = &ProviderDefinition{
 			Source:  "hashicorp/external",
 			Version: "2.3.4",

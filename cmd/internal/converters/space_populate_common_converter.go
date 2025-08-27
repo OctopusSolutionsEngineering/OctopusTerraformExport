@@ -1,13 +1,14 @@
 package converters
 
 import (
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	terraform2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"strings"
 )
 
 // TerraformProviderGenerator creates the common terraform files required to populate a space
@@ -94,7 +95,7 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformProvider{
+		terraformResource := terraform.TerraformProvider{
 			Type: "octopusdeploy",
 		}
 
@@ -111,14 +112,7 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
 
 		if experimentalStepTemplateEnabled {
-			shellScriptProvider := terraform2.TerraformShellProvider{
-				Type:              "shell",
-				Interpreter:       []string{"pwsh", "-Command"},
-				EnableParallelism: false,
-			}
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(shellScriptProvider, "provider"))
-
-			externalProvider := terraform2.TerraformEmptyProvider{
+			externalProvider := terraform.TerraformEmptyProvider{
 				Type: "external",
 			}
 			file.Body().AppendBlock(gohcl.EncodeAsBlock(externalProvider, "provider"))
@@ -144,7 +138,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform2.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion, c.ExperimentalEnableStepTemplates)
+		terraformResource := terraform.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion, c.ExperimentalEnableStepTemplates)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 		return string(file.Bytes()), nil
@@ -166,7 +160,7 @@ func (c TerraformProviderGenerator) createVariables(directory string, includeSpa
 		file := hclwrite.NewEmptyFile()
 
 		if includeServerDetails {
-			octopusServer := terraform2.TerraformVariable{
+			octopusServer := terraform.TerraformVariable{
 				Name:        "octopus_server",
 				Type:        "string",
 				Nullable:    false,
@@ -174,7 +168,7 @@ func (c TerraformProviderGenerator) createVariables(directory string, includeSpa
 				Description: "The URL of the Octopus server e.g. https://myinstance.octopus.app.",
 			}
 
-			octopusApiKey := terraform2.TerraformVariable{
+			octopusApiKey := terraform.TerraformVariable{
 				Name:        "octopus_apikey",
 				Type:        "string",
 				Nullable:    false,
@@ -192,7 +186,7 @@ func (c TerraformProviderGenerator) createVariables(directory string, includeSpa
 		}
 
 		if includeSpaceId {
-			octopusSpaceId := terraform2.TerraformVariable{
+			octopusSpaceId := terraform.TerraformVariable{
 				Name:        "octopus_space_id",
 				Type:        "string",
 				Nullable:    false,
@@ -226,7 +220,7 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, in
 		file := hclwrite.NewEmptyFile()
 
 		if includeServerDetails {
-			octopusServer := terraform2.TerraformOutput{
+			octopusServer := terraform.TerraformOutput{
 				Name:  "octopus_server",
 				Value: "${var.octopus_server}",
 			}
@@ -236,12 +230,12 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, in
 		}
 
 		if includeSpaceId {
-			octopusSpaceId := terraform2.TerraformOutput{
+			octopusSpaceId := terraform.TerraformOutput{
 				Name:  "octopus_space_id",
 				Value: "${var.octopus_space_id}",
 			}
 
-			octopusSpaceNameData := terraform2.TerraformSpaceData{
+			octopusSpaceNameData := terraform.TerraformSpaceData{
 				Type:         "octopusdeploy_spaces",
 				Name:         "octopus_space_name",
 				ResourceName: nil,
@@ -251,7 +245,7 @@ func (c TerraformProviderGenerator) createOctopusOutputVars(directory string, in
 				Take:         1,
 			}
 
-			octopusSpaceName := terraform2.TerraformOutput{
+			octopusSpaceName := terraform.TerraformOutput{
 				Name:  "octopus_space_name",
 				Value: "${data.octopusdeploy_spaces.octopus_space_name.spaces[0].name}",
 			}
