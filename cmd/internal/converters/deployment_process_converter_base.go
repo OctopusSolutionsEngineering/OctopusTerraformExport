@@ -600,7 +600,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			if parameters, err := c.getTemplateParameters(templateId.(string)); err != nil {
 				return "", err
 			} else {
-				c.assignProperties("execution_properties", block, owner, step.Actions[0].Properties, parameters, &step.Actions[0], file, dependencies)
+				sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(step.Actions[0].ActionType), step.Actions[0].Properties)
+				c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, &step.Actions[0], file, dependencies)
 			}
 		}
 
@@ -721,7 +722,8 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 		c.assignProperties("properties", block, projectOrRunbook, maputil.ToStringAnyMap(step.Properties), []string{}, step, file, dependencies)
 
 		if hasChild {
-			c.assignProperties("execution_properties", block, projectOrRunbook, step.Actions[0].Properties, []string{}, &step.Actions[0], file, dependencies)
+			sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(step.Actions[0].ActionType), step.Actions[0].Properties)
+			c.assignProperties("execution_properties", block, projectOrRunbook, sanitizedProperties, []string{}, &step.Actions[0], file, dependencies)
 		}
 
 		file.Body().AppendBlock(block)

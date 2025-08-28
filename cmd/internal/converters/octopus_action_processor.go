@@ -219,6 +219,33 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 	return properties
 }
 
+func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties map[string]any) map[string]any {
+	sanitisedProperties := map[string]any{}
+	for k, v := range properties {
+
+		sanitisedProperties[k] = v
+		/*
+				I've seen cases where manual interventions have Octopus.Action.RunOnServer set to false
+			 	When this step is recreated, the value is true. This results in the error:
+
+			 	Error: Provider produced inconsistent result after apply
+				When applying changes to
+				octopusdeploy_process_step.process_step_k8s_app_approve_production_deployment,
+				provider "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]"
+				produced an unexpected new value:
+				.execution_properties["Octopus.Action.RunOnServer"]: was
+				cty.StringVal("false"), but now cty.StringVal("true").
+		*/
+		if actionType == "Octopus.Manual" && k == "Octopus.Action.RunOnServer" {
+			if str, ok := v.(string); ok && strings.ToLower(str) == "false" {
+				sanitisedProperties[k] = "true"
+			}
+		}
+
+	}
+	return sanitisedProperties
+}
+
 // EscapeDollars escapes variable interpolation
 // https://developer.hashicorp.com/terraform/language/expressions/strings#escape-sequences
 func (c OctopusActionProcessor) EscapeDollars(properties map[string]string) map[string]string {
