@@ -726,8 +726,7 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 		c.assignProperties("properties", block, projectOrRunbook, maputil.ToStringAnyMap(step.Properties), []string{}, step, file, dependencies)
 
 		if hasChild {
-			sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(step.Actions[0].ActionType), step.Actions[0].Properties)
-			c.assignProperties("execution_properties", block, projectOrRunbook, sanitizedProperties, []string{}, &step.Actions[0], file, dependencies)
+			c.assignExecutionProperties(&step.Actions[0], block, projectOrRunbook, []string{}, file, dependencies)
 		}
 
 		file.Body().AppendBlock(block)
