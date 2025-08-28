@@ -372,7 +372,8 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("execution_properties", block, owner, action.Properties, []string{}, action, file, dependencies)
+		sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(action.ActionType), action.Properties)
+		c.assignProperties("execution_properties", block, owner, sanitizedProperties, []string{}, action, file, dependencies)
 
 		file.Body().AppendBlock(block)
 
@@ -458,7 +459,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 		if parameters, err := c.getTemplateParameters(templateId.(string)); err != nil {
 			return "", err
 		} else {
-			c.assignProperties("execution_properties", block, owner, action.Properties, parameters, action, file, dependencies)
+			sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(action.ActionType), action.Properties)
+			c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, action, file, dependencies)
 		}
 
 		file.Body().AppendBlock(block)
