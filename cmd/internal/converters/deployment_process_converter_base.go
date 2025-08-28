@@ -372,8 +372,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(action.ActionType), action.Properties)
-		c.assignProperties("execution_properties", block, owner, sanitizedProperties, []string{}, action, file, dependencies)
+		c.assignExecutionProperties(action, block, owner, []string{}, file, dependencies)
 
 		file.Body().AppendBlock(block)
 
@@ -381,6 +380,11 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 	}
 
 	dependencies.AddResource(thisResource)
+}
+
+func (c *DeploymentProcessConverterBase) assignExecutionProperties(action *octopus.Action, block *hclwrite.Block, owner octopus.NameIdParentResource, parameters []string, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+	sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(action.ActionType), action.Properties)
+	c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, action, file, dependencies)
 }
 
 func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
@@ -459,8 +463,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 		if parameters, err := c.getTemplateParameters(templateId.(string)); err != nil {
 			return "", err
 		} else {
-			sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(action.ActionType), action.Properties)
-			c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, action, file, dependencies)
+			c.assignExecutionProperties(action, block, owner, parameters, file, dependencies)
 		}
 
 		file.Body().AppendBlock(block)
@@ -602,8 +605,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			if parameters, err := c.getTemplateParameters(templateId.(string)); err != nil {
 				return "", err
 			} else {
-				sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(step.Actions[0].ActionType), step.Actions[0].Properties)
-				c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, &step.Actions[0], file, dependencies)
+				c.assignExecutionProperties(&step.Actions[0], block, owner, parameters, file, dependencies)
 			}
 		}
 
