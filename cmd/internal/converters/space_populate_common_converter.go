@@ -14,17 +14,16 @@ import (
 // TerraformProviderGenerator creates the common terraform files required to populate a space
 // including the provider, terraform config, and common vars
 type TerraformProviderGenerator struct {
-	TerraformBackend                string
-	ProviderVersion                 string
-	ExperimentalEnableStepTemplates bool
-	ExcludeProvider                 bool
-	IncludeOctopusOutputVars        bool
-	OctopusManagedTerraformVars     string
-	GenerateImportScripts           bool
+	TerraformBackend            string
+	ProviderVersion             string
+	ExcludeProvider             bool
+	IncludeOctopusOutputVars    bool
+	OctopusManagedTerraformVars string
+	GenerateImportScripts       bool
 }
 
 func (c TerraformProviderGenerator) ToHcl(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
-	c.createProvider(directory, includeSpaceId, includeServerDetails, c.ExperimentalEnableStepTemplates, dependencies)
+	c.createProvider(directory, includeSpaceId, includeServerDetails, dependencies)
 	c.createTerraformConfig(directory, dependencies)
 	c.createVariables(directory, includeSpaceId, includeServerDetails, dependencies)
 
@@ -84,7 +83,7 @@ Get-ChildItem -Path . -Filter *.ps1 | Where-Object { $_.Name -ne $scriptName } |
 	}
 }
 
-func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, includeServerDetails bool, experimentalStepTemplateEnabled bool, dependencies *data.ResourceDetailsCollection) {
+func (c TerraformProviderGenerator) createProvider(directory string, includeSpaceId bool, includeServerDetails bool, dependencies *data.ResourceDetailsCollection) {
 	if c.ExcludeProvider {
 		return
 	}
@@ -111,13 +110,6 @@ func (c TerraformProviderGenerator) createProvider(directory string, includeSpac
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "provider"))
 
-		if experimentalStepTemplateEnabled {
-			externalProvider := terraform.TerraformEmptyProvider{
-				Type: "external",
-			}
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(externalProvider, "provider"))
-		}
-
 		return string(file.Bytes()), nil
 	}
 	dependencies.AddResource(thisResource)
@@ -138,7 +130,7 @@ func (c TerraformProviderGenerator) createTerraformConfig(directory string, depe
 	thisResource.ResourceType = ""
 	thisResource.Lookup = ""
 	thisResource.ToHcl = func() (string, error) {
-		terraformResource := terraform.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion, c.ExperimentalEnableStepTemplates)
+		terraformResource := terraform.TerraformConfig{}.CreateTerraformConfig(backend, c.ProviderVersion)
 		file := hclwrite.NewEmptyFile()
 		file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "terraform"))
 		return string(file.Bytes()), nil

@@ -25,23 +25,22 @@ import (
 const octopusdeployStepTemplateResourceType = "octopusdeploy_step_template"
 const octopusdeployCommunityStepTemplateDataType = "octopusdeploy_community_step_template"
 const octopusdeployCommunityStepTemplateResourceType = "octopusdeploy_community_step_template"
-const octopusdeployStepTemplateDataType = "external"
+const octopusdeployStepTemplateDataType = "octopusdeploy_step_template"
 
 type StepTemplateConverter struct {
-	ErrGroup                        *errgroup.Group
-	Client                          client.OctopusClient
-	ExcludeAllStepTemplates         bool
-	ExcludeStepTemplates            []string
-	ExcludeStepTemplatesRegex       []string
-	ExcludeStepTemplatesExcept      []string
-	Excluder                        ExcludeByName
-	LimitResourceCount              int
-	GenerateImportScripts           bool
-	ExperimentalEnableStepTemplates bool
-	IncludeSpaceInPopulation        bool
-	InlineVariableValues            bool
-	DummySecretGenerator            dummy.DummySecretGenerator
-	TerraformVariableWriter         variables.TerraformVariableWriter
+	ErrGroup                   *errgroup.Group
+	Client                     client.OctopusClient
+	ExcludeAllStepTemplates    bool
+	ExcludeStepTemplates       []string
+	ExcludeStepTemplatesRegex  []string
+	ExcludeStepTemplatesExcept []string
+	Excluder                   ExcludeByName
+	LimitResourceCount         int
+	GenerateImportScripts      bool
+	IncludeSpaceInPopulation   bool
+	InlineVariableValues       bool
+	DummySecretGenerator       dummy.DummySecretGenerator
+	TerraformVariableWriter    variables.TerraformVariableWriter
 }
 
 func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -73,65 +72,14 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 	thisResource.Id = template.Id
 	thisResource.Name = template.Name
 	thisResource.ResourceType = c.GetResourceType()
-	/*
-			The result attribute of a data source is a map of key-value pairs. The key is the step template ID, and the value
-			is the step template name. So the keys() is used to get the keys, and the only key is the step template ID.
-
-			The output JSON looks like this:
-
-			"steptemplate_add_cluster_as_deployment_target": {
-		        "sensitive": true,
-		        "type": [
-		          "object",
-		          {
-		            "id": "string",
-		            "program": [
-		              "list",
-		              "string"
-		            ],
-		            "query": [
-		              "map",
-		              "string"
-		            ],
-		            "result": [
-		              "map",
-		              "string"
-		            ],
-		            "working_dir": "string"
-		          }
-		        ],
-		        "value": {
-		          "id": "-",
-		          "program": [
-		            "pwsh",
-		            "-Command",
-		            "\n$query = [Console]::In.ReadLine() | ConvertFrom-JSON\n$headers = @{ \"X-Octopus-ApiKey\" = $query.apikey }\n$response = Invoke-WebRequest -Uri \"$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000\" -Method GET -Headers $headers\n$keyValueResponse = @{}\n$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null\n$results = $keyValueResponse | ConvertTo-JSON -Depth 100\nWrite-Host $results"
-		          ],
-		          "query": {
-		            "apikey": "API-xxx",
-		            "name": "Add cluster as deployment target",
-		            "server": "https://mattc.octopus.app",
-		            "spaceid": "Spaces-282"
-		          },
-		          "result": {
-		            "ActionTemplates-862": "Add cluster as deployment target"
-		          },
-		          "working_dir": null
-		        }
-			}
-	*/
-	thisResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	/*
-		The result attribute of the versions data source is a map of key-value pairs. The key is the step template ID, and the value
-		is the step template version. So the values() is used to get the values, and the only value is the step template version.
-	*/
-	thisResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
+	thisResource.Lookup = "${data." + octopusdeployStepTemplateDataType + "." + resourceName + ".step_template.id}"
+	thisResource.VersionLookup = "${data." + octopusdeployStepTemplateDataType + "." + resourceName + ".step_template.version}"
 	thisResource.VersionCurrent = strconv.Itoa(*template.Version)
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, template)
 		file := hclwrite.NewEmptyFile()
 		block := gohcl.EncodeAsBlock(terraformResource, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an step template called \""+template.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(keys(self.result)) != 0")
+		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an step template called \""+template.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "self.step_template != null")
 		file.Body().AppendBlock(block)
 
 		return string(file.Bytes()), nil
@@ -139,50 +87,18 @@ func (c StepTemplateConverter) ToHclLookupById(id string, dependencies *data.Res
 
 	dependencies.AddResource(thisResource)
 
-	// The second resource maps the step template name to the version
-	thisVersionsResource := data.ResourceDetails{}
-	thisVersionsResource.FileName = "space_population/" + resourceName + "_versions.tf"
-	thisVersionsResource.Id = template.Id
-	thisVersionsResource.Name = template.Name
-	thisVersionsResource.ResourceType = c.GetResourceType() + "_Versions"
-	thisVersionsResource.Lookup = "${keys(data." + octopusdeployStepTemplateDataType + "." + resourceName + ".result)[0]}"
-	thisVersionsResource.VersionLookup = "${values(data." + octopusdeployStepTemplateDataType + "." + resourceName + "_versions.result)[0]}"
-	thisVersionsResource.VersionCurrent = strconv.Itoa(*template.Version)
-	thisVersionsResource.ToHcl = func() (string, error) {
-		terraformResource := c.buildDataVersions(resourceName+"_versions", template)
-		file := hclwrite.NewEmptyFile()
-		block := gohcl.EncodeAsBlock(terraformResource, "data")
-		hcl.WriteLifecyclePostCondition(block, "Failed to resolve an step template called \""+template.Name+"\". This resource must exist in the space before this Terraform configuration is applied.", "length(keys(self.result)) != 0")
-		file.Body().AppendBlock(block)
-
-		return string(file.Bytes()), nil
-	}
-
-	dependencies.AddResource(thisVersionsResource)
 	return nil
 }
 
 func (c StepTemplateConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
-	if !c.ExperimentalEnableStepTemplates {
-		return
-	}
-
 	c.ErrGroup.Go(func() error { return c.allToHcl(false, dependencies) })
 }
 
 func (c StepTemplateConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsCollection) {
-	if !c.ExperimentalEnableStepTemplates {
-		return
-	}
-
 	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
 func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
-	if !c.ExperimentalEnableStepTemplates {
-		return nil
-	}
-
 	if c.ExcludeAllStepTemplates {
 		return nil
 	}
@@ -299,11 +215,11 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 		/*
 			If the length of the result attribute is zero, we did not find an existing step template.
 		*/
-		thisResource.VersionLookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
-			"? values(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + "_versions.result)[0] " +
+		thisResource.VersionLookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
+			"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.version " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].version}"
-		thisResource.Lookup = "${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 " +
-			"? keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)[0] " +
+		thisResource.Lookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
+			"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.id " +
 			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 	} else {
@@ -345,7 +261,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					When the step template is stateless, the resource is created if the data source does not return any results.
 					We measure the presence of results by the length of the keys of the result attribute of the data source.
 				*/
-				communityStepTemplateResource.Count = strutil.StrPointer("${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 ? 0 : 1}")
+				communityStepTemplateResource.Count = strutil.StrPointer("${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null ? 0 : 1}")
 			}
 
 			communityStepTemplateResourceBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
@@ -373,7 +289,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					When the step template is stateless, the resource is created if the data source does not return any results.
 					We measure the presence of results by the length of the keys of the result attribute of the data source.
 				*/
-				terraformResource.Count = strutil.StrPointer("${length(keys(data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".result)) != 0 ? 0 : 1}")
+				terraformResource.Count = strutil.StrPointer("${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null ? 0 : 1}")
 			}
 
 			block := gohcl.EncodeAsBlock(terraformResource, "resource")
@@ -484,88 +400,15 @@ func (c StepTemplateConverter) writeData(file *hclwrite.File, resource octopus.S
 	terraformResource := c.buildData(resourceName, resource)
 	block := gohcl.EncodeAsBlock(terraformResource, "data")
 	file.Body().AppendBlock(block)
-
-	terraformResourceVersions := c.buildDataVersions(resourceName+"_versions", resource)
-	blockVersions := gohcl.EncodeAsBlock(terraformResourceVersions, "data")
-	file.Body().AppendBlock(blockVersions)
 }
 
-func (c StepTemplateConverter) buildData(resourceName string, resource octopus.StepTemplate) terraform.TerraformExternalData {
-	/*
-		Use Powershell to query the action templates.
+func (c StepTemplateConverter) buildData(resourceName string, resource octopus.StepTemplate) terraform.TerraformStepTemplateData {
 
-		I've noticed this happening occasionally when running the script. I don't think it's a problem with the script,
-		but may be specific to pwsh on Linux. There doesn't appear to be any solution other that retrying the terraform
-		apply operation:
-
-		The data source received an unexpected error while attempting to execute the
-		program.
-
-		The program was executed, however it returned no additional error messaging.
-
-		Program: /opt/microsoft/powershell/7/pwsh
-		State: signal: segmentation fault (core dumped)
-	*/
-
-	return terraform.TerraformExternalData{
-		Type: octopusdeployStepTemplateDataType,
-		Name: resourceName,
-		Program: []string{
-			"pwsh",
-			"-Command",
-			strutil.StripMultilineWhitespace(`
-				$query = [Console]::In.ReadLine() | ConvertFrom-JSON
-				$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
-				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
-				$keyValueResponse = @{}
-				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Name} | Out-Null
-				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
-				Write-Host $results`)},
-		Query: map[string]string{
-			"name":    resource.Name,
-			"server":  "${var.octopus_server}",
-			"apikey":  "${var.octopus_apikey}",
-			"spaceid": "${var.octopus_space_id}",
-		},
-	}
-}
-
-func (c StepTemplateConverter) buildDataVersions(resourceName string, resource octopus.StepTemplate) terraform.TerraformExternalData {
-	/*
-		Use Powershell to query the action templates.
-
-		I've noticed this happening occasionally when running the script. I don't think it's a problem with the script,
-		but may be specific to pwsh on Linux. There doesn't appear to be any solution other that retrying the terraform
-		apply operation:
-
-		The data source received an unexpected error while attempting to execute the
-		program.
-
-		The program was executed, however it returned no additional error messaging.
-
-		Program: /opt/microsoft/powershell/7/pwsh
-		State: signal: segmentation fault (core dumped)
-	*/
-
-	return terraform.TerraformExternalData{
-		Type: octopusdeployStepTemplateDataType,
-		Name: resourceName,
-		Program: []string{
-			"pwsh",
-			"-Command",
-			strutil.StripMultilineWhitespace(`
-				$query = [Console]::In.ReadLine() | ConvertFrom-JSON
-				$headers = @{ "X-Octopus-ApiKey" = $query.apikey }
-				$response = Invoke-WebRequest -Uri "$($query.server)/api/$($query.spaceid)/actiontemplates?take=10000" -Method GET -Headers $headers
-				$keyValueResponse = @{}
-				$response.content | ConvertFrom-JSON | Select-Object -Expand Items | ? {$_.Name -eq $query.name} | % {$keyValueResponse[$_.Id] = $_.Version.ToString()} | Out-Null
-				$results = $keyValueResponse | ConvertTo-JSON -Depth 100
-				Write-Host $results`)},
-		Query: map[string]string{
-			"name":    resource.Name,
-			"server":  "${var.octopus_server}",
-			"apikey":  "${var.octopus_apikey}",
-			"spaceid": "${var.octopus_space_id}",
-		},
+	return terraform.TerraformStepTemplateData{
+		Type:         octopusdeployStepTemplateDataType,
+		Name:         resourceName,
+		SpaceId:      nil,
+		Id:           nil,
+		ResourceName: strutil.NilIfEmpty(resource.Name),
 	}
 }

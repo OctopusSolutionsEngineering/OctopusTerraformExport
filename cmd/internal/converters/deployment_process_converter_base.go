@@ -30,28 +30,27 @@ const octopusdeployProcessStepsOrder = "octopusdeploy_process_steps_order"
 const octopusdeployProcessChildStepsOrder = "octopusdeploy_process_child_steps_order"
 
 type DeploymentProcessConverterBase struct {
-	ResourceType                    string
-	Client                          client.OctopusClient
-	OctopusActionProcessor          *OctopusActionProcessor
-	IgnoreProjectChanges            bool
-	WorkerPoolProcessor             OctopusWorkerPoolProcessor
-	ExcludeTenantTags               args.StringSliceArgs
-	ExcludeTenantTagSets            args.StringSliceArgs
-	Excluder                        ExcludeByName
-	TagSetConverter                 ConvertToHclByResource[octopus.TagSet]
-	LimitAttributeLength            int
-	ExcludeTerraformVariables       bool
-	ExcludeAllSteps                 bool
-	ExcludeSteps                    args.StringSliceArgs
-	ExcludeStepsRegex               args.StringSliceArgs
-	ExcludeStepsExcept              args.StringSliceArgs
-	IgnoreInvalidExcludeExcept      bool
-	ExperimentalEnableStepTemplates bool
-	DummySecretGenerator            dummy.DummySecretGenerator
-	DummySecretVariableValues       bool
-	IgnoreCacErrors                 bool
-	DetachProjectTemplates          bool
-	GenerateImportScripts           bool
+	ResourceType               string
+	Client                     client.OctopusClient
+	OctopusActionProcessor     *OctopusActionProcessor
+	IgnoreProjectChanges       bool
+	WorkerPoolProcessor        OctopusWorkerPoolProcessor
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	Excluder                   ExcludeByName
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	LimitAttributeLength       int
+	ExcludeTerraformVariables  bool
+	ExcludeAllSteps            bool
+	ExcludeSteps               args.StringSliceArgs
+	ExcludeStepsRegex          args.StringSliceArgs
+	ExcludeStepsExcept         args.StringSliceArgs
+	IgnoreInvalidExcludeExcept bool
+	DummySecretGenerator       dummy.DummySecretGenerator
+	DummySecretVariableValues  bool
+	IgnoreCacErrors            bool
+	DetachProjectTemplates     bool
+	GenerateImportScripts      bool
 }
 
 func (c *DeploymentProcessConverterBase) SetActionProcessor(actionProcessor *OctopusActionProcessor) {
@@ -414,24 +413,11 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
 
-		// The native step template data source does not have the ability to look up the template ID and version.
-		// So we just reference them as is. This will work when a project is recreated in the same space,
-		// but will fail across spaces as the template IDs change.
-		newTemplateId := step.Actions[0].Properties["Octopus.Action.Template.Id"]
-		newTemplateVersion := step.Actions[0].Properties["Octopus.Action.Template.Version"]
-
-		// If the experimental flag is enabled, we use a workaround to query the template ID and version
-		// from the API.
-		if c.ExperimentalEnableStepTemplates {
-			newTemplateId = dependencies.GetResource("ActionTemplates", templateId.(string))
-			newTemplateVersion = dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string))
-		}
-
 		terraformProcessStepChild := terraform.TerraformProcessTemplatedStep{
 			Type:                 octopusdeployProcessTemplatedStepsOrderResourceType,
 			Name:                 resourceName,
-			TemplateId:           newTemplateId.(string),
-			TemplateVersion:      newTemplateVersion.(string),
+			TemplateId:           dependencies.GetResource("ActionTemplates", templateId.(string)),
+			TemplateVersion:      dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string)),
 			ResourceName:         strutil.EmptyIfNil(action.Name),
 			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
 			ParentId:             strutil.NilIfEmpty(dependencies.GetResource("DeploymentProcesses/Steps", c.getStepId(resource, owner, step))),
@@ -535,19 +521,6 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 
 		file := hclwrite.NewEmptyFile()
 
-		// The native step template data source does not have the ability to look up the template ID and version.
-		// So we just reference them as is. This will work when a project is recreated in the same space,
-		// but will fail across spaces as the template IDs change.
-		newTemplateId := step.Actions[0].Properties["Octopus.Action.Template.Id"]
-		newTemplateVersion := step.Actions[0].Properties["Octopus.Action.Template.Version"]
-
-		// If the experimental flag is enabled, we use a workaround to query the template ID and version
-		// from the API.
-		if c.ExperimentalEnableStepTemplates {
-			newTemplateId = dependencies.GetResource("ActionTemplates", templateId.(string))
-			newTemplateVersion = dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string))
-		}
-
 		terraformProcessStep := terraform.TerraformProcessTemplatedStep{
 			Type:                 octopusdeployProcessTemplateStepResourceType,
 			Name:                 resourceName,
@@ -555,8 +528,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			ResourceName:         strutil.EmptyIfNil(step.Name),
 			ParentId:             nil,
 			ProcessId:            dependencies.GetResource(c.GetResourceType(), resource.GetId()),
-			TemplateId:           newTemplateId.(string),
-			TemplateVersion:      newTemplateVersion.(string),
+			TemplateId:           dependencies.GetResource("ActionTemplates", templateId.(string)),
+			TemplateVersion:      dependencies.GetResourceVersionLookup("ActionTemplates", templateId.(string)),
 			Channels:             nil,
 			Condition:            step.Condition,
 			Container:            nil,
@@ -815,7 +788,7 @@ func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, b
 	sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
-	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, sanitizedProperties, dependencies)
+	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveFields(sanitizedProperties, stepTemplateProperties)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveStepTemplateFields(sanitizedProperties)
@@ -900,7 +873,7 @@ func (c *DeploymentProcessConverterBase) getPrimaryPackage(projectName string, a
 				PackageId:           variableReference,
 				AcquisitionLocation: p.AcquisitionLocation,
 				FeedId:              feedId,
-				Properties:          maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, p.Properties, dependencies)),
+				Properties:          maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies)),
 			}, packageIdVariable
 		}
 	}
@@ -939,7 +912,7 @@ func (c *DeploymentProcessConverterBase) getPackages(projectName string, action 
 				PackageId:           variableReference,
 				AcquisitionLocation: p.AcquisitionLocation,
 				FeedId:              feedId,
-				Properties:          maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(c.ExperimentalEnableStepTemplates, p.Properties, dependencies)),
+				Properties:          maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies)),
 			}
 		}
 	}

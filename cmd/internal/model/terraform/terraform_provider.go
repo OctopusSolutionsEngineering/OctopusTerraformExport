@@ -40,22 +40,15 @@ type TerraformEmptyProvider struct {
 	Type string `hcl:"type,label"`
 }
 
-func (c TerraformConfig) CreateTerraformConfig(backend string, version string, experimentalStepTemplateEnabled bool) TerraformConfig {
+func (c TerraformConfig) CreateTerraformConfig(backend string, version string) TerraformConfig {
 	config := TerraformConfig{
 		RequiredProviders: RequiredProviders{
 			OctopusProvider: ProviderDefinition{
 				Source:  "OctopusDeploy/octopusdeploy",
-				Version: strutil.DefaultIfEmpty(version, "1.3.5"),
+				Version: strutil.DefaultIfEmpty(version, "1.3.6"),
 			},
 		},
 		RequiredVersion: strutil.StrPointer(">= 1.6.0"),
-	}
-
-	if experimentalStepTemplateEnabled {
-		config.RequiredProviders.ExternalProvider = &ProviderDefinition{
-			Source:  "hashicorp/external",
-			Version: "2.3.4",
-		}
 	}
 
 	if backend != "" {

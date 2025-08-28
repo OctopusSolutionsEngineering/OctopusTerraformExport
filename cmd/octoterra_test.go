@@ -162,7 +162,6 @@ func exportSpaceImportAndTest(
 				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
 				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
-				ExperimentalEnableStepTemplates:  arguments.ExperimentalEnableStepTemplates,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
@@ -10370,8 +10369,7 @@ func TestStepTemplates(t *testing.T) {
 		[]string{},
 		[]string{},
 		args2.Arguments{
-			DummySecretVariableValues:       true,
-			ExperimentalEnableStepTemplates: true,
+			DummySecretVariableValues: true,
 		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 			// Assert
@@ -10392,6 +10390,19 @@ func TestStepTemplates(t *testing.T) {
 
 			if len(testProject) == 0 {
 				return errors.New("space must have a project called \"Test\"")
+			}
+
+			stepTemplates := octopus.GeneralCollection[octopus.StepTemplate]{}
+			if err := octopusClient.GetAllResources("ActionTemplates", &stepTemplates); err != nil {
+				return err
+			}
+
+			stepTemplate := lo.Filter(stepTemplates.Items, func(item octopus.StepTemplate, index int) bool {
+				return item.Name == "Hello World"
+			})
+
+			if len(stepTemplate) == 0 {
+				return errors.New("space must have a step template called \"Hello World\"")
 			}
 
 			return nil

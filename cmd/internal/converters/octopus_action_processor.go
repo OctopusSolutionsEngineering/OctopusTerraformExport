@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
@@ -10,23 +12,21 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sliceutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/samber/lo"
-	"strings"
 )
 
 // OctopusActionProcessor exposes a bunch of common functions for exporting the processes associated with
 // projects and runbooks.
 type OctopusActionProcessor struct {
-	FeedConverter                   ConverterAndLookupWithStatelessById
-	AccountConverter                ConverterAndLookupWithStatelessById
-	WorkerPoolConverter             ConverterAndLookupWithStatelessById
-	EnvironmentConverter            ConverterAndLookupWithStatelessById
-	GitCredentialsConverter         ConverterAndLookupWithStatelessById
-	ProjectExporter                 ConverterAndLookupWithStatelessById
-	DetachProjectTemplates          bool
-	ExperimentalEnableStepTemplates bool
-	WorkerPoolProcessor             OctopusWorkerPoolProcessor
-	StepTemplateConverter           ConverterAndLookupById
-	Client                          client.OctopusClient
+	FeedConverter           ConverterAndLookupWithStatelessById
+	AccountConverter        ConverterAndLookupWithStatelessById
+	WorkerPoolConverter     ConverterAndLookupWithStatelessById
+	EnvironmentConverter    ConverterAndLookupWithStatelessById
+	GitCredentialsConverter ConverterAndLookupWithStatelessById
+	ProjectExporter         ConverterAndLookupWithStatelessById
+	DetachProjectTemplates  bool
+	WorkerPoolProcessor     OctopusWorkerPoolProcessor
+	StepTemplateConverter   ConverterAndLookupById
+	Client                  client.OctopusClient
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
@@ -210,12 +210,12 @@ func (c OctopusActionProcessor) ConvertGitDependenciesV2(gitDependencies []octop
 	return &result
 }
 
-func (c OctopusActionProcessor) ReplaceIds(experimentalEnableStepTemplates bool, properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
+func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
 	properties = c.replaceAccountIds(properties, dependencies)
 	properties = c.replaceFeedIds(properties, dependencies)
 	properties = c.replaceProjectIds(properties, dependencies)
 	properties = c.replaceGitCredentialIds(properties, dependencies)
-	properties = c.replaceStepTemplates(experimentalEnableStepTemplates, properties, dependencies)
+	properties = c.replaceStepTemplates(properties, dependencies)
 	return properties
 }
 
@@ -402,15 +402,11 @@ func (c OctopusActionProcessor) replaceGitCredentialIds(properties map[string]st
 
 // replaceStepTemplates looks for any property value that is a valid step template and replaces it with a resource ID lookup.
 // This also looks in the property values, for instance when you export a JSON blob that has feed references.
-func (c OctopusActionProcessor) replaceStepTemplates(experimentalEnableStepTemplates bool, properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
-
-	// Only replace step template ids if they are not included in the model
-	if experimentalEnableStepTemplates {
-		for k, v := range properties {
-			for _, v2 := range dependencies.GetAllResource("ActionTemplates") {
-				if len(v2.Id) != 0 && v == v2.Id {
-					properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
-				}
+func (c OctopusActionProcessor) replaceStepTemplates(properties map[string]string, dependencies *data.ResourceDetailsCollection) map[string]string {
+	for k, v := range properties {
+		for _, v2 := range dependencies.GetAllResource("ActionTemplates") {
+			if len(v2.Id) != 0 && v == v2.Id {
+				properties[k] = strings.ReplaceAll(v, v2.Id, v2.Lookup)
 			}
 		}
 	}
