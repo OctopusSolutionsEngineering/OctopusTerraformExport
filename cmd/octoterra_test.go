@@ -3,6 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+	"testing"
+
 	officialclient "github.com/OctopusDeploy/go-octopusdeploy/v2/pkg/client"
 	args2 "github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
@@ -18,12 +25,6 @@ import (
 	cp "github.com/otiai10/copy"
 	"github.com/samber/lo"
 	"k8s.io/utils/strings/slices"
-	"os"
-	"path/filepath"
-	"reflect"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 // getTempDir creates a temporary directory for the exported Terraform files
@@ -10460,6 +10461,62 @@ func TestStepTemplatesDetached(t *testing.T) {
 
 			if hasTemplateVersion {
 				return errors.New("deployment process must not have template version in properties")
+			}
+
+			return nil
+		})
+}
+
+// TestStepTemplteLookup verifies that a project can link to existing step templates
+func TestStepTemplteLookup(t *testing.T) {
+	exportProjectLookupImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/92-steptemplateslookup/space_creation",
+		"../test/terraform/92-steptemplateslookup/space_prepopulation",
+		"../test/terraform/92-steptemplateslookup/space_population",
+		"../test/terraform/92-steptemplateslookup/space_creation",
+		"../test/terraform/92-steptemplateslookup/space_prepopulation",
+		[]string{},
+		[]string{},
+		[]string{},
+		[]string{},
+		args2.Arguments{
+			DummySecretVariableValues: true,
+		},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+
+			projectCollection := octopus.GeneralCollection[octopus.Project]{}
+			if err := octopusClient.GetAllResources("Projects", &projectCollection); err != nil {
+				return err
+			}
+
+			if len(projectCollection.Items) != 1 {
+				return errors.New("there must only be one project in the space, got " + fmt.Sprint(len(projectCollection.Items)))
+			}
+
+			testProject := lo.Filter(projectCollection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == "Test"
+			})
+
+			if len(testProject) == 0 {
+				return errors.New("space must have a project called \"Test\"")
+			}
+
+			stepTemplates := octopus.GeneralCollection[octopus.StepTemplate]{}
+			if err := octopusClient.GetAllResources("ActionTemplates", &stepTemplates); err != nil {
+				return err
+			}
+
+			stepTemplate := lo.Filter(stepTemplates.Items, func(item octopus.StepTemplate, index int) bool {
+				return item.Name == "Hello World"
+			})
+
+			if len(stepTemplate) == 0 {
+				return errors.New("space must have a step template called \"Hello World\"")
 			}
 
 			return nil
