@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -220,6 +221,11 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 }
 
 func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties map[string]any) map[string]any {
+	serverSteps := []string{
+		"Octopus.Script",
+		"Octopus.Email",
+	}
+
 	sanitisedProperties := map[string]any{}
 	for k, v := range properties {
 
@@ -236,7 +242,7 @@ func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties
 				.execution_properties["Octopus.Action.RunOnServer"]: was
 				cty.StringVal("false"), but now cty.StringVal("true").
 		*/
-		if actionType == "Octopus.Manual" && k == "Octopus.Action.RunOnServer" {
+		if slices.Contains(serverSteps, actionType) && k == "Octopus.Action.RunOnServer" {
 			if str, ok := v.(string); ok && strings.ToLower(str) == "false" {
 				sanitisedProperties[k] = "true"
 			}
