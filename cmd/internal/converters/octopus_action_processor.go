@@ -222,8 +222,9 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 
 func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties map[string]any) map[string]any {
 	serverSteps := []string{
-		"Octopus.Script",
+		"Octopus.Manual",
 		"Octopus.Email",
+		"Octopus.DeployRelease",
 	}
 
 	sanitisedProperties := map[string]any{}
