@@ -225,6 +225,8 @@ func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties
 		"Octopus.Manual",
 		"Octopus.Email",
 		"Octopus.DeployRelease",
+		"Octopus.JiraIntegration.ServiceDeskAction",
+		"Octopus.HealthCheck",
 	}
 
 	sanitisedProperties := map[string]any{}
