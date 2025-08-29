@@ -231,27 +231,38 @@ func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties
 
 	sanitisedProperties := map[string]any{}
 	for k, v := range properties {
-
 		sanitisedProperties[k] = v
-		/*
-				I've seen cases where manual interventions have Octopus.Action.RunOnServer set to false
-			 	When this step is recreated, the value is true. This results in the error:
-
-			 	Error: Provider produced inconsistent result after apply
-				When applying changes to
-				octopusdeploy_process_step.process_step_k8s_app_approve_production_deployment,
-				provider "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]"
-				produced an unexpected new value:
-				.execution_properties["Octopus.Action.RunOnServer"]: was
-				cty.StringVal("false"), but now cty.StringVal("true").
-		*/
-		if slices.Contains(serverSteps, actionType) && k == "Octopus.Action.RunOnServer" {
-			if str, ok := v.(string); ok && strings.ToLower(str) == "false" {
-				sanitisedProperties[k] = "true"
-			}
-		}
-
 	}
+
+	/*
+		I've seen cases where manual interventions have Octopus.Action.RunOnServer set to false
+		When this step is recreated, the value is true. This results in the error:
+
+		Error: Provider produced inconsistent result after apply
+		When applying changes to
+		octopusdeploy_process_step.process_step_k8s_app_approve_production_deployment,
+		provider "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]"
+		produced an unexpected new value:
+		.execution_properties["Octopus.Action.RunOnServer"]: was
+		cty.StringVal("false"), but now cty.StringVal("true").
+
+		And this one
+
+		Error: Provider produced inconsistent result after apply
+		When applying changes to
+		octopusdeploy_process_step.process_step_azure_web_app_jira_service_desk_change_request,
+		provider "provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]"
+		produced an unexpected new value: .execution_properties: inconsistent values
+		for sensitive attribute.
+		This is a bug in the provider, which should be reported in the provider's own
+		issue tracker.
+	*/
+	if slices.Contains(serverSteps, actionType) {
+		if _, ok := sanitisedProperties["Octopus.Action.RunOnServer"]; !ok {
+			sanitisedProperties["Octopus.Action.RunOnServer"] = "true"
+		}
+	}
+
 	return sanitisedProperties
 }
 
