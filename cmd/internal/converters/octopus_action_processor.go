@@ -258,9 +258,7 @@ func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties
 		issue tracker.
 	*/
 	if slices.Contains(serverSteps, actionType) {
-		if _, ok := sanitisedProperties["Octopus.Action.RunOnServer"]; !ok {
-			sanitisedProperties["Octopus.Action.RunOnServer"] = "true"
-		}
+		sanitisedProperties["Octopus.Action.RunOnServer"] = "true"
 	}
 
 	return sanitisedProperties
