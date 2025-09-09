@@ -228,6 +228,9 @@ func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties
 		"Octopus.JiraIntegration.ServiceDeskAction",
 		"Octopus.HealthCheck",
 		"Octopus.AzureResourceGroup",
+		"Octopus.AwsRunCloudFormation",
+		"Octopus.AwsDeleteCloudFormation",
+		"Octopus.AwsApplyCloudFormationChangeSet",
 	}
 
 	sanitisedProperties := map[string]any{}
