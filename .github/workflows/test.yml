@@ -3,6 +3,10 @@ name: Go Test
   workflow_dispatch: {}
   schedule:
     - cron: 0 20 * * 1-5
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
