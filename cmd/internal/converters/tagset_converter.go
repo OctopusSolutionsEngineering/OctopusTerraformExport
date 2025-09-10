@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -238,7 +239,6 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 		terraformResource := terraform.TerraformTagSet{
 			Type:         octopusdeployTagSetResourceType,
 			Name:         tagSetName,
-			Count:        c.getCount(stateless, tagSetName),
 			ResourceName: tagSet.Name,
 			Description:  strutil.NilIfEmptyPointer(strutil.TrimPointer(tagSet.Description)),
 			// The new provider is strict, and fields must not change value.
@@ -254,6 +254,7 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
 		if stateless {
+			hcl.WriteUnquotedAttribute(block, "count", c.getTagSetCount(stateless, tagSetName))
 			hcl.WriteLifecyclePreventDestroyAttribute(block)
 		}
 
@@ -287,7 +288,6 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 			terraformResource := terraform.TerraformTag{
 				Type:         octopusdeployTagResourceType,
 				Name:         tagsetName + "_" + tagName,
-				Count:        c.getCount(stateless, tagSetName),
 				ResourceName: tag.Name,
 				TagSetId:     c.getTagsetId(stateless, tagSetName, tagName),
 				Color:        tag.Color,
@@ -298,7 +298,13 @@ func (c *TagSetConverter) toHcl(tagSet octopus.TagSet, stateless bool, dependenc
 			}
 
 			file := hclwrite.NewEmptyFile()
-			file.Body().AppendBlock(gohcl.EncodeAsBlock(terraformResource, "resource"))
+			block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(block, "count", c.getTagCount(stateless, tagSetName, tag.Name))
+			}
+
+			file.Body().AppendBlock(block)
 
 			return string(file.Bytes()), nil
 		}
@@ -335,12 +341,23 @@ func (c *TagSetConverter) getDependency(stateless bool, tagName string) string {
 	return ""
 }
 
-func (c *TagSetConverter) getCount(stateless bool, tagSetName string) *string {
+func (c *TagSetConverter) getTagSetCount(stateless bool, tagSetName string) string {
 	if stateless {
-		return strutil.StrPointer("${length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 ? 0 : 1}")
+		return "length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 ? 0 : 1"
 	}
 
-	return nil
+	return ""
+}
+
+func (c *TagSetConverter) getTagCount(stateless bool, tagSetName string, tagName string) string {
+	if stateless {
+		// The count is 0 if:
+		// * The tagset exists and
+		// * The tag exists in the tagset
+		return "length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 && length([for item in data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets[0].tags : item if item.name == \"" + tagName + "\"]) != 0 ? 0 : 1"
+	}
+
+	return ""
 }
 
 func (c *TagSetConverter) buildData(resourceName string, resource octopus.TagSet) terraform.TerraformTagSetData {
