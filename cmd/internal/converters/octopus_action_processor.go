@@ -232,6 +232,7 @@ func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties
 		"Octopus.AwsDeleteCloudFormation",
 		"Octopus.AwsApplyCloudFormationChangeSet",
 		"Octopus.Kubernetes.Kustomize",
+		"Octopus.HelmChartUpgrade",
 	}
 
 	sanitisedProperties := map[string]any{}
