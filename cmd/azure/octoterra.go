@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/environment"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"io"
 	"log"
@@ -14,7 +15,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -41,27 +41,13 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow the more sensitive values to be passed as headers
 	apiKey := r.Header.Get("X-Octopus-ApiKey")
 	accessToken := r.Header.Get("X-Octopus-AccessToken")
-	octopusUrl := r.Header.Get("X-Octopus-Url")
+	url := r.Header.Get("X-Octopus-Url")
 	redirectorRedirections := r.Header.Get("X_REDIRECTION_REDIRECTIONS")
 	redirectorApiKey := r.Header.Get("X_REDIRECTION_API_KEY")
 	redirectorServiceApiKey, _ := os.LookupEnv("REDIRECTION_SERVICE_API_KEY")
 	redirectorHost, _ := os.LookupEnv("REDIRECTION_HOST")
-	disableRedirector, _ := os.LookupEnv("DISABLE_REDIRECTION")
 
-	parsedUrl, err := url.Parse(octopusUrl)
-
-	if err != nil {
-		handleError(err, w)
-		return
-	}
-
-	disableRedirectorParsed, err := strconv.ParseBool(disableRedirector)
-
-	if err != nil {
-		disableRedirectorParsed = false
-	}
-
-	useRedirector := !disableRedirectorParsed && !hostIsCloudOrLocal(parsedUrl.Hostname()) && redirectorServiceApiKey != "" && redirectorHost != ""
+	enableRedirector, err := useRedirector(url, redirectorServiceApiKey, redirectorHost, redirectorRedirections, redirectorApiKey)
 
 	respBytes, err := io.ReadAll(r.Body)
 
@@ -119,12 +105,12 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		commandLineArgs = append(commandLineArgs, "-accessToken", accessToken)
 	}
 
-	if octopusUrl != "" {
-		commandLineArgs = append(commandLineArgs, "-url", octopusUrl)
+	if url != "" {
+		commandLineArgs = append(commandLineArgs, "-url", url)
 	}
 
-	if useRedirector {
-		zap.L().Info("Using redirector for host " + octopusUrl)
+	if enableRedirector {
+		zap.L().Info("Using redirector for host " + url)
 		commandLineArgs = append(commandLineArgs, "-useRedirector")
 		commandLineArgs = append(commandLineArgs, "-redirectorHost", redirectorHost)
 		commandLineArgs = append(commandLineArgs, "-redirectorServiceApiKey", redirectorServiceApiKey)
@@ -156,6 +142,35 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte(sb.String())); err != nil {
 		zap.L().Error(err.Error())
 	}
+}
+
+func useRedirector(octopusUrl string, redirectorServiceApiKey string, redirectorHost string, redirections string, redirectorApiKey string) (bool, error) {
+	parsedUrl, err := url.Parse(octopusUrl)
+
+	if err != nil {
+		return false, err
+	}
+
+	bypassList := environment.GetRedirectionBypass()
+
+	// Allow bypassing specific domains via environment variable
+	if lo.Contains(bypassList, parsedUrl.Hostname()) {
+		return false, nil
+	}
+
+	// Allow forcing all traffic through the redirection service
+	if environment.GetRedirectionForce() {
+		return true, nil
+	}
+
+	// All redirections can be disabled via environment variable
+	if environment.GetRedirectionDisable() {
+		return false, nil
+	}
+
+	return redirectorServiceApiKey != "" && redirectorHost != "" &&
+		(!hostIsCloudOrLocal(parsedUrl.Hostname()) ||
+			(redirections != "" && redirectorApiKey != "")), nil
 }
 
 // sanitizeConfig removes sensitive information from the config so it is not
