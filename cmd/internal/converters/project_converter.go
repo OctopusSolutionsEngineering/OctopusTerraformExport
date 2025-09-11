@@ -1196,7 +1196,7 @@ func (c *ProjectConverter) convertCaCVersioningStrategyV2(project octopus.Projec
 		Type:               octopusdeployProjectVersioningStrategyResourceType,
 		Name:               projectName,
 		Count:              nil,
-		ProjectId:          "${" + octopusdeployProjectResourceType + "." + projectName + ".id}",
+		ProjectId:          dependencies.GetResource("Projects", project.Id),
 		SpaceId:            strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
 		DonorPackageStepId: c.getDeploymentProcessStepId(project, dependencies),
 		Template:           strutil.NilIfEmpty(deploymentSettings.VersioningStrategy.Template),
