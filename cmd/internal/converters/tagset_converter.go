@@ -351,10 +351,8 @@ func (c *TagSetConverter) getTagSetCount(stateless bool, tagSetName string) stri
 
 func (c *TagSetConverter) getTagCount(stateless bool, tagSetName string, tagName string) string {
 	if stateless {
-		// The count is 0 if:
-		// * The tagset exists and
-		// * The tag exists in the tagset
-		return "length(data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets) != 0 && length([for item in data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets[0].tags : item if item.name == \"" + tagName + "\"]) != 0 ? 0 : 1"
+		// The count is 0 if the tag set collection has at least one element and it has a tag with the name.
+		return "length(try([for item in data." + octopusdeployTagSetsData + "." + tagSetName + ".tag_sets[0].tags : item if item.name == \"" + tagName + "\"], [])) != 0 ? 0 : 1"
 	}
 
 	return ""
