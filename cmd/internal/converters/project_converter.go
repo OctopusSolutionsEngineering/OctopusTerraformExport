@@ -1170,7 +1170,7 @@ func (c *ProjectConverter) convertDatabaseVersioningStrategyV2(project octopus.P
 		Type:               octopusdeployProjectVersioningStrategyResourceType,
 		Name:               projectName,
 		Count:              nil,
-		ProjectId:          "${" + octopusdeployProjectResourceType + "." + projectName + ".id}",
+		ProjectId:          dependencies.GetResource("Projects", project.Id),
 		SpaceId:            strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", project.SpaceId)),
 		DonorPackageStepId: c.getDeploymentProcessStepId(project, dependencies),
 		Template:           strutil.NilIfEmpty(project.VersioningStrategy.Template),
