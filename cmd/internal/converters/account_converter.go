@@ -163,11 +163,7 @@ func (c AccountConverter) buildData(resourceName string, resource octopus.Accoun
 		PartialName: resource.Name,
 		Skip:        0,
 		Take:        1,
-	}
-
-	// Google account types are not defined in the data resource (this is a bug), so don't use it
-	if resource.AccountType != "GoogleCloudAccount" {
-		terraformResource.AccountType = strutil.StrPointer(resource.AccountType)
+		AccountType: strutil.StrPointer(resource.AccountType),
 	}
 
 	return terraformResource
