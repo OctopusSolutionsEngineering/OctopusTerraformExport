@@ -383,7 +383,8 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 }
 
 func (c *DeploymentProcessConverterBase) assignExecutionProperties(action *octopus.Action, block *hclwrite.Block, owner octopus.NameIdParentResource, parameters []string, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
-	sanitizedProperties := c.OctopusActionProcessor.FixKnownProperties(strutil.EmptyIfNil(action.ActionType), action.Properties)
+	sanitizedProperties := c.OctopusActionProcessor.FixRunOnServer(strutil.EmptyIfNil(action.ActionType), action.Properties)
+	sanitizedProperties = c.OctopusActionProcessor.FixOctopusUseBundledTooling(strutil.EmptyIfNil(action.ActionType), action.Properties)
 	c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, action, file, dependencies)
 }
 

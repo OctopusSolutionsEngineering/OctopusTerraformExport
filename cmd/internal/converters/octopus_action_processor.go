@@ -220,7 +220,37 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 	return properties
 }
 
-func (c OctopusActionProcessor) FixKnownProperties(actionType string, properties map[string]any) map[string]any {
+func (c OctopusActionProcessor) FixOctopusUseBundledTooling(actionType string, properties map[string]any) map[string]any {
+	serverSteps := []string{
+		"Octopus.Kubernetes.Kustomize",
+	}
+
+	sanitisedProperties := map[string]any{}
+	for k, v := range properties {
+		sanitisedProperties[k] = v
+	}
+
+	/*
+		I've seen cases where manual interventions have Octopus.UseBundledTooling set to False
+		when the step is created.
+
+		Error: Provider produced inconsistent result after apply
+		When applying changes to
+		octopusdeploy_process_step.process_step_analytics_engine_5624_deploy_with_kustomize[0],
+		provider "provider[\"registry.opentofu.org/octopusdeploy/octopusdeploy\"]"
+		produced an unexpected new value: .execution_properties: new element
+		"OctopusUseBundledTooling" has appeared.
+	*/
+	if slices.Contains(serverSteps, actionType) {
+		if _, ok := sanitisedProperties["Octopus.UseBundledTooling"].(string); !ok {
+			sanitisedProperties["Octopus.UseBundledTooling"] = "False"
+		}
+	}
+
+	return sanitisedProperties
+}
+
+func (c OctopusActionProcessor) FixRunOnServer(actionType string, properties map[string]any) map[string]any {
 	serverSteps := []string{
 		"Octopus.Manual",
 		"Octopus.Email",
