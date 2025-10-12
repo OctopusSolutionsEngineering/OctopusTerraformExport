@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -16,7 +18,6 @@ import (
 	"github.com/hashicorp/hcl2/hclwrite"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"strings"
 )
 
 type AccountConverter struct {
@@ -164,6 +165,11 @@ func (c AccountConverter) buildData(resourceName string, resource octopus.Accoun
 		Skip:        0,
 		Take:        1,
 		AccountType: strutil.StrPointer(resource.AccountType),
+	}
+
+	// The TF provider is strict about the casing of the account types
+	if strings.ToLower(resource.AccountType) == "azureoidc" {
+		terraformResource.AccountType = strutil.StrPointer("AzureOIDC")
 	}
 
 	return terraformResource
