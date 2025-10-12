@@ -169,9 +169,6 @@ func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []Resour
 // GetAllResourceWithLowerSort returns a slice of resources in the collection of type resourceType that have
 // a lower sort order.
 func (c *ResourceDetailsCollection) GetAllResourceWithLowerSort(resourceType string, maxSort int) []ResourceDetails {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return lo.Filter(c.GetAllResource(resourceType), func(item ResourceDetails, index int) bool {
 		return item.SortOrder < maxSort
 	})
