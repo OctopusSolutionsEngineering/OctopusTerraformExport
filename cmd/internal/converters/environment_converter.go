@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -328,6 +330,7 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 	thisResource.Name = environment.Name
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.Id = environment.Id
+	thisResource.SortOrder = environment.SortOrder
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = c.getLookup(stateless, resourceName)
 	thisResource.Dependency = c.getDependency(stateless, resourceName)
@@ -365,6 +368,17 @@ func (c EnvironmentConverter) toHcl(environment octopus.Environment, _ bool, sta
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// This environment must be created after the other environments with a lower sort order.
+		// The creation of environments defines the sort order - the sort value in the environment resource is
+		// not respected.
+		dependsOn := []string{}
+		for _, terraformDependency := range dependencies.GetAllResourceWithLowerSort(c.GetResourceType(), environment.SortOrder) {
+			dependency := dependencies.GetResourceDependency(c.GetResourceType(), terraformDependency.Id)
+			dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
+			dependsOn = append(dependsOn, dependency)
+		}
+		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
 
 		if stateless {
 			hcl.WriteLifecyclePreventDestroyAttribute(block)

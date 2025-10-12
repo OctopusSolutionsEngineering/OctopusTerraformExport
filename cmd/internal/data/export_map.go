@@ -54,6 +54,9 @@ type ResourceDetails struct {
 	// Step templates can be based on community step templates. The URL of the community step template is used as
 	// and external ID that links resources between spaces.
 	ExternalID string
+	// Some resources are sorted in a specific order and need to be recreated in the same order.
+	// Environments are an example of this.
+	SortOrder int
 	// ResourceType is the type of Octopus resource (almost always related to the path that the resource is loaded from)
 	ResourceType string
 	// Lookup is the ID of the resource created or looked up by Terraform. For example,
@@ -161,6 +164,17 @@ func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []Resour
 	}
 
 	return resources
+}
+
+// GetAllResourceWithLowerSort returns a slice of resources in the collection of type resourceType that have
+// a lower sort order.
+func (c *ResourceDetailsCollection) GetAllResourceWithLowerSort(resourceType string, maxSort int) []ResourceDetails {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return lo.Filter(c.GetAllResource(resourceType), func(item ResourceDetails, index int) bool {
+		return item.SortOrder < maxSort
+	})
 }
 
 // GetResource returns the terraform references for a given resource type and id.
