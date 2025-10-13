@@ -229,11 +229,24 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 				": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
 			thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
 		} else {
-			thisResource.VersionLookup = "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template != null " +
-				"? data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template.version " +
+			/*
+				In stateless mode, we either find the existing step template installed by the community step template,
+				or we reference the community step template resource.
+
+				This is a little different to most resources where a data source for the resource is used to determine
+				if it exists or not. Community step templates are different in that we always assume they exist
+				(because they are synced from an external library), so the octopusdeploy_community_step_template
+				data source will always return the details of any valid community step. But, community step templates are
+				not always installed in the space.
+
+				It is the presence of a step template with the same name as the community step template that indicates
+				it has been installed.
+			*/
+			thisResource.VersionLookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
+				"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.version " +
 				": " + octopusdeployCommunityStepTemplateResourceType + "." + communityStepTemplateName + "[0].version}"
-			thisResource.Lookup = "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template != null " +
-				"? data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template.id " +
+			thisResource.Lookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
+				"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.id " +
 				": " + octopusdeployCommunityStepTemplateResourceType + "." + communityStepTemplateName + "[0].id}"
 			thisResource.Dependency = "${" + octopusdeployCommunityStepTemplateResourceType + "." + communityStepTemplateName + "}"
 		}
