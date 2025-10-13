@@ -264,6 +264,7 @@ func (c OctopusActionProcessor) FixRunOnServer(actionType string, properties map
 		"Octopus.AwsApplyCloudFormationChangeSet",
 		"Octopus.Kubernetes.Kustomize",
 		"Octopus.HelmChartUpgrade",
+		"Octopus.TentaclePackage",
 	}
 
 	sanitisedProperties := map[string]any{}
