@@ -2,6 +2,9 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -17,7 +20,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"k8s.io/utils/strings/slices"
-	"strings"
 )
 
 const octopusdeployProjectDeploymentTargetTriggerResourceType = "octopusdeploy_project_deployment_target_trigger"
@@ -32,6 +34,11 @@ type ProjectTriggerConverter struct {
 	IncludeIds            bool
 	GenerateImportScripts bool
 	EnvironmentConverter  ConverterAndLookupWithStatelessById
+	ExcludeTriggers       args.StringSliceArgs
+	ExcludeTriggersExcept args.StringSliceArgs
+	ExcludeTriggersRegex  args.StringSliceArgs
+	ExcludeAllTriggers    bool
+	Excluder              ExcludeByName
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
@@ -68,6 +75,10 @@ func (c ProjectTriggerConverter) toHclByProjectIdAndName(projectId string, proje
 	for _, resource := range triggers {
 		if dependencies.HasResource(resource.Id, c.GetResourceType()) {
 			return nil
+		}
+
+		if c.Excluder.IsResourceExcludedWithRegex(resource.Name, c.ExcludeAllTriggers, c.ExcludeTriggers, c.ExcludeTriggersRegex, c.ExcludeTriggersExcept) {
+			continue
 		}
 
 		zap.L().Info("Project Trigger: " + resource.Id + " " + resource.Name)
@@ -269,6 +280,15 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, recursive bool, lookup bool, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
+	// Don't import twice
+	if dependencies.HasResource(projectTrigger.Id, c.GetResourceType()) {
+		return nil
+	}
+
+	if c.Excluder.IsResourceExcludedWithRegex(projectTrigger.Name, c.ExcludeAllTriggers, c.ExcludeTriggers, c.ExcludeTriggersRegex, c.ExcludeTriggersExcept) {
+		return nil
+	}
+
 	// Some triggers are not supported
 	supportedTriggers := []string{"GitFilter", "ArcFeedFilter", "MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter"}
 	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {

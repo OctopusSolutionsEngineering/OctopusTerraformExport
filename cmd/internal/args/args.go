@@ -115,6 +115,11 @@ type Arguments struct {
 	ExcludeRunbooksRegex  StringSliceArgs
 	ExcludeRunbooksExcept StringSliceArgs
 
+	ExcludeAllTriggers    bool
+	ExcludeTriggers       StringSliceArgs
+	ExcludeTriggersRegex  StringSliceArgs
+	ExcludeTriggersExcept StringSliceArgs
+
 	ExcludeLibraryVariableSets       StringSliceArgs
 	ExcludeLibraryVariableSetsRegex  StringSliceArgs
 	ExcludeLibraryVariableSetsExcept StringSliceArgs
@@ -294,6 +299,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.Var(&arguments.ExcludeRunbooks, "excludeRunbook", "A runbook to be excluded when exporting a single project. WARNING: variables scoped to this runbook will no longer have the runbook scope applied.")
 	flags.Var(&arguments.ExcludeRunbooksRegex, "excludeRunbookRegex", "A runbook to be excluded when exporting a single project based on regex match. WARNING: variables scoped to this runbook will no longer have the runbook scope applied.")
 	flags.Var(&arguments.ExcludeRunbooksExcept, "excludeRunbooksExcept", "All runbooks except those defined with excludeRunbooksExcept are excluded when exporting a single project. WARNING: variables scoped to other runbooks will no longer have the runbook scope applied.")
+
+	flags.BoolVar(&arguments.ExcludeAllTriggers, "excludeAllTriggers", false, "Exclude all triggers when exporting a project or space.")
+	flags.Var(&arguments.ExcludeTriggers, "excludeTrigger", "A trigger to be excluded when exporting a single project.")
+	flags.Var(&arguments.ExcludeTriggersRegex, "excludeTriggerRegex", "A trigger to be excluded when exporting a single project based on regex match.")
+	flags.Var(&arguments.ExcludeTriggersExcept, "excludeTriggersExcept", "All triggers except those defined with excludeRunbooksExcept are excluded when exporting a single project.")
 
 	flags.BoolVar(&arguments.ExcludeAllLibraryVariableSets, "excludeAllLibraryVariableSets", false, "Exclude all library variable sets. WARNING: projects that linked this library variable set will no longer include these variables.")
 	flags.Var(&arguments.ExcludeLibraryVariableSets, "excludeLibraryVariableSet", "A library variable set to be excluded when exporting a single project. WARNING: projects that linked this library variable set will no longer include these variables.")
