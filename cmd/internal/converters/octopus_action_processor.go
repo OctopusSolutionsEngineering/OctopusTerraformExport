@@ -223,6 +223,7 @@ func (c OctopusActionProcessor) ReplaceIds(properties map[string]string, depende
 func (c OctopusActionProcessor) FixOctopusUseBundledTooling(actionType string, properties map[string]any) map[string]any {
 	serverSteps := []string{
 		"Octopus.Kubernetes.Kustomize",
+		"Octopus.KubernetesDeployRawYaml",
 	}
 
 	sanitisedProperties := map[string]any{}
