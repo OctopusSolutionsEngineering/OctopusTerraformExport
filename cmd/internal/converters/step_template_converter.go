@@ -99,6 +99,14 @@ func (c StepTemplateConverter) AllToStatelessHcl(dependencies *data.ResourceDeta
 }
 
 func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, false, dependencies)
+}
+
+func (c StepTemplateConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclById(id, true, dependencies)
+}
+
+func (c StepTemplateConverter) toHclById(id string, stateless bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllStepTemplates {
 		return nil
 	}
@@ -129,7 +137,7 @@ func (c StepTemplateConverter) ToHclById(id string, dependencies *data.ResourceD
 		}
 	}
 
-	return c.toHcl(resource, communityStepTemplate, false, dependencies)
+	return c.toHcl(resource, communityStepTemplate, stateless, dependencies)
 }
 
 func (c StepTemplateConverter) GetResourceType() string {
@@ -212,16 +220,23 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		/*
-			If the length of the result attribute is zero, we did not find an existing step template.
-		*/
-		thisResource.VersionLookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
-			"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.version " +
-			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].version}"
-		thisResource.Lookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
-			"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.id " +
-			": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
-		thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
+		if thisResource.ExternalID == "" {
+			thisResource.VersionLookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
+				"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.version " +
+				": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].version}"
+			thisResource.Lookup = "${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null " +
+				"? data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template.id " +
+				": " + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + "}"
+		} else {
+			thisResource.VersionLookup = "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template != null " +
+				"? data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template.version " +
+				": " + octopusdeployCommunityStepTemplateResourceType + "." + communityStepTemplateName + "[0].version}"
+			thisResource.Lookup = "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template != null " +
+				"? data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".step_template.id " +
+				": " + octopusdeployCommunityStepTemplateResourceType + "." + communityStepTemplateName + "[0].id}"
+			thisResource.Dependency = "${" + octopusdeployCommunityStepTemplateResourceType + "." + communityStepTemplateName + "}"
+		}
 	} else {
 		if thisResource.ExternalID == "" {
 			thisResource.Lookup = "${" + octopusdeployStepTemplateResourceType + "." + stepTemplateName + ".id}"
@@ -252,7 +267,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			communityStepTemplateResource := terraform.TerraformCommunityStepTemplate{
 				Type:                      octopusdeployCommunityStepTemplateResourceType,
 				Name:                      communityStepTemplateName,
-				CommunityActionTemplateId: "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".steps[0].id}",
+				CommunityActionTemplateId: "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".id}",
 			}
 
 			if stateless {

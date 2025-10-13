@@ -26,7 +26,7 @@ type OctopusActionProcessor struct {
 	ProjectExporter         ConverterAndLookupWithStatelessById
 	DetachProjectTemplates  bool
 	WorkerPoolProcessor     OctopusWorkerPoolProcessor
-	StepTemplateConverter   ConverterAndLookupById
+	StepTemplateConverter   ConverterAndLookupWithStatelessById
 	Client                  client.OctopusClient
 }
 
@@ -264,7 +264,6 @@ func (c OctopusActionProcessor) FixRunOnServer(actionType string, properties map
 		"Octopus.AwsApplyCloudFormationChangeSet",
 		"Octopus.Kubernetes.Kustomize",
 		"Octopus.HelmChartUpgrade",
-		"Octopus.TentaclePackage",
 	}
 
 	sanitisedProperties := map[string]any{}
@@ -559,6 +558,31 @@ func (c OctopusActionProcessor) ExportProjects(recursive bool, lookup bool, stat
 					if err != nil {
 						return err
 					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c OctopusActionProcessor) ExportCommunityStepTemplates(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
+	for _, step := range steps {
+		for _, action := range step.Actions {
+
+			if prop, ok := action.Properties["Octopus.Action.Template.Id"]; ok {
+				var err error
+				if recursive {
+					if stateless {
+						err = c.StepTemplateConverter.ToHclStatelessById(prop.(string), dependencies)
+					} else {
+						err = c.StepTemplateConverter.ToHclById(prop.(string), dependencies)
+					}
+				} else if lookup {
+					err = c.StepTemplateConverter.ToHclLookupById(prop.(string), dependencies)
+				}
+				if err != nil {
+					return err
 				}
 			}
 		}

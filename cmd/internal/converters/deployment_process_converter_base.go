@@ -977,6 +977,9 @@ func (c *DeploymentProcessConverterBase) exportDependencies(recursive bool, look
 		return err
 	}
 
+	// Export community step templates
+	err = c.OctopusActionProcessor.ExportCommunityStepTemplates(recursive, lookup, stateless, resource.GetSteps(), dependencies)
+
 	return nil
 }
 
