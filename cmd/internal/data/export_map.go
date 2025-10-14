@@ -123,6 +123,14 @@ func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) 
 	return false
 }
 
+func (c *ResourceDetailsCollection) AddResourcePtr(resources ...*ResourceDetails) {
+	for _, resource := range resources {
+		if resource != nil {
+			c.AddResource(*resource)
+		}
+	}
+}
+
 // AddResource adds a resource to the collection
 func (c *ResourceDetailsCollection) AddResource(resources ...ResourceDetails) {
 	c.mu.Lock()

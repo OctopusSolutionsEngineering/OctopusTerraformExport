@@ -270,6 +270,10 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		return nil
 	}
 
+	if dependencies.HasResource(pool.Id, c.GetResourceType()) {
+		return nil
+	}
+
 	if c.LimitResourceCount > 0 && len(dependencies.GetAllResource(c.GetResourceType())) >= c.LimitResourceCount {
 		zap.L().Info(c.GetResourceType() + " hit limit of " + fmt.Sprint(c.LimitResourceCount) + " - skipping " + pool.Id)
 		return nil
@@ -290,15 +294,16 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		fallback := "Default Worker Pool"
 
 		if forceLookup {
-			c.createDynamicWorkerPoolLookupResource("workerpool_"+sanitizer.SanitizeName(fallback),
-				fallback,
+			c.createDynamicWorkerPoolLookupResource("workerpool_"+sanitizer.SanitizeName(pool.Name),
+				pool.Name,
 				&thisResource,
 				pool,
 				stateless)
 
-			dependencies.AddResource(*c.createStandAloneLookupResource(
+			dependencies.AddResourcePtr(c.createStandAloneLookupResource(
 				"workerpool_"+sanitizer.SanitizeName(fallback),
-				fallback))
+				fallback,
+				dependencies))
 
 		} else {
 			if c.GenerateImportScripts && !stateless {
@@ -319,13 +324,15 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 				pool,
 				stateless)
 
-			dependencies.AddResource(*c.createStandAloneLookupResource(
+			dependencies.AddResourcePtr(c.createStandAloneLookupResource(
 				"workerpool_"+sanitizer.SanitizeName(fallback),
-				fallback))
+				fallback,
+				dependencies))
 
-			dependencies.AddResource(*c.createStandAloneLookupResource(
+			dependencies.AddResourcePtr(c.createStandAloneLookupResource(
 				"workerpool_"+sanitizer.SanitizeName(fallback2),
-				fallback2))
+				fallback2,
+				dependencies))
 
 		} else {
 			if c.GenerateImportScripts && !stateless {
@@ -428,11 +435,16 @@ func (c WorkerPoolConverter) createStaticWorkerPoolResource(resourceName string,
 // createStandAloneLookupResource creates a data resource for the equivalent worker pool in an on-premise or cloud instance.
 // This resource is only used by stateless modules. It allows a stateless module to be created on a cloud instance and applied
 // to an on-premise instance, or vice versa.
-func (c WorkerPoolConverter) createStandAloneLookupResource(resourceName string, resourceDisplayName string) *data.ResourceDetails {
+func (c WorkerPoolConverter) createStandAloneLookupResource(resourceName string, resourceDisplayName string, dependencies *data.ResourceDetailsCollection) *data.ResourceDetails {
 
 	// Resource names might be empty - a default worker pool is just an empty string.
 	// There is no need to create a data source for it.
 	if resourceDisplayName == "" {
+		return nil
+	}
+
+	// This fallback has already been created
+	if dependencies.HasResource(resourceName, "FallbackWorkerPool") {
 		return nil
 	}
 
