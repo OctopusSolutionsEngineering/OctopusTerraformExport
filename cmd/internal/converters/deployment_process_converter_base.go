@@ -385,10 +385,15 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 // assignNecessaryExecutionProperties assigns only the necessary execution properties that are required for the action to function.
 // Specifically, we do not assign the properties that are defined on the step template.
 func (c *DeploymentProcessConverterBase) assignNecessaryExecutionProperties(action *octopus.Action, block *hclwrite.Block, owner octopus.NameIdParentResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+	requiredProperties := []string{"Octopus.Action.RunOnServer", "Octopus.UseBundledTooling"}
+
 	sanitizedProperties := map[string]any{}
-	// preserve the original run on server value if it exists
-	if property, ok := action.Properties["Octopus.Action.RunOnServer"]; ok {
-		sanitizedProperties["Octopus.Action.RunOnServer"] = property
+
+	for _, requiredProperty := range requiredProperties {
+		// preserve the original run on server value if it exists
+		if property, ok := action.Properties[requiredProperty]; ok {
+			sanitizedProperties[requiredProperty] = property
+		}
 	}
 	sanitizedProperties = c.OctopusActionProcessor.FixRunOnServer(strutil.EmptyIfNil(action.ActionType), sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.FixOctopusUseBundledTooling(strutil.EmptyIfNil(action.ActionType), sanitizedProperties)
