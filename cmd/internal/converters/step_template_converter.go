@@ -278,9 +278,11 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 
 			// We then need to reference the ID of the community step template data source in the step template resource
 			communityStepTemplateResource := terraform.TerraformCommunityStepTemplate{
-				Type:                      octopusdeployCommunityStepTemplateResourceType,
-				Name:                      communityStepTemplateName,
-				CommunityActionTemplateId: "${data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".id}",
+				Type: octopusdeployCommunityStepTemplateResourceType,
+				Name: communityStepTemplateName,
+				// It is possible the community step template is not installed or the id/website is not valid, so we need to check if the steps array has any entries
+				CommunityActionTemplateId: "${length(data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".steps) != 0 ? " +
+					"data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".steps[0].id : null}",
 			}
 
 			if stateless {
