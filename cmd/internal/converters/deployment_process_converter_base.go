@@ -385,7 +385,7 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 func (c *DeploymentProcessConverterBase) assignExecutionProperties(action *octopus.Action, block *hclwrite.Block, owner octopus.NameIdParentResource, parameters []string, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	sanitizedProperties := c.OctopusActionProcessor.FixRunOnServer(strutil.EmptyIfNil(action.ActionType), action.Properties)
 	sanitizedProperties = c.OctopusActionProcessor.FixOctopusUseBundledTooling(strutil.EmptyIfNil(action.ActionType), sanitizedProperties)
-	c.assignProperties("execution_properties", block, owner, sanitizedProperties, parameters, action, file, dependencies)
+	c.assignProperties("execution_properties", block, owner, sanitizedProperties, []string{}, parameters, action, file, dependencies)
 }
 
 func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
@@ -592,8 +592,6 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), []string{}, step, file, dependencies)
-
 		if hasChild {
 
 			template := octopus.StepTemplate{}
@@ -607,6 +605,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 				return "", err
 			} else {
 				c.assignExecutionProperties(&step.Actions[0], block, owner, parameters, file, dependencies)
+				c.assignProperties("properties", block, owner, (&step.Actions[0]).Properties, parameters, []string{}, step, file, dependencies)
 			}
 		}
 
@@ -724,7 +723,7 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 			hcl.WriteLifecycleAllAttribute(block)
 		}
 
-		c.assignProperties("properties", block, projectOrRunbook, maputil.ToStringAnyMap(step.Properties), []string{}, step, file, dependencies)
+		c.assignProperties("properties", block, projectOrRunbook, maputil.ToStringAnyMap(step.Properties), []string{}, []string{}, step, file, dependencies)
 
 		if hasChild {
 			c.assignExecutionProperties(&step.Actions[0], block, projectOrRunbook, []string{}, file, dependencies)
@@ -782,7 +781,7 @@ func (c *DeploymentProcessConverterBase) generateChildStepName(parent octopus.Na
 	return "process_child_step_" + sanitizer.SanitizeName(owner.GetName()) + "_" + sanitizer.SanitizeName(named.GetName())
 }
 
-func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, stepTemplateProperties []string, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, block *hclwrite.Block, owner octopus.NameIdParentResource, properties map[string]any, keepFields []string, removeFields []string, action octopus.NamedResource, file *hclwrite.File, dependencies *data.ResourceDetailsCollection) {
 	if action == nil {
 		return
 	}
@@ -791,12 +790,15 @@ func (c *DeploymentProcessConverterBase) assignProperties(propertyName string, b
 		DummySecretGenerator:      c.DummySecretGenerator,
 		DummySecretVariableValues: c.DummySecretVariableValues,
 	}.SanitizeMap(owner, action, properties, dependencies)
+	sanitizedProperties = c.OctopusActionProcessor.RemoveFields(sanitizedProperties, removeFields)
+	if keepFields != nil && len(keepFields) > 0 {
+		sanitizedProperties = c.OctopusActionProcessor.KeepOnlyFields(sanitizedProperties, keepFields)
+	}
 	sanitizedProperties = c.OctopusActionProcessor.EscapeDollars(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.EscapePercents(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceStepTemplateVersion(dependencies, sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.ReplaceIds(sanitizedProperties, dependencies)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveUnnecessaryActionFields(sanitizedProperties)
-	sanitizedProperties = c.OctopusActionProcessor.RemoveFields(sanitizedProperties, stepTemplateProperties)
 	sanitizedProperties = c.OctopusActionProcessor.RemoveStepTemplateFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.FixActionFields(sanitizedProperties)
 	sanitizedProperties = c.OctopusActionProcessor.LimitPropertyLength(c.LimitAttributeLength, true, sanitizedProperties)

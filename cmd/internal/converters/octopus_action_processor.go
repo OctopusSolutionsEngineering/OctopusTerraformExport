@@ -360,10 +360,20 @@ func (c OctopusActionProcessor) RemoveStepTemplateFields(properties map[string]s
 	return c.RemoveFields(properties, unnecessaryFields)
 }
 
-func (c OctopusActionProcessor) RemoveFields(properties map[string]string, unnecessaryFields []string) map[string]string {
+func (c OctopusActionProcessor) KeepOnlyFields(properties map[string]string, keepFields []string) map[string]string {
 	sanitisedProperties := map[string]string{}
 	for k, v := range properties {
-		if !sliceutil.Contains(unnecessaryFields, k) {
+		if sliceutil.Contains(keepFields, k) {
+			sanitisedProperties[k] = v
+		}
+	}
+	return sanitisedProperties
+}
+
+func (c OctopusActionProcessor) RemoveFields(properties map[string]string, removeFields []string) map[string]string {
+	sanitisedProperties := map[string]string{}
+	for k, v := range properties {
+		if !sliceutil.Contains(removeFields, k) {
 			sanitisedProperties[k] = v
 		}
 	}
