@@ -290,7 +290,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		fallback := "Default Worker Pool"
 
 		if forceLookup {
-			c.createDynamicWorkerPoolLookupResource(resourceName,
+			c.createDynamicWorkerPoolLookupResource("workerpool_"+sanitizer.SanitizeName(fallback),
 				fallback,
 				&thisResource,
 				pool,
