@@ -253,6 +253,7 @@ func (c OctopusActionProcessor) FixOctopusUseBundledTooling(actionType string, p
 
 func (c OctopusActionProcessor) FixRunOnServer(actionType string, properties map[string]any) map[string]any {
 	serverSteps := []string{
+		"Octopus.Script",
 		"Octopus.Manual",
 		"Octopus.Email",
 		"Octopus.DeployRelease",
