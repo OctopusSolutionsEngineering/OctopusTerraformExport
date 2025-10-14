@@ -287,8 +287,7 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 		forceLookup := lookup || pool.Name == "Hosted Windows" || pool.Name == "Hosted Ubuntu"
 
 		// Fallback is used when the default worker pool, usually called "Hosted Ubuntu" or "Hosted Windows", is not found.
-		// An empty string falls back to the default worker pool.
-		fallback := "null"
+		fallback := "Default Worker Pool"
 
 		if forceLookup {
 			c.createDynamicWorkerPoolLookupResource(resourceName,
@@ -296,6 +295,10 @@ func (c WorkerPoolConverter) toHcl(pool octopus.WorkerPool, _ bool, lookup bool,
 				&thisResource,
 				pool,
 				stateless)
+
+			dependencies.AddResource(*c.createStandAloneLookupResource(
+				"workerpool_"+sanitizer.SanitizeName(fallback),
+				fallback))
 
 		} else {
 			if c.GenerateImportScripts && !stateless {
@@ -478,13 +481,13 @@ func (c WorkerPoolConverter) createStaticWorkerPoolLookupResource(resourceName s
 	}
 }
 
-func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, fallbackDataLookup string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
+func (c WorkerPoolConverter) createDynamicWorkerPoolLookupResource(resourceName string, fallbackResourceName string, thisResource *data.ResourceDetails, pool octopus.WorkerPool, stateless bool) {
 	if stateless {
 		// Stateless modules try to use the dynamic worker pool first, and if that fails, use the static worker pool
 		// This allows a module created on a cloud instance to be used in an on-premise instance.
 		thisResource.Lookup = "${length(data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools) != 0 " +
 			"? data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id " +
-			": " + fallbackDataLookup + "}"
+			": data." + octopusdeployWorkerPoolsDataType + "." + fallbackResourceName + ".worker_pools[0].id}"
 	} else {
 		thisResource.Lookup = "${data." + octopusdeployWorkerPoolsDataType + "." + resourceName + ".worker_pools[0].id}"
 	}
