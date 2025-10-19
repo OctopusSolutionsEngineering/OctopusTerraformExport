@@ -19,5 +19,6 @@
       "arguments": []
     },
     "enableForwardingHttpRequest": true
-  }
+  },
+  "functionsRuntimeAdminIsolationEnabled": true
 }
