@@ -557,7 +557,7 @@ func (c *LibraryVariableSetConverter) convertTemplates(actionPackages []octopus.
 func (c *LibraryVariableSetConverter) getTemplateLookup(stateless bool, libraryName string, index int) string {
 	if stateless {
 		return "${length(data." + octopusdeployLibraryVariableSetsDataType + "." + libraryName + ".library_variable_sets) != 0 " +
-			"? data." + octopusdeployLibraryVariableSetsDataType + "." + libraryName + ".library_variable_sets[0].template[" + fmt.Sprint(index) + "] " +
+			"? data." + octopusdeployLibraryVariableSetsDataType + "." + libraryName + ".library_variable_sets[0].template[" + fmt.Sprint(index) + "].id " +
 			": " + octopusdeployLibraryVariableSetsResourceType + "." + libraryName + "[0].template[" + fmt.Sprint(index) + "].id}"
 	}
 
