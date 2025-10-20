@@ -920,10 +920,15 @@ func (c *ProjectConverter) convertTemplates(actionPackages []octopus.Template, p
 			})
 		}
 
+		lookup := "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(i) + "].id}"
+		if stateless {
+			lookup = "${" + octopusdeployProjectResourceType + "." + projectName + "[0].template[" + fmt.Sprint(i) + "].id}"
+		}
+
 		templateMap = append(templateMap, data.ResourceDetails{
 			Id:           v.Id,
 			ResourceType: "ProjectTemplates",
-			Lookup:       "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(i) + "].id}",
+			Lookup:       lookup,
 			FileName:     "",
 			ToHcl:        nil,
 		})
