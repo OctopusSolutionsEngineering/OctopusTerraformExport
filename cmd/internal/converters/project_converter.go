@@ -936,7 +936,7 @@ func (c *ProjectConverter) getLookup(stateless bool, projectName string, index i
 		// There is no tag lookup, so if the project exists, the template is not created, and the lookup is an
 		// empty string.
 		return "${length(data." + octopusdeployProjectsDataType + "." + projectName + ".projects) != 0 " +
-			"? '' " +
+			"? null " +
 			": " + octopusdeployProjectResourceType + "." + projectName + "[0].template[" + fmt.Sprint(index) + "].id}"
 	}
 	return "${" + octopusdeployProjectResourceType + "." + projectName + ".template[" + fmt.Sprint(index) + "].id}"
