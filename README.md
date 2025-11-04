@@ -168,18 +168,6 @@ state.
 
 The documentation in [platform engineering](https://octopus.com/docs/platform-engineering) allow octoterra to be used directly in Octopus via native steps.
 
-## Browser usage
-
-Exporting projects to HCL can be embedded in the browser by using the [Violentmonkey](https://violentmonkey.github.io/)
-script [violentmonkey.js](wasm/violentmonkey.js).
-
-![image](https://user-images.githubusercontent.com/160104/227693138-3fd77272-d962-444b-a50f-735174629711.png)
-
-This script adds a `Export HCL` link to the project page. Once the link is ready to be clicked (it takes a minute or
-so to build the HCL), the link displays the project's HCL representation in a popup window.
-
-![HCL Export link](hcl_export.png)
-
 ## How to contribute
 
 * Ensure any new features or bugs have an associated test in [octoterra_test.go](https://github.com/OctopusSolutionsEngineering/OctopusTerraformExport/blob/main/cmd/octoterra_test.go)
