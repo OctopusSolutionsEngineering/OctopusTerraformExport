@@ -29,7 +29,7 @@ func GetRedirectionBypass() []string {
 
 	err := json.Unmarshal([]byte(hostnamesJson), &hostnames)
 	if err != nil {
-		zap.L().Error("Error parsing JSON:", zap.Error(err))
+		zap.L().Error("Error parsing redirection bypass JSON:", zap.Error(err))
 		return []string{}
 	}
 
