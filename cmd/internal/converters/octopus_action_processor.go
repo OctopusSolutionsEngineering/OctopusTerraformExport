@@ -244,8 +244,8 @@ func (c OctopusActionProcessor) FixOctopusUseBundledTooling(actionType string, p
 		"OctopusUseBundledTooling" has appeared.
 	*/
 	if slices.Contains(serverSteps, actionType) {
-		if _, ok := sanitisedProperties["Octopus.UseBundledTooling"].(string); !ok {
-			sanitisedProperties["Octopus.UseBundledTooling"] = "False"
+		if _, ok := sanitisedProperties["OctopusUseBundledTooling"].(string); !ok {
+			sanitisedProperties["OctopusUseBundledTooling"] = "False"
 		}
 	}
 
