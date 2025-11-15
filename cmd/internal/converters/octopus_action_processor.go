@@ -224,6 +224,7 @@ func (c OctopusActionProcessor) FixOctopusUseBundledTooling(actionType string, p
 	serverSteps := []string{
 		"Octopus.Kubernetes.Kustomize",
 		"Octopus.KubernetesDeployRawYaml",
+		"Octopus.AzurePowerShell",
 	}
 
 	sanitisedProperties := map[string]any{}
