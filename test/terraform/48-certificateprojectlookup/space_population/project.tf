@@ -25,7 +25,7 @@ resource "octopusdeploy_project" "project_1" {
   default_guided_failure_mode          = "EnvironmentDefault"
   default_to_skip_if_already_installed = false
   description                          = "Test project"
-  discrete_channel_release             = false
+
   is_disabled                          = false
   is_discrete_channel_release          = false
   is_version_controlled                = false
@@ -61,7 +61,7 @@ resource "octopusdeploy_project" "project_2" {
   default_guided_failure_mode          = "EnvironmentDefault"
   default_to_skip_if_already_installed = false
   description                          = "Test project 2"
-  discrete_channel_release             = false
+
   is_disabled                          = false
   is_discrete_channel_release          = false
   is_version_controlled                = false

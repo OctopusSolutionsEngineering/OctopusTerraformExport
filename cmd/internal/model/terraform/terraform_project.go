@@ -11,7 +11,7 @@ type TerraformProject struct {
 	DefaultGuidedFailureMode               *string                                                 `hcl:"default_guided_failure_mode"`
 	DefaultToSkipIfAlreadyInstalled        bool                                                    `hcl:"default_to_skip_if_already_installed"`
 	Description                            *string                                                 `hcl:"description"`
-	DiscreteChannelRelease                 bool                                                    `hcl:"discrete_channel_release"`
+	DiscreteChannelRelease                 bool                                                    `hcl:"is_discrete_channel_release"`
 	IsDisabled                             bool                                                    `hcl:"is_disabled"`
 	IsVersionControlled                    bool                                                    `hcl:"is_version_controlled"`
 	LifecycleId                            string                                                  `hcl:"lifecycle_id"`
