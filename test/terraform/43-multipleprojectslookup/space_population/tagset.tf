@@ -1,7 +1,6 @@
 resource "octopusdeploy_tag_set" "tagset_tag1" {
   name        = "tag1"
   description = "Test tagset"
-  sort_order  = 0
 }
 
 resource "octopusdeploy_tag" "tag_a" {
@@ -23,7 +22,6 @@ resource "octopusdeploy_tag" "tag_b" {
 resource "octopusdeploy_tag_set" "tagset_tag2" {
   name        = "tag2"
   description = "Test tagset"
-  sort_order  = 0
 }
 
 resource "octopusdeploy_tag" "tag_c" {
