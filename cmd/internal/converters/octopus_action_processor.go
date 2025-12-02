@@ -225,6 +225,7 @@ func (c OctopusActionProcessor) FixOctopusUseBundledTooling(actionType string, p
 		"Octopus.Kubernetes.Kustomize",
 		"Octopus.KubernetesDeployRawYaml",
 		"Octopus.AzurePowerShell",
+		"Octopus.HelmChartUpgrade",
 	}
 
 	sanitisedProperties := map[string]any{}
