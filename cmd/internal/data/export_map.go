@@ -187,6 +187,10 @@ func (c *ResourceDetailsCollection) GetAllResourceWithLowerSort(resourceType str
 // but we treat a mostly valid output as a "graceful fallback" rather than failing hard, as the resulting text
 // can still be edited by hand.
 func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) string {
+	if id == "" {
+		return ""
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -205,6 +209,10 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 // The returned string is used only for the depends_on field, as it may reference to a collection of resources
 // rather than a single ID.
 func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id string) string {
+	if id == "" {
+		return ""
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -223,6 +231,10 @@ func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id str
 // The returned string is used only for the depends_on field, as it may reference to a collection of resources
 // rather than a single ID.
 func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id string) string {
+	if id == "" {
+		return ""
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -239,6 +251,10 @@ func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id stri
 
 // GetResourceVersionLookup returns the terraform syntax to lookup the version of the new resource.
 func (c *ResourceDetailsCollection) GetResourceVersionLookup(resourceType string, id string) string {
+	if id == "" {
+		return ""
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -255,6 +271,10 @@ func (c *ResourceDetailsCollection) GetResourceVersionLookup(resourceType string
 
 // GetResourceVersionCurrent returns the current version of the resource being exported.
 func (c *ResourceDetailsCollection) GetResourceVersionCurrent(resourceType string, id string) string {
+	if id == "" {
+		return ""
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -273,6 +293,10 @@ func (c *ResourceDetailsCollection) GetResourceVersionCurrent(resourceType strin
 // The returned string is used only for the depends_on field, as it may reference to a collection of resources
 // rather than a single ID.
 func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, id string) string {
+	if id == "" {
+		return ""
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -313,6 +337,10 @@ func (c *ResourceDetailsCollection) GetResourceDependencyPointer(resourceType st
 
 // GetResourceDependencyFromParent returns the terraform references for a given resource type based on the parent ID.
 func (c *ResourceDetailsCollection) GetResourceDependencyFromParent(parentId string, resourceType string) []string {
+	if parentId == "" {
+		return []string{}
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -346,6 +374,11 @@ func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...str
 
 // GetResourcePointer returns the Terraform reference for a given resource type and id as a string pointer.
 func (c *ResourceDetailsCollection) GetResourcePointer(resourceType string, id *string) *string {
+	if id == nil {
+		empty := ""
+		return &empty
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
