@@ -1150,6 +1150,10 @@ func (c *ProjectConverter) convertUsernamePasswordGitPersistence(project octopus
 // getDeploymentProcessStepId finds the internal ID of the action. This is despite the fact that the API calls the
 // parameter "DonorPackageStepId" - it is actually an Action ID, not a step ID.
 func (c *ProjectConverter) getDeploymentProcessStepId(project octopus.Project, dependencies *data.ResourceDetailsCollection) *string {
+	if strutil.EmptyIfNil(project.VersioningStrategy.DonorPackageStepId) == "" {
+		return nil
+	}
+
 	// The first action in a step is combined with the step, so here we lookup the "DeploymentProcesses/Steps" resource type
 	stepId := dependencies.GetResourceDependency("DeploymentProcesses/Steps",
 		project.Id+"/"+
