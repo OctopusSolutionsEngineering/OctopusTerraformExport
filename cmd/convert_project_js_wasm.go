@@ -3,6 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+	"syscall/js"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/converters"
@@ -10,9 +14,6 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
-	"sort"
-	"strings"
-	"syscall/js"
 )
 
 // This is the entrypoint of a WASM library that can be embedded in a web page to convert an
@@ -197,6 +198,7 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 		ExcludeTenantVariables:       nil,
 		ExcludeTenantVariablesExcept: nil,
 		ExcludeTenantVariablesRegex:  nil,
+		TerraformVariableWriter:      &terraformVariableWriter,
 	}
 
 	tenantProjectVariableConverter := converters.TenantProjectVariableConverter{

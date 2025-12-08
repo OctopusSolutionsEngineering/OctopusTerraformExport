@@ -10,6 +10,14 @@ type TenantVariable struct {
 	LibraryVariables map[string]LibraryVariable
 }
 
+func (t *TenantVariable) GetName() string {
+	return t.TenantName
+}
+
+func (t *TenantVariable) GetId() string {
+	return t.Id
+}
+
 type ProjectVariable struct {
 	ProjectId   string
 	ProjectName string

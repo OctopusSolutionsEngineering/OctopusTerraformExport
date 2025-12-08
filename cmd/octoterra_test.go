@@ -7324,7 +7324,14 @@ func TestTenantCommonVarsExport(t *testing.T) {
 		"../test/terraform/56-tenantcommonvars/space_population",
 		[]string{},
 		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			/*
+				This is required to work around a bug where setting a tenant variable to a blank value (which it will be
+				if it was a secret value) causes the import to fail. Inserting a dummy value ensures recreating
+				secrets always has a value.
+			*/
+			DummySecretVariableValues: true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert

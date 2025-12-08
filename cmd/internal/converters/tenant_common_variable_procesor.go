@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -9,10 +11,10 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/variables"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"github.com/samber/lo"
-	"strings"
 )
 
 // TenantCommonVariableProcessor is used to serialize the tenant common variables.
@@ -28,6 +30,7 @@ type TenantCommonVariableProcessor struct {
 	ExcludeTenantVariables       args.StringSliceArgs
 	ExcludeTenantVariablesExcept args.StringSliceArgs
 	ExcludeTenantVariablesRegex  args.StringSliceArgs
+	TerraformVariableWriter      variables.TerraformVariableWriter
 }
 
 func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless bool, tenantVariable octopus.TenantVariable, tenantVariableId string, tenantVariableValue any, libraryVariableSet octopus.LibraryVariableSet, commonVariableIndex int, dependencies *data.ResourceDetailsCollection) error {
@@ -67,18 +70,25 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 	thisResource.ResourceType = c.GetResourceType()
 	thisResource.Lookup = "${octopusdeploy_tenant_common_variable." + variableName + ".id}"
 
-	/*
-		Tenants can define secrets, in which case value is an object indicating the state of the
-		secret, but not the value. In this case we can only export an empty string.
-		TODO: Create a variable to override this value if needed.
-	*/
-	fixedValue := ""
-	if stringValue, ok := tenantVariableValue.(string); ok {
-		fixedValue = stringValue
-	}
-
 	thisResource.ToHcl = func() (string, error) {
 		file := hclwrite.NewEmptyFile()
+
+		/*
+			Tenants can define secrets, in which case value is an object indicating the state of the
+			secret, but not the value. In this case we can only export an empty string.
+
+			Note, however, that we can not import an empty string as a secret variable. If you try to, you will
+			get the error:
+
+			Variable was created but ID not returned in response
+		*/
+		var fixedValue *string = nil
+		if stringValue, ok := tenantVariableValue.(string); ok {
+			fixedValue = strutil.EscapeDollarCurlyPointer(&stringValue)
+		} else {
+			fixedValue = c.TerraformVariableWriter.WriteTerraformVariablesForSecret(c.GetResourceType(), file, &tenantVariable, dependencies)
+		}
+
 		terraformResource := terraform.TerraformTenantCommonVariable{
 			Type:                 "octopusdeploy_tenant_common_variable",
 			Name:                 variableName,
@@ -87,7 +97,7 @@ func (c TenantCommonVariableProcessor) ConvertTenantCommonVariable(stateless boo
 			LibraryVariableSetId: dependencies.GetResource("LibraryVariableSets", libraryVariableSet.Id),
 			TemplateId:           "",
 			TenantId:             dependencies.GetResource("Tenants", tenantVariable.TenantId),
-			Value:                strutil.EscapeDollarCurlyPointer(&fixedValue),
+			Value:                fixedValue,
 		}
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
 
