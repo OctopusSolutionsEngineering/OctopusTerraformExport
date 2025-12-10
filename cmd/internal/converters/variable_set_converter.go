@@ -1535,9 +1535,9 @@ func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.T
 	if strutil.EmptyIfNil(prompt.Label) != "" || strutil.EmptyIfNil(prompt.Description) != "" {
 		return &terraform.TerraformProjectVariablePrompt{
 			Description: strutil.TrimPointer(prompt.Description),
-			// Empty string must be nil to fix this:
-			// unexpected new value: .template[0].label: was cty.StringVal(""), but now null.
-			Label:           strutil.NilIfEmptyPointer(prompt.Label),
+			// Nil value must be empty string, otherwise Terraform reports:
+			// unexpected new value: .prompt[0].label: was null, but now cty.StringVal("")
+			Label:           strutil.EmptyPointerIfNil(prompt.Label),
 			IsRequired:      prompt.Required,
 			DisplaySettings: c.convertDisplaySettings(prompt),
 		}
