@@ -39,4 +39,5 @@ type TerraformProjectVariableScope struct {
 	Machines     []string `hcl:"machines"`
 	Roles        []string `hcl:"roles"`
 	TenantTags   []string `hcl:"tenant_tags"`
+	Processes    []string `hcl:"processes"`
 }

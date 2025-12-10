@@ -1616,7 +1616,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 		return nil, err
 	}
 
-	// BUG: A octopusdeploy_process_child_step includes both the step and the first action. Hwoever, the ID is the step ID.
+	// BUG: A octopusdeploy_process_child_step includes both the step and the first action. However, the ID is the step ID.
 	// There is no way to get the ID of the action. This means that any variables scoped to the first step in a process
 	// will be recreated with the step ID, and not the action ID, leading to a "Missing Resource" error in the UI.
 	// See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/60
@@ -1624,13 +1624,15 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
 	environments := dependencies.GetResources("Environments", filteredEnvironments...)
 	machines := dependencies.GetResources("Machines", variable.Scope.Machine...)
+	processes := dependencies.GetResources("Projects", variable.Scope.ProcessOwner...)
 
 	if len(actions) != 0 ||
 		len(channels) != 0 ||
 		len(environments) != 0 ||
 		len(machines) != 0 ||
 		len(variable.Scope.Role) != 0 ||
-		len(variable.Scope.TenantTag) != 0 {
+		len(variable.Scope.TenantTag) != 0 ||
+		len(processes) != 0 {
 
 		return &terraform.TerraformProjectVariableScope{
 			Actions:      sliceutil.NilIfEmpty(actions),
@@ -1639,6 +1641,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 			Machines:     sliceutil.NilIfEmpty(machines),
 			Roles:        sliceutil.NilIfEmpty(variable.Scope.Role),
 			TenantTags:   sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(variable.Scope.TenantTag, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
+			Processes:    sliceutil.NilIfEmpty(processes),
 		}, nil
 	}
 
