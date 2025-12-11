@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -268,7 +269,7 @@ func (c DeploymentFreezeConverter) writeData(file *hclwrite.File, resource octop
 
 func (c DeploymentFreezeConverter) buildData(resourceName string, resource octopus.DeploymentFreeze) terraform.TerraformDeploymentFreezeData {
 	return terraform.TerraformDeploymentFreezeData{
-		Type:        octopusdeployMachinePoliciesDataType,
+		Type:        octopusdeployDeploymentFreezeDataType,
 		Name:        resourceName,
 		Ids:         nil,
 		PartialName: resource.Name,
