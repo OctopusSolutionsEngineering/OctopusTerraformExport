@@ -553,6 +553,7 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			ProjectGroupId:                         dependencies.GetResource("ProjectGroups", project.ProjectGroupId),
 			IncludedLibraryVariableSets:            c.convertLibraryVariableSets(project.IncludedLibraryVariableSetIds, dependencies),
 			TenantedDeploymentParticipation:        &tenanted,
+			ReleaseNotesTemplate:                   project.ReleaseNotesTemplate,
 			Template:                               projectTemplates,
 			ConnectivityPolicy:                     connectivityPolicy,
 			GitLibraryPersistenceSettings:          c.convertLibraryGitPersistence(project, projectName, dependencies),

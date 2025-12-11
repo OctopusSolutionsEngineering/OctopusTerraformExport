@@ -58,6 +58,7 @@ type Project struct {
 	VariableSetId                   *string
 	IncludedLibraryVariableSetIds   []string
 	PersistenceSettings             PersistenceSettings
+	ReleaseNotesTemplate            *string
 	VersioningStrategy              VersioningStrategy
 	ExtensionSettings               []ExtensionSetting
 }
