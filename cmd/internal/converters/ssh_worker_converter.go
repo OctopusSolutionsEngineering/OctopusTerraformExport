@@ -348,7 +348,7 @@ func (c SshWorkerConverter) toHcl(worker octopus.Worker, recursive bool, statele
 
 		if stateless {
 			c.writeData(file, worker, workerName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeploySshWorkerDataType + "." + workerName + ".deployment_targets) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeploySshWorkerDataType + "." + workerName + ".workers) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
