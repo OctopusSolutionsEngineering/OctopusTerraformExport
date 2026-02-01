@@ -46,11 +46,12 @@ type TerraformProcessStepContainer struct {
 }
 
 type TerraformProcessStepGitDependencies struct {
-	DefaultBranch     string    `cty:"default_branch"`
-	GitCredentialType string    `cty:"git_credential_type"`
-	RepositoryUri     string    `cty:"repository_uri"`
-	FilePathFilters   *[]string `cty:"file_path_filters"`
-	GitCredentialId   *string   `cty:"git_credential_id"`
+	DefaultBranch      string    `cty:"default_branch"`
+	GitCredentialType  string    `cty:"git_credential_type"`
+	RepositoryUri      string    `cty:"repository_uri"`
+	FilePathFilters    *[]string `cty:"file_path_filters"`
+	GitCredentialId    *string   `cty:"git_credential_id"`
+	GitHubConnectionId *string   `cty:"github_connection_id"`
 }
 
 type TerraformProcessStepPackage struct {

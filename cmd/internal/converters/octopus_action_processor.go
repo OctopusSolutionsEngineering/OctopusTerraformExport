@@ -201,6 +201,10 @@ func (c OctopusActionProcessor) ConvertGitDependenciesV2(gitDependencies []octop
 			RepositoryUri:     strutil.EmptyIfNil(gitDependency.RepositoryUri),
 			FilePathFilters:   nil,
 			GitCredentialId:   dependencies.GetResourcePointer("Git-Credentials", gitDependency.GitCredentialId),
+			// We need to make sure an empty string is used to define an empty value to avoid this error:
+			// unexpected new value: .git_dependencies[""].github_connection_id: was null,
+			// but now cty.StringVal("").
+			GitHubConnectionId: strutil.StrPointer(strutil.EmptyIfNil(gitDependency.GithubConnectionId)),
 		}
 	}
 

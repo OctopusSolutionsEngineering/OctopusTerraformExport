@@ -101,6 +101,7 @@ type GitDependency struct {
 	FilePathFilters              []string
 	GitCredentialId              *string
 	StepPackageInputsReferenceId *string
+	GithubConnectionId           *string
 }
 
 type Container struct {
