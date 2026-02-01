@@ -10,6 +10,7 @@ type TerraformSshConnectionDeploymentTarget struct {
 	Environments       []string `hcl:"environments"`
 	Fingerprint        string   `hcl:"fingerprint"`
 	Host               string   `hcl:"host"`
+	Port               *string  `hcl:"port""`
 	ResourceName       string   `hcl:"name"`
 	Roles              []string `hcl:"roles"`
 	DotNetCorePlatform *string  `hcl:"dot_net_core_platform"`

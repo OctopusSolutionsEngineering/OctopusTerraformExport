@@ -2,6 +2,9 @@ package converters
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -15,7 +18,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"strings"
 )
 
 const octopusdeploySshConnectionDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -418,6 +420,7 @@ func (c SshTargetConverter) toHcl(target octopus.SshEndpointResource, recursive 
 			Environments:       c.lookupEnvironments(target.EnvironmentIds, dependencies),
 			Fingerprint:        target.Endpoint.Fingerprint,
 			Host:               target.Endpoint.Host,
+			Port:               strutil.StrPointer(strconv.Itoa(target.Endpoint.Port)),
 			ResourceName:       target.Name,
 			Roles:              target.Roles,
 			DotNetCorePlatform: &target.Endpoint.DotNetCorePlatform,
