@@ -6,7 +6,15 @@ resource "octopusdeploy_process_step" "process_step_every_step_project_deploy_wi
   condition             = "Success"
   environments          = null
   excluded_environments = null
-  git_dependencies      = { "" = { default_branch = "main", file_path_filters = null, git_credential_id = "${octopusdeploy_git_credential.gitcredential_github.id}", git_credential_type = "Library", repository_uri = "https://github.com/OctopusSamples/OctoPetShop.git" } }
+  git_dependencies      = {
+    "" = {
+      default_branch = "main",
+      file_path_filters = null,
+      git_credential_id = "${octopusdeploy_git_credential.gitcredential_github.id}",
+      git_credential_type = "Library", repository_uri = "https://github.com/OctopusSamples/OctoPetShop.git"
+      github_connection_id = ""
+    }
+  }
   notes                 = "This step deploys a Kustomize resource to a Kubernetes cluster."
   package_requirement   = "LetOctopusDecide"
   slug                  = "deploy-with-kustomize"

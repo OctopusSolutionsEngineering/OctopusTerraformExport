@@ -65,6 +65,7 @@ resource "octopusdeploy_process_step" "process_step_get_mysql_host" {
       git_credential_type = "Library"
       git_credential_id = octopusdeploy_git_credential.gitcredential_test.id
       default_branch = "main"
+      github_connection_id = ""
     }
   }
   execution_properties  = {
