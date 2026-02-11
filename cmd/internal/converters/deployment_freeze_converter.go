@@ -110,8 +110,8 @@ func (c DeploymentFreezeConverter) toHcl(deploymentFreeze octopus.DeploymentFree
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		thisResource.Lookup = "${length(data." + octopusdeployDeploymentFreezeDataType + "." + freezeName + ".machine_policies) != 0 " +
-			"? data." + octopusdeployDeploymentFreezeDataType + "." + freezeName + ".machine_policies[0].id " +
+		thisResource.Lookup = "${length(data." + octopusdeployDeploymentFreezeDataType + "." + freezeName + ".deployment_freezes) != 0 " +
+			"? data." + octopusdeployDeploymentFreezeDataType + "." + freezeName + ".deployment_freezes[0].id " +
 			": " + octopusdeployDeploymentFreezeResourceType + "." + freezeName + "[0].id}"
 		thisResource.Dependency = "${" + octopusdeployDeploymentFreezeResourceType + "." + freezeName + "}"
 	} else {
