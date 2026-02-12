@@ -291,7 +291,7 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 					When the step template is stateless, the resource is created if the data source does not return any results.
 					We measure the presence of results by the length of the keys of the result attribute of the data source.
 				*/
-				communityStepTemplateResource.Count = strutil.StrPointer("${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null ? 0 : 1}")
+				communityStepTemplateResource.Count = strutil.StrPointer("${length(data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".steps) != 0 ? 0 : 1}")
 			}
 
 			communityStepTemplateResourceBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
