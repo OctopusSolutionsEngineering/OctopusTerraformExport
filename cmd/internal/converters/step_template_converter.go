@@ -288,10 +288,11 @@ func (c StepTemplateConverter) toHcl(template octopus.StepTemplate, communitySte
 			if stateless {
 				c.writeData(file, template, stepTemplateName)
 				/*
-					When the step template is stateless, the resource is created if the data source does not return any results.
-					We measure the presence of results by the length of the keys of the result attribute of the data source.
+						When the step template is stateless, the resource is created if the data source does not return any results.
+						We check for the step template of the same name to determine if the community step template has been installed, because the community step template is essentially a read only step template in the space.
+					    If the community step template is not installed, then there will be no step template with the same name as the community step template.
 				*/
-				communityStepTemplateResource.Count = strutil.StrPointer("${length(data." + octopusdeployCommunityStepTemplateDataType + "." + communityStepTemplateName + ".steps) != 0 ? 0 : 1}")
+				communityStepTemplateResource.Count = strutil.StrPointer("${data." + octopusdeployStepTemplateDataType + "." + stepTemplateName + ".step_template != null ? 0 : 1}")
 			}
 
 			communityStepTemplateResourceBlock := gohcl.EncodeAsBlock(communityStepTemplateResource, "resource")
