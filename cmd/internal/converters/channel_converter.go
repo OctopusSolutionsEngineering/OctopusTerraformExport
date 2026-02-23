@@ -221,7 +221,6 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		// That said, triggers will create, even if the project does not own Channel-1.
 		thisResource.Lookup = "Channels-1"
 
-		// TODO: This needs to be project specific to mean anything
 		thisResource.ToHcl = func() (string, error) {
 			data := terraform.TerraformChannelData{
 				Name:        resourceName,
