@@ -133,7 +133,7 @@ func (c DeploymentFreezeConverter) toHcl(deploymentFreeze octopus.DeploymentFree
 
 		if stateless {
 			c.writeData(file, deploymentFreeze, freezeName)
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployDeploymentFreezeDataType + "." + freezeName + ".machine_policies) != 0 ? 0 : 1}")
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployDeploymentFreezeDataType + "." + freezeName + ".deployment_freezes) != 0 ? 0 : 1}")
 		}
 
 		block := gohcl.EncodeAsBlock(terraformResource, "resource")
