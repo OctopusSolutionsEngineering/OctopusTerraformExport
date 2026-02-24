@@ -227,7 +227,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				Type:        octopusdeployChannelDataType,
 				Ids:         []string{},
 				PartialName: channel.Name,
-				ProjectId:   strutil.StrPointer(channel.ProjectId),
+				ProjectId:   strutil.StrPointer(dependencies.GetResource("Projects", channel.ProjectId)),
 				Skip:        0,
 				Take:        1,
 			}
