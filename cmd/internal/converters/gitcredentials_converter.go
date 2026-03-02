@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
@@ -331,6 +332,7 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 		terraformResource := terraform.TerraformGitCredentials{
 			Type:         octopusdeployGitCredentialResourceType,
 			Name:         gitCredentialsName,
+			Count:        nil,
 			Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &gitCredentials.Id),
 			SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", gitCredentials.SpaceId)),
 			Description:  strutil.NilIfEmptyPointer(strutil.TrimPointer(gitCredentials.Description)),
@@ -338,6 +340,10 @@ func (c GitCredentialsConverter) toHclResource(stateless bool, gitCredentials oc
 			ResourceType: gitCredentials.Details.Type,
 			Username:     gitCredentials.Details.Username,
 			Password:     "${var." + gitCredentialSecretName + "}",
+			RepositoryRestrictions: terraform.TerraformGitCredentialsRepositoryRestriction{
+				AllowedRepositories: gitCredentials.RepositoryRestrictions.AllowedRepositories,
+				Enabled:             gitCredentials.RepositoryRestrictions.Enabled,
+			},
 		}
 		file := hclwrite.NewEmptyFile()
 
