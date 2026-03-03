@@ -15,6 +15,6 @@ type TerraformGitCredentials struct {
 }
 
 type TerraformGitCredentialsRepositoryRestriction struct {
-	AllowedRepositories []string `hcl:"allowed_repositories"`
-	Enabled             bool     `hcl:"enabled"`
+	AllowedRepositories []string `cty:"allowed_repositories"`
+	Enabled             bool     `cty:"enabled"`
 }
