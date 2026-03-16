@@ -14,10 +14,11 @@ import (
 )
 
 type PlatformHubConverter struct {
-	Client                    client.OctopusClient
-	ErrGroup                  *errgroup.Group
-	DummySecretVariableValues bool
-	DummySecretGenerator      dummy.DummySecretGenerator
+	Client                           client.OctopusClient
+	ErrGroup                         *errgroup.Group
+	DummySecretVariableValues        bool
+	DummySecretGenerator             dummy.DummySecretGenerator
+	ExcludePlatformHubVersionControl bool
 }
 
 func (c PlatformHubConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -28,7 +29,13 @@ func (c PlatformHubConverter) AllToStatelessHcl(dependencies *data.ResourceDetai
 	c.ErrGroup.Go(func() error { return c.allToHcl(true, dependencies) })
 }
 
+// allToHcl converts the single instance level platform hub settings. There is no concept
+// of stateless settings, so the all parameter is not used.
 func (c PlatformHubConverter) allToHcl(all bool, dependencies *data.ResourceDetailsCollection) error {
+	if c.ExcludePlatformHubVersionControl {
+		return nil
+	}
+
 	resource := &octopus.OctopusPlatformHubVersionControlUsernamePasswordSetting{}
 	if err := c.Client.GetAllGlobalResources("PlatformHub/VersionControl", &resource, []string{}, []string{}); err != nil {
 		return err
@@ -52,14 +59,30 @@ func (c PlatformHubConverter) allToHcl(all bool, dependencies *data.ResourceDeta
 	thisResource.ToHcl = func() (string, error) {
 		if resource.Credentials.Type == "UsernamePassword" {
 			return c.generateUsernamePasswordHcl(resource, dependencies)
+		} else {
+			return c.generateAnonymousHcl(resource)
 		}
-
-		return "", nil
 	}
 
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c PlatformHubConverter) generateAnonymousHcl(resource *octopus.OctopusPlatformHubVersionControlUsernamePasswordSetting) (string, error) {
+	terraformResource := terraform.TerraformPlatformHubVersionControlAnonymousSettings{
+		Type:          "octopusdeploy_platform_hub_version_control_anonymous_settings",
+		Name:          "PlatformHubVersionControl",
+		Count:         nil,
+		Url:           resource.Url,
+		DefaultBranch: resource.DefaultBranch,
+		BasePath:      resource.BasePath,
+	}
+	file := hclwrite.NewEmptyFile()
+	block := gohcl.EncodeAsBlock(terraformResource, "resource")
+	file.Body().AppendBlock(block)
+
+	return string(file.Bytes()), nil
 }
 
 func (c PlatformHubConverter) generateUsernamePasswordHcl(resource *octopus.OctopusPlatformHubVersionControlUsernamePasswordSetting, dependencies *data.ResourceDetailsCollection) (string, error) {

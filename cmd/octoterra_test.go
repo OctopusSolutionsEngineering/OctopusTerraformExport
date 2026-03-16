@@ -163,6 +163,7 @@ func exportSpaceImportAndTest(
 				ExcludeTargetsWithNoEnvironments: arguments.ExcludeTargetsWithNoEnvironments,
 				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
+				ExcludePlatformHubVersionControl: arguments.ExcludePlatformHubVersionControl,
 			}
 
 			dependencies, err := entry.ConvertSpaceToTerraform(args, "")
@@ -308,6 +309,7 @@ func exportProjectImportAndTest(
 				ExcludeProjectVariablesExcept:    arguments.ExcludeProjectVariablesExcept,
 				IncludeSpaceInPopulation:         false,
 				IncludeProviderServerDetails:     true,
+				ExcludePlatformHubVersionControl: arguments.ExcludePlatformHubVersionControl,
 			}
 
 			dependencies, err := entry.ConvertProjectToTerraform(args, "")
