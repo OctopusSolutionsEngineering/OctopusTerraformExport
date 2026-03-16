@@ -7,6 +7,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
 	"golang.org/x/sync/errgroup"
@@ -69,11 +70,24 @@ func (c PlatformHubConverter) generateUsernamePasswordHcl(resource *octopus.Octo
 		Url:           resource.Url,
 		DefaultBranch: resource.DefaultBranch,
 		BasePath:      resource.BasePath,
-		Username:      resource.Credentials.Username,
+		Username:      "${var.PlatformHubVersionControlUsername}",
 		Password:      "${var.PlatformHubVersionControlPassword}",
 	}
 	file := hclwrite.NewEmptyFile()
 	block := gohcl.EncodeAsBlock(terraformResource, "resource")
+	file.Body().AppendBlock(block)
+
+	usernameVariableResource := terraform.TerraformVariable{
+		Name:        "PlatformHubVersionControlUsername",
+		Type:        "string",
+		Nullable:    false,
+		Sensitive:   true,
+		Description: "The username associated with the platform hub version control settings",
+		Default:     strutil.StrPointer(resource.Credentials.Username),
+	}
+
+	block = gohcl.EncodeAsBlock(usernameVariableResource, "variable")
+	hcl.WriteUnquotedAttribute(block, "type", "string")
 	file.Body().AppendBlock(block)
 
 	secretVariableResource := terraform.TerraformVariable{
