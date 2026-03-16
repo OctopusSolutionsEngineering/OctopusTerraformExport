@@ -1080,6 +1080,14 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		GenerateImportScripts:          args.GenerateImportScripts,
 	}
 
+	platformHubConverter := converters.PlatformHubConverter{
+		Client:                           &octopusClient,
+		ErrGroup:                         &group,
+		DummySecretVariableValues:        args.DummySecretVariableValues,
+		DummySecretGenerator:             dummySecretGenerator,
+		ExcludePlatformHubVersionControl: args.ExcludePlatformHubVersionControl,
+	}
+
 	spaceConverter := converters.SpaceConverter{
 		Client:                      &octopusClient,
 		ExcludeSpaceCreation:        args.ExcludeSpaceCreation,
@@ -1122,6 +1130,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		SshWorkerConverter:                sshWorkerConverter,
 		MachineProxyConverter:             machineProxyConverter,
 		Stateless:                         args.Stateless,
+		PlatformHubConverter:              platformHubConverter,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
