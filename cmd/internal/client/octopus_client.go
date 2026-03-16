@@ -1009,6 +1009,9 @@ func (o *OctopusApiClient) GetAllGlobalResources(resourceType string, resources 
 
 func (o *OctopusApiClient) getAllResources(req *http.Request, resourceType string, resources any, queryParams ...[]string) (funcErr error) {
 	queryParamsId := strings.Join(lo.Map(queryParams, func(item []string, index int) string {
+		if len(item) != 2 {
+			return ""
+		}
 		return item[0] + "=" + item[1]
 	}), ",")
 
