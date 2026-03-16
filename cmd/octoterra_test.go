@@ -2670,8 +2670,8 @@ func TestTagSetExport(t *testing.T) {
 						return errors.New("The tag set must be have a description of \"Test tagset\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
-					if v.SortOrder != 0 {
-						return errors.New("The tag set must be have a sort order of \"0\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
+					if v.SortOrder != 1 {
+						return errors.New("The tag set must be have a sort order of \"1\" (was \"" + fmt.Sprint(v.SortOrder) + "\")")
 					}
 
 					tagAFound := false

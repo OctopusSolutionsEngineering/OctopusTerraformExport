@@ -16,7 +16,7 @@ resource "octopusdeploy_runbook" "runbook_every_step_project_example_runbook" {
   multi_tenancy_mode          = "TenantedOrUntenanted"
 
   retention_policy {
-    quantity_to_keep = 100
+    quantity_to_keep = 0
   }
 
   connectivity_policy {

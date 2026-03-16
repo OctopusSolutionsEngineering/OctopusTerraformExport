@@ -140,7 +140,7 @@ resource "octopusdeploy_runbook" "runbook_runbookcac_test" {
   multi_tenancy_mode          = "Untenanted"
 
   retention_policy {
-    quantity_to_keep = 100
+    quantity_to_keep = 0
   }
 
   connectivity_policy {
