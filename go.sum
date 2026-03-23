@@ -16,6 +16,7 @@ github.com/OctopusDeploy/go-octopusdeploy/v2 v2.63.1 h1:ShfJ3VZqNblU5V0UnA/UNjQu
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.63.1/go.mod h1:ggvOXzMnq+w0pLg6C9zdjz6YBaHfO3B3tqmmB7JQdaw=
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.78.0 h1:UCp+9nLGfpcM5sHLM0C5lyEFsmSqSp7Z/rEAuiK3Zs0=
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.78.0/go.mod h1:ZCOnCz9ae/uuOk7AIQ9NzjnzFbuN8Q7H3oj2Eq4QSgQ=
+github.com/OctopusDeploy/go-octopusdeploy/v2 v2.80.1/go.mod h1:ZCOnCz9ae/uuOk7AIQ9NzjnzFbuN8Q7H3oj2Eq4QSgQ=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20250129010830-6ae8633979e8 h1:5cCNV9bfMXX3Qb7DeknRfytPePzyhqrXbzxS1J3zdsE=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20250129010830-6ae8633979e8/go.mod h1:g/WBZgtRp3XojqvlI8qh/K1eLeGd2fyUcamDL9o811U=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v0.0.0-20250227231041-a2cd44955742 h1:cfssvEL6GBKnwyf3wMPFCoQhpxgORO6T0r42K41FlaE=
@@ -28,6 +29,8 @@ github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v1.0.2-0.20
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v1.0.2-0.20250611205838-afd5df96385b/go.mod h1:NO37ZW3yTe+iIeAr55/MZ7kHp0G4jIe+HrBRHnzvP4E=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v1.0.2-0.20250804045951-911b2e97d07f h1:PYXjcI4YQFTWmgL7sJpnxUigpRkBbI8Kw0I05hoUIIw=
 github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v1.0.2-0.20250804045951-911b2e97d07f/go.mod h1:iNRfhbDnsDKX68C7Pu7OVaOmgn0GGvxmHSv00h1EQIU=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/v2 v2.0.1 h1:o3UmYJ6GdQrlXEbRMlbw1MLiiOP7oO2lac5Xf/QeJvU=
+github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/v2 v2.0.1/go.mod h1:+8YFec4h0QAvUl3zE6SZWVxDmDXw15ZlsJGXmHzwlus=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
 github.com/agext/levenshtein v1.2.3/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

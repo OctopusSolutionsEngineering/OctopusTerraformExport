@@ -3,8 +3,7 @@ module github.com/OctopusSolutionsEngineering/OctopusTerraformExport
 go 1.25.0
 
 require (
-	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.78.0
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework v1.0.2-0.20250804045951-911b2e97d07f
+	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.80.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80
@@ -23,6 +22,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OctopusDeploy/go-octodiff v1.0.0 // indirect
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/v2 v2.0.1 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
