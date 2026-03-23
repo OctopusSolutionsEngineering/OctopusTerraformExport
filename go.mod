@@ -22,7 +22,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OctopusDeploy/go-octodiff v1.0.0 // indirect
-	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/v2 v2.0.1 // indirect
+	github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/v2 v2.0.2 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
