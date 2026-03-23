@@ -6312,10 +6312,10 @@ func TestProjectWithGitUsernameExport(t *testing.T) {
 		"../test/terraform/39-projectgitusername/space_creation",
 		"../test/terraform/39-projectgitusername/space_population",
 		[]string{
-			"-var=project_git_password=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=project_git_password=" + os.Getenv("OCTOGITTEST_GITHUB_CREDS"),
 		},
 		[]string{
-			"-var=project_test_git_password=" + os.Getenv("GIT_CREDENTIAL"),
+			"-var=project_test_git_password=" + os.Getenv("OCTOGITTEST_GITHUB_CREDS"),
 			"-var=project_test_git_base_path=.octopus/projectgitusername" + uuid.New().String(),
 		},
 		args2.Arguments{
