@@ -20,7 +20,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/test"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformTestFramework/v2/test"
 	"github.com/google/uuid"
 	cp "github.com/otiai10/copy"
 	"github.com/samber/lo"
