@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
-	"github.com/avast/retry-go/v4"
-	"github.com/samber/lo"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,6 +13,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
+	"github.com/avast/retry-go/v4"
+	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 type OctopusClient interface {
@@ -374,13 +375,13 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 }
 
 func (o *OctopusApiClient) getGlobalCollectionRequest(resourceType string, queryParams ...[]string) (*http.Request, error) {
-	spaceUrl, err := o.GetBaseUrl()
+	baseUrl, err := o.GetBaseUrl()
 
 	if err != nil {
 		return nil, err
 	}
 
-	requestURL, err := url.Parse(spaceUrl + "/" + resourceType)
+	requestURL, err := url.Parse(baseUrl + "/" + resourceType)
 
 	if err != nil {
 		panic(err)
@@ -1008,6 +1009,9 @@ func (o *OctopusApiClient) GetAllGlobalResources(resourceType string, resources 
 
 func (o *OctopusApiClient) getAllResources(req *http.Request, resourceType string, resources any, queryParams ...[]string) (funcErr error) {
 	queryParamsId := strings.Join(lo.Map(queryParams, func(item []string, index int) string {
+		if len(item) != 2 {
+			return ""
+		}
 		return item[0] + "=" + item[1]
 	}), ",")
 

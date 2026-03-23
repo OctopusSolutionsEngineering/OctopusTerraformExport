@@ -49,6 +49,7 @@ type SpaceConverter struct {
 	ListeningWorkerConverter          Converter
 	SshWorkerConverter                Converter
 	MachineProxyConverter             Converter
+	PlatformHubConverter              Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 	IncludeOctopusOutputVars          bool
@@ -180,6 +181,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 	// Convert the machine proxies
 	c.MachineProxyConverter.AllToHcl(dependencies)
 
+	// Convert the platform hub settings
+	c.PlatformHubConverter.AllToHcl(dependencies)
+
 	return c.ErrGroup.Wait()
 }
 
@@ -275,6 +279,9 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 
 	// Convert the machine proxies
 	c.MachineProxyConverter.AllToStatelessHcl(dependencies)
+
+	// Convert the platform hub settings
+	c.PlatformHubConverter.AllToStatelessHcl(dependencies)
 
 	return c.ErrGroup.Wait()
 }

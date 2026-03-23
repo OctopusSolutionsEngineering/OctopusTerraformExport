@@ -205,6 +205,8 @@ type Arguments struct {
 	ExcludeDeploymentFreezes       StringSliceArgs
 	ExcludeDeploymentFreezesExcept StringSliceArgs
 	ExcludeDeploymentFreezesRegex  StringSliceArgs
+
+	ExcludePlatformHubVersionControl bool
 }
 
 // GetBackend forces the use of a local backend for stateless exports
@@ -418,6 +420,8 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	flags.BoolVar(&arguments.IgnoreProjectGroupChanges, "ignoreProjectGroupChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's group.")
 	flags.BoolVar(&arguments.IgnoreProjectNameChanges, "ignoreProjectNameChanges", false, "Use the Terraform lifecycle meta-argument to ignore the changes to the project's name.")
 	flags.BoolVar(&arguments.LookUpDefaultWorkerPools, "lookUpDefaultWorkerPools", false, "Reference the worker pool by name when a step uses the default worker pool. This means exported projects do not inherit the default worker pool when they are applied in a new space.")
+
+	flags.BoolVar(&arguments.ExcludePlatformHubVersionControl, "excludePlatformHubVersionControl", false, "Exclude the Platform Hub version control settings.")
 
 	err := flags.Parse(args)
 
