@@ -72,19 +72,19 @@ func exportSpaceImportAndTest(
 	createSpaceDirCopy, err := copyDir("../test/terraform/z-createspace")
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createSpaceDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 		}
 
@@ -203,24 +203,24 @@ func exportProjectImportAndTest(
 	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 		}
 
@@ -351,36 +351,36 @@ func exportProjectLookupImportAndTest(
 	prepopulateImportSpaceModuleDirCopy, err := copyDir(prepopulateImportSpaceModuleDir)
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	prepopulateSourceBlankSpaceModuleDirCopy, err := copyDir(prepopulateSourceBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy, prepopulateSourceBlankSpaceModuleDirCopy, prepopulateImportSpaceModuleDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 		}
 
@@ -536,34 +536,34 @@ func exportImportAndTest(
 
 	prepopulateImportSpaceModuleDirCopy, err := copyDir(prepopulateImportSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	createSourceBlankSpaceModuleDirCopy, err := copyDir(createSourceBlankSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	createImportBlankSpaceModuleDirCopy, err := copyDir(createImportBlankSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	populateSourceSpaceModuleDirCopy, err := copyDir(populateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	prepopulateSourceSpaceModuleDirCopy, err := copyDir(prepopulateSourceSpaceModuleDir)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer func() {
 		for _, dir := range []string{populateSourceSpaceModuleDirCopy, createImportBlankSpaceModuleDirCopy, createSourceBlankSpaceModuleDirCopy, prepopulateImportSpaceModuleDirCopy, prepopulateSourceSpaceModuleDirCopy} {
 			err := os.RemoveAll(dir)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 		}
 
