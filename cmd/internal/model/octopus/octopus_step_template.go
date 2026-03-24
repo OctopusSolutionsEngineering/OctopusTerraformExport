@@ -14,21 +14,32 @@ type CommunityStepTemplate struct {
 	StepPackageId string                   `json:"StepPackageId"`
 }
 
+type StepTemplateGitDependency struct {
+	Name                         string   `json:"Name"`
+	RepositoryUri                string   `json:"RepositoryUri"`
+	DefaultBranch                string   `json:"DefaultBranch"`
+	GitCredentialType            string   `json:"GitCredentialType"`
+	FilePathFilters              []string `json:"FilePathFilters"`
+	GitCredentialId              *string  `json:"GitCredentialId"`
+	GitHubConnectionId           *string  `json:"GitHubConnectionId"`
+	StepPackageInputsReferenceId *string  `json:"StepPackageInputsReferenceId"`
+}
+
 type StepTemplate struct {
-	Id                        string                   `json:"Id"`
-	SpaceId                   *string                  `json:"SpaceId"`
-	Version                   *int                     `json:"Version"`
-	Name                      string                   `json:"Name"`
-	Description               *string                  `json:"Description"`
-	ActionType                string                   `json:"ActionType"`
-	Packages                  []Package                `json:"Packages"`
-	GitDependencies           []string                 `json:"GitDependencies"`
-	Properties                map[string]string        `json:"Properties"`
-	LastModifiedBy            string                   `json:"LastModifiedBy"`
-	Category                  string                   `json:"Category"`
-	StepPackageId             string                   `json:"StepPackageId"`
-	Parameters                []StepTemplateParameters `json:"Parameters"`
-	CommunityActionTemplateId *string                  `json:"CommunityActionTemplateId"`
+	Id                        string                      `json:"Id"`
+	SpaceId                   *string                     `json:"SpaceId"`
+	Version                   *int                        `json:"Version"`
+	Name                      string                      `json:"Name"`
+	Description               *string                     `json:"Description"`
+	ActionType                string                      `json:"ActionType"`
+	Packages                  []Package                   `json:"Packages"`
+	GitDependencies           []StepTemplateGitDependency `json:"GitDependencies"`
+	Properties                map[string]string           `json:"Properties"`
+	LastModifiedBy            string                      `json:"LastModifiedBy"`
+	Category                  string                      `json:"Category"`
+	StepPackageId             string                      `json:"StepPackageId"`
+	Parameters                []StepTemplateParameters    `json:"Parameters"`
+	CommunityActionTemplateId *string                     `json:"CommunityActionTemplateId"`
 }
 
 type StepTemplateParameters struct {
