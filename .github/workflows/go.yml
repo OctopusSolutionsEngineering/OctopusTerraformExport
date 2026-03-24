@@ -92,7 +92,7 @@ jobs:
           LICENSE: ${{ secrets.LICENSE }}
           ECR_ACCESS_KEY: ${{ secrets.ECR_ACCESS_KEY }}
           ECR_SECRET_KEY: ${{ secrets.ECR_SECRET_KEY }}
-          GIT_CREDENTIAL: ${{ secrets.GIT_CREDENTIAL }}
+          OCTOGITTEST_GITHUB_CREDS: ${{ secrets.OCTOGITTEST_GITHUB_CREDS }}
           OCTOTESTSKIPINIT: false
           OCTODISABLEOCTOCONTAINERLOGGING: true
           OCTOTESTDUMPSTATE: true
