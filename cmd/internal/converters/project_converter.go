@@ -990,6 +990,18 @@ func (c *ProjectConverter) convertLibraryVariableSets(setIds []string, dependenc
 			collection = append(collection, dependencies.GetResource("LibraryVariableSets", v))
 		}
 	}
+
+	/*
+		Sorting is an attempt to fix this error:
+
+		When applying changes to octopusdeploy_project.project_1, provider
+		"provider[\"registry.terraform.io/octopusdeploy/octopusdeploy\"]" produced an
+		unexpected new value: .included_library_variable_sets[2]: was
+		cty.StringVal("LibraryVariableSets-2"), but now
+		cty.StringVal("LibraryVariableSets-3").
+	*/
+	slices.Sort(collection)
+
 	return collection
 }
 
