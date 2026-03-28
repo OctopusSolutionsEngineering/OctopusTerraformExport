@@ -2,13 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/environment"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
-	"github.com/samber/lo"
-	"go.uber.org/zap"
 	"io"
 	"log"
 	"net/http"
@@ -16,6 +9,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/environment"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
+	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 type AzureFunctionRequestDataReq struct {
@@ -137,9 +139,11 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		sb.WriteString(str + "\n\n")
 	}
 
+	result := output.WriteString(files)
+
 	w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
 	w.WriteHeader(200)
-	if _, err := w.Write([]byte(sb.String())); err != nil {
+	if _, err := w.Write([]byte(result)); err != nil {
 		zap.L().Error(err.Error())
 	}
 }
