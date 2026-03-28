@@ -219,3 +219,19 @@ docker run -v $PWD:/tmp/octoexport:z --rm ghcr.io/octopussolutionsengineering/oc
     -lookupProjectDependencies \
     -dest /tmp/octoexport
 ```
+
+## MCP Server
+
+The MCP server is distributed as a self-contained binary configured in a `mcp.json` file like this:
+
+```json
+        "octoterra": {
+            "type": "stdio",
+            "command": "/opt/octoterramcp",
+            "args": [],
+            "env": {
+                "OCTOPUS_CLI_SERVER": "https://yourinstance.octopus.app",
+                "OCTOPUS_CLI_API_KEY": "API-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            }
+        }
+```
