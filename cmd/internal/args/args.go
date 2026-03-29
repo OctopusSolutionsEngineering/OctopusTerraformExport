@@ -26,8 +26,8 @@ type Arguments struct {
 	ConfigPath                      string          `json:"configPath" jsonschema:"The path of the configuration file to use. Defaults to the current directory"`
 	Version                         bool            `json:"version" jsonschema:"Print the version"`
 	IgnoreInvalidExcludeExcept      bool            `json:"ignoreInvalidExcludeExcept" jsonschema:"Ensures that resource names passed to the 'Exclude<ResourceType>Except' arguments are valid, and if they are not, removes those names from the list. This is useful when an external system attempts to filter results but places incorrect values into 'Exclude<ResourceType>Except' arguments. It may result in all resources being returned if no valid resources names are included in the 'Exclude<ResourceType>Except' arguments."`
-	Url                             string          `json:"url" jsonschema:"The Octopus URL e.g. https://myinstance.octopus.app - this is also defined in the OCTOPUS_CLI_SERVER environment variable"`
-	ApiKey                          string          `json:"apiKey" jsonschema:"The Octopus api key - this is also defined in the OCTOPUS_CLI_API_KEY environment variable"`
+	Url                             string          `json:"url" jsonschema:"The Octopus URL e.g. https://myinstance.octopus.app - this is also defined in the OCTOPUS_CLI_SERVER environment variable. Do not set this when calling as an MCP tool."`
+	ApiKey                          string          `json:"apiKey" jsonschema:"The Octopus api key - this is also defined in the OCTOPUS_CLI_API_KEY environment variable. Do not set this when calling as an MCP tool."`
 	AccessToken                     string          `json:"accessToken" jsonschema:"The Octopus access token"`
 	UseRedirector                   bool            `json:"useRedirector" jsonschema:"Set to true to access the Octopus instance via the redirector"`
 	RedirectorHost                  string          `json:"redirectorHost" jsonschema:"The hostname of the redirector service"`
