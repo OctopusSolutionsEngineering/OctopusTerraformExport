@@ -27,6 +27,11 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	Output,
 	error,
 ) {
+	// These are not valid or passed via env vars
+	input.ApiKey = ""
+	input.Url = ""
+	input.UseRedirector = false
+
 	files, err := entry.Entry(input, "")
 
 	if err != nil {
