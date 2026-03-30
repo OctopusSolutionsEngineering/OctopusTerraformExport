@@ -30,8 +30,12 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 ) {
 	// These are not valid or passed via env vars
 	input.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
+	input.AccessToken = ""
 	input.Url = os.Getenv("OCTOPUS_CLI_SERVER")
 	input.UseRedirector = false
+	input.Console = true
+	input.ConfigFile = ""
+	input.ConfigPath = ""
 
 	files, err := entry.Entry(input, "")
 
