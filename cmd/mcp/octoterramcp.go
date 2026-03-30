@@ -43,11 +43,19 @@ func buildInputSchema() (*jsonschema.Schema, error) {
 
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "Octoterra", Version: "v1.0.0"}, nil)
+	schema, err := buildInputSchema()
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "convertOctopusToTerraform",
 		Description: "Convert Octopus space or project to Terraform configuration",
-		InputSchema: buildInputSchema(),
+		InputSchema: schema,
 	}, convert)
+
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)
 	}
