@@ -39,6 +39,15 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	input.Version = false
 	input.Profiling = false
 
+	// Ignore things that look like empty arrays
+	if input.RunbookName == "[]" {
+		input.RunbookName = ""
+	}
+
+	if input.RunbookId == "[]" {
+		input.RunbookId = ""
+	}
+
 	if input.Destination == "" {
 		dir, err := os.MkdirTemp("", "octoterra*")
 		if err != nil {
