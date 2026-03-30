@@ -68,6 +68,7 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	input.ConfigPath = ""
 	input.Version = false
 	input.Profiling = false
+	input.ExcludeSpaceCreation = true
 
 	// Ignore things that look like empty arrays
 	if input.RunbookName == "[]" {
