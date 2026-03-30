@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
@@ -28,8 +29,8 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	error,
 ) {
 	// These are not valid or passed via env vars
-	input.ApiKey = ""
-	input.Url = ""
+	input.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
+	input.Url = os.Getenv("OCTOPUS_CLI_SERVER")
 	input.UseRedirector = false
 
 	files, err := entry.Entry(input, "")
