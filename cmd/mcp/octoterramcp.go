@@ -28,7 +28,7 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	Output,
 	error,
 ) {
-	// These are not valid or passed via env vars
+	// These arguments don't make sense or can have default values
 	input.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
 	input.AccessToken = ""
 	input.Url = os.Getenv("OCTOPUS_CLI_SERVER")
@@ -36,6 +36,15 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	input.Console = true
 	input.ConfigFile = ""
 	input.ConfigPath = ""
+	input.Version = false
+
+	if input.Destination == "" {
+		dir, err := os.MkdirTemp("", "octoterra*")
+		if err != nil {
+			return nil, Output{}, err
+		}
+		input.Destination = dir
+	}
 
 	files, err := entry.Entry(input, "")
 
