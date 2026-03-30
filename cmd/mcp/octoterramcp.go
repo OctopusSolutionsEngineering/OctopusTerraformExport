@@ -37,6 +37,7 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	input.ConfigFile = ""
 	input.ConfigPath = ""
 	input.Version = false
+	input.Profiling = false
 
 	if input.Destination == "" {
 		dir, err := os.MkdirTemp("", "octoterra*")
