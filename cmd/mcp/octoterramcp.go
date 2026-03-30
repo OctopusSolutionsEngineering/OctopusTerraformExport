@@ -4,10 +4,12 @@ import (
 	"context"
 	"log"
 	"os"
+	"reflect"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -15,9 +17,37 @@ type Output struct {
 	Terraform string `json:"terraform" jsonschema:"the generated Terraform configuration"`
 }
 
+// buildInputSchema generates a JSON schema for args.Arguments with all fields
+// marked as optional (Required list cleared). StringSliceArgs is mapped to an
+// array-of-strings schema so the MCP client can pass it as a JSON array.
+func buildInputSchema() (*jsonschema.Schema, error) {
+	schema, err := jsonschema.For[args.Arguments](&jsonschema.ForOptions{
+		TypeSchemas: map[reflect.Type]*jsonschema.Schema{
+			reflect.TypeFor[args.StringSliceArgs](): {
+				Type:  "array",
+				Items: &jsonschema.Schema{Type: "string"},
+			},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if schema != nil {
+		schema.Required = nil
+	}
+
+	return schema, nil
+}
+
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "Octoterra", Version: "v1.0.0"}, nil)
-	mcp.AddTool(server, &mcp.Tool{Name: "convertOctopusToTerraform", Description: "Convert Octopus space or project to Terraform configuration"}, convert)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "convertOctopusToTerraform",
+		Description: "Convert Octopus space or project to Terraform configuration",
+		InputSchema: buildInputSchema(),
+	}, convert)
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)
 	}
