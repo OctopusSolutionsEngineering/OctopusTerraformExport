@@ -219,6 +219,11 @@ jobs:
           GOOS: linux
           GOARCH: amd64
           CGO_ENABLED: 0
+      - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o octoterra_linux_arm64 cmd/cli/octoterra.go
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: 0
       - run: go build -ldflags="-X 'main.Version=${{ steps.determine_version.outputs.semVer }}'" -o functions/octoterra_linux_amd64_azure cmd/azure/octoterra.go
         env:
           GOOS: linux
@@ -280,6 +285,7 @@ jobs:
           tag_name: ${{ steps.determine_version.outputs.semVer }}+run${{ github.run_number }}-attempt${{ github.run_attempt }}
           files: |
             octoterra_linux_amd64
+            octoterra_linux_arm64
             octoterra_windows_amd64.exe
             octoterra_macos_amd64
             octoterra_macos_arm64
@@ -321,14 +327,14 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: octopussamples/octoterra:latest
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push versioned image
         uses: docker/build-push-action@v4
         with:
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: octopussamples/octoterra:${{ steps.determine_version.outputs.semVer }}
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push Azure latest
@@ -351,14 +357,14 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/octopussolutionsengineering/octoterra:latest
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push versioned image
         uses: docker/build-push-action@v4
         with:
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/octopussolutionsengineering/octoterra:${{ steps.determine_version.outputs.semVer }}
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
       - name: Build and push Azure latest
