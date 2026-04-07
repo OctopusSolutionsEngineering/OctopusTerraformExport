@@ -43,6 +43,9 @@ type ResourceDetails struct {
 	// deduced by Terraform. However, it is not easy to infer all the step resources that belong to a project based on ID
 	// alone. But by setting the ParentId field, it is possible to query all the steps that belong to a project.
 	ParentId string
+	// ImmediateParentId captures the immediate parent id. This is used for steps to indicate their process. This is
+	// distinct from ParentId, which in the case of steps is the project.
+	ImmediateParentId string
 	// Name is the name of the resource
 	Name string
 	// Step templates have a calculated version value that is only available when the template is created. This value
@@ -179,6 +182,14 @@ func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []Resour
 func (c *ResourceDetailsCollection) GetAllResourceWithLowerSort(resourceType string, maxSort int) []ResourceDetails {
 	return lo.Filter(c.GetAllResource(resourceType), func(item ResourceDetails, index int) bool {
 		return item.SortOrder < maxSort
+	})
+}
+
+// GetAllResourceWithImmediateParentWithLowerSort returns a slice of resources in the collection of type resourceType that have
+// a lower sort order and who share the same immediate parent ID.
+func (c *ResourceDetailsCollection) GetAllResourceWithImmediateParentWithLowerSort(resourceType string, maxSort int, immediateParentId string) []ResourceDetails {
+	return lo.Filter(c.GetAllResource(resourceType), func(item ResourceDetails, index int) bool {
+		return item.SortOrder < maxSort && item.ImmediateParentId == immediateParentId
 	})
 }
 

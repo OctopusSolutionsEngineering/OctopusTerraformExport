@@ -1,6 +1,8 @@
 package converters
 
 import (
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -529,7 +531,9 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = owner.GetUltimateParent()
+	thisResource.ImmediateParentId = resource.GetId()
 	thisResource.Id = c.getStepId(resource, owner, step)
+	thisResource.SortOrder = c.getStepIndex(resource, step)
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
 	thisResource.Dependency = "${" + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "}"
 
@@ -608,6 +612,14 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 
 		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
 
+		dependsOn := []string{}
+		for _, terraformDependency := range dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId) {
+			dependency := dependencies.GetResourceDependency("DeploymentProcesses/Steps", terraformDependency.Id)
+			dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
+			dependsOn = append(dependsOn, dependency)
+		}
+		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+
 		if c.IgnoreProjectChanges {
 			hcl.WriteLifecycleAllAttribute(block)
 		}
@@ -660,6 +672,8 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 	thisResource := data.ResourceDetails{}
 	thisResource.FileName = "space_population/" + resourceName + ".tf"
 	thisResource.ParentId = projectOrRunbook.GetUltimateParent()
+	thisResource.ImmediateParentId = deploymentProcess.GetId()
+	thisResource.SortOrder = c.getStepIndex(deploymentProcess, step)
 	thisResource.Id = c.getStepId(deploymentProcess, projectOrRunbook, step)
 	thisResource.AlternateId = c.getActionId(deploymentProcess, projectOrRunbook, &step.Actions[0])
 	thisResource.ResourceType = "DeploymentProcesses/Steps"
@@ -743,6 +757,16 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 
 		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
 
+		// Steps need to be created in the order in which they appear. Otherwise, settings like "StartWithPrevious"
+		// may be ignored. See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/190.
+		dependsOn := []string{}
+		for _, terraformDependency := range dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId) {
+			dependency := dependencies.GetResourceDependency("DeploymentProcesses/Steps", terraformDependency.Id)
+			dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
+			dependsOn = append(dependsOn, dependency)
+		}
+		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+
 		if c.IgnoreProjectChanges {
 			hcl.WriteLifecycleAllAttribute(block)
 		}
@@ -777,6 +801,18 @@ func (c *DeploymentProcessConverterBase) generateStepOrderName(parent octopus.Na
 
 func (c *DeploymentProcessConverterBase) getStepId(deploymentProcess octopus.OctopusProcess, runbookOrProject octopus.NameIdParentResource, step *octopus.Step) string {
 	return runbookOrProject.GetId() + "/" + deploymentProcess.GetId() + "/" + strutil.EmptyIfNil(step.Id)
+}
+
+func (c *DeploymentProcessConverterBase) getStepIndex(deploymentProcess octopus.OctopusProcess, step *octopus.Step) int {
+	_, index, found := lo.FindIndexOf(deploymentProcess.GetSteps(), func(item octopus.Step) bool {
+		return item.Id == step.Id
+	})
+
+	if !found {
+		return 0
+	}
+
+	return index
 }
 
 func (c *DeploymentProcessConverterBase) getActionId(deploymentProcess octopus.OctopusProcess, runbookOrProject octopus.NameIdParentResource, action *octopus.Action) string {
