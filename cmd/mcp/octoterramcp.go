@@ -7,8 +7,10 @@ import (
 	"reflect"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -67,33 +69,33 @@ func convert(ctx context.Context, req *mcp.CallToolRequest, input args.Arguments
 	error,
 ) {
 	// These arguments don't make sense or can have default values
-	input.ApiKey = os.Getenv("OCTOPUS_CLI_API_KEY")
-	input.AccessToken = ""
-	input.Url = os.Getenv("OCTOPUS_CLI_SERVER")
-	input.UseRedirector = false
-	input.Console = true
-	input.ConfigFile = ""
-	input.ConfigPath = ""
-	input.Version = false
-	input.Profiling = false
-	input.ExcludeSpaceCreation = true
-	input.InsecureTls = true
+	input.ApiKey = strutil.StrPointer(os.Getenv("OCTOPUS_CLI_API_KEY"))
+	input.AccessToken = nil
+	input.Url = strutil.StrPointer(os.Getenv("OCTOPUS_CLI_SERVER"))
+	input.UseRedirector = boolutil.BoolPtr(false)
+	input.Console = boolutil.BoolPtr(true)
+	input.ConfigFile = nil
+	input.ConfigPath = nil
+	input.Version = boolutil.BoolPtr(false)
+	input.Profiling = boolutil.BoolPtr(false)
+	input.ExcludeSpaceCreation = boolutil.BoolPtr(true)
+	input.InsecureTls = boolutil.BoolPtr(true)
 
 	// Ignore things that look like empty arrays
-	if input.RunbookName == "[]" {
-		input.RunbookName = ""
+	if *input.RunbookName == "[]" {
+		input.RunbookName = nil
 	}
 
-	if input.RunbookId == "[]" {
-		input.RunbookId = ""
+	if *input.RunbookId == "[]" {
+		input.RunbookId = nil
 	}
 
-	if input.Destination == "" {
+	if *input.Destination == "" {
 		dir, err := os.MkdirTemp("", "octoterra*")
 		if err != nil {
 			return nil, Output{}, err
 		}
-		input.Destination = dir
+		input.Destination = strutil.StrPointer(dir)
 	}
 
 	files, err := entry.Entry(input, "")

@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"flag"
+	"os"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
-	"os"
 )
 
 var Version = "development"
@@ -32,44 +33,44 @@ func main() {
 	zap.L().Info("Version: " + Version)
 
 	// Exit if the version argument was provided
-	if parseArgs.Version {
+	if *parseArgs.Version {
 		os.Exit(0)
 	}
 
-	if parseArgs.Url == "" {
+	if *parseArgs.Url == "" {
 		errorExit("You must specify the URL with the -url argument")
 	}
 
-	if parseArgs.ApiKey == "" && parseArgs.AccessToken == "" {
+	if *parseArgs.ApiKey == "" && *parseArgs.AccessToken == "" {
 		errorExit("You must specify the API key with the -apiKey argument")
 	}
 
-	if parseArgs.RunbookName != "" && len(parseArgs.ProjectName) != 1 && len(parseArgs.ProjectId) == 1 {
+	if *parseArgs.RunbookName != "" && len(*parseArgs.ProjectName) != 1 && len(*parseArgs.ProjectId) == 1 {
 		errorExit("runbookName requires either a single projectId or projectName to be set")
 	}
 
-	if (parseArgs.RunbookName != "" || parseArgs.RunbookId != "") && parseArgs.Stateless {
+	if (*parseArgs.RunbookName != "" || *parseArgs.RunbookId != "") && *parseArgs.Stateless {
 		errorExit("runbooks can not be used with stepTemplate")
 	}
 
-	if parseArgs.Stateless {
-		if parseArgs.StepTemplateKey == "" {
+	if *parseArgs.Stateless {
+		if *parseArgs.StepTemplateKey == "" {
 			errorExit("stepTemplate requires stepTemplateKey to be defined (e.g. EKS, AKS, Lambda, WebApp)")
 		}
 
-		if parseArgs.StepTemplateName == "" {
+		if *parseArgs.StepTemplateName == "" {
 			errorExit("stepTemplate requires stepTemplateName to be defined")
 		}
 
 		// Don't generate scripts
-		parseArgs.GenerateImportScripts = false
+		*parseArgs.GenerateImportScripts = false
 	}
 
-	if !parseArgs.ExcludeCaCProjectSettings && parseArgs.ExcludeAllGitCredentials {
+	if !*parseArgs.ExcludeCaCProjectSettings && *parseArgs.ExcludeAllGitCredentials {
 		errorExit("excludeAllGitCredentials requires excludeCaCProjectSettings to be true")
 	}
 
-	if parseArgs.LookupProjectDependencies && parseArgs.Stateless {
+	if *parseArgs.LookupProjectDependencies && *parseArgs.Stateless {
 		errorExit("lookupProjectDependencies can not be used with stepTemplate")
 	}
 
@@ -79,7 +80,7 @@ func main() {
 		errorExit(err.Error())
 	}
 
-	err = output.WriteFiles(strutil.UnEscapeDollarInMap(files), parseArgs.Destination, parseArgs.Console)
+	err = output.WriteFiles(strutil.UnEscapeDollarInMap(files), *parseArgs.Destination, *parseArgs.Console)
 
 	if err != nil {
 		errorExit(err.Error())
