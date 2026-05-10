@@ -391,7 +391,7 @@ jobs:
         with:
           push: true
           file: Dockerfile-mcp
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/octopussolutionsengineering/octoterra-mcp:latest
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
   build-windows:
