@@ -385,6 +385,15 @@ jobs:
           platforms: linux/amd64
           tags: ghcr.io/octopussolutionsengineering/octoterra-azure:latest
           build-args: Version=${{ steps.determine_version.outputs.semVer }}
+      - name: Build and push MCP latest
+        if: ${{ steps.branch-name.outputs.current_branch == 'main' }}
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          file: Dockerfile-mcp
+          platforms: linux/amd64
+          tags: ghcr.io/octopussolutionsengineering/octoterra-mcp:latest
+          build-args: Version=${{ steps.determine_version.outputs.semVer }}
   build-windows:
     runs-on: windows-latest
     env:
