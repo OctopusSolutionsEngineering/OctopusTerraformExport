@@ -1,8 +1,6 @@
 package converters
 
 import (
-	"strings"
-
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -612,16 +610,20 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 
 		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
 
-		dependsOn := []string{}
-		for _, terraformDependency := range dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId) {
-			dependency := dependencies.GetResourceDependency("DeploymentProcesses/Steps", terraformDependency.Id)
-			dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
-			dependsOn = append(dependsOn, dependency)
-		}
-		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+		// Steps need to be created in the order in which they appear. Otherwise, settings like "StartWithPrevious"
+		// may be ignored. See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/190.
+		previousSteps := dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId)
+		if len(previousSteps) > 0 {
+			previousStep := lo.MaxBy(dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId), func(a data.ResourceDetails, b data.ResourceDetails) bool {
+				return a.SortOrder >= b.SortOrder
+			})
+			previousStepDependency := dependencies.GetResourceDependency("DeploymentProcesses/Steps", previousStep.Id)
+			previousStepDependency = hcl.RemoveId(hcl.RemoveInterpolation(previousStepDependency))
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+previousStepDependency+"]")
 
-		if c.IgnoreProjectChanges {
-			hcl.WriteLifecycleAllAttribute(block)
+			if c.IgnoreProjectChanges {
+				hcl.WriteLifecycleAllAttribute(block)
+			}
 		}
 
 		c.assignProperties("properties", block, owner, maputil.ToStringAnyMap(step.Properties), []string{}, []string{}, step, file, dependencies)
@@ -759,16 +761,18 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 
 		// Steps need to be created in the order in which they appear. Otherwise, settings like "StartWithPrevious"
 		// may be ignored. See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/190.
-		dependsOn := []string{}
-		for _, terraformDependency := range dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId) {
-			dependency := dependencies.GetResourceDependency("DeploymentProcesses/Steps", terraformDependency.Id)
-			dependency = hcl.RemoveId(hcl.RemoveInterpolation(dependency))
-			dependsOn = append(dependsOn, dependency)
-		}
-		hcl.WriteUnquotedAttribute(block, "depends_on", "["+strings.Join(dependsOn[:], ",")+"]")
+		previousSteps := dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId)
+		if len(previousSteps) > 0 {
+			previousStep := lo.MaxBy(dependencies.GetAllResourceWithImmediateParentWithLowerSort("DeploymentProcesses/Steps", thisResource.SortOrder, thisResource.ImmediateParentId), func(a data.ResourceDetails, b data.ResourceDetails) bool {
+				return a.SortOrder >= b.SortOrder
+			})
+			previousStepDependency := dependencies.GetResourceDependency("DeploymentProcesses/Steps", previousStep.Id)
+			previousStepDependency = hcl.RemoveId(hcl.RemoveInterpolation(previousStepDependency))
+			hcl.WriteUnquotedAttribute(block, "depends_on", "["+previousStepDependency+"]")
 
-		if c.IgnoreProjectChanges {
-			hcl.WriteLifecycleAllAttribute(block)
+			if c.IgnoreProjectChanges {
+				hcl.WriteLifecycleAllAttribute(block)
+			}
 		}
 
 		c.assignProperties("properties", block, projectOrRunbook, maputil.ToStringAnyMap(step.Properties), []string{}, []string{}, step, file, dependencies)
