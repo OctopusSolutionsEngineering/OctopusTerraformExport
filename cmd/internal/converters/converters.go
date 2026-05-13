@@ -76,8 +76,8 @@ type ConverterAndWithLookupsById interface {
 
 // ConverterByIdWithName converts an individual resource by its ID, and uses the supplied name for the Terraform resource
 type ConverterByIdWithName interface {
-	ToHclByIdAndName(id string, name string, recursive bool, dependencies *data.ResourceDetailsCollection) error
-	ToHclStatelessByIdAndName(id string, name string, dependencies *data.ResourceDetailsCollection) error
+	ToHclByIdAndName(id string, recursive bool, dependencies *data.ResourceDetailsCollection) error
+	ToHclStatelessByIdAndName(id string, dependencies *data.ResourceDetailsCollection) error
 }
 
 // ConverterLookupByIdWithName converts an individual resource by its ID, uses the supplied name for the Terraform resource, and

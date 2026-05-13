@@ -17,6 +17,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/variables"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -134,7 +135,7 @@ func logDummyValues(dependencies *data.ResourceDetailsCollection) string {
 
 func getDependencies(parseArgs args.Arguments, version string) (*data.ResourceDetailsCollection, error) {
 	if parseArgs.RunbookId != "" {
-		zap.L().Info("Exporting runbook " + parseArgs.RunbookId + " in space " + parseArgs.Space)
+		zap.L().Info("Exporting runbook " + parseArgs.RunbookId + " from project " + lo.Ternary(len(parseArgs.ProjectId) != 0, parseArgs.ProjectId[0], "undefined") + " in space " + parseArgs.Space)
 		files, err := ConvertRunbookToTerraform(parseArgs, version)
 		if err != nil {
 			return nil, err
@@ -1462,20 +1463,24 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 				GenerateImportScripts:      args.GenerateImportScripts,
 			},
 		},
-		EnvironmentConverter:     environmentConverter,
-		ExcludedRunbooks:         nil,
-		ExcludeRunbooksRegex:     nil,
-		ExcludeRunbooksExcept:    nil,
-		ExcludeAllRunbooks:       false,
-		Excluder:                 converters.DefaultExcluder{},
-		IgnoreProjectChanges:     args.IgnoreProjectChanges,
-		ProjectConverter:         projectConverter,
-		LimitResourceCount:       args.LimitResourceCount,
-		IncludeSpaceInPopulation: args.IncludeSpaceInPopulation,
-		IncludeIds:               args.IncludeIds,
-		GenerateImportScripts:    args.GenerateImportScripts,
-		ErrGroup:                 nil,
-		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
+		EnvironmentConverter:      environmentConverter,
+		ExcludedRunbooks:          nil,
+		ExcludeRunbooksRegex:      nil,
+		ExcludeRunbooksExcept:     nil,
+		ExcludeAllRunbooks:        false,
+		Excluder:                  converters.DefaultExcluder{},
+		IgnoreProjectChanges:      args.IgnoreProjectChanges,
+		ProjectConverter:          projectConverter,
+		LimitResourceCount:        args.LimitResourceCount,
+		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		IncludeIds:                args.IncludeIds,
+		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
+		IgnoreCacManagedValues:    args.IgnoreCacManagedValues,
+		Stateless:                 args.Stateless,
+		LookupProjectDependencies: args.LookupProjectDependencies,
+		RunbookId:                 args.RunbookId,
+		ProjectId:                 lo.Ternary(len(args.ProjectId) != 0, args.ProjectId[0], ""),
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -1493,9 +1498,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 
 	runbookConverter.RunbookProcessConverter.SetActionProcessor(&octopusActionProcessor)
 
-	err := runbookConverter.ToHclByIdWithLookups(args.RunbookId, &dependencies)
-
-	if err != nil {
+	if err := runbookConverter.Export(&dependencies); err != nil {
 		return nil, err
 	}
 

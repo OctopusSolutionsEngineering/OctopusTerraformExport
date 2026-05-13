@@ -3,6 +3,9 @@ package converters
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -19,8 +22,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/strings/slices"
-	"net/url"
-	"regexp"
 )
 
 const octopusdeployRunbookResourceType = "octopusdeploy_runbook"
@@ -33,6 +34,8 @@ type RunbookConverter struct {
 	ExcludedRunbooks             args.StringSliceArgs
 	ExcludeRunbooksRegex         args.StringSliceArgs
 	ExcludeRunbooksExcept        args.StringSliceArgs
+	RunbookId                    string
+	ProjectId                    string
 	ExcludeAllRunbooks           bool
 	excludeRunbooksRegexCompiled []*regexp.Regexp
 	Excluder                     ExcludeByName
@@ -43,6 +46,30 @@ type RunbookConverter struct {
 	IncludeIds                   bool
 	GenerateImportScripts        bool
 	IgnoreCacManagedValues       bool
+	Stateless                    bool
+	LookupProjectDependencies    bool
+}
+
+// Export is the top level function that exports projects to HCL files.
+func (c *RunbookConverter) Export(dependencies *data.ResourceDetailsCollection) error {
+
+	if c.LookupProjectDependencies {
+		if err := c.ToHclByIdWithLookups(c.RunbookId, dependencies); err != nil {
+			return err
+		}
+	} else {
+		if c.Stateless {
+			if err := c.toHclByIdAndName(c.ProjectId, c.RunbookId, true, true, true, dependencies); err != nil {
+				return err
+			}
+		} else {
+			if err := c.toHclByIdAndName(c.ProjectId, c.RunbookId, true, false, false, dependencies); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -81,18 +108,18 @@ func (c *RunbookConverter) ToHclByIdWithLookups(id string, dependencies *data.Re
 	}
 
 	zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
-	return c.toHcl(&resource, &parentResource, false, true, false, dependencies)
+	return c.toHcl(&resource, &parentResource, false, true, false, false, dependencies)
 }
 
-func (c *RunbookConverter) ToHclByIdAndName(projectId string, projectName string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(projectId, projectName, recursive, false, dependencies)
+func (c *RunbookConverter) ToHclByIdAndName(projectId string, recursive bool, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(projectId, "", recursive, false, false, dependencies)
 }
 
-func (c *RunbookConverter) ToHclStatelessByIdAndName(projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclByIdAndName(projectId, projectName, true, true, dependencies)
+func (c *RunbookConverter) ToHclStatelessByIdAndName(projectId string, dependencies *data.ResourceDetailsCollection) error {
+	return c.toHclByIdAndName(projectId, "", true, true, false, dependencies)
 }
 
-func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookConverter) toHclByIdAndName(projectId string, runbookId string, recursive bool, stateless bool, standalone bool, dependencies *data.ResourceDetailsCollection) error {
 	if c.ExcludeAllRunbooks {
 		return nil
 	}
@@ -115,8 +142,12 @@ func (c *RunbookConverter) toHclByIdAndName(projectId string, projectName string
 			return nil
 		}
 
+		if strutil.IsNotBlank(runbookId) && resource.Id != runbookId {
+			continue
+		}
+
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
-		err = c.toHcl(&resource, &project, recursive, false, stateless, dependencies)
+		err = c.toHcl(&resource, &project, recursive, false, stateless, standalone, dependencies)
 
 		if err != nil {
 			return err
@@ -145,7 +176,7 @@ func (c *RunbookConverter) ToHclLookupByIdAndName(projectId string, projectName 
 	for _, resource := range collection.Items {
 		zap.L().Info("Runbook: " + resource.Id + " " + resource.Name)
 
-		if err := c.toHcl(&resource, &project, false, true, false, dependencies); err != nil {
+		if err := c.toHcl(&resource, &project, false, true, false, false, dependencies); err != nil {
 			return nil
 		}
 	}
@@ -332,7 +363,7 @@ if ($LASTEXITCODE -ne 0) {
 	})
 }
 
-func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Project, recursive bool, lookups bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Project, recursive bool, lookups bool, stateless bool, standalone bool, dependencies *data.ResourceDetailsCollection) error {
 	c.compileRegexes()
 
 	// Ignore excluded runbooks
@@ -359,7 +390,7 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 		c.toPowershellImport(runbookName, project.Name, runbook.Name, dependencies)
 	}
 
-	err := c.exportChildDependencies(recursive, lookups, stateless, project, runbook, dependencies)
+	err := c.exportChildDependencies(recursive, lookups, stateless, standalone, project, runbook, dependencies)
 
 	if err != nil {
 		return err
@@ -403,8 +434,14 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 		file := hclwrite.NewEmptyFile()
 
 		if stateless {
-			// when importing a stateless project, the runbook is only created if the project does not exist
-			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
+			if !standalone {
+				// when importing a stateless project, the runbook is only created if the project does not exist
+				terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(project.Name) + ".projects) != 0 ? 0 : 1}")
+			} else {
+				// Typically we would look up existing runbooks and skip this runbook if it existed.
+				// However, there is no runbook data source, so we just have to fail if the runbook already exists.
+				// TODO: Fix this up if we get a runbook data source
+			}
 		}
 
 		c.writeProjectNameVariable(file, runbookName, runbook.Name)
@@ -482,18 +519,16 @@ func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *ter
 	}
 }
 
-func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, project *octopus.Project, runbook *octopus.Runbook, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, stateless bool, standalone bool, project *octopus.Project, runbook *octopus.Runbook, dependencies *data.ResourceDetailsCollection) error {
 	// It is not valid to have lookup be false and recursive be true, as the only supported export of a runbook is
 	// with lookup being true.
 	if lookup && recursive {
 		return errors.New("exporting a runbook with dependencies is not supported")
 	}
 
-	// When lookup is true and recursive is false this runbook has been exported as a standalone resource
-	// that references its parent project by a lookup.
-	// If lookup is true and recursive is true, this runbook was exported with a project, and the project has already
-	// been resolved.
-	if lookup && !recursive && c.ProjectConverter != nil {
+	// We need to export the parent project as a data source if this is a standalone stateless export,
+	// or if looksups are enabled and it is not recursive.
+	if ((stateless && standalone) || (lookup && !recursive)) && c.ProjectConverter != nil {
 		err := c.ProjectConverter.ToHclLookupById(runbook.ProjectId, dependencies)
 
 		if err != nil {

@@ -1,11 +1,12 @@
 package strutil
 
 import (
-	"github.com/samber/lo"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/samber/lo"
 )
 
 var regex = regexp.MustCompile(`"\$\$\{([^}]*)}"`)
@@ -13,6 +14,10 @@ var dollarCurlyRegex = regexp.MustCompile(`\$\{`)
 var dollarCurlyEscapedRegex = regexp.MustCompile(`\$\$\{\\"\$\\"}\{`)
 var percentCurlyRegex = regexp.MustCompile(`%\{`)
 var percentCurlyEscapedRegex = regexp.MustCompile(`%%\{\\"%\\"}\{`)
+
+func IsNotBlank(str string) bool {
+	return strings.TrimSpace(str) != ""
+}
 
 func IsString(value interface{}) bool {
 	return reflect.TypeOf(value).Kind() == reflect.String

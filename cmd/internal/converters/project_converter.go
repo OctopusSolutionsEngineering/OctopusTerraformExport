@@ -1389,9 +1389,9 @@ func (c *ProjectConverter) exportChildDependencies(recursive bool, lookup bool, 
 			err = c.RunbookConverter.ToHclLookupByIdAndName(project.Id, project.Name, dependencies)
 		} else {
 			if stateless {
-				err = c.RunbookConverter.ToHclStatelessByIdAndName(project.Id, project.Name, dependencies)
+				err = c.RunbookConverter.ToHclStatelessByIdAndName(project.Id, dependencies)
 			} else {
-				err = c.RunbookConverter.ToHclByIdAndName(project.Id, project.Name, recursive, dependencies)
+				err = c.RunbookConverter.ToHclByIdAndName(project.Id, recursive, dependencies)
 			}
 		}
 

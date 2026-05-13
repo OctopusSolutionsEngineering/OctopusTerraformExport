@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"flag"
+	"os"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/entry"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/logger"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/output"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"go.uber.org/zap"
-	"os"
 )
 
 var Version = "development"
@@ -46,10 +47,6 @@ func main() {
 
 	if parseArgs.RunbookName != "" && len(parseArgs.ProjectName) != 1 && len(parseArgs.ProjectId) == 1 {
 		errorExit("runbookName requires either a single projectId or projectName to be set")
-	}
-
-	if (parseArgs.RunbookName != "" || parseArgs.RunbookId != "") && parseArgs.Stateless {
-		errorExit("runbooks can not be used with stepTemplate")
 	}
 
 	if parseArgs.Stateless {
