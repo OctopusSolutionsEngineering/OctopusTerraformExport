@@ -110,7 +110,13 @@ func (c *DeploymentProcessConverterBase) toHcl(deploymentProcess octopus.Octopus
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessResource.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessResource.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		terraformProcessResourceBlock := gohcl.EncodeAsBlock(terraformProcessResource, "resource")
@@ -225,7 +231,13 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessChildStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessChildStepsOrder.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessChildStepsOrder, "resource")
@@ -279,7 +291,13 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStepsOrder.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessStepsOrder.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessStepsOrder, "resource")
@@ -357,7 +375,13 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStepChild.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessStepChild.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		c.assignPrimaryPackage(owner.GetName(), &terraformProcessStepChild, action, file, dependencies)
@@ -466,7 +490,13 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStepChild.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessStepChild.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		if err := c.assignWorkerPool(&terraformProcessStepChild, action, file, dependencies); err != nil {
@@ -605,7 +635,13 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStep.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", owner.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessStep.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
@@ -754,7 +790,13 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 
 		if stateless {
 			// only create the deployment process, step order, and steps if the project was created
-			terraformProcessStep.Count = strutil.StrPointer(dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent()))
+			parentCount := dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent())
+
+			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+			// The count will be blank, which is expected.
+			if strutil.IsNotBlank(parentCount) {
+				terraformProcessStep.Count = strutil.StrPointer(parentCount)
+			}
 		}
 
 		block := gohcl.EncodeAsBlock(terraformProcessStep, "resource")
