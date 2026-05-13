@@ -10164,7 +10164,7 @@ func TestMachineProxies(t *testing.T) {
 		})
 }
 
-// TestChildSteps verifies that a project with child steps is reimported propertly
+// TestChildSteps verifies that a project with child steps is reimported properly
 func TestChildSteps(t *testing.T) {
 
 	exportSpaceImportAndTest(
