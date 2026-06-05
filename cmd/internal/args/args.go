@@ -428,6 +428,11 @@ func ParseArgs(args []string) (Arguments, string, error) {
 
 	flags.BoolVar(&arguments.ExcludePlatformHubVersionControl, "excludePlatformHubVersionControl", false, "Exclude the Platform Hub version control settings.")
 
+	flags.BoolVar(&arguments.ExcludeAllStepTemplates, "excludeAllStepTemplates", false, "Exclude all step templates from being exported.")
+	flags.Var(&arguments.ExcludeStepTemplates, "excludeStepTemplates", "Exclude step templates from being exported.")
+	flags.Var(&arguments.ExcludeStepTemplatesRegex, "excludeStepTemplatesRegex", "Exclude step templates from being exported based on regex match.")
+	flags.Var(&arguments.ExcludeStepTemplatesExcept, "excludeStepTemplatesExcept", "Exclude all step templates except for those defined in this list. The step templates in excludeStepTemplates take precedence, so a step template defined here and in excludeStepTemplates is excluded.")
+
 	err := flags.Parse(args)
 
 	if err != nil {
