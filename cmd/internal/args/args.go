@@ -207,6 +207,11 @@ type Arguments struct {
 	ExcludeDeploymentFreezesRegex  StringSliceArgs `json:"excludeDeploymentFreezesRegex,omitempty" jsonschema:"Exclude a deployment freeze from being exported based on regex match."`
 
 	ExcludePlatformHubVersionControl bool `json:"excludePlatformHubVersionControl,omitempty" jsonschema:"Exclude the Platform Hub version control settings."`
+
+	ExcludeAllStepTemplates    bool            `json:"excludeAllStepTemplates,omitempty" jsonschema:"Exclude all step templates from being exported."`
+	ExcludeStepTemplates       StringSliceArgs `json:"excludeStepTemplates,omitempty" jsonschema:"Exclude step templates from being exported."`
+	ExcludeStepTemplatesRegex  StringSliceArgs `json:"excludeStepTemplatesRegex,omitempty" jsonschema:"Exclude step templates from being exported based on regex match."`
+	ExcludeStepTemplatesExcept StringSliceArgs `json:"excludeStepTemplatesExcept,omitempty" jsonschema:"Exclude all step templates except for those defined in this list. The step templates in excludeStepTemplates take precedence, so a step template defined here and in excludeStepTemplates is excluded."`
 }
 
 // GetBackend forces the use of a local backend for stateless exports
