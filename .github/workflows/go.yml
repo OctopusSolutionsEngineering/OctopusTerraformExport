@@ -62,7 +62,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Clone the Terraform provider source
-        run: git clone https://github.com/OctopusDeploy/terraform-provider-octopusdeploy.git
+        run: git clone --depth 1 --branch v1.14.0 https://github.com/OctopusDeploy/terraform-provider-octopusdeploy.git
         shell: bash
 
       - name: Build the Terraform provider from source
