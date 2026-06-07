@@ -78,9 +78,10 @@ func octoterraHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.WriteFile(file.Name(), configJson, 0644)
-
+	zap.L().Info("Writing config to " + file.Name())
 	zap.L().Info(string(configJson))
+
+	err = os.WriteFile(file.Name(), configJson, 0644)
 
 	if err != nil {
 		handleError(err, w)
