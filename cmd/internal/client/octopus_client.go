@@ -158,7 +158,7 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		return "", err
 	}
 
-	requestURL := fmt.Sprintf("%s/api/Spaces?take=1000&partialName=%s", baseUrl, url.QueryEscape(o.Space))
+	requestURL := fmt.Sprintf("%s/api/Spaces?take=1000&partialName=%s", baseUrl, strictQueryEscape(o.Space))
 
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 
@@ -359,7 +359,7 @@ func (o *OctopusApiClient) getCollectionRequest(resourceType string, queryParams
 		params.Add("take", "10000")
 	}
 
-	requestURL.RawQuery = params.Encode()
+	requestURL.RawQuery = strictQueryEncode(params)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL.String(), nil)
 
@@ -403,7 +403,7 @@ func (o *OctopusApiClient) getGlobalCollectionRequest(resourceType string, query
 		params.Add("take", "10000")
 	}
 
-	requestURL.RawQuery = params.Encode()
+	requestURL.RawQuery = strictQueryEncode(params)
 
 	req, err := http.NewRequest(http.MethodGet, requestURL.String(), nil)
 
@@ -442,6 +442,17 @@ func (o *OctopusApiClient) GetSpace(resources *octopus.Space) (funcErr error) {
 	}(res.Body)
 
 	return json.NewDecoder(res.Body).Decode(resources)
+}
+
+// strictQueryEscape encodes values for query string use and forces spaces to %20 instead of '+'.
+// This avoids ambiguity for APIs that treat '+' specially in search values.
+func strictQueryEscape(value string) string {
+	return strings.ReplaceAll(url.QueryEscape(value), "+", "%20")
+}
+
+// strictQueryEncode is equivalent to url.Values.Encode(), except spaces are encoded as %20.
+func strictQueryEncode(values url.Values) string {
+	return strings.ReplaceAll(values.Encode(), "+", "%20")
 }
 
 func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
