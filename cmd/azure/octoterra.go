@@ -191,14 +191,10 @@ func sanitizeConfig(rawConfig []byte) ([]byte, error) {
 	if err := json.Unmarshal(rawConfig, &config); err != nil {
 		return nil, err
 	}
-	delete(config, "apiKey")
-	delete(config, "accessToken")
-	delete(config, "url")
-	delete(config, "redirectorServiceApiKey")
-	delete(config, "redirecrtorApiKey")
-	delete(config, "redirectorHost")
-	delete(config, "useRedirector")
-	delete(config, "redirectorRedirections")
+
+	for _, varName := range args.SensitiveArgs {
+		delete(config, varName)
+	}
 	return json.Marshal(config)
 }
 

@@ -15,7 +15,19 @@ import (
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"k8s.io/utils/strings/slices"
 )
+
+var SensitiveArgs = []string{
+	"apiKey",
+	"accessToken",
+	"url",
+	"redirectorServiceApiKey",
+	"redirecrtorApiKey",
+	"redirectorHost",
+	"useRedirector",
+	"redirectorRedirections",
+}
 
 type Arguments struct {
 	InsecureTls                     bool            `json:"insecureTls,omitempty" jsonschema:"Ignore certificate errors when connecting to the Octopus server."`
@@ -619,10 +631,12 @@ func bindFlags(flags *flag.FlagSet, v *viper.Viper) (funErr error) {
 
 			if types.IsArrayOrSlice(anyValue) {
 				for _, value := range v.GetStringSlice(configName) {
+					logOverride(allFlags.Name, value)
 					err := flags.Set(allFlags.Name, value)
 					funcError = errors.Join(funcError, err)
 				}
 			} else {
+				logOverride(allFlags.Name, v.GetString(configName))
 				err := flags.Set(allFlags.Name, v.GetString(configName))
 				funcError = errors.Join(funcError, err)
 			}
@@ -630,4 +644,12 @@ func bindFlags(flags *flag.FlagSet, v *viper.Viper) (funErr error) {
 	})
 
 	return funcError
+}
+
+func logOverride(name string, value string) {
+	if slices.Contains(SensitiveArgs, name) {
+		zap.L().Info("Overriding flag "+name+" with value from config file or environment variable", zap.String("value", "********"))
+	} else {
+		zap.L().Info("Overriding flag "+name+" with value from config file or environment variable", zap.String("value", value))
+	}
 }
