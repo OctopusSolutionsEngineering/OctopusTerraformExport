@@ -14,6 +14,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/types"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type Arguments struct {
@@ -442,6 +443,7 @@ func ParseArgs(args []string) (Arguments, string, error) {
 	err = overrideArgs(flags, arguments.ConfigPath, arguments.ConfigFile)
 
 	if err != nil {
+		zap.L().Error("Error overriding arguments with config file values", zap.Error(err))
 		return Arguments{}, buf.String(), err
 	}
 
