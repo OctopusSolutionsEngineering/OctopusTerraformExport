@@ -563,9 +563,15 @@ func filterNamedResource[K octopus.NamedResource](octopusClient client.OctopusAp
 		if err := octopusClient.GetAllResources(resourceType, &collection, []string{"partialName", resource}); err != nil {
 			funcErr = errors.Join(funcErr, err)
 		}
-		return lo.ContainsBy[K](collection.Items, func(item K) bool {
+		exists := lo.ContainsBy[K](collection.Items, func(item K) bool {
 			return item.GetName() == resource
 		})
+
+		if !exists {
+			zap.L().Warn(resourceType + " does not exist " + resource)
+		}
+
+		return exists
 	})
 
 	return filtered, funcErr
