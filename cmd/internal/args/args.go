@@ -559,13 +559,33 @@ func (arguments *Arguments) ValidateExcludeExceptArgs() (funcErr error) {
 
 func filterNamedResource[K octopus.NamedResource](octopusClient client.OctopusApiClient, resourceType string, filter []string) (results []string, funcErr error) {
 	filtered := lo.Filter(filter, func(resource string, index int) bool {
+		// First attempt: partialName search (fast, but encoding-sensitive — proxies between octoterra and
+		// the Octopus server may decode %2B back to +, which Octopus then decodes as a space, so names
+		// containing special characters like + can fail to match).
 		collection := octopus.GeneralCollection[K]{}
 		if err := octopusClient.GetAllResources(resourceType, &collection, []string{"partialName", resource}); err != nil {
 			funcErr = errors.Join(funcErr, err)
 		}
+
 		exists := lo.ContainsBy[K](collection.Items, func(item K) bool {
 			return item.GetName() == resource
 		})
+
+		// There is an edge case that manifest on Azure when a project name ended in a plus symbol (for example, "My Project +").
+		// The partial name search failed to match - I suspect this is due to proxy re-encoding of special characters such as + in the query string.
+		// So, if the project name contains a plus symbol, and we didn't find it, we match the name against a full list of projects.
+		if !exists && strings.Contains(resource, "+") {
+			zap.L().Debug(resourceType + " not found via partialName search for \"" + resource + "\", falling back to full list scan")
+
+			fullCollection := octopus.GeneralCollection[K]{}
+			if err := octopusClient.GetAllResources(resourceType, &fullCollection); err != nil {
+				funcErr = errors.Join(funcErr, err)
+			} else {
+				exists = lo.ContainsBy[K](fullCollection.Items, func(item K) bool {
+					return item.GetName() == resource
+				})
+			}
+		}
 
 		if !exists {
 			zap.L().Warn(resourceType + " does not exist " + resource)
