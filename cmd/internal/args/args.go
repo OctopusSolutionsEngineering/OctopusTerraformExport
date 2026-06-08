@@ -571,22 +571,6 @@ func filterNamedResource[K octopus.NamedResource](octopusClient client.OctopusAp
 			return item.GetName() == resource
 		})
 
-		// There is an edge case that manifest on Azure when a project name ended in a plus symbol (for example, "My Project +").
-		// The partial name search failed to match - I suspect this is due to proxy re-encoding of special characters such as + in the query string.
-		// So, if the project name contains a plus symbol, and we didn't find it, we match the name against a full list of projects.
-		if !exists && strings.Contains(resource, "+") {
-			zap.L().Debug(resourceType + " not found via partialName search for \"" + resource + "\", falling back to full list scan")
-
-			fullCollection := octopus.GeneralCollection[K]{}
-			if err := octopusClient.GetAllResources(resourceType, &fullCollection); err != nil {
-				funcErr = errors.Join(funcErr, err)
-			} else {
-				exists = lo.ContainsBy[K](fullCollection.Items, func(item K) bool {
-					return item.GetName() == resource
-				})
-			}
-		}
-
 		if !exists {
 			zap.L().Warn(resourceType + " does not exist " + resource)
 		}
