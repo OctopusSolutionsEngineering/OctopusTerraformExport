@@ -985,6 +985,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeIds:               args.IncludeIds,
 		GenerateImportScripts:    args.GenerateImportScripts,
 		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
+		IgnoreCacErrors:          args.IgnoreCacErrors,
 	}
 
 	projectConverter := &converters.ProjectConverter{
@@ -1481,6 +1482,7 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		LookupProjectDependencies: args.LookupProjectDependencies,
 		RunbookId:                 args.RunbookId,
 		ProjectId:                 lo.Ternary(len(args.ProjectId) != 0, args.ProjectId[0], ""),
+		IgnoreCacErrors:           args.IgnoreCacErrors,
 	}
 
 	octopusActionProcessor := converters.OctopusActionProcessor{
@@ -2198,6 +2200,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		GenerateImportScripts:    args.GenerateImportScripts,
 		ErrGroup:                 nil,
 		IgnoreCacManagedValues:   args.IgnoreCacManagedValues,
+		IgnoreCacErrors:          args.IgnoreCacErrors,
 	}
 
 	projectConverter := converters.ProjectConverter{

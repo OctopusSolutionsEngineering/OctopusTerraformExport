@@ -48,6 +48,7 @@ type RunbookConverter struct {
 	IgnoreCacManagedValues       bool
 	Stateless                    bool
 	LookupProjectDependencies    bool
+	IgnoreCacErrors              bool
 }
 
 // Export is the top level function that exports projects to HCL files.
@@ -469,6 +470,9 @@ func (c *RunbookConverter) GetRunbookCollection(project *octopus.Project) (octop
 	collection := octopus.GeneralCollection[octopus.Runbook]{}
 	if project.HasCacConfigured() {
 		if err := c.Client.GetAllResources(c.GetCaCGroupResourceType(project.Id, project.PersistenceSettings.DefaultBranch), &collection); err != nil {
+			if c.IgnoreCacErrors {
+				return collection, nil
+			}
 			return collection, fmt.Errorf("error in OctopusClient.GetAllResources loading type octopus.GeneralCollection[octopus.Runbook]: %w", err)
 		}
 	} else {
