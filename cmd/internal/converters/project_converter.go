@@ -956,6 +956,9 @@ func (c *ProjectConverter) convertDatabaseConnectivityPolicy(project octopus.Pro
 func (c *ProjectConverter) convertCaCConnectivityPolicy(project octopus.Project) (*terraform.TerraformConnectivityPolicy, error) {
 	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
 	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
+		if c.IgnoreCacErrors {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -1206,6 +1209,10 @@ func (c *ProjectConverter) convertDatabaseVersioningStrategyV2(project octopus.P
 func (c *ProjectConverter) convertCaCVersioningStrategyV2(project octopus.Project, projectName string, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProjectVersioningStrategy, error) {
 	deploymentSettings := octopus.ProjectCacDeploymentSettings{}
 	if _, err := c.Client.GetResource("Projects/"+project.Id+"/"+project.PersistenceSettings.DefaultBranch+"/DeploymentSettings", &deploymentSettings); err != nil {
+		// Just ignore this error if we are ignoring CaC errors.
+		if c.IgnoreCacErrors {
+			return nil, nil
+		}
 		return nil, err
 	}
 
