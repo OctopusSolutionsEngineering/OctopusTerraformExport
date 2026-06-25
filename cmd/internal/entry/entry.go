@@ -380,6 +380,19 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
 		GenerateImportScripts:     args.GenerateImportScripts,
 	}
+	parentEnvironmentConverter := converters.ParentEnvironmentConverter{
+		Client:                    &octopusClient,
+		ExcludeEnvironments:       args.ExcludeEnvironments,
+		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
+		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
+		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
+		Excluder:                  converters.DefaultExcluder{},
+		ErrGroup:                  &group,
+		IncludeIds:                args.IncludeIds,
+		LimitResourceCount:        args.LimitResourceCount,
+		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		GenerateImportScripts:     args.GenerateImportScripts,
+	}
 	tenantVariableConverter := converters.TenantVariableConverter{
 		Client:                         &octopusClient,
 		ExcludeTenants:                 args.ExcludeTenants,
@@ -1096,6 +1109,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		IncludeOctopusOutputVars:    args.IncludeOctopusOutputVars,
 		AccountConverter:            accountConverter,
 		EnvironmentConverter:        environmentConverter,
+		ParentEnvironmentConverter:  parentEnvironmentConverter,
 		LibraryVariableSetConverter: &libraryVariableSetConverter,
 		LifecycleConverter:          lifecycleConverter,
 		WorkerPoolConverter:         workerPoolConverter,
@@ -1253,6 +1267,19 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
+		Client:                    &octopusClient,
+		ExcludeEnvironments:       args.ExcludeEnvironments,
+		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
+		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
+		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
+		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
+		LimitResourceCount:        args.LimitResourceCount,
+		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
+	}
+	parentEnvironmentConverter := converters.ParentEnvironmentConverter{
 		Client:                    &octopusClient,
 		ExcludeEnvironments:       args.ExcludeEnvironments,
 		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
@@ -1504,6 +1531,13 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		return nil, err
 	}
 
+	// Convert parent environments
+	if args.Stateless {
+		parentEnvironmentConverter.AllToStatelessHcl(&dependencies)
+	} else {
+		parentEnvironmentConverter.AllToHcl(&dependencies)
+	}
+
 	return &dependencies, nil
 }
 
@@ -1598,6 +1632,19 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	}.ToHcl("space_population", true, args.IncludeProviderServerDetails, &dependencies)
 
 	environmentConverter := converters.EnvironmentConverter{
+		Client:                    &octopusClient,
+		ExcludeEnvironments:       args.ExcludeEnvironments,
+		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
+		ExcludeEnvironmentsExcept: args.ExcludeEnvironmentsExcept,
+		ExcludeEnvironmentsRegex:  args.ExcludeEnvironmentsRegex,
+		Excluder:                  converters.DefaultExcluder{},
+		IncludeIds:                args.IncludeIds,
+		LimitResourceCount:        args.LimitResourceCount,
+		IncludeSpaceInPopulation:  args.IncludeSpaceInPopulation,
+		GenerateImportScripts:     args.GenerateImportScripts,
+		ErrGroup:                  nil,
+	}
+	parentEnvironmentConverter := converters.ParentEnvironmentConverter{
 		Client:                    &octopusClient,
 		ExcludeEnvironments:       args.ExcludeEnvironments,
 		ExcludeAllEnvironments:    args.ExcludeAllEnvironments,
@@ -2309,6 +2356,13 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 
 	if err := projectConverter.Export(&dependencies); err != nil {
 		return nil, err
+	}
+
+	// Convert parent environments
+	if args.Stateless {
+		parentEnvironmentConverter.AllToStatelessHcl(&dependencies)
+	} else {
+		parentEnvironmentConverter.AllToHcl(&dependencies)
 	}
 
 	return &dependencies, nil
