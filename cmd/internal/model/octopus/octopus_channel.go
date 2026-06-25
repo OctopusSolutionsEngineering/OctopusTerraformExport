@@ -15,6 +15,7 @@ type Channel struct {
 	AutomaticEphemeralEnvironmentDeployments *bool
 	CustomFieldDefinitions                   []CustomFieldDefinitions
 	ParentEnvironmentId                      *string
+	Type                                     *string
 }
 
 type CustomFieldDefinitions struct {

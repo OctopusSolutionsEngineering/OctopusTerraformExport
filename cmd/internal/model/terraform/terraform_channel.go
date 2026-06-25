@@ -14,14 +14,15 @@ type TerraformChannel struct {
 	ProjectId                        string                  `hcl:"project_id"`
 	IsDefault                        bool                    `hcl:"is_default"`
 	Rule                             []TerraformRule         `hcl:"rule,block"`
-	CustomFieldDefinitions           []CustomFieldDefinition `hcl:"custom_field_definitions,block"`
+	CustomFieldDefinitions           []CustomFieldDefinition `hcl:"custom_field_definitions"`
 	TenantTags                       []string                `hcl:"tenant_tags"`
 	DependsOn                        []string                `hcl:"depends_on"`
+	ChannelType                      *string                 `hcl:"type"`
 }
 
 type CustomFieldDefinition struct {
-	FieldName   string  `hcl:"field_name"`
-	Description *string `hcl:"description"`
+	FieldName   string  `cty:"field_name"`
+	Description *string `cty:"description"`
 }
 
 type TerraformRule struct {

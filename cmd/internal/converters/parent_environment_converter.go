@@ -352,7 +352,7 @@ func (c ParentEnvironmentConverter) toHcl(environment octopus.ParentEnvironment,
 			Name:                        resourceName,
 			Id:                          strutil.InputPointerIfEnabled(c.IncludeIds, &environment.Id),
 			Count:                       c.getCount(stateless, resourceName),
-			SpaceId:                     strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", environment.SpaceId)),
+			SpaceId:                     "${trimspace(var.octopus_space_id)}",
 			ResourceName:                environment.Name,
 			Description:                 strutil.NilIfEmpty(environment.Description),
 			UseGuidedFailure:            environment.UseGuidedFailure,
@@ -396,6 +396,7 @@ func (c ParentEnvironmentConverter) getAutomaticDeprovisioningRule(environment o
 		Days:  environment.AutomaticDeprovisioningRule.ExpiryDays,
 		Hours: environment.AutomaticDeprovisioningRule.ExpiryHours,
 	}
+
 }
 
 func (c ParentEnvironmentConverter) GetResourceType() string {

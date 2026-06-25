@@ -67,6 +67,9 @@ type OctopusApiClient struct {
 	IgnoreUnauthorized bool
 	// IgnoreServerError silently ignores 500 responses when fetching individual resources
 	IgnoreServerError bool
+	// ApiVersion is an optional version string (e.g. "v2") appended to the resource type path.
+	// When set, the API path becomes "{resourceType}/{ApiVersion}" instead of just "{resourceType}".
+	ApiVersion string
 }
 
 func (o *OctopusApiClient) buildUserAgent() string {
@@ -75,6 +78,14 @@ func (o *OctopusApiClient) buildUserAgent() string {
 	}
 
 	return "octoterra/" + o.Version + " (" + runtime.GOOS + " " + runtime.GOARCH + ")"
+}
+
+// getVersionedResourceType returns the resource type path with the API version appended if set.
+func (o *OctopusApiClient) getVersionedResourceType(resourceType string) string {
+	if o.ApiVersion != "" {
+		return resourceType + "/" + o.ApiVersion
+	}
+	return resourceType
 }
 
 func (o *OctopusApiClient) buildUrl() (string, error) {
@@ -1013,23 +1024,25 @@ func (o *OctopusApiClient) unmarshal(resources any, body []byte) error {
 }
 
 func (o *OctopusApiClient) GetAllResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
-	req, err := o.getCollectionRequest(resourceType, queryParams...)
+	versionedResourceType := o.getVersionedResourceType(resourceType)
+	req, err := o.getCollectionRequest(versionedResourceType, queryParams...)
 
 	if err != nil {
 		return err
 	}
 
-	return o.getAllResources(req, resourceType, resources, queryParams...)
+	return o.getAllResources(req, versionedResourceType, resources, queryParams...)
 }
 
 func (o *OctopusApiClient) GetAllGlobalResources(resourceType string, resources any, queryParams ...[]string) (funcErr error) {
-	req, err := o.getGlobalCollectionRequest(resourceType, queryParams...)
+	versionedResourceType := o.getVersionedResourceType(resourceType)
+	req, err := o.getGlobalCollectionRequest(versionedResourceType, queryParams...)
 
 	if err != nil {
 		return err
 	}
 
-	return o.getAllResources(req, resourceType, resources, queryParams...)
+	return o.getAllResources(req, versionedResourceType, resources, queryParams...)
 }
 
 func (o *OctopusApiClient) getAllResources(req *http.Request, resourceType string, resources any, queryParams ...[]string) (funcErr error) {

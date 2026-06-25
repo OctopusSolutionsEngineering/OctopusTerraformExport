@@ -10531,3 +10531,141 @@ func TestStepTemplteLookup(t *testing.T) {
 			return nil
 		})
 }
+
+// TestEphemeralEnvironments verifies that a project can be reimported with the correct settings
+func TestEphemeralEnvironments(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/93-ephemeralenvironment/space_creation",
+		"../test/terraform/93-ephemeralenvironment/space_population",
+		[]string{},
+		[]string{},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			octopusClient := createClient(container, recreatedSpaceId)
+			octopusClientV2 := &client.OctopusApiClient{
+				Url:        container.URI,
+				Space:      recreatedSpaceId,
+				ApiKey:     test.ApiKey,
+				ApiVersion: "v2",
+			}
+
+			collection := octopus.GeneralCollection[octopus.Project]{}
+			err := octopusClient.GetAllResources("Projects", &collection)
+
+			if err != nil {
+				return err
+			}
+
+			resourceName := "Test"
+			found := false
+			for _, v := range collection.Items {
+				if v.Name == resourceName {
+					found = true
+
+					variables := octopus.VariableSet{}
+					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
+
+					if err != nil || len(variables.Variables) != 0 {
+						return errors.New("the project must have no variables")
+					}
+
+					if strutil.EmptyIfNil(v.Description) != "Test project" {
+						return errors.New("The project must be have a description of \"Test project\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
+					}
+
+					if v.AutoCreateRelease {
+						return errors.New("The project must not have auto release create enabled")
+					}
+
+					if strutil.EmptyIfNil(v.DefaultGuidedFailureMode) != "EnvironmentDefault" {
+						return errors.New("The project must be have a DefaultGuidedFailureMode of \"EnvironmentDefault\" (was \"" + strutil.EmptyIfNil(v.DefaultGuidedFailureMode) + "\")")
+					}
+
+					if v.DefaultToSkipIfAlreadyInstalled {
+						return errors.New("The project must not have DefaultToSkipIfAlreadyInstalled enabled")
+					}
+
+					if v.DiscreteChannelRelease {
+						return errors.New("The project must not have DiscreteChannelRelease enabled")
+					}
+
+					if v.IsDisabled {
+						return errors.New("The project must not have IsDisabled enabled")
+					}
+
+					if v.IsVersionControlled {
+						return errors.New("The project must not have IsVersionControlled enabled")
+					}
+
+					if strutil.EmptyIfNil(v.TenantedDeploymentMode) != "Untenanted" {
+						return errors.New("The project must be have a TenantedDeploymentMode of \"Untenanted\" (was \"" + strutil.EmptyIfNil(v.TenantedDeploymentMode) + "\")")
+					}
+
+					if len(v.IncludedLibraryVariableSetIds) != 0 {
+						return errors.New("The project must not have any library variable sets")
+					}
+
+					if v.ProjectConnectivityPolicy.AllowDeploymentsToNoTargets {
+						return errors.New("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+					}
+
+					if v.ProjectConnectivityPolicy.ExcludeUnhealthyTargets {
+						return errors.New("The project must not have ProjectConnectivityPolicy.AllowDeploymentsToNoTargets enabled")
+					}
+
+					if v.ProjectConnectivityPolicy.SkipMachineBehavior != "SkipUnavailableMachines" {
+						t.Log("BUG: The project must be have a ProjectConnectivityPolicy.SkipMachineBehavior of \"SkipUnavailableMachines\" (was \"" + v.ProjectConnectivityPolicy.SkipMachineBehavior + "\") - Known issue where the value returned by /api/Spaces-#/ProjectGroups/ProjectGroups-#/projects is different to /api/Spaces-/Projects")
+					}
+
+					// Verify the "Features" channel exists
+					channelCollection := octopus.GeneralCollection[octopus.Channel]{}
+					err = octopusClient.GetAllResources("Projects/"+v.Id+"/channels", &channelCollection)
+
+					if err != nil {
+						return err
+					}
+
+					channelName := "Features"
+					foundChannel := false
+					for _, c := range channelCollection.Items {
+						if c.Name == channelName {
+							foundChannel = true
+						}
+					}
+
+					if !foundChannel {
+						return errors.New("Project must have a channel called \"" + channelName + "\" in space " + recreatedSpaceId)
+					}
+				}
+			}
+
+			if !found {
+				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
+			}
+
+			// Verify the "Parent Environment" parent environment exists
+			parentEnvCollection := octopus.GeneralCollection[octopus.ParentEnvironment]{}
+			err = octopusClientV2.GetAllResources("environments", &parentEnvCollection, []string{"type", "Parent"}, []string{"skip", "0"}, []string{"take", "1000"})
+
+			if err != nil {
+				return err
+			}
+
+			parentEnvName := "Parent Environment"
+			foundParentEnv := false
+			for _, e := range parentEnvCollection.Items {
+				if e.Name == parentEnvName {
+					foundParentEnv = true
+				}
+			}
+
+			if !foundParentEnv {
+				return errors.New("Space must have a parent environment called \"" + parentEnvName + "\" in space " + recreatedSpaceId)
+			}
+
+			return nil
+		})
+}

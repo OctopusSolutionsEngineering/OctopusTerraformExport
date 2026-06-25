@@ -270,6 +270,7 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 				EphemeralEnvironmentNameTemplate: channel.EphemeralEnvironmentNameTemplate,
 				ParentEnvironmentId:              c.getParentEnvironmentId(channel.ParentEnvironmentId, dependencies),
 				CustomFieldDefinitions:           c.convertCustomFieldDefinitions(channel.CustomFieldDefinitions),
+				ChannelType:                      channel.Type,
 			}
 			file := hclwrite.NewEmptyFile()
 
