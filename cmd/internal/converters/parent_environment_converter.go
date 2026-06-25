@@ -67,7 +67,7 @@ func (c ParentEnvironmentConverter) allToHcl(stateless bool, dependencies *data.
 			continue
 		}
 
-		// The list endpoint returns incomplete details, so we fetch the full resource
+		// The list endpoint returns incomplete details (notably the AutomaticDeprovisioningRule field is missing), so we fetch the full resource
 		resource := octopus.ParentEnvironment{}
 		_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), listItem.Id, &resource)
 
