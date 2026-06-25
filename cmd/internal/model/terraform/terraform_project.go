@@ -19,6 +19,8 @@ type TerraformProject struct {
 	IncludedLibraryVariableSets            []string                                                `hcl:"included_library_variable_sets"`
 	TenantedDeploymentParticipation        *string                                                 `hcl:"tenanted_deployment_participation"`
 	ReleaseNotesTemplate                   *string                                                 `hcl:"release_notes_template"`
+	DeprovisioningRunbookId                *string                                                 `hcl:"deprovisioning_runbook_id"`
+	ProvisioningRunbookId                  *string                                                 `hcl:"provisioning_runbook_id"`
 	Template                               []TerraformTemplate                                     `hcl:"template,block"`
 	ConnectivityPolicy                     *TerraformConnectivityPolicy                            `hcl:"connectivity_policy,block"`
 	GitLibraryPersistenceSettings          *TerraformGitLibraryPersistenceSettings                 `hcl:"git_library_persistence_settings,block"`
