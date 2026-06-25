@@ -55,27 +55,28 @@ type ProjectConverter struct {
 	DummySecretGenerator        dummy.DummySecretGenerator
 	Excluder                    ExcludeByName
 	// This is set to true when this converter is only to be used to call ToHclLookupById
-	LookupOnlyMode            bool
-	ErrGroup                  *errgroup.Group
-	ExcludeTerraformVariables bool
-	IncludeIds                bool
-	LimitResourceCount        int
-	IncludeSpaceInPopulation  bool
-	GenerateImportScripts     bool
-	LookupProjectLinkTenants  bool
-	TenantProjectConverter    TenantProjectConverter
-	TenantVariableConverter   ToHclByTenantIdAndProject
-	ExcludeTenantTagSets      args.StringSliceArgs
-	ExcludeTenantTags         args.StringSliceArgs
-	ExcludeTenants            args.StringSliceArgs
-	ExcludeTenantsRegex       args.StringSliceArgs
-	ExcludeTenantsWithTags    args.StringSliceArgs
-	ExcludeTenantsExcept      args.StringSliceArgs
-	ExcludeAllTenants         bool
-	IgnoreCacErrors           bool
-	LookupProjectDependencies bool
-	Stateless                 bool
-	ProjectId                 args.StringSliceArgs
+	LookupOnlyMode             bool
+	ErrGroup                   *errgroup.Group
+	ExcludeTerraformVariables  bool
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	GenerateImportScripts      bool
+	LookupProjectLinkTenants   bool
+	TenantProjectConverter     TenantProjectConverter
+	TenantVariableConverter    ToHclByTenantIdAndProject
+	ExcludeTenantTagSets       args.StringSliceArgs
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenants             args.StringSliceArgs
+	ExcludeTenantsRegex        args.StringSliceArgs
+	ExcludeTenantsWithTags     args.StringSliceArgs
+	ExcludeTenantsExcept       args.StringSliceArgs
+	ExcludeAllTenants          bool
+	IgnoreCacErrors            bool
+	LookupProjectDependencies  bool
+	Stateless                  bool
+	ProjectId                  args.StringSliceArgs
+	ParentEnvironmentConverter Converter
 }
 
 // Export is the top level function that exports projects to HCL files.
