@@ -25,24 +25,24 @@ const octopusdeployChannelResourceType = "octopusdeploy_channel"
 const defaultChannelName = "Default"
 
 type ChannelConverter struct {
-	Client                   client.OctopusClient
-	LifecycleConverter       ConverterAndLookupWithStatelessById
-	EnvironmentConverter     ConverterAndLookupWithStatelessById
-	ExcludeTenantTags        args.StringSliceArgs
-	ExcludeTenantTagSets     args.StringSliceArgs
-	Excluder                 ExcludeByName
-	ErrGroup                 *errgroup.Group
-	IncludeIds               bool
-	LimitResourceCount       int
-	IncludeDefaultChannel    bool
-	IncludeSpaceInPopulation bool
-	IgnoreCacErrors          bool
-	ExcludeAllChannels       bool
-	ExcludeChannels          args.StringSliceArgs
-	ExcludeChannelsRegex     args.StringSliceArgs
-	ExcludeChannelsExcept    args.StringSliceArgs
-	ExcludeInvalidChannels   bool
-	GenerateImportScripts    bool
+	Client                     client.OctopusClient
+	LifecycleConverter         ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	Excluder                   ExcludeByName
+	ErrGroup                   *errgroup.Group
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeDefaultChannel      bool
+	IncludeSpaceInPopulation   bool
+	IgnoreCacErrors            bool
+	ExcludeAllChannels         bool
+	ExcludeChannels            args.StringSliceArgs
+	ExcludeChannelsRegex       args.StringSliceArgs
+	ExcludeChannelsExcept      args.StringSliceArgs
+	ExcludeInvalidChannels     bool
+	GenerateImportScripts      bool
 }
 
 func (c ChannelConverter) ToHclByProjectIdWithTerraDependencies(projectId string, terraformDependencies map[string]string, dependencies *data.ResourceDetailsCollection) error {
@@ -186,12 +186,12 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		var err error
 		if recursive {
 			if stateless {
-				err = c.EnvironmentConverter.ToHclStatelessById(*channel.ParentEnvironmentId, dependencies)
+				err = c.ParentEnvironmentConverter.ToHclStatelessById(*channel.ParentEnvironmentId, dependencies)
 			} else {
-				err = c.EnvironmentConverter.ToHclById(*channel.ParentEnvironmentId, dependencies)
+				err = c.ParentEnvironmentConverter.ToHclById(*channel.ParentEnvironmentId, dependencies)
 			}
 		} else if lookup {
-			err = c.EnvironmentConverter.ToHclLookupById(*channel.ParentEnvironmentId, dependencies)
+			err = c.ParentEnvironmentConverter.ToHclLookupById(*channel.ParentEnvironmentId, dependencies)
 		}
 
 		if err != nil {
