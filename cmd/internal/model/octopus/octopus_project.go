@@ -61,6 +61,8 @@ type Project struct {
 	ReleaseNotesTemplate            *string
 	VersioningStrategy              VersioningStrategy
 	ExtensionSettings               []ExtensionSetting
+	ProvisioningRunbookId           *string
+	DeprovisioningRunbookId         *string
 }
 
 func (p *Project) GetParentId() *string {
