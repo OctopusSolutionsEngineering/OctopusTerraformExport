@@ -1537,13 +1537,6 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		return nil, err
 	}
 
-	// Convert parent environments
-	if args.Stateless {
-		parentEnvironmentConverter.AllToStatelessHcl(&dependencies)
-	} else {
-		parentEnvironmentConverter.AllToHcl(&dependencies)
-	}
-
 	return &dependencies, nil
 }
 
