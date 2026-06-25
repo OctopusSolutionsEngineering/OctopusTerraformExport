@@ -501,6 +501,7 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 	channelConverter := converters.ChannelConverter{
 		Client:                   &octopusClient,
 		LifecycleConverter:       lifecycleConverter,
+		EnvironmentConverter:     environmentConverter,
 		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
 		Excluder:                 converters.DefaultExcluder{},
@@ -1698,6 +1699,7 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 	channelConverter := converters.ChannelConverter{
 		Client:                   &octopusClient,
 		LifecycleConverter:       lifecycleConverter,
+		EnvironmentConverter:     environmentConverter,
 		ExcludeTenantTags:        args.ExcludeTenantTags,
 		ExcludeTenantTagSets:     args.ExcludeTenantTagSets,
 		Excluder:                 converters.DefaultExcluder{},

@@ -27,6 +27,7 @@ const defaultChannelName = "Default"
 type ChannelConverter struct {
 	Client                   client.OctopusClient
 	LifecycleConverter       ConverterAndLookupWithStatelessById
+	EnvironmentConverter     ConverterAndLookupWithStatelessById
 	ExcludeTenantTags        args.StringSliceArgs
 	ExcludeTenantTagSets     args.StringSliceArgs
 	Excluder                 ExcludeByName
@@ -174,6 +175,23 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 
 		} else if lookup {
 			err = c.LifecycleConverter.ToHclLookupById(*channel.LifecycleId, dependencies)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if !strutil.IsBlankPointer(channel.ParentEnvironmentId) {
+		var err error
+		if recursive {
+			if stateless {
+				err = c.EnvironmentConverter.ToHclStatelessById(*channel.ParentEnvironmentId, dependencies)
+			} else {
+				err = c.EnvironmentConverter.ToHclById(*channel.ParentEnvironmentId, dependencies)
+			}
+		} else if lookup {
+			err = c.EnvironmentConverter.ToHclLookupById(*channel.ParentEnvironmentId, dependencies)
 		}
 
 		if err != nil {
