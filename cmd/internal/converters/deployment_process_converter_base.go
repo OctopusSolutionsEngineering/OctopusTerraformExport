@@ -667,7 +667,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 		if hasChild {
 
 			template := octopus.StepTemplate{}
-			_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), templateId.(string), &template)
+			_, err := c.Client.GetSpaceResourceById("ActionTemplates", templateId.(string), &template)
 
 			if err != nil {
 				return "", err

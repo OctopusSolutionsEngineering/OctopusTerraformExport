@@ -50,6 +50,7 @@ type SpaceConverter struct {
 	SshWorkerConverter                Converter
 	MachineProxyConverter             Converter
 	PlatformHubConverter              Converter
+	ParentEnvironmentConverter        Converter
 	ErrGroup                          *errgroup.Group
 	ExcludeSpaceCreation              bool
 	IncludeOctopusOutputVars          bool
@@ -95,6 +96,9 @@ func (c SpaceConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) e
 
 	// Convert the environments
 	c.EnvironmentConverter.AllToHcl(dependencies)
+
+	// Convert the parent environments
+	c.ParentEnvironmentConverter.AllToHcl(dependencies)
 
 	// Convert the library variables
 	c.LibraryVariableSetConverter.AllToHcl(dependencies)
@@ -200,6 +204,9 @@ func (c SpaceConverter) AllToStatelessHcl(dependencies *data.ResourceDetailsColl
 
 	// Convert the environments
 	c.EnvironmentConverter.AllToStatelessHcl(dependencies)
+
+	// Convert the parent environments
+	c.ParentEnvironmentConverter.AllToStatelessHcl(dependencies)
 
 	// Convert the library variables
 	c.LibraryVariableSetConverter.AllToStatelessHcl(dependencies)
