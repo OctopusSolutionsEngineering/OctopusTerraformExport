@@ -372,6 +372,10 @@ func (c ChannelConverter) getParentEnvironmentId(parentEnvironmentId *string, de
 }
 
 func (c ChannelConverter) convertCustomFieldDefinitions(definitions []octopus.CustomFieldDefinitions) []terraform.CustomFieldDefinition {
+	if len(definitions) == 0 {
+		return nil
+	}
+
 	terraformDefinitions := make([]terraform.CustomFieldDefinition, 0)
 	for _, v := range definitions {
 		terraformDefinitions = append(terraformDefinitions, terraform.CustomFieldDefinition{
