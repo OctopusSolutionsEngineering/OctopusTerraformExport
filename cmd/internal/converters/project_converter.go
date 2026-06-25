@@ -563,6 +563,8 @@ func (c *ProjectConverter) toHcl(project octopus.Project, recursive bool, lookup
 			Lifecycle:                              nil,
 			JiraServiceManagementExtensionSettings: jsm,
 			ServicenowExtensionSettings:            snow,
+			ProvisioningRunbookId:                  c.getRunbookId(project.ProvisioningRunbookId, dependencies),
+			DeprovisioningRunbookId:                c.getRunbookId(project.DeprovisioningRunbookId, dependencies),
 		}
 
 		// There is no point ignoring changes for stateless exports
@@ -710,6 +712,15 @@ func (c *ProjectConverter) getStepTemplateParameters(projectName string, project
 }
 
 // Octopus has two places where protected branches are defined: the explicit list of branches and optionally the default branch.
+func (c *ProjectConverter) getRunbookId(runbookId *string, dependencies *data.ResourceDetailsCollection) *string {
+	if strutil.IsBlankPointer(runbookId) {
+		return nil
+	}
+
+	lookup := dependencies.GetResource("Runbooks", *runbookId)
+	return &lookup
+}
+
 // The TF provider only has the explicit list. So getProtectedBranches builds a single list taking these two sources
 // into account.
 func (c *ProjectConverter) getProtectedBranches(project octopus.Project) []string {

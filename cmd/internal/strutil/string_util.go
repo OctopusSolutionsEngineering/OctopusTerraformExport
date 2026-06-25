@@ -19,6 +19,14 @@ func IsNotBlank(str string) bool {
 	return strings.TrimSpace(str) != ""
 }
 
+func IsNotBlankPointer(str *string) bool {
+	return strings.TrimSpace(EmptyIfNil(str)) != ""
+}
+
+func IsBlankPointer(str *string) bool {
+	return strings.TrimSpace(EmptyIfNil(str)) == ""
+}
+
 func IsString(value interface{}) bool {
 	return reflect.TypeOf(value).Kind() == reflect.String
 }

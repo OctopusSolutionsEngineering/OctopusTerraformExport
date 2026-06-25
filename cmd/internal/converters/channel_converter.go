@@ -163,17 +163,17 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 		return nil
 	}
 
-	if channel.LifecycleId != "" {
+	if !strutil.IsBlankPointer(channel.LifecycleId) {
 		var err error
 		if recursive {
 			if stateless {
-				err = c.LifecycleConverter.ToHclStatelessById(channel.LifecycleId, dependencies)
+				err = c.LifecycleConverter.ToHclStatelessById(*channel.LifecycleId, dependencies)
 			} else {
-				err = c.LifecycleConverter.ToHclById(channel.LifecycleId, dependencies)
+				err = c.LifecycleConverter.ToHclById(*channel.LifecycleId, dependencies)
 			}
 
 		} else if lookup {
-			err = c.LifecycleConverter.ToHclLookupById(channel.LifecycleId, dependencies)
+			err = c.LifecycleConverter.ToHclLookupById(*channel.LifecycleId, dependencies)
 		}
 
 		if err != nil {
@@ -256,17 +256,20 @@ func (c ChannelConverter) toHcl(channel octopus.Channel, project octopus.Project
 
 		thisResource.ToHcl = func() (string, error) {
 			terraformResource := terraform.TerraformChannel{
-				Type:         octopusdeployChannelResourceType,
-				Name:         resourceName,
-				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &channel.Id),
-				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", channel.SpaceId)),
-				ResourceName: channel.Name,
-				Description:  strutil.TrimPointer(channel.Description),
-				LifecycleId:  c.getLifecycleId(channel.LifecycleId, dependencies),
-				ProjectId:    dependencies.GetResource("Projects", channel.ProjectId),
-				IsDefault:    channel.IsDefault,
-				Rule:         c.convertRules(channel.Rules, resource),
-				TenantTags:   c.Excluder.FilteredTenantTags(channel.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+				Type:                             octopusdeployChannelResourceType,
+				Name:                             resourceName,
+				Id:                               strutil.InputPointerIfEnabled(c.IncludeIds, &channel.Id),
+				SpaceId:                          strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", channel.SpaceId)),
+				ResourceName:                     channel.Name,
+				Description:                      strutil.TrimPointer(channel.Description),
+				LifecycleId:                      c.getLifecycleId(channel.LifecycleId, dependencies),
+				ProjectId:                        dependencies.GetResource("Projects", channel.ProjectId),
+				IsDefault:                        channel.IsDefault,
+				Rule:                             c.convertRules(channel.Rules, resource),
+				TenantTags:                       c.Excluder.FilteredTenantTags(channel.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
+				EphemeralEnvironmentNameTemplate: channel.EphemeralEnvironmentNameTemplate,
+				ParentEnvironmentId:              c.getParentEnvironmentId(channel.ParentEnvironmentId, dependencies),
+				CustomFieldDefinitions:           c.convertCustomFieldDefinitions(channel.CustomFieldDefinitions),
 			}
 			file := hclwrite.NewEmptyFile()
 
@@ -345,17 +348,37 @@ func (c ChannelConverter) isInvalid(channel octopus.Channel, project octopus.Pro
 	return false, nil
 }
 
-func (c ChannelConverter) getLifecycleId(lifecycleId string, dependencies *data.ResourceDetailsCollection) *string {
-	if lifecycleId == "" {
+func (c ChannelConverter) getLifecycleId(lifecycleId *string, dependencies *data.ResourceDetailsCollection) *string {
+	if strutil.IsBlankPointer(lifecycleId) {
 		return nil
 	}
 
-	lifecycleLookup := dependencies.GetResource("Lifecycles", lifecycleId)
+	lifecycleLookup := dependencies.GetResource("Lifecycles", *lifecycleId)
 	return &lifecycleLookup
 }
 
 func (c ChannelConverter) GetResourceType() string {
 	return "Channels"
+}
+
+func (c ChannelConverter) getParentEnvironmentId(parentEnvironmentId *string, dependencies *data.ResourceDetailsCollection) *string {
+	if strutil.IsBlankPointer(parentEnvironmentId) {
+		return nil
+	}
+
+	lookup := dependencies.GetResource("parentEnvironments", *parentEnvironmentId)
+	return &lookup
+}
+
+func (c ChannelConverter) convertCustomFieldDefinitions(definitions []octopus.CustomFieldDefinitions) []terraform.CustomFieldDefinition {
+	terraformDefinitions := make([]terraform.CustomFieldDefinition, 0)
+	for _, v := range definitions {
+		terraformDefinitions = append(terraformDefinitions, terraform.CustomFieldDefinition{
+			FieldName:   v.FieldName,
+			Description: v.Description,
+		})
+	}
+	return terraformDefinitions
 }
 
 func (c ChannelConverter) GetGroupResourceType(projectId string) string {
