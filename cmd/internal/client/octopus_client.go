@@ -63,6 +63,10 @@ type OctopusApiClient struct {
 	// collectionCache is a map of resource types to their collections
 	collectionCache   map[string][]byte
 	collectionCacheMu sync.Mutex
+	// IgnoreUnauthorized silently ignores 401 responses when fetching individual resources
+	IgnoreUnauthorized bool
+	// IgnoreServerError silently ignores 500 responses when fetching individual resources
+	IgnoreServerError bool
 }
 
 func (o *OctopusApiClient) buildUserAgent() string {
@@ -784,6 +788,16 @@ func (o *OctopusApiClient) getResourceById(resourceType string, global bool, id 
 	}
 
 	if res.StatusCode == 404 {
+		return false, nil
+	}
+
+	if res.StatusCode == 401 && o.IgnoreUnauthorized {
+		zap.L().Info("Ignoring unauthorized response for " + resourceType + " " + id)
+		return false, nil
+	}
+
+	if res.StatusCode == 500 && o.IgnoreServerError {
+		zap.L().Info("Ignoring server error response for " + resourceType + " " + id)
 		return false, nil
 	}
 

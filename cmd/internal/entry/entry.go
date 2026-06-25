@@ -267,6 +267,8 @@ func ConvertSpaceToTerraform(args args.Arguments, version string) (*data.Resourc
 		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
 		RedirecrtorApiKey:       args.RedirecrtorApiKey,
 		RedirectorRedirections:  args.RedirectorRedirections,
+		IgnoreUnauthorized:      args.IgnoreUnauthorized,
+		IgnoreServerError:       args.IgnoreServerError,
 	}
 
 	dependencies := data.ResourceDetailsCollection{}
@@ -1189,6 +1191,8 @@ func ConvertRunbookToTerraform(args args.Arguments, version string) (*data.Resou
 		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
 		RedirecrtorApiKey:       args.RedirecrtorApiKey,
 		RedirectorRedirections:  args.RedirectorRedirections,
+		IgnoreUnauthorized:      args.IgnoreUnauthorized,
+		IgnoreServerError:       args.IgnoreServerError,
 	}
 
 	dummySecretGenerator := dummy.DummySecret{}
@@ -1554,6 +1558,8 @@ func ConvertProjectToTerraform(args args.Arguments, version string) (*data.Resou
 		RedirectorServiceApiKey: args.RedirectorServiceApiKey,
 		RedirecrtorApiKey:       args.RedirecrtorApiKey,
 		RedirectorRedirections:  args.RedirectorRedirections,
+		IgnoreUnauthorized:      args.IgnoreUnauthorized,
+		IgnoreServerError:       args.IgnoreServerError,
 	}
 
 	dummySecretGenerator := dummy.DummySecret{}
