@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
@@ -414,9 +413,9 @@ func (c LifecycleConverter) convertPolicy(policy *octopus.Policy) *terraform.Ter
 	}
 
 	return &terraform.TerraformPolicy{
-		QuantityToKeep:    policy.QuantityToKeep,
-		ShouldKeepForever: boolutil.NilIfFalse(policy.ShouldKeepForever),
-		Unit:              policy.Unit,
+		QuantityToKeep: policy.QuantityToKeep,
+		Strategy:       policy.Strategy,
+		Unit:           policy.Unit,
 	}
 }
 

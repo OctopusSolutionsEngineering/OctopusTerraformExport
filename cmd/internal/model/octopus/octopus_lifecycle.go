@@ -26,4 +26,5 @@ type Policy struct {
 	Unit              string
 	QuantityToKeep    int
 	ShouldKeepForever bool
+	Strategy          string
 }

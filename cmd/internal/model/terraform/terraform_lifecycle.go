@@ -9,8 +9,8 @@ type TerraformLifecycle struct {
 	ResourceName            string           `hcl:"name"`
 	Description             *string          `hcl:"description"`
 	Phase                   []TerraformPhase `hcl:"phase,block"`
-	ReleaseRetentionPolicy  *TerraformPolicy `hcl:"release_retention_policy,block"`
-	TentacleRetentionPolicy *TerraformPolicy `hcl:"tentacle_retention_policy,block"`
+	ReleaseRetentionPolicy  *TerraformPolicy `hcl:"release_retention_with_strategy,block"`
+	TentacleRetentionPolicy *TerraformPolicy `hcl:"tentacle_retention_with_strategy,block"`
 }
 
 type TerraformPhase struct {
@@ -24,7 +24,7 @@ type TerraformPhase struct {
 }
 
 type TerraformPolicy struct {
-	QuantityToKeep    int    `hcl:"quantity_to_keep"`
-	ShouldKeepForever *bool  `hcl:"should_keep_forever"`
-	Unit              string `hcl:"unit"`
+	Strategy       string `hcl:"strategy"`
+	QuantityToKeep int    `hcl:"quantity_to_keep"`
+	Unit           string `hcl:"unit"`
 }
