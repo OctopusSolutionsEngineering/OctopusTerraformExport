@@ -24,12 +24,14 @@ resource "octopusdeploy_lifecycle" "lifecycle_application" {
     minimum_environments_before_promotion = 0
   }
 
-  release_retention_policy {
+  release_retention_with_strategy {
+    strategy         = "Count"
     quantity_to_keep = 30
     unit             = "Days"
   }
 
-  tentacle_retention_policy {
+  tentacle_retention_with_strategy {
+    strategy         = "Count"
     quantity_to_keep = 30
     unit             = "Days"
   }
