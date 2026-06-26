@@ -19,8 +19,8 @@ type TerraformPhase struct {
 	Name                               *string          `hcl:"name"`
 	IsOptionalPhase                    bool             `hcl:"is_optional_phase"`
 	MinimumEnvironmentsBeforePromotion int              `hcl:"minimum_environments_before_promotion"`
-	ReleaseRetentionPolicy             *TerraformPolicy `hcl:"release_retention_policy,block"`
-	TentacleRetentionPolicy            *TerraformPolicy `hcl:"tentacle_retention_policy,block"`
+	ReleaseRetentionPolicy             *TerraformPolicy `hcl:"release_retention_with_strategy,block"`
+	TentacleRetentionPolicy            *TerraformPolicy `hcl:"tentacle_retention_with_strategy,block"`
 }
 
 type TerraformPolicy struct {
