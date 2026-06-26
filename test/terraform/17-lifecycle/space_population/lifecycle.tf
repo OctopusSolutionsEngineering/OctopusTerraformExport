@@ -11,7 +11,7 @@ resource "octopusdeploy_lifecycle" "simple_lifecycle" {
   tentacle_retention_with_strategy {
     strategy         = "Count"
     quantity_to_keep = 30
-    unit             = "Days"
+    unit             = "Items"
   }
 
   phase {
@@ -28,7 +28,7 @@ resource "octopusdeploy_lifecycle" "simple_lifecycle" {
     tentacle_retention_with_strategy {
       strategy         = "Count"
       quantity_to_keep = 30
-      unit             = "Days"
+      unit             = "Items"
     }
   }
 
