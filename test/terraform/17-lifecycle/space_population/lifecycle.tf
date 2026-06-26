@@ -10,7 +10,7 @@ resource "octopusdeploy_lifecycle" "simple_lifecycle" {
 
   tentacle_retention_with_strategy {
     strategy         = "Count"
-    quantity_to_keep = 30
+    quantity_to_keep = 1
     unit             = "Items"
   }
 
@@ -27,7 +27,7 @@ resource "octopusdeploy_lifecycle" "simple_lifecycle" {
 
     tentacle_retention_with_strategy {
       strategy         = "Count"
-      quantity_to_keep = 30
+      quantity_to_keep = 1
       unit             = "Items"
     }
   }
@@ -45,7 +45,7 @@ resource "octopusdeploy_lifecycle" "simple_lifecycle" {
 
     tentacle_retention_with_strategy {
       strategy         = "Count"
-      quantity_to_keep = 30
+      quantity_to_keep = 1
       unit             = "Items"
     }
   }
@@ -63,7 +63,7 @@ resource "octopusdeploy_lifecycle" "simple_lifecycle" {
 
     tentacle_retention_with_strategy {
       strategy         = "Count"
-      quantity_to_keep = 30
+      quantity_to_keep = 1
       unit             = "Items"
     }
   }
