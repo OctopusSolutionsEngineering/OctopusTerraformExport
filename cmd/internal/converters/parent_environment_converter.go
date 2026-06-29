@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const octopusdeployParentEnvironmentsDataType = "octopusdeploy_parent_environments"
 const octopusdeployParentEnvironmentResourceType = "octopusdeploy_parent_environment"
 
 type ParentEnvironmentConverter struct {
@@ -146,7 +147,7 @@ func (c ParentEnvironmentConverter) ToHclLookupById(id string, dependencies *dat
 	thisResource.Id = environment.Id
 	thisResource.Name = environment.Name
 	thisResource.ResourceType = c.GetResourceType()
-	thisResource.Lookup = "${data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id}"
+	thisResource.Lookup = "${data." + octopusdeployParentEnvironmentsDataType + "." + resourceName + ".parent_environments[0].id}"
 	thisResource.ToHcl = func() (string, error) {
 		terraformResource := c.buildData(resourceName, environment)
 		file := hclwrite.NewEmptyFile()
@@ -161,14 +162,13 @@ func (c ParentEnvironmentConverter) ToHclLookupById(id string, dependencies *dat
 	return nil
 }
 
-func (c ParentEnvironmentConverter) buildData(resourceName string, resource octopus.ParentEnvironment) terraform.TerraformEnvironmentData {
-	return terraform.TerraformEnvironmentData{
-		Type:        octopusdeployEnvironmentsDataType,
-		Name:        resourceName,
-		Ids:         nil,
-		PartialName: resource.Name,
-		Skip:        0,
-		Take:        1,
+func (c ParentEnvironmentConverter) buildData(resourceName string, resource octopus.ParentEnvironment) terraform.TerraformParentEnvironmentData {
+	return terraform.TerraformParentEnvironmentData{
+		Type: octopusdeployParentEnvironmentsDataType,
+		Name: resourceName,
+		Ids:  nil,
+		Skip: 0,
+		Take: 1,
 	}
 }
 
@@ -181,8 +181,8 @@ func (c ParentEnvironmentConverter) writeData(file *hclwrite.File, resource octo
 
 func (c ParentEnvironmentConverter) getLookup(stateless bool, resourceName string) string {
 	if stateless {
-		return "${length(data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments) != 0 " +
-			"? data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments[0].id " +
+		return "${length(data." + octopusdeployParentEnvironmentsDataType + "." + resourceName + ".parent_environments) != 0 " +
+			"? data." + octopusdeployParentEnvironmentsDataType + "." + resourceName + ".parent_environments[0].id " +
 			": " + octopusdeployParentEnvironmentResourceType + "." + resourceName + "[0].id}"
 	}
 	return "${" + octopusdeployParentEnvironmentResourceType + "." + resourceName + ".id}"
@@ -198,7 +198,7 @@ func (c ParentEnvironmentConverter) getDependency(stateless bool, resourceName s
 
 func (c ParentEnvironmentConverter) getCount(stateless bool, resourceName string) *string {
 	if stateless {
-		return strutil.StrPointer("${length(data." + octopusdeployEnvironmentsDataType + "." + resourceName + ".environments) != 0 ? 0 : 1}")
+		return strutil.StrPointer("${length(data." + octopusdeployParentEnvironmentsDataType + "." + resourceName + ".parent_environments) != 0 ? 0 : 1}")
 	}
 
 	return nil
