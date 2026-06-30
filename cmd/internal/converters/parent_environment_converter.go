@@ -164,11 +164,12 @@ func (c ParentEnvironmentConverter) ToHclLookupById(id string, dependencies *dat
 
 func (c ParentEnvironmentConverter) buildData(resourceName string, resource octopus.ParentEnvironment) terraform.TerraformParentEnvironmentData {
 	return terraform.TerraformParentEnvironmentData{
-		Type: octopusdeployParentEnvironmentsDataType,
-		Name: resourceName,
-		Ids:  nil,
-		Skip: 0,
-		Take: 1,
+		Type:         octopusdeployParentEnvironmentsDataType,
+		Name:         resourceName,
+		ResourceName: resource.Name,
+		Ids:          nil,
+		Skip:         0,
+		Take:         1,
 	}
 }
 
