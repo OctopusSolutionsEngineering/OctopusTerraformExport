@@ -442,6 +442,7 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 				// Typically we would look up existing runbooks and skip this runbook if it existed.
 				// However, there is no runbook data source, so we just have to fail if the runbook already exists.
 				// TODO: Fix this up if we get a runbook data source
+				terraformResource.Count = strutil.StrPointer("1")
 			}
 		}
 
