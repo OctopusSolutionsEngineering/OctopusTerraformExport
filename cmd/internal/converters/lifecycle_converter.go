@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -13,6 +14,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -412,10 +414,12 @@ func (c LifecycleConverter) convertPolicy(policy *octopus.Policy) *terraform.Ter
 		return nil
 	}
 
+	noQuantity := strings.ToLower(policy.Strategy) == "forever" || strings.ToLower(policy.Strategy) == "default"
+
 	return &terraform.TerraformPolicy{
-		QuantityToKeep: policy.QuantityToKeep,
+		QuantityToKeep: lo.Ternary(noQuantity, nil, &policy.QuantityToKeep),
 		Strategy:       policy.Strategy,
-		Unit:           policy.Unit,
+		Unit:           lo.Ternary(noQuantity, nil, &policy.Unit),
 	}
 }
 

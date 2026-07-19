@@ -24,7 +24,7 @@ type TerraformPhase struct {
 }
 
 type TerraformPolicy struct {
-	Strategy       string `hcl:"strategy"`
-	QuantityToKeep int    `hcl:"quantity_to_keep"`
-	Unit           string `hcl:"unit"`
+	Strategy       string  `hcl:"strategy"`
+	QuantityToKeep *int    `hcl:"quantity_to_keep"`
+	Unit           *string `hcl:"unit"`
 }
