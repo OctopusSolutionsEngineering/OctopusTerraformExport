@@ -171,8 +171,17 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProcessStepContainer {
 	if container.Image != nil || container.FeedId != nil || container.Dockerfile != nil || container.GitUrl != nil {
 		return &terraform.TerraformProcessStepContainer{
-			FeedId:     dependencies.GetResourcePointer("Feeds", container.FeedId),
-			Image:      container.Image,
+			FeedId: dependencies.GetResourcePointer("Feeds", container.FeedId),
+			/*
+				Must be an empty string if nil to avoid this error:
+
+				When applying changes to
+				octopusdeploy_process_step.process_step_17__categorize_changes_run_claude_agent[0],
+				provider "provider[\"registry.opentofu.org/octopusdeploy/octopusdeploy\"]"
+				produced an unexpected new value: .container.image: was null, but now
+				cty.StringVal("").
+			*/
+			Image:      strutil.EmptyPointerIfNil(container.Image),
 			Dockerfile: container.Dockerfile,
 			GitUrl:     container.GitUrl,
 		}
