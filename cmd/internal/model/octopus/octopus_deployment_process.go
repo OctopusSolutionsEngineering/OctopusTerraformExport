@@ -115,6 +115,7 @@ type Package struct {
 	PackageId               *string
 	FeedId                  *string
 	AcquisitionLocation     *string
+	Version                 *string
 	ExtractDuringDeployment bool
 	Properties              map[string]string
 }

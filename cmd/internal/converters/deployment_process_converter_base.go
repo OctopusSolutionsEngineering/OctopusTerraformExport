@@ -987,6 +987,7 @@ func (c *DeploymentProcessConverterBase) getPrimaryPackage(projectName string, a
 				PackageId:           variableReference,
 				AcquisitionLocation: p.AcquisitionLocation,
 				FeedId:              feedId,
+				Version:             p.Version,
 				Properties:          maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies)),
 			}, packageIdVariable
 		}
@@ -995,7 +996,7 @@ func (c *DeploymentProcessConverterBase) getPrimaryPackage(projectName string, a
 	return nil, nil
 }
 
-// getPackages returns the details of the reference packages and an optional variables used to reference the package ID.
+// getPackages returns the details of the reference packages and any optional variables used to reference the package ID.
 func (c *DeploymentProcessConverterBase) getPackages(projectName string, action *octopus.Action, dependencies *data.ResourceDetailsCollection) (*map[string]terraform.TerraformProcessStepPackage, []*terraform.TerraformVariable) {
 	packages := map[string]terraform.TerraformProcessStepPackage{}
 	packageIdVariables := []*terraform.TerraformVariable{}
@@ -1026,6 +1027,7 @@ func (c *DeploymentProcessConverterBase) getPackages(projectName string, action 
 				PackageId:           variableReference,
 				AcquisitionLocation: p.AcquisitionLocation,
 				FeedId:              feedId,
+				Version:             p.Version,
 				Properties:          maputil.NilIfEmptyMap(c.OctopusActionProcessor.ReplaceIds(p.Properties, dependencies)),
 			}
 		}
