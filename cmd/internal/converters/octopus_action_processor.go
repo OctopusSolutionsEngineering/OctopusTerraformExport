@@ -169,7 +169,7 @@ func (c OctopusActionProcessor) ExportWorkerPools(recursive bool, lookup bool, s
 }
 
 func (c OctopusActionProcessor) ConvertContainer(container octopus.Container, dependencies *data.ResourceDetailsCollection) *terraform.TerraformProcessStepContainer {
-	if container.Image != nil || container.FeedId != nil {
+	if container.Image != nil || container.FeedId != nil || container.Dockerfile != nil || container.GitUrl != nil {
 		return &terraform.TerraformProcessStepContainer{
 			FeedId:     dependencies.GetResourcePointer("Feeds", container.FeedId),
 			Image:      container.Image,
