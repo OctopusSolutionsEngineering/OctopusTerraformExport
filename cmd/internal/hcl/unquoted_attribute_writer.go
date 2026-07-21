@@ -3,13 +3,14 @@ package hcl
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 	"github.com/hashicorp/hcl2/hclwrite"
-	"regexp"
-	"strings"
 )
 
 // WriteUnquotedAttribute uses the example from https://github.com/hashicorp/hcl/issues/442
@@ -131,10 +132,14 @@ func jsonStringToHcl(value string) string {
 	jsonArray := []any{}
 	jsonArrayError := json.Unmarshal([]byte(value), &jsonArray)
 
+	isMultilineString := strings.Contains(value, "\n")
+
 	if jsonMapError == nil {
 		return "jsonencode(" + mapToHclMap(jsonMap) + ")"
 	} else if jsonArrayError == nil {
 		return "jsonencode(" + arrayToHclMap(jsonArray) + ")"
+	} else if isMultilineString {
+		return encodeMultilineString(value)
 	} else {
 		return encodeString(value)
 	}
@@ -178,6 +183,11 @@ func arrayToHclMap(jsonArray []any) string {
 	}
 	output += "]"
 	return output
+}
+
+// encodeMultilineString creates heredoc values for long strings
+func encodeMultilineString(value string) string {
+	return "<<EOT\n" + value + "\nEOT"
 }
 
 // encodeString assumes that HCL strings are escaped like JSON strings
