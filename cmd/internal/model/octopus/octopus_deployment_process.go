@@ -105,8 +105,10 @@ type GitDependency struct {
 }
 
 type Container struct {
-	Image  *string
-	FeedId *string
+	Image      *string
+	FeedId     *string
+	GitUrl     *string
+	Dockerfile *string
 }
 
 type Package struct {

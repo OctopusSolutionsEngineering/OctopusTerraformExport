@@ -41,11 +41,10 @@ func (a *TerraformProcessStep) SetWorkerPoolId(workerPool string) {
 }
 
 type TerraformProcessStepContainer struct {
-	FeedId *string `cty:"feed_id"`
-	Image  *string `cty:"image"`
-	// These values are not exposed by the provider
-	Dockerfile *string
-	GitUrl     *string
+	FeedId     *string `cty:"feed_id"`
+	Image      *string `cty:"image"`
+	Dockerfile *string `cty:"dockerfile"`
+	GitUrl     *string `cty:"git_url"`
 }
 
 type TerraformProcessStepGitDependencies struct {
