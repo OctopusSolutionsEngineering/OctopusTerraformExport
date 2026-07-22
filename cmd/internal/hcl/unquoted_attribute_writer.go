@@ -133,12 +133,17 @@ func jsonStringToHcl(value string) string {
 	jsonArrayError := json.Unmarshal([]byte(value), &jsonArray)
 
 	isMultilineString := strings.Contains(value, "\n")
+	// Don't use heredocs for strings containing ${ or $${ because heredocs are template strings
+	// in Terraform, and $${VARIABLE} would be unescaped to ${VARIABLE} by Terraform's template processing.
+	// The UnEscapeDollar post-processing step only handles quoted strings (produced by encodeString),
+	// not raw heredoc content.
+	containsDollarCurly := strings.Contains(value, "${")
 
 	if jsonMapError == nil {
 		return "jsonencode(" + mapToHclMap(jsonMap) + ")"
 	} else if jsonArrayError == nil {
 		return "jsonencode(" + arrayToHclMap(jsonArray) + ")"
-	} else if isMultilineString {
+	} else if isMultilineString && !containsDollarCurly {
 		return encodeMultilineString(value)
 	} else {
 		return encodeString(value)
