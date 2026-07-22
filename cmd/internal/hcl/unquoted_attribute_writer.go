@@ -137,7 +137,7 @@ func jsonStringToHcl(value string) string {
 	// in Terraform, and $${VARIABLE} would be unescaped to ${VARIABLE} by Terraform's template processing.
 	// The UnEscapeDollar post-processing step only handles quoted strings (produced by encodeString),
 	// not raw heredoc content.
-	containsDollarCurly := strings.Contains(value, "${")
+	containsDollarCurly := strings.Contains(value, "${") || strings.Contains(value, "%{")
 
 	if jsonMapError == nil {
 		return "jsonencode(" + mapToHclMap(jsonMap) + ")"
