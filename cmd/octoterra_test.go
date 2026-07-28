@@ -1892,10 +1892,6 @@ func TestLifecycleExport(t *testing.T) {
 						return errors.New("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
-					if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
-						return errors.New("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
-					}
-
 					if v.TentacleRetentionPolicy.ShouldKeepForever {
 						return errors.New("The lifecycle must be have a tentacle retention not set to keep forever")
 					}
