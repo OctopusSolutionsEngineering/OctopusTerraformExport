@@ -1,6 +1,7 @@
 package data
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
@@ -118,7 +119,7 @@ func (c *ResourceDetailsCollection) HasResource(id string, resourceType string) 
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if r.Id == id && strings.EqualFold(r.ResourceType, resourceType) {
 			return true
 		}
 	}
@@ -155,7 +156,7 @@ func (c *ResourceDetailsCollection) AddResource(resources ...ResourceDetails) {
 	*/
 	fixedResources := lo.Filter(resources, func(resource ResourceDetails, index int) bool {
 		return !lo.ContainsBy(c.Resources, func(existingResource ResourceDetails) bool {
-			return resource.Id != "" && resource.ResourceType != "" && existingResource.Id == resource.Id && existingResource.ResourceType == resource.ResourceType
+			return resource.Id != "" && resource.ResourceType != "" && existingResource.Id == resource.Id && strings.EqualFold(existingResource.ResourceType, resource.ResourceType)
 		})
 	})
 
@@ -169,7 +170,7 @@ func (c *ResourceDetailsCollection) GetAllResource(resourceType string) []Resour
 
 	resources := make([]ResourceDetails, 0)
 	for _, r := range c.Resources {
-		if r.ResourceType == resourceType {
+		if strings.EqualFold(r.ResourceType, resourceType) {
 			resources = append(resources, r)
 		}
 	}
@@ -206,7 +207,7 @@ func (c *ResourceDetailsCollection) GetResource(resourceType string, id string) 
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if (r.Id == id || r.AlternateId == id) && r.ResourceType == resourceType {
+		if (r.Id == id || r.AlternateId == id) && strings.EqualFold(r.ResourceType, resourceType) {
 			return r.Lookup
 		}
 	}
@@ -228,7 +229,7 @@ func (c *ResourceDetailsCollection) GetResourceCount(resourceType string, id str
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if r.Id == id && strings.EqualFold(r.ResourceType, resourceType) {
 			return r.Count
 		}
 	}
@@ -250,7 +251,7 @@ func (c *ResourceDetailsCollection) GetResourceName(resourceType string, id stri
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if r.Id == id && strings.EqualFold(r.ResourceType, resourceType) {
 			return r.Name
 		}
 	}
@@ -270,7 +271,7 @@ func (c *ResourceDetailsCollection) GetResourceVersionLookup(resourceType string
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if r.Id == id && strings.EqualFold(r.ResourceType, resourceType) {
 			return r.VersionLookup
 		}
 	}
@@ -290,7 +291,7 @@ func (c *ResourceDetailsCollection) GetResourceVersionCurrent(resourceType strin
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == id && r.ResourceType == resourceType {
+		if r.Id == id && strings.EqualFold(r.ResourceType, resourceType) {
 			return r.VersionCurrent
 		}
 	}
@@ -312,7 +313,7 @@ func (c *ResourceDetailsCollection) GetResourceDependency(resourceType string, i
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if (r.Id == id || r.AlternateId == id) && r.ResourceType == resourceType {
+		if (r.Id == id || r.AlternateId == id) && strings.EqualFold(r.ResourceType, resourceType) {
 			// return the dependency field if it was defined, otherwise fall back to the lookup field
 			return strutil.DefaultIfEmpty(r.Dependency, r.Lookup)
 		}
@@ -335,7 +336,7 @@ func (c *ResourceDetailsCollection) GetResourceDependencyPointer(resourceType st
 	defer c.mu.Unlock()
 
 	for _, r := range c.Resources {
-		if r.Id == *id && r.ResourceType == resourceType {
+		if r.Id == *id && strings.EqualFold(r.ResourceType, resourceType) {
 			// return the dependency field if it was defined, otherwise fall back to the lookup field
 			return strutil.NilIfEmpty(strutil.DefaultIfEmpty(r.Dependency, r.Lookup))
 		}
@@ -356,7 +357,7 @@ func (c *ResourceDetailsCollection) GetResourceDependencyFromParent(parentId str
 	defer c.mu.Unlock()
 
 	return lo.FilterMap(c.Resources, func(item ResourceDetails, index int) (string, bool) {
-		return item.Dependency, item.ParentId == parentId && item.ResourceType == resourceType
+		return item.Dependency, item.ParentId == parentId && strings.EqualFold(item.ResourceType, resourceType)
 	})
 }
 
@@ -369,7 +370,7 @@ func (c *ResourceDetailsCollection) GetResources(resourceType string, ids ...str
 	for _, i := range ids {
 		found := false
 		for _, r := range c.Resources {
-			if r.Id == i && r.ResourceType == resourceType {
+			if r.Id == i && strings.EqualFold(r.ResourceType, resourceType) {
 				lookups = append(lookups, r.Lookup)
 				found = true
 				continue
@@ -395,7 +396,7 @@ func (c *ResourceDetailsCollection) GetResourcePointer(resourceType string, id *
 
 	if id != nil {
 		for _, r := range c.Resources {
-			if r.Id == *id && r.ResourceType == resourceType {
+			if r.Id == *id && strings.EqualFold(r.ResourceType, resourceType) {
 				return &r.Lookup
 			}
 		}

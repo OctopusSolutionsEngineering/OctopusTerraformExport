@@ -348,13 +348,14 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		AccountConverter:       accountConverter,
-		CertificateConverter:   certificateConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		AccountConverter:           accountConverter,
+		CertificateConverter:       certificateConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	sshTargetConverter := converters.SshTargetConverter{
@@ -367,12 +368,13 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		AccountConverter:       accountConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		AccountConverter:           accountConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	listeningTargetConverter := converters.ListeningTargetConverter{
@@ -385,11 +387,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	pollingTargetConverter := converters.PollingTargetConverter{
@@ -402,11 +405,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	cloudRegionTargetConverter := converters.CloudRegionTargetConverter{
@@ -419,11 +423,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	offlineDropTargetConverter := converters.OfflineDropTargetConverter{
@@ -436,11 +441,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	azureCloudServiceTargetConverter := converters.AzureCloudServiceTargetConverter{
@@ -453,12 +459,13 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		AccountConverter:       accountConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		AccountConverter:           accountConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	azureServiceFabricTargetConverter := converters.AzureServiceFabricTargetConverter{
@@ -471,11 +478,12 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	azureWebAppTargetConverter := converters.AzureWebAppTargetConverter{
@@ -488,12 +496,13 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			ExcludeAllEnvironments:           false,
 			ExcludeTargetsWithNoEnvironments: false,
 		},
-		MachinePolicyConverter: machinePolicyConverter,
-		AccountConverter:       accountConverter,
-		EnvironmentConverter:   environmentConverter,
-		ExcludeTenantTags:      nil,
-		ExcludeTenantTagSets:   nil,
-		TagSetConverter:        &tagsetConverter,
+		MachinePolicyConverter:     machinePolicyConverter,
+		AccountConverter:           accountConverter,
+		EnvironmentConverter:       environmentConverter,
+		ParentEnvironmentConverter: nil,
+		ExcludeTenantTags:          nil,
+		ExcludeTenantTagSets:       nil,
+		TagSetConverter:            &tagsetConverter,
 	}
 
 	variableSetConverter := converters.VariableSetConverter{

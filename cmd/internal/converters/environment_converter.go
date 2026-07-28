@@ -99,10 +99,16 @@ func (c EnvironmentConverter) toHclById(id string, stateless bool, dependencies 
 	}
 
 	resource := octopus.Environment{}
-	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &resource)
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.Environment: %w", err)
+	}
+
+	// Environment lists can be for regular environments or parent environments.
+	// If the resource is not found, it may be a parent environment, so we will skip it.
+	if !found {
+		return nil
 	}
 
 	zap.L().Info("Environment: " + resource.Id + " " + resource.Name)

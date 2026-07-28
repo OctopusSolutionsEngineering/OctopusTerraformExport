@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -15,7 +17,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"strings"
 )
 
 const octopusdeployAzureWebAppDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -24,21 +25,22 @@ const octopusdeployAzureWebAppDeploymentTargetResourceType = "octopusdeploy_azur
 type AzureWebAppTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter   ConverterWithStatelessById
-	AccountConverter         ConverterAndLookupWithStatelessById
-	EnvironmentConverter     ConverterAndLookupWithStatelessById
-	ExcludeAllTargets        bool
-	ExcludeTargets           args.StringSliceArgs
-	ExcludeTargetsRegex      args.StringSliceArgs
-	ExcludeTargetsExcept     args.StringSliceArgs
-	ExcludeTenantTags        args.StringSliceArgs
-	ExcludeTenantTagSets     args.StringSliceArgs
-	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
-	ErrGroup                 *errgroup.Group
-	IncludeIds               bool
-	LimitResourceCount       int
-	IncludeSpaceInPopulation bool
-	GenerateImportScripts    bool
+	MachinePolicyConverter     ConverterWithStatelessById
+	AccountConverter           ConverterAndLookupWithStatelessById
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	ExcludeAllTargets          bool
+	ExcludeTargets             args.StringSliceArgs
+	ExcludeTargetsRegex        args.StringSliceArgs
+	ExcludeTargetsExcept       args.StringSliceArgs
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                   *errgroup.Group
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	GenerateImportScripts      bool
 }
 
 func (c AzureWebAppTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -466,7 +468,11 @@ func (c AzureWebAppTargetConverter) GetResourceType() string {
 func (c AzureWebAppTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = dependencies.GetResource("Environments", v)
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		newEnvs[i] = environment
 	}
 	return lo.Filter(newEnvs, func(item string, index int) bool {
 		return strings.TrimSpace(item) != ""
@@ -529,6 +535,17 @@ func (c AzureWebAppTargetConverter) exportDependencies(target octopus.AzureWebAp
 		}
 	}
 
+	// Export the parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range target.EnvironmentIds {
+			err = c.ParentEnvironmentConverter.ToHclById(e, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -554,6 +571,17 @@ func (c AzureWebAppTargetConverter) exportStatelessDependencies(target octopus.A
 
 		if err != nil {
 			return err
+		}
+	}
+
+	// Export the parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range target.EnvironmentIds {
+			err = c.ParentEnvironmentConverter.ToHclStatelessById(e, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 

@@ -13,8 +13,10 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"strings"
 )
 
 const octopusdeployOfflinePackageDropDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -23,22 +25,23 @@ const octopusdeployOfflinePackageDropDeploymentTargetResourceType = "octopusdepl
 type OfflineDropTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter    ConverterWithStatelessById
-	EnvironmentConverter      ConverterAndLookupWithStatelessById
-	ExcludeAllTargets         bool
-	ExcludeTargets            args.StringSliceArgs
-	ExcludeTargetsRegex       args.StringSliceArgs
-	ExcludeTargetsExcept      args.StringSliceArgs
-	DummySecretVariableValues bool
-	DummySecretGenerator      dummy.DummySecretGenerator
-	ExcludeTenantTags         args.StringSliceArgs
-	ExcludeTenantTagSets      args.StringSliceArgs
-	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
-	ErrGroup                  *errgroup.Group
-	IncludeIds                bool
-	LimitResourceCount        int
-	IncludeSpaceInPopulation  bool
-	GenerateImportScripts     bool
+	MachinePolicyConverter     ConverterWithStatelessById
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	ExcludeAllTargets          bool
+	ExcludeTargets             args.StringSliceArgs
+	ExcludeTargetsRegex        args.StringSliceArgs
+	ExcludeTargetsExcept       args.StringSliceArgs
+	DummySecretVariableValues  bool
+	DummySecretGenerator       dummy.DummySecretGenerator
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                   *errgroup.Group
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	GenerateImportScripts      bool
 }
 
 func (c OfflineDropTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -457,9 +460,15 @@ func (c OfflineDropTargetConverter) GetResourceType() string {
 func (c OfflineDropTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = dependencies.GetResource("Environments", v)
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		newEnvs[i] = environment
 	}
-	return newEnvs
+	return lo.Filter(newEnvs, func(item string, index int) bool {
+		return strings.TrimSpace(item) != ""
+	})
 }
 
 func (c OfflineDropTargetConverter) getMachinePolicy(machine string, dependencies *data.ResourceDetailsCollection) *string {
@@ -489,6 +498,17 @@ func (c OfflineDropTargetConverter) exportDependencies(target octopus.OfflineDro
 		}
 	}
 
+	// Export the parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range target.EnvironmentIds {
+			err = c.ParentEnvironmentConverter.ToHclById(e, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -507,6 +527,17 @@ func (c OfflineDropTargetConverter) exportStatelessDependencies(target octopus.O
 
 		if err != nil {
 			return err
+		}
+	}
+
+	// Export the parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range target.EnvironmentIds {
+			err = c.ParentEnvironmentConverter.ToHclStatelessById(e, dependencies)
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 

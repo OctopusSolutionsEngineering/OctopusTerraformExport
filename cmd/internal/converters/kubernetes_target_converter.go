@@ -2,6 +2,8 @@ package converters
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
@@ -15,7 +17,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"strings"
 )
 
 const octopusdeployKubernetesClusterDeploymentTargetDataType = "octopusdeploy_deployment_targets"
@@ -24,22 +25,23 @@ const octopusdeployKubernetesClusterDeploymentTargetResourceType = "octopusdeplo
 type KubernetesTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter   ConverterWithStatelessById
-	AccountConverter         ConverterAndLookupWithStatelessById
-	EnvironmentConverter     ConverterAndLookupWithStatelessById
-	CertificateConverter     ConverterAndLookupWithStatelessById
-	ExcludeAllTargets        bool
-	ExcludeTargets           args.StringSliceArgs
-	ExcludeTargetsRegex      args.StringSliceArgs
-	ExcludeTargetsExcept     args.StringSliceArgs
-	ExcludeTenantTags        args.StringSliceArgs
-	ExcludeTenantTagSets     args.StringSliceArgs
-	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
-	ErrGroup                 *errgroup.Group
-	LimitResourceCount       int
-	IncludeSpaceInPopulation bool
-	IncludeIds               bool
-	GenerateImportScripts    bool
+	MachinePolicyConverter     ConverterWithStatelessById
+	AccountConverter           ConverterAndLookupWithStatelessById
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	CertificateConverter       ConverterAndLookupWithStatelessById
+	ExcludeAllTargets          bool
+	ExcludeTargets             args.StringSliceArgs
+	ExcludeTargetsRegex        args.StringSliceArgs
+	ExcludeTargetsExcept       args.StringSliceArgs
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                   *errgroup.Group
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	IncludeIds                 bool
+	GenerateImportScripts      bool
 }
 
 func (c KubernetesTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -558,7 +560,11 @@ func (c KubernetesTargetConverter) getPodAuth(target *octopus.KubernetesEndpoint
 func (c KubernetesTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = dependencies.GetResource("Environments", v)
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("parentEnvironments", v)
+		}
+		newEnvs[i] = environment
 	}
 	return lo.Filter(newEnvs, func(item string, index int) bool {
 		return strings.TrimSpace(item) != ""
@@ -643,6 +649,15 @@ func (c KubernetesTargetConverter) exportDependencies(target octopus.KubernetesE
 		}
 	}
 
+	// Export the environments
+	for _, e := range target.EnvironmentIds {
+		err = c.ParentEnvironmentConverter.ToHclById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -683,6 +698,15 @@ func (c KubernetesTargetConverter) exportStatelessDependencies(target octopus.Ku
 	// Export the environments
 	for _, e := range target.EnvironmentIds {
 		err = c.EnvironmentConverter.ToHclStatelessById(e, dependencies)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Export the parent environments
+	for _, e := range target.EnvironmentIds {
+		err = c.ParentEnvironmentConverter.ToHclStatelessById(e, dependencies)
 
 		if err != nil {
 			return err

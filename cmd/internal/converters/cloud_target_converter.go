@@ -24,20 +24,21 @@ const octopusdeployCloudRegionResourceType = "octopusdeploy_cloud_region_deploym
 type CloudRegionTargetConverter struct {
 	TargetConverter
 
-	MachinePolicyConverter   ConverterWithStatelessById
-	EnvironmentConverter     ConverterAndLookupWithStatelessById
-	ExcludeAllTargets        bool
-	ExcludeTargets           args.StringSliceArgs
-	ExcludeTargetsRegex      args.StringSliceArgs
-	ExcludeTargetsExcept     args.StringSliceArgs
-	ExcludeTenantTags        args.StringSliceArgs
-	ExcludeTenantTagSets     args.StringSliceArgs
-	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
-	ErrGroup                 *errgroup.Group
-	IncludeIds               bool
-	LimitResourceCount       int
-	IncludeSpaceInPopulation bool
-	GenerateImportScripts    bool
+	MachinePolicyConverter     ConverterWithStatelessById
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	ExcludeAllTargets          bool
+	ExcludeTargets             args.StringSliceArgs
+	ExcludeTargetsRegex        args.StringSliceArgs
+	ExcludeTargetsExcept       args.StringSliceArgs
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                   *errgroup.Group
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	GenerateImportScripts      bool
 }
 
 func (c CloudRegionTargetConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -453,7 +454,11 @@ func (c CloudRegionTargetConverter) GetResourceType() string {
 func (c CloudRegionTargetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = dependencies.GetResource("Environments", v)
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		newEnvs[i] = environment
 	}
 	return lo.Filter(newEnvs, func(item string, index int) bool {
 		return strings.TrimSpace(item) != ""
@@ -491,6 +496,21 @@ func (c CloudRegionTargetConverter) exportDependencies(target octopus.CloudRegio
 		} else {
 			if err := c.EnvironmentConverter.ToHclById(e, dependencies); err != nil {
 				return err
+			}
+		}
+	}
+
+	// Export the parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range target.EnvironmentIds {
+			if stateless {
+				if err := c.ParentEnvironmentConverter.ToHclStatelessById(e, dependencies); err != nil {
+					return err
+				}
+			} else {
+				if err := c.ParentEnvironmentConverter.ToHclById(e, dependencies); err != nil {
+					return err
+				}
 			}
 		}
 	}
