@@ -82,11 +82,17 @@ func (c *DeploymentProcessConverterBase) toHcl(deploymentProcess octopus.Octopus
 	thisResource.Dependency = "${" + octopusdeployProcessResourceType + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessResourceType + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessResourceType + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessResourceType + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessResourceType + "." + resourceName + ".id}"
 	}
@@ -208,11 +214,17 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 	thisResource.Dependency = "${" + octopusdeployProcessChildStepsOrder + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessChildStepsOrder + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessChildStepsOrder + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessChildStepsOrder + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessChildStepsOrder + "." + resourceName + ".id}"
 	}
@@ -276,11 +288,17 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 	thisResource.Dependency = "${" + octopusdeployProcessStepsOrderResourceType + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessStepsOrderResourceType + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessStepsOrderResourceType + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessStepsOrderResourceType + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessStepsOrderResourceType + "." + resourceName + ".id}"
 	}
@@ -346,11 +364,17 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 	thisResource.Dependency = "${" + octopusdeployProcessChildStepResourceType + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessChildStepResourceType + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessChildStepResourceType + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessChildStepResourceType + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessChildStepResourceType + "." + resourceName + ".id}"
 	}
@@ -469,11 +493,17 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 	thisResource.Dependency = "${" + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessTemplatedStepsOrderResourceType + "." + resourceName + ".id}"
 	}
@@ -591,11 +621,17 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 	thisResource.Dependency = "${" + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessTemplateStepResourceType + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessTemplateStepResourceType + "." + resourceName + ".id}"
 	}
@@ -748,11 +784,17 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 	thisResource.Dependency = "${" + octopusdeployProcessStepResourceType + "." + resourceName + "}"
 
 	if stateless {
-		// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployProcessStepResourceType + "." + resourceName + "[0].id}"
+		if standalone {
+			// Standalone runbooks always have a deployment process, because counts are always 1
+			// TODO: remove when we have a runbook data source
+			thisResource.Lookup = "${" + octopusdeployProcessStepResourceType + "." + resourceName + "[0].id}"
+		} else {
+			// There is no way to look up an existing deployment process. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + "." + projectResourceName + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployProcessStepResourceType + "." + resourceName + "[0].id}"
+		}
 	} else {
 		thisResource.Lookup = "${" + octopusdeployProcessStepResourceType + "." + resourceName + ".id}"
 	}
