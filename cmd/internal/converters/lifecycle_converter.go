@@ -24,18 +24,19 @@ const octopusdeployLifecycleResourceType = "octopusdeploy_lifecycle"
 const defaultLifecycleName = "Default Lifecycle"
 
 type LifecycleConverter struct {
-	Client                   client.OctopusClient
-	EnvironmentConverter     ConverterAndLookupWithStatelessById
-	ErrGroup                 *errgroup.Group
-	ExcludeLifecycles        args.StringSliceArgs
-	ExcludeLifecyclesRegex   args.StringSliceArgs
-	ExcludeLifecyclesExcept  args.StringSliceArgs
-	ExcludeAllLifecycles     bool
-	Excluder                 ExcludeByName
-	LimitResourceCount       int
-	IncludeSpaceInPopulation bool
-	IncludeIds               bool
-	GenerateImportScripts    bool
+	Client                     client.OctopusClient
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	ErrGroup                   *errgroup.Group
+	ExcludeLifecycles          args.StringSliceArgs
+	ExcludeLifecyclesRegex     args.StringSliceArgs
+	ExcludeLifecyclesExcept    args.StringSliceArgs
+	ExcludeAllLifecycles       bool
+	Excluder                   ExcludeByName
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	IncludeIds                 bool
+	GenerateImportScripts      bool
 }
 
 // SystemDataToHcl exports a data source for the first lifecycle in the space.
@@ -439,11 +440,16 @@ func (c LifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *
 	return terraformPhases
 }
 
+// convertTargets resolves the phase targets, which can reference regular or parent environments
 func (c LifecycleConverter) convertTargets(environments []string, dependencies *data.ResourceDetailsCollection) []string {
 	converted := make([]string, len(environments))
 
 	for i, v := range environments {
-		converted[i] = dependencies.GetResource("Environments", v)
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		converted[i] = environment
 	}
 
 	return converted
@@ -481,6 +487,25 @@ func (c LifecycleConverter) exportDependencies(lifecycle octopus.Lifecycle, stat
 
 				if err != nil {
 					return err
+				}
+			}
+		}
+
+		// The phase targets can also reference parent environments
+		if c.ParentEnvironmentConverter != nil {
+			for _, target := range append(append([]string{}, phase.AutomaticDeploymentTargets...), phase.OptionalDeploymentTargets...) {
+				if stateless {
+					err := c.ParentEnvironmentConverter.ToHclStatelessById(target, dependencies)
+
+					if err != nil {
+						return err
+					}
+				} else {
+					err := c.ParentEnvironmentConverter.ToHclById(target, dependencies)
+
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}

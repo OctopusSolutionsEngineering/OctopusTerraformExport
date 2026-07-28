@@ -37,6 +37,7 @@ type VariableSetConverter struct {
 	Client                            client.OctopusClient
 	ChannelConverter                  ConverterByProjectIdWithTerraDependencies
 	EnvironmentConverter              ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter        ConverterAndLookupWithStatelessById
 	TagSetConverter                   ConvertToHclByResource[octopus.TagSet]
 	AzureCloudServiceTargetConverter  ConverterAndLookupWithStatelessById
 	AzureServiceFabricTargetConverter ConverterAndLookupWithStatelessById
@@ -690,7 +691,7 @@ while IFS= read -r line; do
 	terraform state list "${ID}" &> /dev/null
 	if [[ $? -ne 0 ]]
 	then
-		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${PROJECT_ID}:${VARIABLE_ID}
+		terraform import "-var=octopus_server=$2" "-var=octopus_apikey=$1" "-var=octopus_space_id=$3" "${ID}" ${LIBRARY_VARIABLE_SET_ID}:${VARIABLE_ID}
 	fi
 
 	exit 0
@@ -1622,7 +1623,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 	// See https://github.com/OctopusDeploy/terraform-provider-octopusdeploy/issues/60
 	actions := c.getDeploymentProcessStepId(strutil.EmptyIfNil(variableSet.OwnerId), deploymentProcessId, variable.Scope.Action, dependencies)
 	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
-	environments := dependencies.GetResources("Environments", filteredEnvironments...)
+	environments := c.lookupEnvironments(filteredEnvironments, dependencies)
 	machines := dependencies.GetResources("Machines", variable.Scope.Machine...)
 	processes := dependencies.GetResources("Projects", variable.Scope.ProcessOwner...)
 
@@ -2022,6 +2023,24 @@ func (c *VariableSetConverter) exportEnvironments(recursive bool, lookup bool, s
 		}
 	}
 
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range c.EnvironmentFilter.FilterEnvironmentScope(variable.Scope.Environment) {
+			var err error
+			if recursive {
+				if stateless {
+					err = c.ParentEnvironmentConverter.ToHclStatelessById(e, dependencies)
+				} else {
+					err = c.ParentEnvironmentConverter.ToHclById(e, dependencies)
+				}
+			} else if lookup {
+				err = c.ParentEnvironmentConverter.ToHclLookupById(e, dependencies)
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -2143,4 +2162,18 @@ func (c *VariableSetConverter) addTagSetDependencies(variable octopus.Variable, 
 	}
 
 	return terraformDependencies, nil
+}
+
+func (c *VariableSetConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
+	}
+	return newEnvs
 }

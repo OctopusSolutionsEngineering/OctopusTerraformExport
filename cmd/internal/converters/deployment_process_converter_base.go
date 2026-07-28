@@ -393,8 +393,8 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
 			Container:            c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies),
-			Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
-			ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
+			Environments:         sliceutil.NilIfEmpty(c.lookupEnvironments(action.Environments, dependencies)),
+			ExcludedEnvironments: sliceutil.NilIfEmpty(c.lookupEnvironments(action.ExcludedEnvironments, dependencies)),
 			ExecutionProperties:  nil, // This is assigned by assignProperties()
 			GitDependencies:      c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies),
 			IsDisabled:           boolutil.NilIfFalse(action.IsDisabled),
@@ -522,8 +522,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 			Channels:             sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...)),
 			Condition:            action.Condition,
 			Container:            c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies),
-			Environments:         sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...)),
-			ExcludedEnvironments: sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...)),
+			Environments:         sliceutil.NilIfEmpty(c.lookupEnvironments(action.Environments, dependencies)),
+			ExcludedEnvironments: sliceutil.NilIfEmpty(c.lookupEnvironments(action.ExcludedEnvironments, dependencies)),
 			ExecutionProperties:  nil, // This is assigned by assignProperties()
 			IsDisabled:           boolutil.NilIfFalse(action.IsDisabled),
 			IsRequired:           boolutil.NilIfFalse(action.IsRequired),
@@ -684,8 +684,8 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 
 			terraformProcessStep.Container = c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies)
 			terraformProcessStep.WorkerPoolVariable = strutil.NilIfEmptyPointer(action.WorkerPoolVariable)
-			terraformProcessStep.Environments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...))
-			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))
+			terraformProcessStep.Environments = sliceutil.NilIfEmpty(c.lookupEnvironments(action.Environments, dependencies))
+			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(c.lookupEnvironments(action.ExcludedEnvironments, dependencies))
 			terraformProcessStep.Channels = sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...))
 			terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
 			terraformProcessStep.IsDisabled = boolutil.NilIfFalse(action.IsDisabled)
@@ -848,8 +848,8 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 
 			terraformProcessStep.Container = c.OctopusActionProcessor.ConvertContainer(action.Container, dependencies)
 			terraformProcessStep.WorkerPoolVariable = strutil.NilIfEmptyPointer(action.WorkerPoolVariable)
-			terraformProcessStep.Environments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.Environments...))
-			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(dependencies.GetResources("Environments", action.ExcludedEnvironments...))
+			terraformProcessStep.Environments = sliceutil.NilIfEmpty(c.lookupEnvironments(action.Environments, dependencies))
+			terraformProcessStep.ExcludedEnvironments = sliceutil.NilIfEmpty(c.lookupEnvironments(action.ExcludedEnvironments, dependencies))
 			terraformProcessStep.Channels = sliceutil.NilIfEmpty(dependencies.GetResources("Channels", action.Channels...))
 			terraformProcessStep.TenantTags = sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(action.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets))
 			terraformProcessStep.GitDependencies = c.OctopusActionProcessor.ConvertGitDependenciesV2(action.GitDependencies, dependencies)
@@ -1191,6 +1191,21 @@ func (c *DeploymentProcessConverterBase) getPackageIdVariable(defaultValue strin
 		Description: "The package ID for the package named " + packageName + " from step " + stepName + " in project " + projectName,
 		Default:     &defaultValue,
 	}
+}
+
+// lookupEnvironments resolves the action environment scopes, which can reference regular or parent environments
+func (c *DeploymentProcessConverterBase) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
+	}
+	return newEnvs
 }
 
 func (c *DeploymentProcessConverterBase) writeVariableToFile(file *hclwrite.File, variable *terraform.TerraformVariable) {

@@ -30,6 +30,7 @@ type RunbookConverter struct {
 	Client                       client.OctopusClient
 	RunbookProcessConverter      ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcessesStandalone
 	EnvironmentConverter         ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter   ConverterAndLookupWithStatelessById
 	ProjectConverter             ConverterAndLookupWithStatelessById
 	ExcludedRunbooks             args.StringSliceArgs
 	ExcludeRunbooksRegex         args.StringSliceArgs
@@ -423,7 +424,7 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 			ResourceName:             "${var." + runbookName + "_name}",
 			ProjectId:                dependencies.GetResource("Projects", runbook.ProjectId),
 			EnvironmentScope:         runbook.EnvironmentScope,
-			Environments:             dependencies.GetResources("Environments", runbook.Environments...),
+			Environments:             c.lookupEnvironments(runbook.Environments, dependencies),
 			ForcePackageDownload:     runbook.ForcePackageDownload,
 			DefaultGuidedFailureMode: runbook.DefaultGuidedFailureMode,
 			Description:              strutil.TrimPointer(runbook.Description),
@@ -594,7 +595,40 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 		}
 	}
 
+	// The environment scope can also reference parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range runbook.Environments {
+			var err error
+			if recursive {
+				if stateless {
+					err = c.ParentEnvironmentConverter.ToHclStatelessById(e, dependencies)
+				} else {
+					err = c.ParentEnvironmentConverter.ToHclById(e, dependencies)
+				}
+			} else if lookup {
+				err = c.ParentEnvironmentConverter.ToHclLookupById(e, dependencies)
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
+}
+
+func (c *RunbookConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
+	}
+	return newEnvs
 }
 
 func (c *RunbookConverter) compileRegexes() {

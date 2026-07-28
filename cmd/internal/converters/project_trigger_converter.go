@@ -29,16 +29,17 @@ const octopusdeployProjectGitTrigger = "octopusdeploy_git_trigger"
 const octopusdeployProjectArcTrigger = "octopusdeploy_built_in_trigger"
 
 type ProjectTriggerConverter struct {
-	Client                client.OctopusClient
-	LimitResourceCount    int
-	IncludeIds            bool
-	GenerateImportScripts bool
-	EnvironmentConverter  ConverterAndLookupWithStatelessById
-	ExcludeTriggers       args.StringSliceArgs
-	ExcludeTriggersExcept args.StringSliceArgs
-	ExcludeTriggersRegex  args.StringSliceArgs
-	ExcludeAllTriggers    bool
-	Excluder              ExcludeByName
+	Client                     client.OctopusClient
+	LimitResourceCount         int
+	IncludeIds                 bool
+	GenerateImportScripts      bool
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	ExcludeTriggers            args.StringSliceArgs
+	ExcludeTriggersExcept      args.StringSliceArgs
+	ExcludeTriggersRegex       args.StringSliceArgs
+	ExcludeAllTriggers         bool
+	Excluder                   ExcludeByName
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
@@ -362,7 +363,7 @@ func (c ProjectTriggerConverter) buildTargetTrigger(projectTrigger octopus.Proje
 			ResourceName:    projectTrigger.Name,
 			ProjectId:       dependencies.GetResource("Projects", projectTrigger.ProjectId),
 			EventCategories: projectTrigger.Filter.EventCategories,
-			EnvironmentIds:  dependencies.GetResources("Environments", projectTrigger.Filter.EnvironmentIds...),
+			EnvironmentIds:  c.lookupEnvironments(projectTrigger.Filter.EnvironmentIds, dependencies),
 			EventGroups:     projectTrigger.Filter.EventGroups,
 			Roles:           projectTrigger.Filter.Roles,
 			ShouldRedeploy:  projectTrigger.Action.ShouldRedeployWhenMachineHasBeenDeployedTo,
@@ -792,7 +793,7 @@ func (c ProjectTriggerConverter) buildTerraformProjectScheduledTriggerRunRunbook
 	}
 
 	return &terraform.TerraformProjectScheduledTriggerRunRunbookAction{
-		TargetEnvironmentIds: dependencies.GetResources("Environments", projectTrigger.Action.EnvironmentIds...),
+		TargetEnvironmentIds: c.lookupEnvironments(projectTrigger.Action.EnvironmentIds, dependencies),
 		RunbookId:            dependencies.GetResource("Runbooks", strutil.EmptyIfNil(projectTrigger.Action.RunbookId)),
 	}
 }
@@ -819,7 +820,7 @@ func (c ProjectTriggerConverter) buildDeployNewReleaseAction(projectTrigger octo
 		return nil
 	}
 
-	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId))
+	environment := c.lookupEnvironment(strutil.EmptyIfNil(projectTrigger.Action.EnvironmentId), dependencies)
 
 	return &terraform.TerraformProjectScheduledTriggerDeployNewReleaseAction{
 		DestinationEnvironmentId: environment,
@@ -831,8 +832,8 @@ func (c ProjectTriggerConverter) buildDeployLatestReleaseAction(projectTrigger o
 		return nil
 	}
 
-	environment := dependencies.GetResource("Environments", strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId))
-	sourceEnvironments := dependencies.GetResources("Environments", projectTrigger.Action.SourceEnvironmentIds...)
+	environment := c.lookupEnvironment(strutil.EmptyIfNil(projectTrigger.Action.DestinationEnvironmentId), dependencies)
+	sourceEnvironments := c.lookupEnvironments(projectTrigger.Action.SourceEnvironmentIds, dependencies)
 
 	if len(sourceEnvironments) == 0 {
 		zap.L().Info("The source environment was not resolved for trigger " + projectTrigger.Name + ". The resulting trigger has no source environment ID and will not deploy correctly.")
@@ -881,9 +882,53 @@ func (c ProjectTriggerConverter) exportEnvironments(projectTrigger octopus.Proje
 				return err
 			}
 		}
+
+		// The trigger environments can also reference parent environments
+		if c.ParentEnvironmentConverter != nil {
+			if recursive {
+				if stateless {
+					if err := c.ParentEnvironmentConverter.ToHclStatelessById(env, dependencies); err != nil {
+						return err
+					}
+				} else {
+					if err := c.ParentEnvironmentConverter.ToHclById(env, dependencies); err != nil {
+						return err
+					}
+				}
+			} else if lookup {
+				if err := c.ParentEnvironmentConverter.ToHclLookupById(env, dependencies); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	return nil
+}
+
+// lookupEnvironments resolves the trigger environments, which can reference regular or parent environments
+func (c ProjectTriggerConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := c.lookupEnvironment(v, dependencies)
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
+	}
+	return newEnvs
+}
+
+// lookupEnvironment resolves a single environment, which can reference a regular or parent environment
+func (c ProjectTriggerConverter) lookupEnvironment(env string, dependencies *data.ResourceDetailsCollection) string {
+	if env == "" {
+		return ""
+	}
+
+	environment := dependencies.GetResource("Environments", env)
+	if environment == "" {
+		environment = dependencies.GetResource("ParentEnvironments", env)
+	}
+	return environment
 }
 
 func (c ProjectTriggerConverter) buildGitTriggerResources(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) error {

@@ -135,10 +135,16 @@ func (c ParentEnvironmentConverter) ToHclLookupById(id string, dependencies *dat
 	}
 
 	environment := octopus.ParentEnvironment{}
-	_, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &environment)
+	found, err := c.Client.GetSpaceResourceById(c.GetResourceType(), id, &environment)
 
 	if err != nil {
 		return fmt.Errorf("error in OctopusClient.GetSpaceResourceById loading type octopus.ParentEnvironment: %w", err)
+	}
+
+	// Environment lists can be for regular environments or parent environments.
+	// If the resource is not found, it may be a regular environment, so we will skip it.
+	if !found {
+		return nil
 	}
 
 	if c.Excluder.IsResourceExcludedWithRegex(environment.Name, c.ExcludeAllEnvironments, c.ExcludeEnvironments, c.ExcludeEnvironmentsRegex, c.ExcludeEnvironmentsExcept) {

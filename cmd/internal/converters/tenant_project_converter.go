@@ -107,7 +107,7 @@ func (c TenantProjectConverter) LinkTenantToProject(tenant octopus.Tenant, proje
 			SpaceId:        strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", tenant.SpaceId)),
 			TenantId:       dependencies.GetResource("Tenants", tenant.Id),
 			ProjectId:      dependencies.GetResource("Projects", project.Id),
-			EnvironmentIds: dependencies.GetResources("Environments", environmentIds...),
+			EnvironmentIds: c.lookupEnvironments(environmentIds, dependencies),
 		}
 
 		file := hclwrite.NewEmptyFile()
@@ -117,4 +117,19 @@ func (c TenantProjectConverter) LinkTenantToProject(tenant octopus.Tenant, proje
 	}
 
 	dependencies.AddResource(tenantProject)
+}
+
+// lookupEnvironments resolves the tenant project environments, which can reference regular or parent environments
+func (c TenantProjectConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
+	}
+	return newEnvs
 }

@@ -18,16 +18,17 @@ import (
 // OctopusActionProcessor exposes a bunch of common functions for exporting the processes associated with
 // projects and runbooks.
 type OctopusActionProcessor struct {
-	FeedConverter           ConverterAndLookupWithStatelessById
-	AccountConverter        ConverterAndLookupWithStatelessById
-	WorkerPoolConverter     ConverterAndLookupWithStatelessById
-	EnvironmentConverter    ConverterAndLookupWithStatelessById
-	GitCredentialsConverter ConverterAndLookupWithStatelessById
-	ProjectExporter         ConverterAndLookupWithStatelessById
-	DetachProjectTemplates  bool
-	WorkerPoolProcessor     OctopusWorkerPoolProcessor
-	StepTemplateConverter   ConverterAndLookupWithStatelessById
-	Client                  client.OctopusClient
+	FeedConverter              ConverterAndLookupWithStatelessById
+	AccountConverter           ConverterAndLookupWithStatelessById
+	WorkerPoolConverter        ConverterAndLookupWithStatelessById
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	GitCredentialsConverter    ConverterAndLookupWithStatelessById
+	ProjectExporter            ConverterAndLookupWithStatelessById
+	DetachProjectTemplates     bool
+	WorkerPoolProcessor        OctopusWorkerPoolProcessor
+	StepTemplateConverter      ConverterAndLookupWithStatelessById
+	Client                     client.OctopusClient
 }
 
 func (c OctopusActionProcessor) ExportFeeds(recursive bool, lookup bool, stateless bool, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) error {
@@ -559,6 +560,23 @@ func (c OctopusActionProcessor) ExportEnvironments(recursive bool, lookup bool, 
 
 				if err != nil {
 					return err
+				}
+
+				// The environment scopes can also reference parent environments
+				if c.ParentEnvironmentConverter != nil {
+					if recursive {
+						if stateless {
+							err = c.ParentEnvironmentConverter.ToHclStatelessById(environment, dependencies)
+						} else {
+							err = c.ParentEnvironmentConverter.ToHclById(environment, dependencies)
+						}
+					} else if lookup {
+						err = c.ParentEnvironmentConverter.ToHclLookupById(environment, dependencies)
+					}
+
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}

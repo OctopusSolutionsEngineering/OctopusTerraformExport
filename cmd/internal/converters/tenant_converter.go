@@ -24,28 +24,29 @@ const octopusdeployTenantResourceType = "octopusdeploy_tenant"
 const octopusdeployTenantProjectResourceType = "octopusdeploy_tenant_project"
 
 type TenantConverter struct {
-	Client                   client.OctopusClient
-	TenantVariableConverter  ConverterByTenantId
-	EnvironmentConverter     ConverterAndLookupWithStatelessById
-	TagSetConverter          ConvertToHclByResource[octopus.TagSet]
-	ExcludeTenantTagSets     args.StringSliceArgs
-	ExcludeTenantTags        args.StringSliceArgs
-	ExcludeTenants           args.StringSliceArgs
-	ExcludeTenantsRegex      args.StringSliceArgs
-	ExcludeTenantsWithTags   args.StringSliceArgs
-	ExcludeTenantsExcept     args.StringSliceArgs
-	ExcludeAllTenants        bool
-	Excluder                 ExcludeByName
-	ExcludeProjects          args.StringSliceArgs
-	ExcludeProjectsExcept    args.StringSliceArgs
-	ExcludeProjectsRegex     args.StringSliceArgs
-	ExcludeAllProjects       bool
-	ErrGroup                 *errgroup.Group
-	IncludeIds               bool
-	LimitResourceCount       int
-	IncludeSpaceInPopulation bool
-	GenerateImportScripts    bool
-	TenantProjectConverter   TenantProjectConverter
+	Client                     client.OctopusClient
+	TenantVariableConverter    ConverterByTenantId
+	EnvironmentConverter       ConverterAndLookupWithStatelessById
+	ParentEnvironmentConverter ConverterAndLookupWithStatelessById
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	ExcludeTenantTagSets       args.StringSliceArgs
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenants             args.StringSliceArgs
+	ExcludeTenantsRegex        args.StringSliceArgs
+	ExcludeTenantsWithTags     args.StringSliceArgs
+	ExcludeTenantsExcept       args.StringSliceArgs
+	ExcludeAllTenants          bool
+	Excluder                   ExcludeByName
+	ExcludeProjects            args.StringSliceArgs
+	ExcludeProjectsExcept      args.StringSliceArgs
+	ExcludeProjectsRegex       args.StringSliceArgs
+	ExcludeAllProjects         bool
+	ErrGroup                   *errgroup.Group
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	GenerateImportScripts      bool
+	TenantProjectConverter     TenantProjectConverter
 }
 
 func (c *TenantConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -323,6 +324,23 @@ func (c *TenantConverter) toHcl(tenant octopus.Tenant, recursive bool, lookup bo
 		if err != nil {
 			return err
 		}
+
+		// The tenant environments can also reference parent environments
+		if c.ParentEnvironmentConverter != nil {
+			for _, environments := range tenant.ProjectEnvironments {
+				for _, environment := range environments {
+					if stateless {
+						err = c.ParentEnvironmentConverter.ToHclStatelessById(environment, dependencies)
+					} else {
+						err = c.ParentEnvironmentConverter.ToHclById(environment, dependencies)
+					}
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
 	}
 
 	tagSetDependencies, err := c.addTagSetDependencies(tenant, recursive, stateless, dependencies)
@@ -471,10 +489,15 @@ func (c *TenantConverter) excludeProject(projectId string) (bool, error) {
 	return c.Excluder.IsResourceExcludedWithRegex(project.Name, c.ExcludeAllProjects, c.ExcludeProjects, c.ExcludeProjectsRegex, c.ExcludeProjectsExcept), nil
 }
 
+// lookupEnvironments resolves the tenant project environments, which can reference regular or parent environments
 func (c *TenantConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
 	newEnvs := make([]string, len(envs))
 	for i, v := range envs {
-		newEnvs[i] = dependencies.GetResource("Environments", v)
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		newEnvs[i] = environment
 	}
 	return newEnvs
 }

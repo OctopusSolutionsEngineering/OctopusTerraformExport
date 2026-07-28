@@ -21,24 +21,25 @@ import (
 )
 
 type AccountConverter struct {
-	Client                    client.OctopusClient
-	EnvironmentConverter      ConverterById
-	TenantConverter           ConverterById
-	DummySecretVariableValues bool
-	DummySecretGenerator      dummy.DummySecretGenerator
-	ExcludeTenantTags         args.StringSliceArgs
-	ExcludeTenantTagSets      args.StringSliceArgs
-	Excluder                  ExcludeByName
-	TagSetConverter           ConvertToHclByResource[octopus.TagSet]
-	ErrGroup                  *errgroup.Group
-	ExcludeAccounts           args.StringSliceArgs
-	ExcludeAccountsRegex      args.StringSliceArgs
-	ExcludeAccountsExcept     args.StringSliceArgs
-	ExcludeAllAccounts        bool
-	IncludeIds                bool
-	LimitResourceCount        int
-	IncludeSpaceInPopulation  bool
-	GenerateImportScripts     bool
+	Client                     client.OctopusClient
+	EnvironmentConverter       ConverterById
+	ParentEnvironmentConverter ConverterById
+	TenantConverter            ConverterById
+	DummySecretVariableValues  bool
+	DummySecretGenerator       dummy.DummySecretGenerator
+	ExcludeTenantTags          args.StringSliceArgs
+	ExcludeTenantTagSets       args.StringSliceArgs
+	Excluder                   ExcludeByName
+	TagSetConverter            ConvertToHclByResource[octopus.TagSet]
+	ErrGroup                   *errgroup.Group
+	ExcludeAccounts            args.StringSliceArgs
+	ExcludeAccountsRegex       args.StringSliceArgs
+	ExcludeAccountsExcept      args.StringSliceArgs
+	ExcludeAllAccounts         bool
+	IncludeIds                 bool
+	LimitResourceCount         int
+	IncludeSpaceInPopulation   bool
+	GenerateImportScripts      bool
 }
 
 func (c AccountConverter) AllToHcl(dependencies *data.ResourceDetailsCollection) {
@@ -516,7 +517,7 @@ func (c AccountConverter) writeAwsAccount(stateless bool, resource *data.Resourc
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			ResourceName:                    account.Name,
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -588,7 +589,7 @@ func (c AccountConverter) writeAzureServicePrincipalAccount(stateless bool, reso
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -654,7 +655,7 @@ func (c AccountConverter) writeAzureSubscriptionAccount(stateless bool, resource
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -728,7 +729,7 @@ func (c AccountConverter) writeGoogleCloudAccount(stateless bool, resource *data
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -798,7 +799,7 @@ func (c AccountConverter) writeTokenAccount(stateless bool, resource *data.Resou
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -869,7 +870,7 @@ func (c AccountConverter) writeUsernamePasswordAccount(stateless bool, resource 
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -949,7 +950,7 @@ func (c AccountConverter) writeSshAccount(stateless bool, resource *data.Resourc
 			Id:                              strutil.InputPointerIfEnabled(c.IncludeIds, &account.Id),
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -1022,7 +1023,7 @@ func (c AccountConverter) writeAwsOidcAccount(stateless bool, resource *data.Res
 			ResourceName:                    account.Name,
 			Description:                     strutil.TrimPointer(account.Description),
 			RoleArn:                         strutil.EmptyIfNil(account.RoleArn),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			ExecutionSubjectKeys:            account.DeploymentSubjectKeys,
 			AccountTestSubjectKeys:          account.AccountTestSubjectKeys,
 			HealthSubjectKeys:               account.HealthCheckSubjectKeys,
@@ -1083,7 +1084,7 @@ func (c AccountConverter) writeAzureOidcAccount(stateless bool, resource *data.R
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			ResourceName:                    account.Name,
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
 			TenantedDeploymentParticipation: account.TenantedDeploymentParticipation,
@@ -1165,7 +1166,7 @@ func (c AccountConverter) writeGenericOidcAccount(stateless bool, resource *data
 			SpaceId:                         strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", account.SpaceId)),
 			ResourceName:                    account.Name,
 			Description:                     strutil.TrimPointer(account.Description),
-			Environments:                    dependencies.GetResources("Environments", account.EnvironmentIds...),
+			Environments:                    c.lookupEnvironments(account.EnvironmentIds, dependencies),
 			ExecutionSubjectKeys:            account.DeploymentSubjectKeys,
 			TenantTags:                      c.Excluder.FilteredTenantTags(account.TenantTags, c.ExcludeTenantTags, c.ExcludeTenantTagSets),
 			Tenants:                         dependencies.GetResources("Tenants", account.TenantIds...),
@@ -1204,6 +1205,17 @@ func (c AccountConverter) exportDependencies(target octopus.Account, dependencie
 		}
 	}
 
+	// Export the parent environments
+	if c.ParentEnvironmentConverter != nil {
+		for _, e := range target.EnvironmentIds {
+			err := c.ParentEnvironmentConverter.ToHclById(e, dependencies)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	// Export the tenants
 	for _, e := range target.TenantIds {
 		err := c.TenantConverter.ToHclById(e, dependencies)
@@ -1214,4 +1226,19 @@ func (c AccountConverter) exportDependencies(target octopus.Account, dependencie
 	}
 
 	return nil
+}
+
+// lookupEnvironments resolves the environment scopes, which can reference regular or parent environments
+func (c AccountConverter) lookupEnvironments(envs []string, dependencies *data.ResourceDetailsCollection) []string {
+	newEnvs := make([]string, 0)
+	for _, v := range envs {
+		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
+		if environment != "" {
+			newEnvs = append(newEnvs, environment)
+		}
+	}
+	return newEnvs
 }

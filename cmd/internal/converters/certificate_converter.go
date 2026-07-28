@@ -494,6 +494,9 @@ func (c CertificateConverter) lookupEnvironments(envs []string, dependencies *da
 	newEnvs := make([]string, 0)
 	for _, v := range envs {
 		environment := dependencies.GetResource("Environments", v)
+		if environment == "" {
+			environment = dependencies.GetResource("ParentEnvironments", v)
+		}
 		if environment != "" {
 			newEnvs = append(newEnvs, environment)
 		}
