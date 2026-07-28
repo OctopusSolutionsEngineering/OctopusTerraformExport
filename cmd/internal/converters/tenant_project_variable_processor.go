@@ -95,7 +95,7 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 			Name:          variableName,
 			Count:         count,
 			Id:            nil,
-			EnvironmentId: dependencies.GetResource("Environments", environmentId),
+			EnvironmentId: c.lookupEnvironment(environmentId, dependencies),
 			ProjectId:     dependencies.GetResource("Projects", projectVariable.ProjectId),
 			TemplateId:    dependencies.GetResource("ProjectTemplates", templateId),
 			TenantId:      dependencies.GetResource("Tenants", tenantVariable.TenantId),
@@ -122,6 +122,16 @@ func (c TenantProjectVariableConverter) ConvertTenantProjectVariable(stateless b
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+// lookupEnvironment resolves the environment that a tenant project variable is scoped to, which
+// can be a regular or parent environment
+func (c TenantProjectVariableConverter) lookupEnvironment(environmentId string, dependencies *data.ResourceDetailsCollection) string {
+	environment := dependencies.GetResource("Environments", environmentId)
+	if environment == "" {
+		environment = dependencies.GetResource("ParentEnvironments", environmentId)
+	}
+	return environment
 }
 
 func (c TenantProjectVariableConverter) GetResourceType() string {

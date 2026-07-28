@@ -29,9 +29,13 @@ resource "octopusdeploy_certificate" "certificate_parent_env" {
 /*
   Note that Octopus rejects parent environments in some places that accept regular environments,
   so they are not covered here:
+
     * A lifecycle phase fails with "The phase ... has an invalid environment ID".
-    * Linking a tenant to a project fails with "You are attempting to add environments that you
-      do not have permission to view".
+
+    * Linking a tenant to a project fails with "You do not have permission to perform this action
+      ... You are attempting to add environments that you do not have permission to view". This
+      also rules out a tenant project variable scoped to a parent environment, because that
+      requires the tenant to be connected to the project for that environment.
 */
 
 resource "octopusdeploy_variable" "parent_env_variable" {
