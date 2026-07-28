@@ -10532,7 +10532,11 @@ func TestEphemeralEnvironments(t *testing.T) {
 		"../test/terraform/93-ephemeralenvironment/space_population",
 		[]string{},
 		[]string{},
-		args2.Arguments{},
+		args2.Arguments{
+			// The account and certificate scoped to the parent environment have secrets that
+			// are not passed in as variables when the space is reimported.
+			DummySecretVariableValues: true,
+		},
 		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
 
 			// Assert
@@ -10543,6 +10547,24 @@ func TestEphemeralEnvironments(t *testing.T) {
 				ApiKey:     test.ApiKey,
 				ApiVersion: "v2",
 			}
+
+			// Verify the "Parent Environment" parent environment exists. The resources below are all
+			// scoped to this parent environment rather than a regular environment.
+			parentEnvCollection := octopus.GeneralCollection[octopus.ParentEnvironment]{}
+			if err := octopusClientV2.GetAllResources("environments", &parentEnvCollection, []string{"type", "Parent"}, []string{"skip", "0"}, []string{"take", "1000"}); err != nil {
+				return err
+			}
+
+			parentEnvName := "Parent Environment"
+			parentEnv := lo.Filter(parentEnvCollection.Items, func(item octopus.ParentEnvironment, index int) bool {
+				return item.Name == parentEnvName
+			})
+
+			if len(parentEnv) != 1 {
+				return errors.New("Space must have a parent environment called \"" + parentEnvName + "\" in space " + recreatedSpaceId)
+			}
+
+			parentEnvId := parentEnv[0].Id
 
 			collection := octopus.GeneralCollection[octopus.Project]{}
 			err := octopusClient.GetAllResources("Projects", &collection)
@@ -10557,11 +10579,24 @@ func TestEphemeralEnvironments(t *testing.T) {
 				if v.Name == resourceName {
 					found = true
 
+					// The project has a single variable scoped to the parent environment
 					variables := octopus.VariableSet{}
 					_, err = octopusClient.GetSpaceResourceById("Variables", strutil.EmptyIfNil(v.VariableSetId), &variables)
 
-					if err != nil || len(variables.Variables) != 0 {
-						return errors.New("the project must have no variables")
+					if err != nil {
+						return err
+					}
+
+					parentEnvVariable := lo.Filter(variables.Variables, func(item octopus.Variable, index int) bool {
+						return item.Name == "Test.ParentEnvVariable"
+					})
+
+					if len(parentEnvVariable) != 1 {
+						return errors.New("the project must have a variable called \"Test.ParentEnvVariable\"")
+					}
+
+					if slices.Index(parentEnvVariable[0].Scope.Environment, parentEnvId) == -1 {
+						return errors.New("the variable \"Test.ParentEnvVariable\" must be scoped to the parent environment")
 					}
 
 					if strutil.EmptyIfNil(v.Description) != "Test project" {
@@ -10638,24 +10673,135 @@ func TestEphemeralEnvironments(t *testing.T) {
 				return errors.New("Space must have an project called \"" + resourceName + "\" in space " + recreatedSpaceId)
 			}
 
-			// Verify the "Parent Environment" parent environment exists
-			parentEnvCollection := octopus.GeneralCollection[octopus.ParentEnvironment]{}
-			err = octopusClientV2.GetAllResources("environments", &parentEnvCollection, []string{"type", "Parent"}, []string{"skip", "0"}, []string{"take", "1000"})
+			project := lo.Filter(collection.Items, func(item octopus.Project, index int) bool {
+				return item.Name == resourceName
+			})
 
-			if err != nil {
+			// Verify the deployment process step is scoped to the parent environment
+			deploymentProcess := octopus.DeploymentProcess{}
+			if _, err := octopusClient.GetSpaceResourceById("DeploymentProcesses", strutil.EmptyIfNil(project[0].DeploymentProcessId), &deploymentProcess); err != nil {
 				return err
 			}
 
-			parentEnvName := "Parent Environment"
-			foundParentEnv := false
-			for _, e := range parentEnvCollection.Items {
-				if e.Name == parentEnvName {
-					foundParentEnv = true
+			if len(deploymentProcess.Steps) != 1 || len(deploymentProcess.Steps[0].Actions) != 1 {
+				return errors.New("the project must have a single step with a single action")
+			}
+
+			if slices.Index(deploymentProcess.Steps[0].Actions[0].Environments, parentEnvId) == -1 {
+				return errors.New("the step \"Test\" must be scoped to the parent environment")
+			}
+
+			// Verify the runbook is scoped to the parent environment
+			runbookCollection := octopus.GeneralCollection[octopus.Runbook]{}
+			if err := octopusClient.GetAllResources("Projects/"+project[0].Id+"/runbooks", &runbookCollection); err != nil {
+				return err
+			}
+
+			runbook := lo.Filter(runbookCollection.Items, func(item octopus.Runbook, index int) bool {
+				return item.Name == "Runbook"
+			})
+
+			if len(runbook) != 1 {
+				return errors.New("space must have a runbook called \"Runbook\" in space " + recreatedSpaceId)
+			}
+
+			if slices.Index(runbook[0].Environments, parentEnvId) == -1 {
+				return errors.New("the runbook \"Runbook\" must be scoped to the parent environment")
+			}
+
+			// Verify the project trigger runs the runbook against the parent environment
+			triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+			if err := octopusClient.GetAllResources("Projects/"+project[0].Id+"/Triggers", &triggers); err != nil {
+				return err
+			}
+
+			trigger := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+				return item.Name == "Parent Env Runbook Trigger"
+			})
+
+			if len(trigger) != 1 {
+				return errors.New("space must have a trigger called \"Parent Env Runbook Trigger\" in space " + recreatedSpaceId)
+			}
+
+			if slices.Index(trigger[0].Action.EnvironmentIds, parentEnvId) == -1 {
+				return errors.New("the trigger \"Parent Env Runbook Trigger\" must target the parent environment")
+			}
+
+			// Verify an example of each target type is scoped to the parent environment. The
+			// CloudRegionResource type is used to read the name and environments of every target,
+			// as those fields are common to all target types.
+			targetCollection := octopus.GeneralCollection[octopus.CloudRegionResource]{}
+			if err := octopusClient.GetAllResources("Machines", &targetCollection); err != nil {
+				return err
+			}
+
+			targetNames := []string{
+				"Parent Env Cloud Region",
+				"Parent Env Listening",
+				"Parent Env Polling",
+				"Parent Env SSH",
+				"Parent Env Offline Drop",
+				"Parent Env Kubernetes",
+				"Parent Env Azure Web App",
+				"Parent Env Service Fabric",
+			}
+
+			for _, targetName := range targetNames {
+				target := lo.Filter(targetCollection.Items, func(item octopus.CloudRegionResource, index int) bool {
+					return item.Name == targetName
+				})
+
+				if len(target) != 1 {
+					return errors.New("space must have a target called \"" + targetName + "\" in space " + recreatedSpaceId)
+				}
+
+				if slices.Index(target[0].EnvironmentIds, parentEnvId) == -1 {
+					return errors.New("the target \"" + targetName + "\" must be scoped to the parent environment")
 				}
 			}
 
-			if !foundParentEnv {
-				return errors.New("Space must have a parent environment called \"" + parentEnvName + "\" in space " + recreatedSpaceId)
+			// Verify the accounts are scoped to the parent environment
+			accountCollection := octopus.GeneralCollection[octopus.Account]{}
+			if err := octopusClient.GetAllResources("Accounts", &accountCollection); err != nil {
+				return err
+			}
+
+			accountNames := []string{
+				"Parent Env Account",
+				"Parent Env Service Principal",
+				"Parent Env Subscription",
+			}
+
+			for _, accountName := range accountNames {
+				account := lo.Filter(accountCollection.Items, func(item octopus.Account, index int) bool {
+					return item.Name == accountName
+				})
+
+				if len(account) != 1 {
+					return errors.New("space must have an account called \"" + accountName + "\" in space " + recreatedSpaceId)
+				}
+
+				if slices.Index(account[0].EnvironmentIds, parentEnvId) == -1 {
+					return errors.New("the account \"" + accountName + "\" must be scoped to the parent environment")
+				}
+			}
+
+			// Verify the certificate is scoped to the parent environment
+			certificateCollection := octopus.GeneralCollection[octopus.Certificate]{}
+			if err := octopusClient.GetAllResources("Certificates", &certificateCollection); err != nil {
+				return err
+			}
+
+			certificate := lo.Filter(certificateCollection.Items, func(item octopus.Certificate, index int) bool {
+				return item.Name == "Parent Env Certificate"
+			})
+
+			if len(certificate) != 1 {
+				return errors.New("space must have a certificate called \"Parent Env Certificate\" in space " + recreatedSpaceId)
+			}
+
+			if slices.Index(certificate[0].EnvironmentIds, parentEnvId) == -1 {
+				return errors.New("the certificate \"Parent Env Certificate\" must be scoped to the parent environment")
 			}
 
 			return nil

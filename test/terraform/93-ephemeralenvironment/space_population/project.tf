@@ -61,7 +61,7 @@ resource "octopusdeploy_process_step" "process_step_test" {
   process_id            = "${octopusdeploy_process.process_cloudformation_step.id}"
   channels              = null
   condition             = "Success"
-  environments          = null
+  environments          = ["${octopusdeploy_parent_environment.example.id}"]
   excluded_environments = null
   package_requirement   = "LetOctopusDecide"
   primary_package       = {
@@ -103,6 +103,7 @@ resource "octopusdeploy_runbook" "runbook" {
     quantity_to_keep = 10
   }
   environment_scope           = "Specified"
+  environments                = [octopusdeploy_parent_environment.example.id]
   default_guided_failure_mode = "EnvironmentDefault"
   force_package_download      = false
 }
