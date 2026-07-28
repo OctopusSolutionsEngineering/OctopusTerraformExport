@@ -159,23 +159,23 @@ func (c *DeploymentProcessConverterBase) toHcl(deploymentProcess octopus.Octopus
 		parentStep := len(step.Actions) > 1
 
 		// Every step is either standalone or a parent step with child steps.
-		c.generateSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, dependencies)
-		c.generateTemplateSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, dependencies)
+		c.generateSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, standalone, dependencies)
+		c.generateTemplateSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, standalone, dependencies)
 
 		if parentStep {
 			// Steps that have children create a new child step from all the actions after the first one.
 			for _, action := range step.Actions[1:] {
-				c.generateChildSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, &action, dependencies)
-				c.generateTemplateChildSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, &action, dependencies)
+				c.generateChildSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, &action, standalone, dependencies)
+				c.generateTemplateChildSteps(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, &action, standalone, dependencies)
 			}
 
 			// The child steps are captured in the TerraformProcessChildStepsOrder resource.
-			c.generateChildStepOrder(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, dependencies)
+			c.generateChildStepOrder(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, &step, standalone, dependencies)
 		}
 	}
 
 	// The steps are captured in the TerraformProcessStepsOrder resource.
-	c.generateStepOrder(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, validSteps, dependencies)
+	c.generateStepOrder(stateless, deploymentProcess, parentProjectOrNil, projectOrRunbook, validSteps, standalone, dependencies)
 
 	return nil
 }
@@ -191,7 +191,7 @@ func (c *DeploymentProcessConverterBase) getValidSteps(resource octopus.OctopusP
 		c.ExcludeStepsExcept)
 }
 
-func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, deploymentProcess octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, deploymentProcess octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, standalone bool, dependencies *data.ResourceDetailsCollection) {
 	if len(step.Actions) < 2 {
 		// This shouldn't happen, but if a step has no child actions, we don't create a child step order.
 		return
@@ -235,13 +235,18 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessChildStepsOrder.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessChildStepsOrder.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessChildStepsOrder.Count = strutil.StrPointer("1")
 			}
 		}
 
@@ -259,7 +264,7 @@ func (c *DeploymentProcessConverterBase) generateChildStepOrder(stateless bool, 
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, steps []octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, steps []octopus.Step, standalone bool, dependencies *data.ResourceDetailsCollection) {
 	resourceName := c.generateStepOrderName(parent, owner)
 	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parent, owner))
 
@@ -295,13 +300,18 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessStepsOrder.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessStepsOrder.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessStepsOrder.Count = strutil.StrPointer("1")
 			}
 		}
 
@@ -319,7 +329,7 @@ func (c *DeploymentProcessConverterBase) generateStepOrder(stateless bool, resou
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, standalone bool, dependencies *data.ResourceDetailsCollection) {
 	if _, ok := action.Properties["Octopus.Action.Template.Id"]; ok && !c.DetachProjectTemplates {
 		// This is a templated step, so we don't generate a resource for it.
 		return
@@ -379,13 +389,18 @@ func (c *DeploymentProcessConverterBase) generateChildSteps(stateless bool, reso
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessStepChild.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessStepChild.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessStepChild.Count = strutil.StrPointer("1")
 			}
 		}
 
@@ -435,7 +450,7 @@ func (c *DeploymentProcessConverterBase) assignExecutionProperties(action *octop
 	c.assignProperties("execution_properties", block, owner, sanitizedProperties, []string{}, parameters, action, file, dependencies)
 }
 
-func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, action *octopus.Action, standalone bool, dependencies *data.ResourceDetailsCollection) {
 	templateId, ok := action.Properties["Octopus.Action.Template.Id"]
 
 	if !ok || c.DetachProjectTemplates {
@@ -494,13 +509,18 @@ func (c *DeploymentProcessConverterBase) generateTemplateChildSteps(stateless bo
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessStepChild.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessStepChild.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessStepChild.Count = strutil.StrPointer("1")
 			}
 		}
 
@@ -544,7 +564,7 @@ func (c *DeploymentProcessConverterBase) getTemplateParameters(templateId string
 	}), nil
 }
 
-func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, resource octopus.OctopusProcess, parent octopus.NameIdParentResource, owner octopus.NameIdParentResource, step *octopus.Step, standalone bool, dependencies *data.ResourceDetailsCollection) {
 	// This should always be true, but we check it to avoid panics.
 	hasChild := len(step.Actions) >= 1
 
@@ -639,13 +659,18 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", owner.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessStep.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessStep.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessStep.Count = strutil.StrPointer("1")
 			}
 		}
 
@@ -696,7 +721,7 @@ func (c *DeploymentProcessConverterBase) generateTemplateSteps(stateless bool, r
 	dependencies.AddResource(thisResource)
 }
 
-func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymentProcess octopus.OctopusProcess, parentProjectOrNil octopus.NameIdParentResource, projectOrRunbook octopus.NameIdParentResource, step *octopus.Step, dependencies *data.ResourceDetailsCollection) {
+func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymentProcess octopus.OctopusProcess, parentProjectOrNil octopus.NameIdParentResource, projectOrRunbook octopus.NameIdParentResource, step *octopus.Step, standalone bool, dependencies *data.ResourceDetailsCollection) {
 	// This should always be true, but we check it to avoid panics.
 	hasChild := len(step.Actions) >= 1
 
@@ -794,13 +819,18 @@ func (c *DeploymentProcessConverterBase) generateSteps(stateless bool, deploymen
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessStep.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessStep.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessStep.Count = strutil.StrPointer("1")
 			}
 		}
 
