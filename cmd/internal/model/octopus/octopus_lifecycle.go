@@ -23,8 +23,7 @@ type Phase struct {
 }
 
 type Policy struct {
-	Unit              string
-	QuantityToKeep    int
-	ShouldKeepForever bool
-	Strategy          string
+	Unit           string
+	QuantityToKeep int
+	Strategy       string
 }

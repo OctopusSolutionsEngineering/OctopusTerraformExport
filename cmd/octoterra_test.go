@@ -1892,8 +1892,8 @@ func TestLifecycleExport(t *testing.T) {
 						return errors.New("The lifecycle must be have a description of \"A test lifecycle\" (was \"" + strutil.EmptyIfNil(v.Description) + "\")")
 					}
 
-					if v.TentacleRetentionPolicy.ShouldKeepForever {
-						return errors.New("The lifecycle must be have a tentacle retention not set to keep forever")
+					if v.TentacleRetentionPolicy.QuantityToKeep != 30 {
+						return errors.New("The lifecycle must be have a tentacle retention policy of \"30\" (was \"" + fmt.Sprint(v.TentacleRetentionPolicy.QuantityToKeep) + "\")")
 					}
 
 					if v.TentacleRetentionPolicy.Unit != "Items" {
@@ -1902,10 +1902,6 @@ func TestLifecycleExport(t *testing.T) {
 
 					if v.ReleaseRetentionPolicy.QuantityToKeep != 1 {
 						return errors.New("The lifecycle must be have a release retention policy of \"1\" (was \"" + fmt.Sprint(v.ReleaseRetentionPolicy.QuantityToKeep) + "\")")
-					}
-
-					if !v.ReleaseRetentionPolicy.ShouldKeepForever {
-						t.Log("BUG: The lifecycle must be have a release retention set to keep forever (known bug - the provider creates this field as false)")
 					}
 
 					if v.ReleaseRetentionPolicy.Unit != "Days" {
