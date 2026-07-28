@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
@@ -13,6 +14,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hclwrite"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -370,13 +372,15 @@ func (c LifecycleConverter) toHcl(lifecycle octopus.Lifecycle, recursive bool, l
 		thisResource.ToHcl = func() (string, error) {
 
 			terraformResource := terraform.TerraformLifecycle{
-				Type:         octopusdeployLifecycleResourceType,
-				Name:         resourceName,
-				Id:           strutil.InputPointerIfEnabled(c.IncludeIds, &lifecycle.Id),
-				SpaceId:      strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", lifecycle.SpaceId)),
-				ResourceName: lifecycle.Name,
-				Description:  strutil.TrimPointer(lifecycle.Description),
-				Phase:        c.convertPhases(lifecycle.Phases, dependencies),
+				Type:                    octopusdeployLifecycleResourceType,
+				Name:                    resourceName,
+				Id:                      strutil.InputPointerIfEnabled(c.IncludeIds, &lifecycle.Id),
+				SpaceId:                 strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", lifecycle.SpaceId)),
+				ResourceName:            lifecycle.Name,
+				Description:             strutil.TrimPointer(lifecycle.Description),
+				Phase:                   c.convertPhases(lifecycle.Phases, dependencies),
+				ReleaseRetentionPolicy:  c.convertPolicy(lifecycle.ReleaseRetentionPolicy),
+				TentacleRetentionPolicy: c.convertPolicy(lifecycle.TentacleRetentionPolicy),
 			}
 			file := hclwrite.NewEmptyFile()
 
@@ -405,6 +409,20 @@ func (c LifecycleConverter) GetResourceType() string {
 	return "Lifecycles"
 }
 
+func (c LifecycleConverter) convertPolicy(policy *octopus.Policy) *terraform.TerraformPolicy {
+	if policy == nil {
+		return nil
+	}
+
+	noQuantity := strings.ToLower(policy.Strategy) == "forever" || strings.ToLower(policy.Strategy) == "default"
+
+	return &terraform.TerraformPolicy{
+		QuantityToKeep: lo.Ternary(noQuantity, nil, &policy.QuantityToKeep),
+		Strategy:       policy.Strategy,
+		Unit:           lo.Ternary(noQuantity, nil, &policy.Unit),
+	}
+}
+
 func (c LifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *data.ResourceDetailsCollection) []terraform.TerraformPhase {
 	terraformPhases := make([]terraform.TerraformPhase, 0)
 	for _, v := range phases {
@@ -414,6 +432,8 @@ func (c LifecycleConverter) convertPhases(phases []octopus.Phase, dependencies *
 			Name:                               v.Name,
 			IsOptionalPhase:                    v.IsOptionalPhase,
 			MinimumEnvironmentsBeforePromotion: v.MinimumEnvironmentsBeforePromotion,
+			ReleaseRetentionPolicy:             c.convertPolicy(v.ReleaseRetentionPolicy),
+			TentacleRetentionPolicy:            c.convertPolicy(v.TentacleRetentionPolicy),
 		})
 	}
 	return terraformPhases
