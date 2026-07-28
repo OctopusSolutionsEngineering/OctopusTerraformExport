@@ -2,10 +2,11 @@ package converters
 
 import (
 	"fmt"
+	"net/url"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"go.uber.org/zap"
-	"net/url"
 )
 
 // DeploymentProcessConverter converts deployment processes for v1 of the Octopus Terraform provider.
@@ -57,7 +58,7 @@ func (c *DeploymentProcessConverter) toHclByIdAndBranch(parentId string, branch 
 
 	c.exportScripts(project, resource, dependencies)
 
-	return c.toHcl(&resource, nil, &project, recursive, false, stateless, dependencies)
+	return c.toHcl(&resource, nil, &project, recursive, false, stateless, false, dependencies)
 }
 
 func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -96,7 +97,7 @@ func (c *DeploymentProcessConverter) ToHclLookupByIdAndBranch(parentId string, b
 
 	c.exportScripts(project, resource, dependencies)
 
-	return c.toHcl(&resource, nil, &project, false, true, false, dependencies)
+	return c.toHcl(&resource, nil, &project, false, true, false, false, dependencies)
 }
 
 func (c *DeploymentProcessConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -139,7 +140,7 @@ func (c *DeploymentProcessConverter) toHclById(id string, recursive bool, statel
 	zap.L().Info("Deployment Process: " + resource.Id)
 
 	c.exportScripts(project, resource, dependencies)
-	return c.toHcl(&resource, nil, &project, recursive, false, stateless, dependencies)
+	return c.toHcl(&resource, nil, &project, recursive, false, stateless, false, dependencies)
 }
 
 func (c *DeploymentProcessConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -172,7 +173,7 @@ func (c *DeploymentProcessConverter) ToHclLookupById(id string, dependencies *da
 	}
 
 	c.exportScripts(project, resource, dependencies)
-	return c.toHcl(&resource, nil, &project, false, true, false, dependencies)
+	return c.toHcl(&resource, nil, &project, false, true, false, false, dependencies)
 }
 
 func (c *DeploymentProcessConverter) exportScripts(project octopus.Project, resource octopus.DeploymentProcess, dependencies *data.ResourceDetailsCollection) {

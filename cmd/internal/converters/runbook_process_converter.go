@@ -2,10 +2,11 @@ package converters
 
 import (
 	"fmt"
+	"net/url"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"go.uber.org/zap"
-	"net/url"
 )
 
 // RunbookProcessConverter converts deployment processes for v1 of the Octopus Terraform provider.
@@ -72,7 +73,7 @@ func (c *RunbookProcessConverter) toHclByIdBranchAndProject(parentId string, run
 
 	c.exportScripts(project, runbook, resource, dependencies)
 
-	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
+	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, false, dependencies)
 }
 
 func (c *RunbookProcessConverter) ToHclLookupByIdBranchAndProject(parentId string, runbookProcessId string, branch string, dependencies *data.ResourceDetailsCollection) error {
@@ -118,18 +119,18 @@ func (c *RunbookProcessConverter) ToHclLookupByIdBranchAndProject(parentId strin
 
 	c.exportScripts(project, runbook, resource, dependencies)
 
-	return c.toHcl(&resource, &project, &runbook, false, true, false, dependencies)
+	return c.toHcl(&resource, &project, &runbook, false, true, false, false, dependencies)
 }
 
 func (c *RunbookProcessConverter) ToHclById(id string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclById(id, true, false, dependencies)
+	return c.toHclById(id, true, false, dependencies, false)
 }
 
-func (c *RunbookProcessConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error {
-	return c.toHclById(id, true, true, dependencies)
+func (c *RunbookProcessConverter) ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection, standalone bool) error {
+	return c.toHclById(id, true, true, dependencies, standalone)
 }
 
-func (c *RunbookProcessConverter) toHclById(id string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *RunbookProcessConverter) toHclById(id string, recursive bool, stateless bool, dependencies *data.ResourceDetailsCollection, standalone bool) error {
 	if id == "" {
 		return nil
 	}
@@ -169,7 +170,7 @@ func (c *RunbookProcessConverter) toHclById(id string, recursive bool, stateless
 
 	c.exportScripts(project, runbook, resource, dependencies)
 
-	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, dependencies)
+	return c.toHcl(&resource, &project, &runbook, recursive, false, stateless, standalone, dependencies)
 }
 
 func (c *RunbookProcessConverter) ToHclLookupById(id string, dependencies *data.ResourceDetailsCollection) error {
@@ -210,7 +211,7 @@ func (c *RunbookProcessConverter) ToHclLookupById(id string, dependencies *data.
 
 	c.exportScripts(project, runbook, resource, dependencies)
 
-	return c.toHcl(&resource, &project, &runbook, false, true, false, dependencies)
+	return c.toHcl(&resource, &project, &runbook, false, true, false, false, dependencies)
 }
 
 func (c *RunbookProcessConverter) exportScripts(project octopus.Project, runbook octopus.Runbook, resource octopus.RunbookProcess, dependencies *data.ResourceDetailsCollection) {

@@ -20,6 +20,16 @@ type ConverterToStatelessById interface {
 	ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection) error
 }
 
+// ConverterToStandaloneStatelessById converts an individual resource by its ID. This is used to convert runbooks,
+// which may be "standalone" (i.e. not created with a project)
+// TODO: This can be removed when we get runbook data sources
+type ConverterToStandaloneStatelessById interface {
+	// ToHclStatelessById converts a single resource to a stateless representation by its ID. This is used when
+	// converting a single project, and then converting anything that the project references (like feeds, accounts,
+	// environments etc).
+	ToHclStatelessById(id string, dependencies *data.ResourceDetailsCollection, standalone bool) error
+}
+
 // ConverterByIdWithLookups converts an individual resource by its ID, with all external resources referenced
 // as lookups
 type ConverterByIdWithLookups interface {
@@ -128,6 +138,16 @@ type ConverterAndLookupByIdAndNameWithDeploymentProcesses interface {
 	ActionProcessor
 }
 
+// ConverterAndLookupByIdAndNameWithDeploymentProcessesStandalone converts an individual resource by ID to HCL and to a data lookup
+// with references to projects, with the option of creating standalone resources
+// TODO: This can be removed when we get runbook data sources
+type ConverterAndLookupByIdAndNameWithDeploymentProcessesStandalone interface {
+	ConverterById
+	ConverterLookupById
+	ConverterToStandaloneStatelessById
+	ActionProcessor
+}
+
 // ConverterAndLookupByIdAndNameOrBranchWithDeploymentProcesses converts an individual resource by ID or git branch to HCL and to a data lookup
 // with references to projects
 type ConverterAndLookupByIdAndNameOrBranchWithDeploymentProcesses interface {
@@ -139,6 +159,14 @@ type ConverterAndLookupByIdAndNameOrBranchWithDeploymentProcesses interface {
 // ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcesses converts an individual resource by ID or git branch to HCL and based on a parent project
 type ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcesses interface {
 	ConverterAndLookupByIdAndNameWithDeploymentProcesses
+	ConverterLookupByIdWithBranchAndProject
+	ActionProcessor
+}
+
+// ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcessesStandalone converts an individual resource by ID or git branch to HCL and based on a parent project
+// TODO: This can be removed when we get runbook data sources
+type ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcessesStandalone interface {
+	ConverterAndLookupByIdAndNameWithDeploymentProcessesStandalone
 	ConverterLookupByIdWithBranchAndProject
 	ActionProcessor
 }

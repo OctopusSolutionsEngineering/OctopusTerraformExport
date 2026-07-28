@@ -28,7 +28,7 @@ const octopusdeployRunbookResourceType = "octopusdeploy_runbook"
 
 type RunbookConverter struct {
 	Client                       client.OctopusClient
-	RunbookProcessConverter      ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcesses
+	RunbookProcessConverter      ConverterAndLookupByIdAndNameOrBranchAndProjectWithDeploymentProcessesStandalone
 	EnvironmentConverter         ConverterAndLookupWithStatelessById
 	ProjectConverter             ConverterAndLookupWithStatelessById
 	ExcludedRunbooks             args.StringSliceArgs
@@ -548,7 +548,7 @@ func (c *RunbookConverter) exportChildDependencies(recursive bool, lookup bool, 
 			err = c.RunbookProcessConverter.ToHclLookupById(*runbook.RunbookProcessId, dependencies)
 		} else {
 			if stateless {
-				err = c.RunbookProcessConverter.ToHclStatelessById(*runbook.RunbookProcessId, dependencies)
+				err = c.RunbookProcessConverter.ToHclStatelessById(*runbook.RunbookProcessId, dependencies, standalone)
 			} else {
 				err = c.RunbookProcessConverter.ToHclById(*runbook.RunbookProcessId, dependencies)
 			}

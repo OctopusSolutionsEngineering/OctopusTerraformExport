@@ -65,7 +65,7 @@ func (c *DeploymentProcessConverterBase) getParentName(parent octopus.NameIdPare
 	return owner.GetName()
 }
 
-func (c *DeploymentProcessConverterBase) toHcl(deploymentProcess octopus.OctopusProcess, parentProjectOrNil octopus.NameIdParentResource, projectOrRunbook octopus.NameIdParentResource, recursive bool, lookup bool, stateless bool, dependencies *data.ResourceDetailsCollection) error {
+func (c *DeploymentProcessConverterBase) toHcl(deploymentProcess octopus.OctopusProcess, parentProjectOrNil octopus.NameIdParentResource, projectOrRunbook octopus.NameIdParentResource, recursive bool, lookup bool, stateless bool, standalone bool, dependencies *data.ResourceDetailsCollection) error {
 	resourceName := c.generateProcessName(parentProjectOrNil, projectOrRunbook)
 	projectResourceName := "project_" + sanitizer.SanitizeName(c.getParentName(parentProjectOrNil, projectOrRunbook))
 
@@ -109,13 +109,18 @@ func (c *DeploymentProcessConverterBase) toHcl(deploymentProcess octopus.Octopus
 		}
 
 		if stateless {
-			// only create the deployment process, step order, and steps if the project was created
-			parentCount := dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent())
+			if !standalone {
+				// only create the deployment process, step order, and steps if the project was created
+				parentCount := dependencies.GetResourceCount("Projects", projectOrRunbook.GetUltimateParent())
 
-			// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
-			// The count will be blank, which is expected.
-			if strutil.IsNotBlank(parentCount) {
-				terraformProcessResource.Count = strutil.StrPointer(parentCount)
+				// When exporting a stateless runbook, there is no parent to refer to, because there is no runbook data source.
+				// The count will be blank, which is expected.
+				if strutil.IsNotBlank(parentCount) {
+					terraformProcessResource.Count = strutil.StrPointer(parentCount)
+				}
+			} else {
+				// TODO: Fix this when we have a runbook data source
+				terraformProcessResource.Count = strutil.StrPointer("1")
 			}
 		}
 
