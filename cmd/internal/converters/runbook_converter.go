@@ -404,11 +404,17 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 	thisResource.ResourceType = c.GetResourceType()
 
 	if stateless {
-		// There is no way to look up an existing runbook. If the project exists, the lookup is an empty string. But
-		// if the project exists, nothing will be created that needs to look up the runbook anyway.
-		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(project.Name) + ".projects) != 0 " +
-			"? null " +
-			": " + octopusdeployRunbookResourceType + "." + runbookName + "[0].id}"
+		if standalone {
+			// Standalone runbooks have a count of 1
+			// TODO: Refactor this to use a data source if one is available for runbooks.
+			thisResource.Lookup = "${" + octopusdeployRunbookResourceType + "." + runbookName + "[0].id}"
+		} else {
+			// There is no way to look up an existing runbook. If the project exists, the lookup is an empty string. But
+			// if the project exists, nothing will be created that needs to look up the runbook anyway.
+			thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(project.Name) + ".projects) != 0 " +
+				"? null " +
+				": " + octopusdeployRunbookResourceType + "." + runbookName + "[0].id}"
+		}
 		thisResource.Dependency = "${" + octopusdeployRunbookResourceType + "." + runbookName + "}"
 	} else {
 		thisResource.Lookup = "${" + octopusdeployRunbookResourceType + "." + runbookName + ".id}"
