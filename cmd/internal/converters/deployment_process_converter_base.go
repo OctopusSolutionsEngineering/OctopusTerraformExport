@@ -1063,7 +1063,7 @@ func (c *DeploymentProcessConverterBase) getPrimaryPackage(projectName string, a
 			feedId = dependencies.GetResourcePointer("Feeds", p.FeedId)
 		}
 
-		if strutil.NilIfEmptyPointer(p.Name) == nil {
+		if strutil.IsBlankPointer(p.Name) {
 			return &terraform.TerraformProcessStepPackage{
 				Id:                  nil,
 				PackageId:           variableReference,
@@ -1108,7 +1108,7 @@ func (c *DeploymentProcessConverterBase) getPackages(projectName string, action 
 			feedId = dependencies.GetResourcePointer("Feeds", p.FeedId)
 		}
 
-		if strutil.NilIfEmptyPointer(p.Name) != nil {
+		if strutil.IsNotBlankPointer(p.Name) {
 			packages[strutil.EmptyIfNil(p.Name)] = terraform.TerraformProcessStepPackage{
 				Id:                  nil,
 				PackageId:           variableReference,
