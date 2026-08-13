@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -126,7 +127,7 @@ func (o *OctopusApiClient) lookupSpaceAsId() (bool, error) {
 		return false, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return false, err
@@ -162,6 +163,76 @@ func (o *OctopusApiClient) setHeaders(req *http.Request) error {
 	return nil
 }
 
+const (
+	// maxRetryAttempts is the number of times a request is retried when the server responds with a 429.
+	maxRetryAttempts = 5
+	// defaultRetryDelay is the fallback delay used when the server does not supply a Retry-After header.
+	defaultRetryDelay = 5 * time.Second
+)
+
+// doRequest executes the supplied request, retrying when the server responds with a 429 (Too Many
+// Requests). When present, the Retry-After header is honoured to determine how long to sleep before
+// retrying. All callers should use this method instead of http.DefaultClient.Do directly.
+func (o *OctopusApiClient) doRequest(req *http.Request) (*http.Response, error) {
+	for attempt := 0; ; attempt++ {
+		res, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if res.StatusCode != http.StatusTooManyRequests || attempt >= maxRetryAttempts {
+			return res, nil
+		}
+
+		delay := retryAfterDelay(res.Header.Get("Retry-After"))
+
+		// Drain and close the body so the connection can be reused before we retry.
+		_, _ = io.Copy(io.Discard, res.Body)
+		_ = res.Body.Close()
+
+		zap.L().Info(fmt.Sprintf("Received 429 Too Many Requests for %s, sleeping %s before retry %d/%d",
+			req.URL.String(), delay, attempt+1, maxRetryAttempts))
+
+		time.Sleep(delay)
+
+		// Reset the request body for the retry if one was provided.
+		if req.GetBody != nil {
+			body, err := req.GetBody()
+			if err != nil {
+				return nil, err
+			}
+			req.Body = body
+		}
+	}
+}
+
+// retryAfterDelay parses the value of a Retry-After header, which may be either a number of seconds
+// or an HTTP date. It falls back to defaultRetryDelay when the header is absent or cannot be parsed.
+func retryAfterDelay(header string) time.Duration {
+	header = strings.TrimSpace(header)
+
+	if header == "" {
+		return defaultRetryDelay
+	}
+
+	if seconds, err := strconv.Atoi(header); err == nil {
+		if seconds < 0 {
+			return defaultRetryDelay
+		}
+		return time.Duration(seconds) * time.Second
+	}
+
+	if t, err := http.ParseTime(header); err == nil {
+		if delay := time.Until(t); delay > 0 {
+			return delay
+		}
+		return defaultRetryDelay
+	}
+
+	return defaultRetryDelay
+}
+
 func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error) {
 	if len(strings.TrimSpace(o.Space)) == 0 {
 		return "", errors.New("space can not be empty")
@@ -185,7 +256,7 @@ func (o *OctopusApiClient) lookupSpaceAsName() (spaceName string, funcErr error)
 		return "", err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		zap.L().Error(err.Error())
@@ -440,7 +511,7 @@ func (o *OctopusApiClient) GetSpace(resources *octopus.Space) (funcErr error) {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return err
@@ -489,7 +560,7 @@ func (o *OctopusApiClient) GetSpaces() (spaces []octopus.Space, funcErr error) {
 		return nil, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		zap.L().Error(err.Error())
@@ -537,7 +608,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return nil, err
 		}
 
-		getRes, err := http.DefaultClient.Do(getReq)
+		getRes, err := o.doRequest(getReq)
 
 		if err != nil {
 			return nil, err
@@ -597,7 +668,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return err
 		}
 
-		putRes, err := http.DefaultClient.Do(putReq)
+		putRes, err := o.doRequest(putReq)
 
 		if err != nil {
 			return err
@@ -634,7 +705,7 @@ func (o *OctopusApiClient) EnsureSpaceDeleted(spaceId string) (deleted bool, fun
 			return err
 		}
 
-		res, err := http.DefaultClient.Do(req)
+		res, err := o.doRequest(req)
 
 		if err != nil {
 			return err
@@ -688,7 +759,7 @@ func (o *OctopusApiClient) GetResource(resourceType string, resources any) (exis
 		return false, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return false, err
@@ -792,7 +863,7 @@ func (o *OctopusApiClient) getResourceById(resourceType string, global bool, id 
 		return false, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return false, err
@@ -877,7 +948,7 @@ func (o *OctopusApiClient) GetResourceNameById(resourceType string, id string) (
 		return "", err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return "", err
@@ -938,7 +1009,7 @@ func (o *OctopusApiClient) GetResourceById(resourceType string, id string, resou
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return err
@@ -1071,7 +1142,7 @@ func (o *OctopusApiClient) getAllResources(req *http.Request, resourceType strin
 
 	zap.L().Debug("Getting collection " + resourceType)
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := o.doRequest(req)
 
 	if err != nil {
 		return err
