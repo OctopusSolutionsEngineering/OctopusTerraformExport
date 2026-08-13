@@ -1039,7 +1039,12 @@ func (c *DeploymentProcessConverterBase) assignWorkerPool(terraformProcessStep t
 func (c *DeploymentProcessConverterBase) getPrimaryPackage(projectName string, action *octopus.Action, dependencies *data.ResourceDetailsCollection) (*terraform.TerraformProcessStepPackage, *terraform.TerraformVariable) {
 	var packageIdVariable *terraform.TerraformVariable = nil
 
-	for _, p := range action.Packages {
+	// Primary packages have no name
+	primaryPackages := lo.Filter(action.Packages, func(item octopus.Package, index int) bool {
+		return strutil.EmptyIfNil(item.Name) == ""
+	})
+
+	for _, p := range primaryPackages {
 		packageId := strutil.EmptyIfNil(p.PackageId)
 
 		var variableReference string
@@ -1078,7 +1083,12 @@ func (c *DeploymentProcessConverterBase) getPackages(projectName string, action 
 	packages := map[string]terraform.TerraformProcessStepPackage{}
 	packageIdVariables := []*terraform.TerraformVariable{}
 
-	for _, p := range action.Packages {
+	// Primary packages have no name
+	namedPackages := lo.Filter(action.Packages, func(item octopus.Package, index int) bool {
+		return strutil.EmptyIfNil(item.Name) != ""
+	})
+
+	for _, p := range namedPackages {
 		packageId := strutil.EmptyIfNil(p.PackageId)
 
 		var variableReference string
@@ -1175,16 +1185,19 @@ func (c *DeploymentProcessConverterBase) getPackageIdVariable(defaultValue strin
 	sanitizedPackageName := sanitizer.SanitizeName(packageName)
 	sanitizedStepName := sanitizer.SanitizeName(stepName)
 
-	variableName := ""
-
 	if packageName == "" {
-		variableName = "project_" + sanitizedProjectName + "_step_" + sanitizedStepName + "_packageid"
-	} else {
-		variableName = "project_" + sanitizedProjectName + "_step_" + sanitizedStepName + "_package_" + sanitizedPackageName + "_packageid"
+		return &terraform.TerraformVariable{
+			Name:        "project_" + sanitizedProjectName + "_step_" + sanitizedStepName + "_packageid",
+			Type:        "string",
+			Nullable:    false,
+			Sensitive:   false,
+			Description: "The package ID for the default package from step " + stepName + " in project " + projectName,
+			Default:     &defaultValue,
+		}
 	}
 
 	return &terraform.TerraformVariable{
-		Name:        variableName,
+		Name:        "project_" + sanitizedProjectName + "_step_" + sanitizedStepName + "_package_" + sanitizedPackageName + "_packageid",
 		Type:        "string",
 		Nullable:    false,
 		Sensitive:   false,
