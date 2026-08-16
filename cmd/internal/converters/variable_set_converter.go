@@ -1532,8 +1532,8 @@ func (c *VariableSetConverter) convertValue(variable octopus.Variable, resourceN
 	return nil
 }
 
-func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
-	if strutil.EmptyIfNil(prompt.Label) != "" || strutil.EmptyIfNil(prompt.Description) != "" {
+func (c *VariableSetConverter) convertPrompt(prompt *octopus.Prompt) *terraform.TerraformProjectVariablePrompt {
+	if prompt != nil {
 		return &terraform.TerraformProjectVariablePrompt{
 			Description: strutil.TrimPointer(prompt.Description),
 			// Nil value must be empty string, otherwise Terraform reports:
@@ -1547,7 +1547,7 @@ func (c *VariableSetConverter) convertPrompt(prompt octopus.Prompt) *terraform.T
 	return nil
 }
 
-func (c *VariableSetConverter) convertDisplaySettings(prompt octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
+func (c *VariableSetConverter) convertDisplaySettings(prompt *octopus.Prompt) *terraform.TerraformProjectVariableDisplay {
 	if prompt.DisplaySettings == nil || len(prompt.DisplaySettings) == 0 {
 		return nil
 	}

@@ -1,10 +1,11 @@
 package octopus
 
 import (
+	"strings"
+
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/samber/lo"
-	"strings"
 )
 
 type VariableSet struct {
@@ -22,7 +23,7 @@ type Variable struct {
 	IsEditable  bool
 	Type        string
 	IsSensitive bool
-	Prompt      Prompt
+	Prompt      *Prompt
 }
 
 func (v *Variable) GetId() string {
