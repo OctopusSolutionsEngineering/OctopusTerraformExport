@@ -1625,6 +1625,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 	channels := dependencies.GetResources("Channels", variable.Scope.Channel...)
 	environments := c.lookupEnvironments(filteredEnvironments, dependencies)
 	machines := dependencies.GetResources("Machines", variable.Scope.Machine...)
+	runbookProcesses := dependencies.GetResources("Runbooks", variable.Scope.ProcessOwner...)
 	processes := dependencies.GetResources("Projects", variable.Scope.ProcessOwner...)
 
 	if len(actions) != 0 ||
@@ -1633,7 +1634,8 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 		len(machines) != 0 ||
 		len(variable.Scope.Role) != 0 ||
 		len(variable.Scope.TenantTag) != 0 ||
-		len(processes) != 0 {
+		len(processes) != 0 ||
+		len(runbookProcesses) != 0 {
 
 		return &terraform.TerraformProjectVariableScope{
 			Actions:      sliceutil.NilIfEmpty(actions),
@@ -1642,7 +1644,7 @@ func (c *VariableSetConverter) convertScope(variable octopus.Variable, variableS
 			Machines:     sliceutil.NilIfEmpty(machines),
 			Roles:        sliceutil.NilIfEmpty(variable.Scope.Role),
 			TenantTags:   sliceutil.NilIfEmpty(c.Excluder.FilteredTenantTags(variable.Scope.TenantTag, c.ExcludeTenantTags, c.ExcludeTenantTagSets)),
-			Processes:    sliceutil.NilIfEmpty(processes),
+			Processes:    sliceutil.NilIfEmpty(lo.Union(processes, runbookProcesses)),
 		}, nil
 	}
 
