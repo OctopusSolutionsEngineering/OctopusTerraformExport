@@ -1,8 +1,9 @@
 package intutil
 
 import (
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"strconv"
+
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 )
 
 // ZeroIfNil converts a int pointer to an int, retuning 0 if the input is nil
@@ -25,6 +26,14 @@ func NilIfZero(input int) *int {
 
 func NilIfTrue(input int, nilValue bool) *int {
 	if nilValue {
+		return nil
+	}
+
+	return &input
+}
+
+func NilIfFalse(input int, nilValue bool) *int {
+	if !nilValue {
 		return nil
 	}
 

@@ -35,6 +35,7 @@ func (r *Runbook) GetUltimateParent() string {
 }
 
 type RunRetentionPolicy struct {
-	QuantityToKeep    int
-	ShouldKeepForever bool
+	QuantityToKeep *int
+	Strategy       string
+	Unit           *string
 }

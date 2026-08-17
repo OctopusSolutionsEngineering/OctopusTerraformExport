@@ -7,11 +7,9 @@ import (
 	"regexp"
 
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/args"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/boolutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
-	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -423,20 +421,20 @@ func (c *RunbookConverter) toHcl(runbook *octopus.Runbook, project *octopus.Proj
 	thisResource.ToHcl = func() (string, error) {
 
 		terraformResource := terraform.TerraformRunbook{
-			Type:                     octopusdeployRunbookResourceType,
-			Name:                     runbookName,
-			Id:                       strutil.InputPointerIfEnabled(c.IncludeIds, &runbook.Id),
-			SpaceId:                  strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", runbook.SpaceId)),
-			ResourceName:             "${var." + runbookName + "_name}",
-			ProjectId:                dependencies.GetResource("Projects", runbook.ProjectId),
-			EnvironmentScope:         runbook.EnvironmentScope,
-			Environments:             c.lookupEnvironments(runbook.Environments, dependencies),
-			ForcePackageDownload:     runbook.ForcePackageDownload,
-			DefaultGuidedFailureMode: runbook.DefaultGuidedFailureMode,
-			Description:              strutil.TrimPointer(runbook.Description),
-			MultiTenancyMode:         runbook.MultiTenancyMode,
-			RetentionPolicy:          c.convertRetentionPolicy(runbook),
-			ConnectivityPolicy:       c.convertConnectivityPolicy(runbook),
+			Type:                        octopusdeployRunbookResourceType,
+			Name:                        runbookName,
+			Id:                          strutil.InputPointerIfEnabled(c.IncludeIds, &runbook.Id),
+			SpaceId:                     strutil.InputIfEnabled(c.IncludeSpaceInPopulation, dependencies.GetResourceDependency("Spaces", runbook.SpaceId)),
+			ResourceName:                "${var." + runbookName + "_name}",
+			ProjectId:                   dependencies.GetResource("Projects", runbook.ProjectId),
+			EnvironmentScope:            runbook.EnvironmentScope,
+			Environments:                c.lookupEnvironments(runbook.Environments, dependencies),
+			ForcePackageDownload:        runbook.ForcePackageDownload,
+			DefaultGuidedFailureMode:    runbook.DefaultGuidedFailureMode,
+			Description:                 strutil.TrimPointer(runbook.Description),
+			MultiTenancyMode:            runbook.MultiTenancyMode,
+			RetentionPolicyWithStrategy: c.convertRetentionPolicy(runbook),
+			ConnectivityPolicy:          c.convertConnectivityPolicy(runbook),
 		}
 
 		file := hclwrite.NewEmptyFile()
@@ -524,10 +522,11 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook *octopus.Runbook) *
 	}
 }
 
-func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *terraform.RetentionPolicy {
-	return &terraform.RetentionPolicy{
-		QuantityToKeep:    intutil.NilIfTrue(runbook.RunRetentionPolicy.QuantityToKeep, runbook.RunRetentionPolicy.ShouldKeepForever),
-		ShouldKeepForever: boolutil.NilIfFalse(runbook.RunRetentionPolicy.ShouldKeepForever),
+func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *terraform.RetentionPolicyWithStrategy {
+	return &terraform.RetentionPolicyWithStrategy{
+		QuantityToKeep: runbook.RunRetentionPolicy.QuantityToKeep,
+		Strategy:       runbook.RunRetentionPolicy.Strategy,
+		Unit:           runbook.RunRetentionPolicy.Unit,
 	}
 }
 
