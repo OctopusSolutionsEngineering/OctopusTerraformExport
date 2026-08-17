@@ -32,6 +32,14 @@ func NilIfTrue(input int, nilValue bool) *int {
 	return &input
 }
 
+func NilIfTruePointer(input *int, nilValue bool) *int {
+	if nilValue {
+		return nil
+	}
+
+	return input
+}
+
 func NilIfFalse(input int, nilValue bool) *int {
 	if !nilValue {
 		return nil

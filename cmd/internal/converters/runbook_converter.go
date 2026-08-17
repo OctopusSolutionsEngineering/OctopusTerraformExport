@@ -10,6 +10,7 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
@@ -525,7 +526,7 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook *octopus.Runbook) *
 func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *terraform.RetentionPolicyWithStrategy {
 	// retention_policy_with_strategy[0].unit must not be set when the strategy is 'Forever'.
 	return &terraform.RetentionPolicyWithStrategy{
-		QuantityToKeep: runbook.RunRetentionPolicy.QuantityToKeep,
+		QuantityToKeep: intutil.NilIfTruePointer(runbook.RunRetentionPolicy.QuantityToKeep, runbook.RunRetentionPolicy.Strategy == "Forever"),
 		Strategy:       runbook.RunRetentionPolicy.Strategy,
 		Unit:           strutil.NilStringIfTrue(runbook.RunRetentionPolicy.Unit, runbook.RunRetentionPolicy.Strategy == "Forever"),
 	}
