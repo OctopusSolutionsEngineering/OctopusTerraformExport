@@ -239,3 +239,19 @@ func StripMultilineWhitespace(input string) string {
 		return strings.TrimSpace(item)
 	}), "\n")
 }
+
+func NilStringIfTrue(input *string, nilValue bool) *string {
+	if nilValue {
+		return nil
+	}
+
+	return input
+}
+
+func NilStringIfFalse(input *string, nilValue bool) *string {
+	if !nilValue {
+		return nil
+	}
+
+	return input
+}

@@ -211,3 +211,55 @@ func TestEnsureSuffix(t *testing.T) {
 		t.Fatalf("result should have been !")
 	}
 }
+
+func TestNilStringIfTrue(t *testing.T) {
+	value := "test"
+
+	if NilStringIfTrue(&value, true) != nil {
+		t.Fatalf("result should have been nil")
+	}
+
+	if NilStringIfTrue(nil, true) != nil {
+		t.Fatalf("result should have been nil")
+	}
+
+	if NilStringIfTrue(nil, false) != nil {
+		t.Fatalf("result should have been nil")
+	}
+
+	result := NilStringIfTrue(&value, false)
+
+	if result == nil {
+		t.Fatalf("result should not have been nil")
+	}
+
+	if *result != "test" {
+		t.Fatalf("result should have been test")
+	}
+}
+
+func TestNilStringIfFalse(t *testing.T) {
+	value := "test"
+
+	if NilStringIfFalse(&value, false) != nil {
+		t.Fatalf("result should have been nil")
+	}
+
+	if NilStringIfFalse(nil, false) != nil {
+		t.Fatalf("result should have been nil")
+	}
+
+	if NilStringIfFalse(nil, true) != nil {
+		t.Fatalf("result should have been nil")
+	}
+
+	result := NilStringIfFalse(&value, true)
+
+	if result == nil {
+		t.Fatalf("result should not have been nil")
+	}
+
+	if *result != "test" {
+		t.Fatalf("result should have been test")
+	}
+}

@@ -523,10 +523,11 @@ func (c *RunbookConverter) convertConnectivityPolicy(runbook *octopus.Runbook) *
 }
 
 func (c *RunbookConverter) convertRetentionPolicy(runbook *octopus.Runbook) *terraform.RetentionPolicyWithStrategy {
+	// retention_policy_with_strategy[0].unit must not be set when the strategy is 'Forever'.
 	return &terraform.RetentionPolicyWithStrategy{
 		QuantityToKeep: runbook.RunRetentionPolicy.QuantityToKeep,
 		Strategy:       runbook.RunRetentionPolicy.Strategy,
-		Unit:           runbook.RunRetentionPolicy.Unit,
+		Unit:           strutil.NilStringIfTrue(runbook.RunRetentionPolicy.Unit, runbook.RunRetentionPolicy.Strategy == "Forever"),
 	}
 }
 
