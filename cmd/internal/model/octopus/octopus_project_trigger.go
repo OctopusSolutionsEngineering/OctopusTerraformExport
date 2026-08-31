@@ -45,6 +45,16 @@ type ProjectTriggerFilter struct {
 	WebhookId *string
 	// RequireApiKey indicates a webhook trigger is authenticated with an Octopus API key rather than a shared secret
 	RequireApiKey *bool
+	// Secret is the shared secret used to authenticate calls to a webhook trigger
+	Secret *ProjectTriggerFilterSecret
+}
+
+// ProjectTriggerFilterSecret represents a webhook trigger's shared secret. The API only reports whether a
+// secret has been set, and never returns the value itself.
+type ProjectTriggerFilterSecret struct {
+	HasValue bool
+	NewValue *string
+	Hint     *string
 }
 
 type ProjectTriggerFilterPackage struct {

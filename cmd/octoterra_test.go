@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -498,6 +499,30 @@ func exportProjectLookupImportAndTest(
 		testFunc)
 }
 
+// featureToggleDisabledError returns true if err is a failed "terraform apply" that was rejected because
+// the Octopus instance under test does not have a required feature toggle enabled. Feature toggles can not
+// be turned on through the API, so there is nothing a test can do to recover. An example of the error
+// returned by the provider is:
+//
+//	Octopus API error: There was a problem with your request. [Webhook feature toggle is not enabled.]
+//
+// The terraform CLI reports these on stderr, which is captured by exec.ExitError rather than being included
+// in the error message.
+func featureToggleDisabledError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	message := err.Error()
+
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
+		message = message + "\n" + string(exitError.Stderr)
+	}
+
+	return strings.Contains(message, "feature toggle is not enabled")
+}
+
 // exportSpaceImportAndTest imports the sample space, exports the space as Terraform, reimports it as a new space, and executes a callback
 // to verify the results.
 //
@@ -569,6 +594,10 @@ func exportImportAndTest(
 
 	}()
 
+	// Set when the test instance is missing a feature toggle required by the fixtures under test. The test
+	// is skipped rather than failed, because the toggle can not be enabled from the API.
+	missingFeatureToggle := ""
+
 	testFramework := test.OctopusContainerTest{}
 	testFramework.ArrangeTest(t, func(t *testing.T, container *test.OctopusContainer, spaceClient *officialclient.Client) (funcErr error) {
 		octopusClient := createClient(container, "")
@@ -585,6 +614,11 @@ func exportImportAndTest(
 			createSourceSpaceVars)
 
 		if err != nil {
+			if featureToggleDisabledError(err) {
+				missingFeatureToggle = "populating the source space"
+				return nil
+			}
+
 			return err
 		}
 
@@ -620,6 +654,11 @@ func exportImportAndTest(
 			importSpaceVars)
 
 		if err != nil {
+			if featureToggleDisabledError(err) {
+				missingFeatureToggle = "reimporting the exported space"
+				return nil
+			}
+
 			// There are some odd errors where Terraform thinks "Test3" is an existing space.
 			// So dump the existing spaces if we get an error just to confirm.
 			spaces, spacesErr := octopusClient.GetSpaces()
@@ -654,6 +693,10 @@ func exportImportAndTest(
 
 		return err
 	})
+
+	if missingFeatureToggle != "" {
+		t.Skip("the Octopus instance under test is missing a feature toggle required when " + missingFeatureToggle)
+	}
 }
 
 // TestSpaceExport verifies that a space can be reimported with the correct settings
@@ -9094,6 +9137,202 @@ func TestSingleProjectLookupScheduledTriggerExport(t *testing.T) {
 			}
 
 			return nil
+		})
+}
+
+// assertWebhookTriggers verifies that the webhook triggers defined in
+// test/terraform/94-webhooktrigger/space_population were recreated in the destination space.
+func assertWebhookTriggers(octopusClient client.OctopusClient, recreatedSpaceId string) error {
+	environments := octopus.GeneralCollection[octopus.Environment]{}
+	err := octopusClient.GetAllResources("Environments", &environments)
+
+	if err != nil {
+		return err
+	}
+
+	testEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+		return item.Name == "Test"
+	})
+
+	if len(testEnvironment) != 1 {
+		return errors.New("space must have an environment called \"Test\" in space " + recreatedSpaceId)
+	}
+
+	developmentEnvironment := lo.Filter(environments.Items, func(item octopus.Environment, index int) bool {
+		return item.Name == "Development"
+	})
+
+	if len(developmentEnvironment) != 1 {
+		return errors.New("space must have an environment called \"Development\" in space " + recreatedSpaceId)
+	}
+
+	projects := octopus.GeneralCollection[octopus.Project]{}
+	err = octopusClient.GetAllResources("Projects", &projects)
+
+	if err != nil {
+		return err
+	}
+
+	project := lo.Filter(projects.Items, func(item octopus.Project, index int) bool {
+		return item.Name == "Test"
+	})
+
+	if len(project) != 1 {
+		return errors.New("space must have an project called \"Test\" in space " + recreatedSpaceId)
+	}
+
+	runbooks := octopus.GeneralCollection[octopus.Runbook]{}
+	err = octopusClient.GetAllResources("Runbooks", &runbooks)
+
+	if err != nil {
+		return err
+	}
+
+	runbook := lo.Filter(runbooks.Items, func(item octopus.Runbook, index int) bool {
+		return item.Name == "Runbook"
+	})
+
+	if len(runbook) != 1 {
+		return errors.New("space must have a runbook called \"Runbook\" in space " + recreatedSpaceId)
+	}
+
+	// Webhook triggers run runbooks, so they are only returned when the runbook trigger action category
+	// is requested.
+	triggers := octopus.GeneralCollection[octopus.ProjectTrigger]{}
+	err = octopusClient.GetAllResources(
+		"Projects/"+project[0].Id+"/Triggers",
+		&triggers,
+		[]string{"triggerActionCategory", "Runbook"})
+
+	if err != nil {
+		return err
+	}
+
+	secretTrigger := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+		return item.Name == "Webhook Secret"
+	})
+
+	if len(secretTrigger) != 1 {
+		return errors.New("space must have a trigger called \"Webhook Secret\" in space " + recreatedSpaceId)
+	}
+
+	if secretTrigger[0].Filter.FilterType != "WebhookFilter" {
+		return errors.New("the trigger \"Webhook Secret\" must have a filter type of \"WebhookFilter\" (was " + secretTrigger[0].Filter.FilterType + ")")
+	}
+
+	if secretTrigger[0].Description == nil || *secretTrigger[0].Description != "This is a webhook trigger authenticated with a shared secret" {
+		return errors.New("the trigger \"Webhook Secret\" must have a description of \"This is a webhook trigger authenticated with a shared secret\"")
+	}
+
+	if secretTrigger[0].IsDisabled {
+		return errors.New("the trigger \"Webhook Secret\" must be enabled")
+	}
+
+	// The secret value is supplied by a Terraform variable, so we can only verify that the server holds a secret.
+	if secretTrigger[0].Filter.Secret == nil || !secretTrigger[0].Filter.Secret.HasValue {
+		return errors.New("the trigger \"Webhook Secret\" must have a shared secret")
+	}
+
+	if boolutil.FalseIfNil(secretTrigger[0].Filter.RequireApiKey) {
+		return errors.New("the trigger \"Webhook Secret\" must not require an API key")
+	}
+
+	// The webhook ID is generated by the server, and is never exported.
+	if strutil.EmptyIfNil(secretTrigger[0].Filter.WebhookId) == "" {
+		return errors.New("the trigger \"Webhook Secret\" must have a webhook ID")
+	}
+
+	if secretTrigger[0].Action.ActionType != "RunRunbook" {
+		return errors.New("the trigger \"Webhook Secret\" must have an action type of \"RunRunbook\" (was " + secretTrigger[0].Action.ActionType + ")")
+	}
+
+	if strutil.EmptyIfNil(secretTrigger[0].Action.RunbookId) != runbook[0].Id {
+		return errors.New("the trigger \"Webhook Secret\" must run the runbook called \"Runbook\"")
+	}
+
+	if slices.Index(secretTrigger[0].Action.EnvironmentIds, testEnvironment[0].Id) == -1 {
+		return errors.New("the trigger \"Webhook Secret\" must have a target environment of Test")
+	}
+
+	if slices.Index(secretTrigger[0].Action.EnvironmentIds, developmentEnvironment[0].Id) == -1 {
+		return errors.New("the trigger \"Webhook Secret\" must have a target environment of Development")
+	}
+
+	apiKeyTrigger := lo.Filter(triggers.Items, func(item octopus.ProjectTrigger, index int) bool {
+		return item.Name == "Webhook Api Key"
+	})
+
+	if len(apiKeyTrigger) != 1 {
+		return errors.New("space must have a trigger called \"Webhook Api Key\" in space " + recreatedSpaceId)
+	}
+
+	if apiKeyTrigger[0].Filter.FilterType != "WebhookFilter" {
+		return errors.New("the trigger \"Webhook Api Key\" must have a filter type of \"WebhookFilter\" (was " + apiKeyTrigger[0].Filter.FilterType + ")")
+	}
+
+	if !apiKeyTrigger[0].IsDisabled {
+		return errors.New("the trigger \"Webhook Api Key\" must be disabled")
+	}
+
+	if !boolutil.FalseIfNil(apiKeyTrigger[0].Filter.RequireApiKey) {
+		return errors.New("the trigger \"Webhook Api Key\" must require an API key")
+	}
+
+	// Triggers authenticated with an API key have no shared secret, so no secret variable is exported for them.
+	if apiKeyTrigger[0].Filter.Secret != nil && apiKeyTrigger[0].Filter.Secret.HasValue {
+		return errors.New("the trigger \"Webhook Api Key\" must not have a shared secret")
+	}
+
+	if strutil.EmptyIfNil(apiKeyTrigger[0].Action.RunbookId) != runbook[0].Id {
+		return errors.New("the trigger \"Webhook Api Key\" must run the runbook called \"Runbook\"")
+	}
+
+	if len(apiKeyTrigger[0].Action.EnvironmentIds) != 1 || apiKeyTrigger[0].Action.EnvironmentIds[0] != developmentEnvironment[0].Id {
+		return errors.New("the trigger \"Webhook Api Key\" must have a single target environment of Development")
+	}
+
+	return nil
+}
+
+// TestProjectWebhookTriggerExport verifies that a space can be reimported with webhook triggers
+func TestProjectWebhookTriggerExport(t *testing.T) {
+	exportSpaceImportAndTest(
+		t,
+		"../test/terraform/94-webhooktrigger/space_creation",
+		"../test/terraform/94-webhooktrigger/space_population",
+		[]string{},
+		[]string{
+			// The API never returns the shared secret, so it is exported as a Terraform variable
+			"-var=projecttrigger_test_webhook_secret_secret=aVerySecretSecret",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			return assertWebhookTriggers(createClient(container, recreatedSpaceId), recreatedSpaceId)
+		})
+}
+
+// TestSingleProjectWebhookTriggerExport verifies that a single project can be reimported with webhook
+// triggers. This exercises the recursive export of the environments and runbooks the triggers reference.
+func TestSingleProjectWebhookTriggerExport(t *testing.T) {
+	exportProjectImportAndTest(
+		t,
+		"Test",
+		"../test/terraform/94-webhooktrigger/space_creation",
+		"../test/terraform/94-webhooktrigger/space_population",
+		"../test/terraform/z-createspace",
+		[]string{},
+		[]string{},
+		[]string{
+			// The API never returns the shared secret, so it is exported as a Terraform variable
+			"-var=projecttrigger_test_webhook_secret_secret=aVerySecretSecret",
+		},
+		args2.Arguments{},
+		func(t *testing.T, container *test.OctopusContainer, recreatedSpaceId string, terraformStateDir string) error {
+
+			// Assert
+			return assertWebhookTriggers(createClient(container, recreatedSpaceId), recreatedSpaceId)
 		})
 }
 
