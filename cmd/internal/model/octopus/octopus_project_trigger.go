@@ -41,6 +41,10 @@ type ProjectTriggerFilter struct {
 	HourInterval        *int
 	MinuteInterval      *int
 	Sources             []ProjectTriggerSources
+	// WebhookId is the server generated identifier used in the URL that invokes a webhook trigger
+	WebhookId *string
+	// RequireApiKey indicates a webhook trigger is authenticated with an Octopus API key rather than a shared secret
+	RequireApiKey *bool
 }
 
 type ProjectTriggerFilterPackage struct {

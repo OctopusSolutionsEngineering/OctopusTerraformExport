@@ -64,3 +64,10 @@ func StepTemplateParameterSecretName(template octopus.StepTemplate, parameter oc
 func MachineProxyPassword(machine octopus.MachineProxy) string {
 	return "machine_proxy_" + sanitizer.SanitizeName(machine.Name) + "_password"
 }
+
+// WebhookTriggerSecretName returns the name of the Terraform variable holding the shared secret used to
+// authenticate calls to a webhook trigger. Trigger names are only unique within a project, so the project
+// name is included to keep the variable name unique within the exported module.
+func WebhookTriggerSecretName(projectName string, trigger octopus.ProjectTrigger) string {
+	return "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(trigger.Name) + "_secret"
+}

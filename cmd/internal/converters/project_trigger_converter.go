@@ -9,10 +9,12 @@ import (
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/client"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/data"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dateutil"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/dummy"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/hcl"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/intutil"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/octopus"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/model/terraform"
+	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/naming"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/sanitizer"
 	"github.com/OctopusSolutionsEngineering/OctopusTerraformExport/cmd/internal/strutil"
 	"github.com/hashicorp/hcl2/gohcl"
@@ -27,6 +29,7 @@ const octopusdeployProjectScheduledTrigger = "octopusdeploy_project_scheduled_tr
 const octopusdeployProjectFeedTrigger = "octopusdeploy_external_feed_create_release_trigger"
 const octopusdeployProjectGitTrigger = "octopusdeploy_git_trigger"
 const octopusdeployProjectArcTrigger = "octopusdeploy_built_in_trigger"
+const octopusdeployWebhookTrigger = "octopusdeploy_webhook_trigger"
 
 type ProjectTriggerConverter struct {
 	Client                     client.OctopusClient
@@ -40,6 +43,8 @@ type ProjectTriggerConverter struct {
 	ExcludeTriggersRegex       args.StringSliceArgs
 	ExcludeAllTriggers         bool
 	Excluder                   ExcludeByName
+	DummySecretVariableValues  bool
+	DummySecretGenerator       dummy.DummySecretGenerator
 }
 
 func (c ProjectTriggerConverter) ToHclByProjectIdAndName(projectId string, projectName string, recursive bool, lookup bool, dependencies *data.ResourceDetailsCollection) error {
@@ -291,7 +296,7 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, re
 	}
 
 	// Some triggers are not supported
-	supportedTriggers := []string{"GitFilter", "ArcFeedFilter", "MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter"}
+	supportedTriggers := []string{"GitFilter", "ArcFeedFilter", "MachineFilter", "OnceDailySchedule", "FeedFilter", "CronExpressionSchedule", "DaysPerMonthSchedule", "ContinuousDailySchedule", "FeedFilter", "WebhookFilter"}
 	if slices.Index(supportedTriggers, projectTrigger.Filter.FilterType) == -1 {
 		zap.L().Error("Found an unsupported trigger type " + projectTrigger.Filter.FilterType)
 		return nil
@@ -320,6 +325,8 @@ func (c ProjectTriggerConverter) toHcl(projectTrigger octopus.ProjectTrigger, re
 	if err != nil {
 		return err
 	}
+
+	c.buildWebhookTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
 
 	return c.buildFeedTriggerResources(projectTrigger, stateless, projectId, projectName, dependencies)
 }
@@ -1027,4 +1034,142 @@ func (c ProjectTriggerConverter) buildGitTrigger(projectTrigger octopus.ProjectT
 	dependencies.AddResource(thisResource)
 
 	return nil
+}
+
+func (c ProjectTriggerConverter) buildWebhookTriggerResources(projectTrigger octopus.ProjectTrigger, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	if projectTrigger.Filter.FilterType != "WebhookFilter" {
+		return
+	}
+
+	projectTriggerName := "projecttrigger_" + sanitizer.SanitizeName(projectName) + "_" + sanitizer.SanitizeName(projectTrigger.Name)
+
+	if c.GenerateImportScripts && !stateless {
+		c.toBashImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployWebhookTrigger, dependencies)
+		c.toPowershellImport(projectTriggerName, projectName, projectTrigger.Name, octopusdeployWebhookTrigger, dependencies)
+	}
+
+	c.buildWebhookTrigger(projectTrigger, projectTriggerName, stateless, projectId, projectName, dependencies)
+}
+
+func (c ProjectTriggerConverter) buildWebhookTrigger(projectTrigger octopus.ProjectTrigger, projectTriggerName string, stateless bool, projectId string, projectName string, dependencies *data.ResourceDetailsCollection) {
+	thisResource := data.ResourceDetails{}
+	thisResource.Name = projectTrigger.Name
+	thisResource.FileName = "space_population/" + projectTriggerName + ".tf"
+	thisResource.Id = projectTrigger.Id
+	thisResource.ResourceType = c.GetGroupResourceType(projectId)
+
+	if stateless {
+		// There is no way to look up an existing trigger. If the project exists, the lookup is an empty string. But
+		// if the project exists, nothing will be created that needs to look up the trigger anyway.
+		thisResource.Lookup = "${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 " +
+			"? null " +
+			": " + octopusdeployWebhookTrigger + "." + projectTriggerName + "[0].id}"
+		thisResource.Dependency = "${" + octopusdeployWebhookTrigger + "." + projectTriggerName + "}"
+	} else {
+		thisResource.Lookup = "${" + octopusdeployWebhookTrigger + "." + projectTriggerName + ".id}"
+	}
+
+	// The API never returns the shared secret, so it is exposed as a Terraform variable. Triggers that
+	// authenticate with an API key have no secret at all.
+	requireApiKey := boolutil.FalseIfNil(projectTrigger.Filter.RequireApiKey)
+	secretName := naming.WebhookTriggerSecretName(projectName, projectTrigger)
+
+	if !requireApiKey {
+		thisResource.Parameters = []data.ResourceParameter{
+			{
+				Label:         "Webhook trigger " + projectTrigger.Name + " secret",
+				Description:   "The secret used to authenticate calls to the webhook trigger \"" + projectTrigger.Name + "\"",
+				ResourceName:  sanitizer.SanitizeParameterName(dependencies, projectTrigger.Name, "Secret"),
+				ParameterType: "Password",
+				Sensitive:     true,
+				VariableName:  secretName,
+			},
+		}
+	}
+
+	thisResource.ToHcl = func() (string, error) {
+
+		terraformResource := terraform.TerraformWebhookTrigger{
+			Type:  octopusdeployWebhookTrigger,
+			Name:  projectTriggerName,
+			Count: nil,
+			Id:    strutil.InputPointerIfEnabled(c.IncludeIds, &projectTrigger.Id),
+			// Space ID is mandatory in at least 0.18.3, so this field is not dependent on the option to include space IDs
+			SpaceId:          strutil.StrPointer("${trimspace(var.octopus_space_id)}"),
+			ResourceName:     projectTrigger.Name,
+			Description:      strutil.TrimPointer(projectTrigger.Description),
+			ProjectId:        dependencies.GetResource("Projects", projectTrigger.ProjectId),
+			IsDisabled:       strutil.NilIfFalse(projectTrigger.IsDisabled),
+			Secret:           strutil.NilStringIfTrue(strutil.StrPointer("${var."+secretName+"}"), requireApiKey),
+			RequireApiKey:    strutil.NilIfFalse(requireApiKey),
+			TenantIds:        dependencies.GetResources("Tenants", projectTrigger.Action.TenantIds...),
+			RunRunbookAction: c.buildWebhookTriggerRunRunbookAction(projectTrigger, dependencies),
+		}
+		file := hclwrite.NewEmptyFile()
+
+		if stateless {
+			// when importing a stateless project, the trigger is only created if the project does not exist
+			terraformResource.Count = strutil.StrPointer("${length(data." + octopusdeployProjectsDataType + ".project_" + sanitizer.SanitizeName(projectName) + ".projects) != 0 ? 0 : 1}")
+		}
+
+		block := gohcl.EncodeAsBlock(terraformResource, "resource")
+
+		// When using dummy values, we expect the secrets will be updated later
+		if (c.DummySecretVariableValues && !requireApiKey) || stateless {
+			ignoreAll := terraform.EmptyBlock{}
+			lifecycleBlock := gohcl.EncodeAsBlock(ignoreAll, "lifecycle")
+			block.Body().AppendBlock(lifecycleBlock)
+
+			if c.DummySecretVariableValues && !requireApiKey {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "ignore_changes", "[secret]")
+			}
+
+			if stateless {
+				hcl.WriteUnquotedAttribute(lifecycleBlock, "prevent_destroy", "true")
+			}
+		}
+
+		file.Body().AppendBlock(block)
+
+		if !requireApiKey {
+			secretVariableResource := terraform.TerraformVariable{
+				Name:        secretName,
+				Type:        "string",
+				Nullable:    false,
+				Sensitive:   true,
+				Description: "The secret used to authenticate calls to the webhook trigger \"" + projectTrigger.Name + "\"",
+			}
+
+			if c.DummySecretVariableValues {
+				secretVariableResource.Default = c.DummySecretGenerator.GetDummySecret()
+				dependencies.AddDummy(data.DummyVariableReference{
+					VariableName: secretName,
+					ResourceName: projectTrigger.Name,
+					ResourceType: c.GetResourceType(),
+				})
+			}
+
+			variableBlock := gohcl.EncodeAsBlock(secretVariableResource, "variable")
+			hcl.WriteUnquotedAttribute(variableBlock, "type", "string")
+			file.Body().AppendBlock(variableBlock)
+		}
+
+		return string(file.Bytes()), nil
+	}
+
+	dependencies.AddResource(thisResource)
+}
+
+// buildWebhookTriggerRunRunbookAction builds the mandatory run_runbook_action attribute. Webhook triggers
+// only support the RunRunbook action.
+func (c ProjectTriggerConverter) buildWebhookTriggerRunRunbookAction(projectTrigger octopus.ProjectTrigger, dependencies *data.ResourceDetailsCollection) *terraform.TerraformWebhookTriggerRunRunbookAction {
+	if projectTrigger.Action.ActionType != "RunRunbook" {
+		zap.L().Error("Found a webhook trigger with an unsupported action type " + projectTrigger.Action.ActionType)
+		return nil
+	}
+
+	return &terraform.TerraformWebhookTriggerRunRunbookAction{
+		RunbookId:            dependencies.GetResource("Runbooks", strutil.EmptyIfNil(projectTrigger.Action.RunbookId)),
+		TargetEnvironmentIds: c.lookupEnvironments(projectTrigger.Action.EnvironmentIds, dependencies),
+	}
 }

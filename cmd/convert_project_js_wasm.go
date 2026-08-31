@@ -635,6 +635,8 @@ func convertProjectToTerraform(url string, space string, projectId string) (map[
 			Client:                     &client,
 			EnvironmentConverter:       environmentConverter,
 			ParentEnvironmentConverter: nil,
+			DummySecretVariableValues:  false,
+			DummySecretGenerator:       nil,
 		},
 		VariableSetConverter:                  &variableSetConverter,
 		ChannelConverter:                      channelConverter,

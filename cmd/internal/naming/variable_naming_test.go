@@ -116,3 +116,12 @@ func TestMachineProxyPassword(t *testing.T) {
 		t.Errorf("expected %s, got %s", expected, result)
 	}
 }
+
+func TestWebhookTriggerSecretName(t *testing.T) {
+	trigger := octopus.ProjectTrigger{Name: "My webhook trigger"}
+	expected := "projecttrigger_test_project_my_webhook_trigger_secret"
+	result := WebhookTriggerSecretName("Test Project", trigger)
+	if result != expected {
+		t.Errorf("expected %s, got %s", expected, result)
+	}
+}
