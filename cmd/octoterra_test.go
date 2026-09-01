@@ -520,7 +520,60 @@ func featureToggleDisabledError(err error) bool {
 		message = message + "\n" + string(exitError.Stderr)
 	}
 
-	return strings.Contains(message, "feature toggle is not enabled")
+	// The terraform CLI wraps and indents diagnostic messages, so the example above is actually printed as
+	// "[Webhook feature\ntoggle is not enabled.]". Collapse the whitespace so the wrapping does not matter.
+	return strings.Contains(strings.Join(strings.Fields(message), " "), "feature toggle is not enabled")
+}
+
+// terraformApplyStderr simulates a "terraform apply" that wrote the supplied text to stderr and exited
+// non-zero, which is how the test framework surfaces provider errors.
+func terraformApplyStderr(t *testing.T, stderr string) error {
+	t.Helper()
+
+	cmd := exec.Command("sh", "-c", "cat >&2; exit 1")
+	cmd.Stdin = strings.NewReader(stderr)
+	_, err := cmd.Output()
+
+	if err == nil {
+		t.Fatal("expected a non-zero exit code")
+	}
+
+	var exitError *exec.ExitError
+	if !errors.As(err, &exitError) || len(exitError.Stderr) == 0 {
+		t.Fatal("expected the stderr of the failed command to be captured")
+	}
+
+	return err
+}
+
+func TestFeatureToggleDisabledError(t *testing.T) {
+	// The terraform CLI wraps diagnostics, so the message is split over two lines in the real output.
+	wrapped := `
+Error: unable to create webhook trigger
+
+  with octopusdeploy_webhook_trigger.webhook_secret_example,
+  on project_triggers.tf line 3, in resource "octopusdeploy_webhook_trigger" "webhook_secret_example":
+   3: resource "octopusdeploy_webhook_trigger" "webhook_secret_example" {
+
+Octopus API error: There was a problem with your request. [Webhook feature
+toggle is not enabled.] 
+`
+
+	if !featureToggleDisabledError(terraformApplyStderr(t, wrapped)) {
+		t.Error("a line wrapped feature toggle error must be detected")
+	}
+
+	if !featureToggleDisabledError(terraformApplyStderr(t, "Octopus API error: [Webhook feature toggle is not enabled.]")) {
+		t.Error("an unwrapped feature toggle error must be detected")
+	}
+
+	if featureToggleDisabledError(terraformApplyStderr(t, "Error: something else went wrong")) {
+		t.Error("an unrelated error must not be detected, or real failures would be skipped")
+	}
+
+	if featureToggleDisabledError(nil) {
+		t.Error("a nil error must not be detected")
+	}
 }
 
 // exportSpaceImportAndTest imports the sample space, exports the space as Terraform, reimports it as a new space, and executes a callback
